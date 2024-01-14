@@ -4,7 +4,7 @@
     <PropertyGroup>
         <Authors>AtmoOmen</Authors>
         <Version>0.0.0.1</Version>
-        <Description>Sample Plugin Template based on goatcorp's.</Description>
+        <Description>Help finish some daily tasks.</Description>
         <Copyright></Copyright>
         <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
         <IsPackable>false</IsPackable>
@@ -45,6 +45,22 @@
         <Compile Remove="bin\**" />
         <EmbeddedResource Remove="bin\**" />
         <None Remove="bin\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="Managers\Langs\ChineseSimplifed.resx" />
+      <EmbeddedResource Remove="Managers\Langs\English.resx" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="Managers\Langs\ChineseSimplifed.resx">
+        <Generator></Generator>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Include="Managers\Langs\English.resx">
+        <Generator></Generator>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
     <ItemGroup>

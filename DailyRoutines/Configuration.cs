@@ -1,4 +1,4 @@
-namespace SamplePlugin;
+namespace DailyRoutines;
 
 [Serializable]
 public class Configuration : IPluginConfiguration

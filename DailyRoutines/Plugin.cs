@@ -1,12 +1,12 @@
-namespace SamplePlugin;
+namespace DailyRoutines;
 
 public sealed class Plugin : IDalamudPlugin
 {
     public string Name => "Omen Sample Plugin";
     public const string CommandName = "/omspp";
 
-    private DalamudPluginInterface PluginInterface { get; init; }
-    public ConfigWindow? ConfigWindow { get; private set; }
+    internal DalamudPluginInterface PluginInterface { get; init; }
+    public Main? Main { get; private set; }
 
     public WindowSystem WindowSystem = new("SamplePlugin");
     public static Plugin Instance = null!;
@@ -35,8 +35,8 @@ public sealed class Plugin : IDalamudPlugin
 
     private void WindowHandler()
     {
-        ConfigWindow = new ConfigWindow(this);
-        WindowSystem.AddWindow(ConfigWindow);
+        Main = new Main(this);
+        WindowSystem.AddWindow(Main);
 
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
@@ -44,7 +44,7 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OnCommand(string command, string args)
     {
-        ConfigWindow.IsOpen = !ConfigWindow.IsOpen;
+        Main.IsOpen = !Main.IsOpen;
     }
 
     private void DrawUI()
@@ -54,13 +54,13 @@ public sealed class Plugin : IDalamudPlugin
 
     public void DrawConfigUI()
     {
-        ConfigWindow.IsOpen = true;
+        Main.IsOpen = true;
     }
 
     public void Dispose()
     {
         WindowSystem.RemoveAllWindows();
-        ConfigWindow.Dispose();
+        Main.Dispose();
 
         Service.Config.Uninitialize();
     }

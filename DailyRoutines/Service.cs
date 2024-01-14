@@ -1,4 +1,4 @@
-namespace SamplePlugin;
+namespace DailyRoutines;
 
 public class Service
 {
