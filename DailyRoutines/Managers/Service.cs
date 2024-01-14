@@ -1,4 +1,4 @@
-namespace DailyRoutines;
+namespace DailyRoutines.Managers;
 
 public class Service
 {
@@ -7,6 +7,25 @@ public class Service
         Config = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         Config.Initialize(pluginInterface);
         pluginInterface.Create<Service>();
+
+        InitLanguage();
+    }
+
+    private static void InitLanguage()
+    {
+        var playerLang = Config.SelectedLanguage;
+        if (string.IsNullOrEmpty(playerLang))
+        {
+            playerLang = ClientState.ClientLanguage.ToString();
+            if (LanguageManager.LanguageNames.All(x => x.Language != playerLang))
+            {
+                playerLang = "English";
+            }
+            Config.SelectedLanguage = playerLang;
+            Config.Save();
+        }
+
+        Lang = new LanguageManager(playerLang);
     }
 
     [PluginService] public static IClientState ClientState { get; private set; } = null!;
@@ -22,5 +41,6 @@ public class Service
     [PluginService] public static IAddonEventManager AddonEvent { get; private set; } = null!;
     [PluginService] public static ITextureProvider Texture { get; set; } = null!;
     public static SigScanner SigScanner { get; private set; } = new();
+    public static LanguageManager Lang { get; set; } = null!;
     public static Configuration Config { get; set; } = null!;
 }

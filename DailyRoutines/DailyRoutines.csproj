@@ -95,4 +95,13 @@
         </Reference>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Managers\Modules\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\ClickLib\ClickLib\ClickLib.csproj" />
+      <ProjectReference Include="..\OmenTools\OmenTools.csproj" />
+    </ItemGroup>
+
 </Project>

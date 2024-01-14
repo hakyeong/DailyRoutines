@@ -2,12 +2,13 @@ namespace DailyRoutines;
 
 public sealed class Plugin : IDalamudPlugin
 {
-    public string Name => "Omen Sample Plugin";
-    public const string CommandName = "/omspp";
+    public string Name => "Daily Routines";
+    public const string CommandName = "/pdr";
 
     internal DalamudPluginInterface PluginInterface { get; init; }
     public Main? Main { get; private set; }
 
+    public ModuleManager? ModuleManager;
     public WindowSystem WindowSystem = new("SamplePlugin");
     public static Plugin Instance = null!;
 
@@ -20,11 +21,13 @@ public sealed class Plugin : IDalamudPlugin
 
         CommandHandler();
         WindowHandler();
+
+        ModuleManager ??= new ModuleManager();
     }
 
     internal void CommandHandler()
     {
-        var helpMessage = "A useful message to display in /xlhelp";
+        var helpMessage = Service.Lang.GetText("CommandHelp");
 
         Service.Command.RemoveHandler(CommandName);
         Service.Command.AddHandler(CommandName, new CommandInfo(OnCommand)
@@ -63,5 +66,6 @@ public sealed class Plugin : IDalamudPlugin
         Main.Dispose();
 
         Service.Config.Uninitialize();
+        ModuleManager.Uninit();
     }
 }

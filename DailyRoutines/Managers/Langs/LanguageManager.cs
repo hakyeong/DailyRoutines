@@ -1,3 +1,5 @@
+using DailyRoutines.Managers;
+
 namespace DailyRoutines.Manager;
 
 public class LanguageManager
@@ -17,7 +19,7 @@ public class LanguageManager
     public LanguageManager(string languageName, bool isDev = false, string devLangPath = "")
     {
         LangsDirectory = Path.Join(Path.GetDirectoryName(Plugin.Instance.PluginInterface.AssemblyLocation.FullName),
-                                   "Manager", "Langs");
+                                   "Managers", "Langs");
 
         if (isDev)
             resourceData = LoadResourceFile(devLangPath);
