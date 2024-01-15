@@ -1,3 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using ClickLib;
+using DailyRoutines.Infos;
+using DailyRoutines.Managers;
+
 namespace DailyRoutines.Manager;
 
 public class ModuleManager
@@ -6,6 +14,8 @@ public class ModuleManager
 
     public ModuleManager()
     {
+        Click.Initialize();
+
         var types = Assembly.GetExecutingAssembly().GetTypes()
                             .Where(t => t.GetInterfaces().Contains(typeof(IDailyModule)) &&
                                         t.GetConstructor(Type.EmptyTypes) != null);

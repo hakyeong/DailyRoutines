@@ -1,3 +1,13 @@
+global using static DailyRoutines.Plugin;
+using DailyRoutines.Manager;
+using DailyRoutines.Managers;
+using DailyRoutines.Windows;
+using Dalamud.Game.Command;
+using Dalamud.Interface.Windowing;
+using Dalamud.Plugin;
+using ECommons;
+using ECommons.Automation;
+
 namespace DailyRoutines;
 
 public sealed class Plugin : IDalamudPlugin
@@ -8,16 +18,20 @@ public sealed class Plugin : IDalamudPlugin
     internal DalamudPluginInterface PluginInterface { get; init; }
     public Main? Main { get; private set; }
 
+    public TaskManager TaskManager = null!;
     public ModuleManager? ModuleManager;
     public WindowSystem WindowSystem = new("SamplePlugin");
-    public static Plugin Instance = null!;
+    internal static Plugin P = null!;
 
     public Plugin(DalamudPluginInterface pluginInterface)
     {
-        Instance = this;
+        P = this;
         PluginInterface = pluginInterface;
 
         Service.Initialize(pluginInterface);
+        ECommonsMain.Init(pluginInterface, this, Module.DalamudReflector);
+
+        TaskManager = new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false};
 
         CommandHandler();
         WindowHandler();
@@ -67,6 +81,7 @@ public sealed class Plugin : IDalamudPlugin
         Main.Dispose();
 
         Service.Config.Uninitialize();
+        ECommonsMain.Dispose();
         ModuleManager.Uninit();
     }
 }

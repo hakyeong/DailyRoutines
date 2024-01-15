@@ -1,5 +1,6 @@
-namespace DailyRoutines.Managers.Modules;
+namespace DailyRoutines.Modules;
 
+/*
 [ModuleDescription("AutoMiniCactpotTitle", "AutoMiniCactpotDescription", ModuleCategories.GoldSaucer)]
 public class AutoMiniCactpot : IDailyModule
 {
@@ -25,9 +26,18 @@ public class AutoMiniCactpot : IDailyModule
 
     public void Init()
     {
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Talk", OnAddonTalk);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "LotteryDaily", OnAddonSetup);
 
         Initialized = true;
+    }
+
+    private void OnAddonTalk(AddonEvent type, AddonArgs args)
+    {
+        if (Service.ClientState.TerritoryType != 144) return;
+        var broker = Service.Target.Target;
+        if (broker == null || broker.DataId != 1010445) return;
+        Click.SendClick("talk");
     }
 
     private unsafe void OnAddonSetup(AddonEvent type, AddonArgs args)
@@ -35,11 +45,11 @@ public class AutoMiniCactpot : IDailyModule
         var ui = (AtkUnitBase*)args.Addon;
         if (!HelpersOm.IsAddonAndNodesReady(ui)) return;
 
-        var stateCheck1 = TaskManager.WaitForExpectedResult(IsOnDisabledLD, true, TimeSpan.FromSeconds(10)).GetAwaiter()
+        var stateCheck1 = TaskManager1.WaitForExpectedResult(IsOnDisabledLD, false, TimeSpan.FromSeconds(10)).GetAwaiter()
                                      .GetResult();
         if (!stateCheck1) return;
 
-        var clickHandler = new ClickLotteryDaily((IntPtr)ui);
+        var clickHandler = new ClickLotteryDaily((nint)ui);
         var rnd = new Random();
 
         var selectedBlocks = BlockNodeIds.Keys.OrderBy(x => rnd.Next()).Take(4).ToArray();
@@ -53,7 +63,7 @@ public class AutoMiniCactpot : IDailyModule
             clickHandler.ClickBlockButton(BlockNodeIds[id]);
         }
 
-        var stateCheck2 = TaskManager.WaitForExpectedResult(IsOnDisabledLD, true, TimeSpan.FromSeconds(10)).GetAwaiter()
+        var stateCheck2 = TaskManager1.WaitForExpectedResult(IsOnDisabledLD, false, TimeSpan.FromSeconds(10)).GetAwaiter()
                                      .GetResult();
         if (!stateCheck2) return;
 
@@ -62,8 +72,7 @@ public class AutoMiniCactpot : IDailyModule
 
         clickHandler.ClickLineButton((AtkComponentRadioButton*)radioButton);
 
-        var stateCheck3 = TaskManager.WaitForExpectedResult(IsOnDisabledLD, true, TimeSpan.FromSeconds(10)).GetAwaiter()
-                                     .GetResult();
+        var stateCheck3 = TaskManager1.WaitForExpectedResult(IsOnDisabledLD, false, TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
         if (!stateCheck3) return;
 
         clickHandler.ClickConfirmButton();
@@ -81,13 +90,14 @@ public class AutoMiniCactpot : IDailyModule
 
     public void Uninit()
     {
-        Service.AddonLifecycle.UnregisterListener(AddonEvent.PostSetup, "LotteryDaily", OnAddonSetup);
+        Service.AddonLifecycle.UnregisterListener(OnAddonTalk);
+        Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
 
         Initialized = false;
     }
 }
 
-public class ClickLotteryDaily(IntPtr addon = default)
+public class ClickLotteryDaily(nint addon = default)
     : ClickBase<ClickLotteryDaily, AddonLotteryDaily>("LotteryDaily", addon)
 {
     public void ClickBlockButton(uint index)
@@ -110,3 +120,4 @@ public class ClickLotteryDaily(IntPtr addon = default)
         FireCallback(-1);
     }
 }
+*/

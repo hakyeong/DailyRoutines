@@ -25,6 +25,9 @@
           "Reloaded.Memory": "[7.1.0, )"
         }
       },
+      "ecommons": {
+        "type": "Project"
+      },
       "omentools": {
         "type": "Project"
       }

@@ -1,4 +1,10 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using DailyRoutines.Managers;
+using Dalamud.Game.Text.SeStringHandling;
 
 namespace DailyRoutines.Manager;
 
@@ -18,7 +24,7 @@ public class LanguageManager
 
     public LanguageManager(string languageName, bool isDev = false, string devLangPath = "")
     {
-        LangsDirectory = Path.Join(Path.GetDirectoryName(Plugin.Instance.PluginInterface.AssemblyLocation.FullName),
+        LangsDirectory = Path.Join(Path.GetDirectoryName(P.PluginInterface.AssemblyLocation.FullName),
                                    "Managers", "Langs");
 
         if (isDev)

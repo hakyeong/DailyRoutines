@@ -121,16 +121,22 @@
     <value>自动</value>
   </data>
   <data name="AutoCACDescription" xml:space="preserve">
-    <value>自动玩重击伽美什</value>
+    <value>交互游戏机后, 自动开始重复游玩重击伽美什</value>
   </data>
   <data name="AutoCACTitle" xml:space="preserve">
     <value>自动重击伽美什</value>
   </data>
   <data name="AutoMiniCactpotDescription" xml:space="preserve">
-    <value>自动完成仙人微彩 (不保证收益最大化)</value>
+    <value>进入仙人微彩界面后, 自动完成仙人微彩 (不保证收益最大化)</value>
   </data>
   <data name="AutoMiniCactpotTitle" xml:space="preserve">
-    <value>自动完成仙人微彩</value>
+    <value>自动仙人微彩</value>
+  </data>
+  <data name="AutoRetainerCollectDescription" xml:space="preserve">
+    <value>打开雇员列表界面后, 自动确认雇员探险结果并重新委派 (需要挂机定时收请使用 AutoRetainer)</value>
+  </data>
+  <data name="AutoRetainerCollectTitle" xml:space="preserve">
+    <value>自动收取雇员</value>
   </data>
   <data name="CommandHelp" xml:space="preserve">
     <value>打开主界面</value>
@@ -143,6 +149,9 @@
   </data>
   <data name="GoldSaucer" xml:space="preserve">
     <value>金碟</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>语言</value>
   </data>
   <data name="Settings" xml:space="preserve">
     <value>设置</value>

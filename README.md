@@ -1,15 +1,9 @@
-# Omen Sample Plugin
+# Daily Routines
 
-Modified from goatcorp's one, by AtmoOmen. Mainly for my personal use.
+Lightweight FF14 automation widget plugin, mainly for personal daily use, for the completion of some daily repetitive work. If you have deep demand on specific aspect, please seek other plugins.
 
-修改自羊圈的示例插件模板，主要为我个人使用。
+轻量级的 FF14 自动化小工具插件, 主要为个人日常使用, 用于完成一些日常重复性工作, 工作室/有深度需求的请寻求其他插件。
 
-## Information / 信息
+Feel free to Pull Request or Open an Issue if you want to help translate, develop new features, bug fixes and so on.
 
-- **API**： 8
-
-- **Dalamud Packager**: 2.1.11
-
-- Provides a more logical code arrangement and simpler service and configuration management.
-
-  提供了更加逻辑明确的代码，和更加简洁的服务与配置管理。
+翻译 / 功能开发 / BUG 修复等都请随意 PR 或提出 Issue。

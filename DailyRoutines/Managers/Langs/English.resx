@@ -121,16 +121,22 @@
     <value>Auto</value>
   </data>
   <data name="AutoCACDescription" xml:space="preserve">
-    <value>Automatically played Cuff-a-Cur</value>
+    <value>Automatically and repeatedly played Cuff-a-Cur after interacting with the machine.</value>
   </data>
   <data name="AutoCACTitle" xml:space="preserve">
     <value>Auto Cuff-a-Cur</value>
   </data>
   <data name="AutoMiniCactpotDescription" xml:space="preserve">
-    <value>Automatically finished Mini Cactpot (No guarantee of maximizing rewards)</value>
+    <value>Automatically finished Mini Cactpot (No guarantee of maximizing rewards).</value>
   </data>
   <data name="AutoMiniCactpotTitle" xml:space="preserve">
     <value>Auto Mini Cactpot</value>
+  </data>
+  <data name="AutoRetainerCollectDescription" xml:space="preserve">
+    <value>进入雇员列表界面后, 自动确认雇员探险结果并重新委派 (需要挂机定时收请使用 AutoRetainer)</value>
+  </data>
+  <data name="AutoRetainerCollectTitle" xml:space="preserve">
+    <value>自动收取雇员</value>
   </data>
   <data name="CommandHelp" xml:space="preserve">
     <value>Open the main window</value>
@@ -143,6 +149,9 @@
   </data>
   <data name="GoldSaucer" xml:space="preserve">
     <value>Gold Saucer</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Language</value>
   </data>
   <data name="Settings" xml:space="preserve">
     <value>Settings</value>

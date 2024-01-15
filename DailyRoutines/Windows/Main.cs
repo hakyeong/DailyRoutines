@@ -1,3 +1,15 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using DailyRoutines.Infos;
+using DailyRoutines.Manager;
+using DailyRoutines.Managers;
+using Dalamud.Interface;
+using Dalamud.Interface.Windowing;
+using ImGuiNET;
+using OmenTools.ImGuiOm;
+
 namespace DailyRoutines.Windows;
 
 public class Main : Window, IDisposable
@@ -65,7 +77,7 @@ public class Main : Window, IDisposable
 
             if (ImGui.BeginTabItem(Service.Lang.GetText("Settings")))
             {
-                ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Globe, "Languages");
+                ImGuiOm.TextIcon(FontAwesomeIcon.Globe, $"{Service.Lang.GetText("Language")}:");
 
                 ImGui.SameLine();
                 if (ImGui.BeginCombo("##LanguagesList", Service.Config.SelectedLanguage))
@@ -122,7 +134,7 @@ public class Main : Window, IDisposable
             Service.Config.Save();
         }
 
-        ImGui.TextDisabled(description);
+        ImGuiOm.TextDisabledWrapped(description);
     }
 
     internal void LanguageSwitchHandler(string languageName)
@@ -131,7 +143,7 @@ public class Main : Window, IDisposable
         Service.Lang = new LanguageManager(Service.Config.SelectedLanguage);
         Service.Config.Save();
 
-        Plugin.Instance.CommandHandler();
+        P.CommandHandler();
     }
 
     public void Dispose() { }

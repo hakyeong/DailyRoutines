@@ -1,3 +1,5 @@
+using System;
+
 namespace DailyRoutines.Infos;
 
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
