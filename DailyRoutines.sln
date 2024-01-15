@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClickLib", "ClickLib\ClickL
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OmenTools", "OmenTools\OmenTools.csproj", "{46C6DFE2-A5A2-455B-97D4-742D13C93556}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ECommons", "ECommons\ECommons\ECommons.csproj", "{0D329BED-8F43-4961-88D7-572579E02828}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ECommons", "ECommons\ECommons\ECommons.csproj", "{0B72E25D-FC7F-4B65-8CD3-1456A100C134}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -43,14 +43,14 @@ Global
 		{46C6DFE2-A5A2-455B-97D4-742D13C93556}.Release|Any CPU.Build.0 = Release|Any CPU
 		{46C6DFE2-A5A2-455B-97D4-742D13C93556}.Release|x64.ActiveCfg = Release|Any CPU
 		{46C6DFE2-A5A2-455B-97D4-742D13C93556}.Release|x64.Build.0 = Release|Any CPU
-		{0D329BED-8F43-4961-88D7-572579E02828}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{0D329BED-8F43-4961-88D7-572579E02828}.Debug|Any CPU.Build.0 = Debug|x64
-		{0D329BED-8F43-4961-88D7-572579E02828}.Debug|x64.ActiveCfg = Debug|x64
-		{0D329BED-8F43-4961-88D7-572579E02828}.Debug|x64.Build.0 = Debug|x64
-		{0D329BED-8F43-4961-88D7-572579E02828}.Release|Any CPU.ActiveCfg = Release|x64
-		{0D329BED-8F43-4961-88D7-572579E02828}.Release|Any CPU.Build.0 = Release|x64
-		{0D329BED-8F43-4961-88D7-572579E02828}.Release|x64.ActiveCfg = Release|x64
-		{0D329BED-8F43-4961-88D7-572579E02828}.Release|x64.Build.0 = Release|x64
+		{0B72E25D-FC7F-4B65-8CD3-1456A100C134}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{0B72E25D-FC7F-4B65-8CD3-1456A100C134}.Debug|Any CPU.Build.0 = Debug|x64
+		{0B72E25D-FC7F-4B65-8CD3-1456A100C134}.Debug|x64.ActiveCfg = Debug|x64
+		{0B72E25D-FC7F-4B65-8CD3-1456A100C134}.Debug|x64.Build.0 = Debug|x64
+		{0B72E25D-FC7F-4B65-8CD3-1456A100C134}.Release|Any CPU.ActiveCfg = Release|x64
+		{0B72E25D-FC7F-4B65-8CD3-1456A100C134}.Release|Any CPU.Build.0 = Release|x64
+		{0B72E25D-FC7F-4B65-8CD3-1456A100C134}.Release|x64.ActiveCfg = Release|x64
+		{0B72E25D-FC7F-4B65-8CD3-1456A100C134}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

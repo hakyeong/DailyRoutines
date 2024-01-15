@@ -95,8 +95,8 @@
 
     <ItemGroup>
       <ProjectReference Include="..\ClickLib\ClickLib\ClickLib.csproj" />
-      <ProjectReference Include="..\OmenTools\OmenTools.csproj" />
       <ProjectReference Include="..\ECommons\ECommons\ECommons.csproj" />
+      <ProjectReference Include="..\OmenTools\OmenTools.csproj" />
     </ItemGroup>
 
 </Project>
