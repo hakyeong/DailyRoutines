@@ -120,8 +120,14 @@
   <data name="Auto" xml:space="preserve">
     <value>Auto</value>
   </data>
+  <data name="AutoCACDescription" xml:space="preserve">
+    <value>Automatically played Cuff-a-Cur</value>
+  </data>
+  <data name="AutoCACTitle" xml:space="preserve">
+    <value>Auto Cuff-a-Cur</value>
+  </data>
   <data name="AutoMiniCactpotDescription" xml:space="preserve">
-    <value>Automatically finished Mini Cactpot (Need ezMiniCactpot)</value>
+    <value>Automatically finished Mini Cactpot (No guarantee of maximizing rewards)</value>
   </data>
   <data name="AutoMiniCactpotTitle" xml:space="preserve">
     <value>Auto Mini Cactpot</value>
@@ -131,5 +137,14 @@
   </data>
   <data name="Enable" xml:space="preserve">
     <value>Enable</value>
+  </data>
+  <data name="General" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="GoldSaucer" xml:space="preserve">
+    <value>Gold Saucer</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Settings</value>
   </data>
 </root>

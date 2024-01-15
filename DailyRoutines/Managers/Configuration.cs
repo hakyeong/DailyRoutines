@@ -8,6 +8,7 @@ public class Configuration : IPluginConfiguration
     public Dictionary<string, bool> ModuleEnabled { get; set; } = new()
     {
         { "AutoMiniCactpot", false },
+        { "AutoPunchingMachine", false }
     };
 
 

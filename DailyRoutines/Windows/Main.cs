@@ -2,26 +2,23 @@ namespace DailyRoutines.Windows;
 
 public class Main : Window, IDisposable
 {
-    private static readonly ConcurrentBag<Type> GeneralModules = new();
+    private static readonly List<Type> GeneralModules = new();
+    private static readonly List<Type> GoldSaucerModules = new();
 
     public Main(Plugin plugin) : base(
-        "Main Window",
+        "Daily Routines - Main",
         ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
     {
-        Size = new Vector2(232, 75);
-        SizeCondition = ImGuiCond.Once;
 
         var assembly = Assembly.GetExecutingAssembly();
-        var typesWithInterface = assembly.GetTypes()
-                                         .Where(t => typeof(IDailyModule).IsAssignableFrom(t) && t.IsClass);
+        var moduleTypes = assembly.GetTypes()
+                                  .Where(t => typeof(IDailyModule).IsAssignableFrom(t) && t.IsClass);
 
-        Parallel.ForEach(typesWithInterface, (type) =>
-        {
+        foreach (var type in moduleTypes)
             CheckAndCache(type);
-        });
 
         return;
-        
+
         static void CheckAndCache(Type type)
         {
             var attr = type.GetCustomAttribute<ModuleDescriptionAttribute>();
@@ -29,25 +26,62 @@ public class Main : Window, IDisposable
 
             switch (attr.Category)
             {
-                case "General": 
+                case ModuleCategories.General:
                     GeneralModules.Add(type);
                     break;
+                case ModuleCategories.GoldSaucer:
+                    GoldSaucerModules.Add(type);
+                    break;
                 default:
+                    Service.Log.Error("Unknown Modules");
                     break;
             }
         }
-
     }
 
     public override void Draw()
     {
         if (ImGui.BeginTabBar("BasicTab"))
         {
-            if (ImGui.BeginTabItem("General"))
+            if (ImGui.BeginTabItem(Service.Lang.GetText("General")))
             {
-                foreach (var module in GeneralModules)
+                for (var i = 0; i < GeneralModules.Count; i++)
                 {
-                    DrawModuleCheckbox(typeof(module.key), )
+                    DrawModuleCheckbox(GeneralModules[i]);
+                    if (i < GeneralModules.Count - 1) ImGui.Separator();
+                }
+                ImGui.EndTabItem();
+            }
+
+            if (ImGui.BeginTabItem(Service.Lang.GetText("GoldSaucer")))
+            {
+                for (var i = 0; i < GoldSaucerModules.Count; i++)
+                {
+                    DrawModuleCheckbox(GoldSaucerModules[i]);
+                    if (i < GoldSaucerModules.Count - 1) ImGui.Separator();
+                }
+                ImGui.EndTabItem();
+            }
+
+            if (ImGui.BeginTabItem(Service.Lang.GetText("Settings")))
+            {
+                ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Globe, "Languages");
+
+                ImGui.SameLine();
+                if (ImGui.BeginCombo("##LanguagesList", Service.Config.SelectedLanguage))
+                {
+                    for (var i = 0; i < LanguageManager.LanguageNames.Length; i++)
+                    {
+                        var languageInfo = LanguageManager.LanguageNames[i];
+                        if (ImGui.Selectable(languageInfo.DisplayName, Service.Config.SelectedLanguage == languageInfo.Language))
+                        {
+                            LanguageSwitchHandler(languageInfo.Language);
+                        }
+                        ImGuiOm.TooltipHover($"By: {string.Join(", ", languageInfo.Translators)}");
+
+                        if (i + 1 != LanguageManager.LanguageNames.Length) ImGui.Separator();
+                    }
+                    ImGui.EndCombo();
                 }
                 ImGui.EndTabItem();
             }
@@ -91,6 +125,14 @@ public class Main : Window, IDisposable
         ImGui.TextDisabled(description);
     }
 
+    internal void LanguageSwitchHandler(string languageName)
+    {
+        Service.Config.SelectedLanguage = languageName;
+        Service.Lang = new LanguageManager(Service.Config.SelectedLanguage);
+        Service.Config.Save();
+
+        Plugin.Instance.CommandHandler();
+    }
 
     public void Dispose() { }
 }

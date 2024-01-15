@@ -48,12 +48,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <EmbeddedResource Remove="Managers\Langs\ChineseSimplifed.resx" />
+      <EmbeddedResource Remove="Managers\Langs\ChineseSimplified.resx" />
       <EmbeddedResource Remove="Managers\Langs\English.resx" />
     </ItemGroup>
 
     <ItemGroup>
-      <None Include="Managers\Langs\ChineseSimplifed.resx">
+      <None Include="Managers\Langs\ChineseSimplified.resx">
         <Generator></Generator>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
@@ -93,10 +93,6 @@
             <HintPath>$(DalamudLibPath)Lumina.Excel.dll</HintPath>
             <Private>false</Private>
         </Reference>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Managers\Modules\" />
     </ItemGroup>
 
     <ItemGroup>

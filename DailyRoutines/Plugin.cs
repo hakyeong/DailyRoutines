@@ -23,6 +23,7 @@ public sealed class Plugin : IDalamudPlugin
         WindowHandler();
 
         ModuleManager ??= new ModuleManager();
+        ModuleManager.Init();
     }
 
     internal void CommandHandler()

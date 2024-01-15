@@ -120,13 +120,31 @@
   <data name="Auto" xml:space="preserve">
     <value>自动</value>
   </data>
+  <data name="AutoCACDescription" xml:space="preserve">
+    <value>自动玩重击伽美什</value>
+  </data>
+  <data name="AutoCACTitle" xml:space="preserve">
+    <value>自动重击伽美什</value>
+  </data>
   <data name="AutoMiniCactpotDescription" xml:space="preserve">
-    <value>自动完成仙人微彩 (需要安装: ezMiniCactpot)</value>
+    <value>自动完成仙人微彩 (不保证收益最大化)</value>
   </data>
   <data name="AutoMiniCactpotTitle" xml:space="preserve">
     <value>自动完成仙人微彩</value>
   </data>
+  <data name="CommandHelp" xml:space="preserve">
+    <value>打开主界面</value>
+  </data>
   <data name="Enable" xml:space="preserve">
     <value>启用</value>
+  </data>
+  <data name="General" xml:space="preserve">
+    <value>一般</value>
+  </data>
+  <data name="GoldSaucer" xml:space="preserve">
+    <value>金碟</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>设置</value>
   </data>
 </root>
