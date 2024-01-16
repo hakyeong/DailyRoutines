@@ -1,62 +1,158 @@
+using System.Collections.Generic;
+using ClickLib;
+using ClickLib.Clicks;
+using DailyRoutines.Infos;
+using DailyRoutines.Managers;
+using Dalamud.Game.AddonLifecycle;
+using Dalamud.Memory;
+using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+
 namespace DailyRoutines.Modules;
 
-/*
 [ModuleDescription("AutoRetainerCollectTitle", "AutoRetainerCollectDescription", ModuleCategories.General)]
 public class AutoRetainerCollect : IDailyModule
 {
     public bool Initialized { get; set; }
 
+    private static bool IsOnProcess;
+
     public void Init()
     {
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerList", OnAddonListSetup);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Talk", SkipTalk);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerList", OnRetainerList);
 
         Initialized = true;
     }
 
-    private void SkipTalk(AddonEvent eventType, AddonArgs addonInfo)
+    private static void SkipTalk(AddonEvent eventType, AddonArgs addonInfo)
     {
         var bell = Service.Target.Target;
         if (bell == null || bell.DataId != 2000401) return;
         Click.SendClick("talk");
     }
 
-    private void OnAddonListSetup(AddonEvent type, AddonArgs args)
+    private static unsafe void OnRetainerList(AddonEvent type, AddonArgs args)
     {
-        unsafe
+        if (!IsOnProcess)
         {
-            var ui = (AtkUnitBase*)args.Addon;
-            if (!HelpersOm.IsAddonAndNodesReady(ui)) return;
-        }
+            IsOnProcess = true;
 
-        RetainerHandler(1);
+            var retainerManager = RetainerManager.Instance();
+            var serverTime = Framework.GetServerTime();
+            var completeRetainers = new List<int>();
+            for (var i = 0; i < 10; i++)
+            {
+                var retainerState = retainerManager->GetRetainerBySortedIndex((uint)i)->VentureComplete;
+                if (retainerState == 0) continue;
+                if (retainerState - serverTime <= 0) completeRetainers.Add(i);
+            }
+
+            foreach (var retainer in completeRetainers)
+            {
+                EnqueueSingleRetainer(retainer);
+            }
+
+            IsOnProcess = false;
+        }
     }
 
-    private bool RetainerHandler(int index)
+    private static void EnqueueSingleRetainer(int index)
     {
-        var retainerHandler = new ClickRetainerList();
-        retainerHandler.Retainer(index);
+        // 雇员列表是否可用
+        P.TaskManager.Enqueue(WaitRetainerListAddon);
+        // 点击指定雇员
+        P.TaskManager.Enqueue(() => ClickSpecificRetainer(index));
+        // 等待选择界面
+        P.TaskManager.Enqueue(WaitSelectStringAddon);
+        // 点击查看探险情况
+        P.TaskManager.Enqueue(CheckVentureState);
+        // 重新派遣
+        P.TaskManager.Enqueue(ClickVentureReassign);
+        // 确认派遣
+        P.TaskManager.Enqueue(ClickVentureConfirm);
+        // 回到雇员列表
+        P.TaskManager.Enqueue(ExitToRetainerList);
+        // 雇员列表是否可用
+        P.TaskManager.Enqueue(WaitRetainerListAddon);
+    }
 
-        var stateCheck1 = TaskManager1.WaitForExpectedResult(IsSSAvailable, true, TimeSpan.FromSeconds(5)).Result;
-        if (!stateCheck1) return false;
+    private static unsafe bool? WaitRetainerListAddon()
+    {
+        return TryGetAddonByName<AddonRetainerList>("RetainerList", out var addon) && IsAddonReady(&addon->AtkUnitBase);
+    }
 
-        Click.SendClick("select_string13");
-
+    private static bool? ClickSpecificRetainer(int index)
+    {
+        var handler = new ClickRetainerList();
+        handler.Retainer(index);
         return true;
     }
 
-    private unsafe bool IsSSAvailable()
+    private static unsafe bool? WaitSelectStringAddon()
     {
-        var ui = (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
-        return HelpersOm.IsAddonAndNodesReady(ui);
+        return TryGetAddonByName<AddonSelectString>("SelectString", out var addon) && IsAddonReady(&addon->AtkUnitBase);
+    }
+
+    internal static unsafe bool? CheckVentureState()
+    {
+        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
+        {
+            var text = MemoryHelper
+                       .ReadSeString(
+                           &addon->UldManager.NodeList[2]->GetAsAtkComponentNode()->Component->UldManager.NodeList[6]->
+                               GetAsAtkComponentNode()->Component->UldManager.NodeList[3]->GetAsAtkTextNode()->NodeText)
+                       .ExtractText().Trim();
+            Service.Log.Debug(text);
+            if (string.IsNullOrEmpty(text) || text.Contains('～'))
+            {
+                P.TaskManager.Enqueue(ExitToRetainerList);
+                P.TaskManager.Abort();
+                IsOnProcess = false;
+                return false;
+            }
+
+            if (Click.TrySendClick("select_string6")) return true;
+        }
+
+        return false;
+    }
+
+    private static unsafe bool? ClickVentureReassign()
+    {
+        if (TryGetAddonByName<AddonRetainerTaskResult>("RetainerTaskResult", out var addon) &&
+            IsAddonReady(&addon->AtkUnitBase))
+            if (Click.TrySendClick("retainer_venture_result_reassign"))
+                return true;
+        return false;
+    }
+
+    private static unsafe bool? ClickVentureConfirm()
+    {
+        if (TryGetAddonByName<AddonRetainerTaskAsk>("RetainerTaskAsk", out var addon) &&
+            IsAddonReady(&addon->AtkUnitBase))
+            if (Click.TrySendClick("retainer_venture_ask_assign"))
+                return true;
+        return false;
+    }
+
+    private static unsafe bool? ExitToRetainerList()
+    {
+        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
+            if (Click.TrySendClick("select_string13"))
+                return true;
+        return false;
     }
 
     public void Uninit()
     {
-        Service.AddonLifecycle.UnregisterListener(OnAddonListSetup);
         Service.AddonLifecycle.UnregisterListener(SkipTalk);
+        Service.AddonLifecycle.UnregisterListener(OnRetainerList);
+        IsOnProcess = false;
+        P.TaskManager.Abort();
 
         Initialized = false;
     }
 }
-*/
