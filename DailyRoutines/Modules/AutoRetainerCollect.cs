@@ -5,6 +5,7 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Memory;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -19,6 +20,11 @@ public class AutoRetainerCollect : IDailyModule
 
     private static bool IsOnProcess;
 
+    public void UI()
+    {
+
+    }
+
     public void Init()
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Talk", SkipTalk);
@@ -29,9 +35,12 @@ public class AutoRetainerCollect : IDailyModule
 
     private static void SkipTalk(AddonEvent eventType, AddonArgs addonInfo)
     {
-        var bell = Service.Target.Target;
-        if (bell == null || bell.DataId != 2000401) return;
-        Click.SendClick("talk");
+        if (EzThrottler.Throttle("SkipTalkAutoRetainerCollect", 100))
+        {
+            var bell = Service.Target.Target;
+            if (bell == null || (bell.DataId != 2000401 && bell.DataId != 196630)) return;
+            Click.SendClick("talk");
+        }
     }
 
     private static unsafe void OnRetainerList(AddonEvent type, AddonArgs args)
@@ -50,9 +59,14 @@ public class AutoRetainerCollect : IDailyModule
                 if (retainerState - serverTime <= 0) completeRetainers.Add(i);
             }
 
-            foreach (var retainer in completeRetainers)
+            for (var r = 0; r < completeRetainers.Count; r++)
             {
-                EnqueueSingleRetainer(retainer);
+                EnqueueSingleRetainer(completeRetainers[r]);
+                // 防止卡住
+                if (r == completeRetainers.Count - 1)
+                {
+                    P.TaskManager.Enqueue(ExitToRetainerList);
+                }
             }
 
             IsOnProcess = false;
@@ -124,8 +138,11 @@ public class AutoRetainerCollect : IDailyModule
     {
         if (TryGetAddonByName<AddonRetainerTaskResult>("RetainerTaskResult", out var addon) &&
             IsAddonReady(&addon->AtkUnitBase))
+        {
             if (Click.TrySendClick("retainer_venture_result_reassign"))
                 return true;
+        }
+
         return false;
     }
 
@@ -133,16 +150,22 @@ public class AutoRetainerCollect : IDailyModule
     {
         if (TryGetAddonByName<AddonRetainerTaskAsk>("RetainerTaskAsk", out var addon) &&
             IsAddonReady(&addon->AtkUnitBase))
+        {
             if (Click.TrySendClick("retainer_venture_ask_assign"))
                 return true;
+        }
+
         return false;
     }
 
     private static unsafe bool? ExitToRetainerList()
     {
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
+        {
             if (Click.TrySendClick("select_string13"))
                 return true;
+        }
+
         return false;
     }
 

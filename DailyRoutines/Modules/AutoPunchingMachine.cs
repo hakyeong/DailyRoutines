@@ -17,6 +17,10 @@ public class AutoPunchingMachine : IDailyModule
 {
     public bool Initialized { get; set; }
 
+    public void UI()
+    {
+
+    }
 
     public void Init()
     {

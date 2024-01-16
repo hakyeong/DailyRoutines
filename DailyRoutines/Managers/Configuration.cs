@@ -14,10 +14,10 @@ public class Configuration : IPluginConfiguration
     public int Version { get; set; } = 0;
     public string SelectedLanguage { get; set; } = string.Empty;
     public Dictionary<string, bool> ModuleEnabled { get; set; } = new();
+    public Dictionary<string, object> ModuleConfigurations { get; set; } = new();
 
     [NonSerialized]
     private DalamudPluginInterface? pluginInterface;
-
 
     public void Initialize(DalamudPluginInterface pluginInterface)
     {
@@ -28,7 +28,9 @@ public class Configuration : IPluginConfiguration
                                   .Where(t => typeof(IDailyModule).IsAssignableFrom(t) && t.IsClass);
 
         foreach (var module in moduleTypes)
+        {
             ModuleEnabled.TryAdd(module.Name, false);
+        }
         Save();
     }
 
@@ -36,6 +38,8 @@ public class Configuration : IPluginConfiguration
     {
         pluginInterface!.SavePluginConfig(this);
     }
+
+    public string GetConfigPath() => pluginInterface.ConfigFile.FullName;
 
     public void Uninitialize()
     {

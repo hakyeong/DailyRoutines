@@ -7,4 +7,6 @@ public interface IDailyModule
     void Uninit();
 
     bool Initialized { get; set; }
+
+    void UI();
 }

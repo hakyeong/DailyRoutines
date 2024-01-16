@@ -121,22 +121,36 @@
     <value>Auto</value>
   </data>
   <data name="AutoCACDescription" xml:space="preserve">
-    <value>Automatically and repeatedly played Cuff-a-Cur after interacting with the machine.</value>
+    <value>Automatically and repeatedly played Cuff-a-Cur after interacting with the machine once.</value>
   </data>
   <data name="AutoCACTitle" xml:space="preserve">
     <value>Auto Cuff-a-Cur</value>
   </data>
   <data name="AutoMiniCactpotDescription" xml:space="preserve">
-    <value>Automatically finished Mini Cactpot (No guarantee of maximizing rewards).</value>
+    <value>Automatically finished Mini Cactpot when you open the UI.
+(If ezMiniCactpot is installed, click according to its recommendations; if not, randomly select)</value>
   </data>
   <data name="AutoMiniCactpotTitle" xml:space="preserve">
     <value>Auto Mini Cactpot</value>
   </data>
   <data name="AutoRetainerCollectDescription" xml:space="preserve">
-    <value>进入雇员列表界面后, 自动确认雇员探险结果并重新委派 (需要挂机定时收请使用 AutoRetainer)</value>
+    <value>After opening the Retainer List interface, automatically confirm and reassign completed ventures.
+(If you need for scheduled collection, please use AutoRetainer)</value>
   </data>
   <data name="AutoRetainerCollectTitle" xml:space="preserve">
-    <value>自动收取雇员</value>
+    <value>Auto Collect Retainer Venture</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-LowestAcceptablePrice" xml:space="preserve">
+    <value>Lowest Acceptable Price</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-SinglePriceReductionValue" xml:space="preserve">
+    <value>Single Price Reduction Value</value>
+  </data>
+  <data name="AutoRetainerPriceAdjustDescription" xml:space="preserve">
+    <value>When opening the Retainer Sell List, automatically change the prices of all sold items to the current lowest market price minus the specified value.</value>
+  </data>
+  <data name="AutoRetainerPriceAdjustTitle" xml:space="preserve">
+    <value>Auto Adjust Prices of Retainer Selling Items</value>
   </data>
   <data name="CommandHelp" xml:space="preserve">
     <value>Open the main window</value>

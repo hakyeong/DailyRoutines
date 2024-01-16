@@ -1,4 +1,8 @@
 global using static DailyRoutines.Plugin;
+global using static ECommons.GenericHelpers;
+global using OmenTools.ImGuiOm;
+global using OmenTools.Helpers;
+global using OmenTools.Widgets;
 using DailyRoutines.Manager;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
@@ -31,7 +35,7 @@ public sealed class Plugin : IDalamudPlugin
         Service.Initialize(pluginInterface);
         ECommonsMain.Init(pluginInterface, this, Module.DalamudReflector);
 
-        TaskManager = new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false};
+        TaskManager = new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = true};
 
         CommandHandler();
         WindowHandler();
