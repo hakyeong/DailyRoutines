@@ -8,7 +8,6 @@ using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using OmenTools.Helpers;
-using static ECommons.GenericHelpers;
 using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
@@ -100,7 +99,7 @@ public class ClickPunchingMachine(nint addon = default) : ClickBase<ClickPunchin
         var button = ui->GetButtonNodeById(23);
         if (button == null || !button->IsEnabled) return false;
 
-        FireCallback(11, 3, new Random().Next(1700, 1800));
+        FireCallback(11, 3, new Random().Next(1700, 1999));
 
         return true;
     }
