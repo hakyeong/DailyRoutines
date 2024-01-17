@@ -113,7 +113,7 @@ public class AutoLeveQuests : IDailyModule
 
     private static void EndProcessHandler()
     {
-        TaskManager.Abort();
+        TaskManager?.Abort();
         Service.AddonLifecycle.UnregisterListener(SkipTalk);
         Service.AddonLifecycle.UnregisterListener(StartAnotherRound);
         IsOnProcessing = false;

@@ -196,7 +196,7 @@ public class AutoMiniCactpot : IDailyModule
     public void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
-        TaskManager.Abort();
+        TaskManager?.Abort();
 
         Initialized = false;
     }

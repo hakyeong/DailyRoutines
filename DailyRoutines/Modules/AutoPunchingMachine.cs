@@ -90,7 +90,7 @@ public class AutoPunchingMachine : IDailyModule
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
         Service.AddonLifecycle.UnregisterListener(OnAddonGSR);
-        TaskManager.Abort();
+        TaskManager?.Abort();
 
         Initialized = false;
     }

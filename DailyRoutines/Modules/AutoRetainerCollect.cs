@@ -119,7 +119,7 @@ public class AutoRetainerCollect : IDailyModule
             if (string.IsNullOrEmpty(text) || text.Contains('～'))
             {
                 TaskManager.Enqueue(ExitToRetainerList);
-                TaskManager.Abort();
+                TaskManager?.Abort();
                 IsOnProcess = false;
                 return false;
             }
@@ -170,7 +170,7 @@ public class AutoRetainerCollect : IDailyModule
         Service.AddonLifecycle.UnregisterListener(SkipTalk);
         Service.AddonLifecycle.UnregisterListener(OnRetainerList);
         IsOnProcess = false;
-        TaskManager.Abort();
+        TaskManager?.Abort();
 
         Initialized = false;
     }

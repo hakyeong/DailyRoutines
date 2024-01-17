@@ -107,7 +107,7 @@ public class AutoRequestItemSubmit : IDailyModule
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
         Service.AddonLifecycle.UnregisterListener(OnAddonHqConfirm);
-        TaskManager.Abort();
+        TaskManager?.Abort();
 
         Initialized = false;
     }

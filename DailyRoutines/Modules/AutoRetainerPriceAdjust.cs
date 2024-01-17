@@ -23,6 +23,8 @@ public class AutoRetainerPriceAdjust : IDailyModule
     private static int ConfigPriceReduction;
     private static int ConfigLowestPrice;
     private static int CurrentMarketLowestPrice;
+    private static unsafe RetainerManager.RetainerList.Retainer* CurrentRetainer;
+
 
     public void Init()
     {
@@ -61,8 +63,18 @@ public class AutoRetainerPriceAdjust : IDailyModule
         }
     }
 
-    private static void OnRetainerSellList(AddonEvent type, AddonArgs args)
+    private static unsafe void OnRetainerSellList(AddonEvent type, AddonArgs args)
     {
+        var activeRetainer = RetainerManager.Instance()->GetActiveRetainer();
+        if (CurrentRetainer == null || CurrentRetainer != activeRetainer)
+        {
+            CurrentRetainer = activeRetainer;
+        }
+        else
+        {
+            return;
+        }
+            
         GetSellListItems(out var itemCount);
         if (itemCount == 0) return;
 
@@ -195,7 +207,7 @@ public class AutoRetainerPriceAdjust : IDailyModule
     public void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnRetainerSellList);
-        TaskManager.Abort();
+        TaskManager?.Abort();
         Service.Config.Save();
 
         Initialized = false;
