@@ -1,8 +1,8 @@
 {
     "Author": "AtmoOmen",
     "Name": "Daily Routines",
-    "Punchline": "Help you finish some daily tasks.",
-    "Description": "Cause I need to spend my time on more meaningful things",
+    "Punchline": "帮你解决一些日常重复性劳动",
+    "Description": "因为还有更多有意义的东西在等我玩",
     "IconUrl": "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/icon.png",
     "RepoUrl": "https://github.com/AtmoOmen/DailyRoutines",
     "ApplicableVersion": "any",

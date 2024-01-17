@@ -40,7 +40,7 @@ public class AutoRequestItemSubmit : IDailyModule
         TaskManager.Enqueue(ClickHqSubmit);
     }
 
-    private unsafe bool? ClickRequestIcon()
+    private static unsafe bool? ClickRequestIcon()
     {
         if (TryGetAddonByName<AddonRequest>("Request", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
@@ -55,7 +55,7 @@ public class AutoRequestItemSubmit : IDailyModule
         return false;
     }
 
-    private unsafe bool? ClickItemToSelect()
+    private static unsafe bool? ClickItemToSelect()
     {
         if (TryGetAddonByName<AddonContextIconMenu>("ContextIconMenu", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
@@ -75,7 +75,7 @@ public class AutoRequestItemSubmit : IDailyModule
         return false;
     }
 
-    private unsafe bool? ClickHandOver()
+    private static unsafe bool? ClickHandOver()
     {
         if (TryGetAddonByName<AddonRequest>("Request", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
@@ -89,7 +89,7 @@ public class AutoRequestItemSubmit : IDailyModule
         return false;
     }
 
-    private unsafe bool? ClickHqSubmit()
+    private static unsafe bool? ClickHqSubmit()
     {
         if (TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))

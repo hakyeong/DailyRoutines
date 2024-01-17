@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using ClickLib;
 using ClickLib.Bases;
 using ClickLib.Clicks;
@@ -8,6 +7,7 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.Gui.Toast;
 using ECommons.Automation;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
@@ -25,7 +25,7 @@ public class AutoLeveQuests : IDailyModule
     public bool Initialized { get; set; }
 
     private static Dictionary<uint, (string, uint)> LeveQuests = new();
-    private static readonly HashSet<uint> qualifiedLeveCategories = new() { 9, 10, 11, 12, 13, 14, 15, 16 };
+    private static readonly HashSet<uint> QualifiedLeveCategories = new() { 9, 10, 11, 12, 13, 14, 15, 16 };
 
     private static (uint, string, uint)? SelectedLeve; // Leve ID - Leve Name - Leve Job Category
 
@@ -119,8 +119,6 @@ public class AutoLeveQuests : IDailyModule
         IsOnProcessing = false;
     }
 
-
-
     private static void SkipTalk(AddonEvent type, AddonArgs args)
     {
         if (EzThrottler.Throttle("AutoRetainerCollect-Talk", 100)) Click.SendClick("talk");
@@ -128,13 +126,21 @@ public class AutoLeveQuests : IDailyModule
 
     private static void EnqueueSingleLeveQuest()
     {
+        // 和理符发行人交互
         TaskManager.Enqueue(InteractWithMete);
+        // 点击制作任务
         TaskManager.Enqueue(() => Click.TrySendClick("select_string2"));
+        // 点击接取任务
         TaskManager.Enqueue(ClickLeveQuest);
+        // 退出理符任务界面
         TaskManager.Enqueue(ClickExit);
+        // 退出 SelectString
         TaskManager.Enqueue(ClickSelectStringExit);
+        // 和理符委托人交互
         TaskManager.Enqueue(InteractWithReceiver);
+        // 选中任务
         TaskManager.Enqueue(ClickSelectQuest);
+        // 确认提交任务
         TaskManager.Enqueue(ClickJournalResultConfirm);
     }
 
@@ -148,7 +154,7 @@ public class AutoLeveQuests : IDailyModule
         {
             LeveQuests = Service.Data.GetExcelSheet<Leve>()
                                 .Where(x => !string.IsNullOrEmpty(x.Name.RawString) &&
-                                            qualifiedLeveCategories.Contains(x.ClassJobCategory.RawRow.RowId) &&
+                                            QualifiedLeveCategories.Contains(x.ClassJobCategory.RawRow.RowId) &&
                                             x.PlaceNameIssued.RawRow.RowId == currentTerritoryPlaceNameId.Value)
                                 .ToDictionary(x => x.RowId, x => (x.Name.RawString, x.ClassJobCategory.RawRow.RowId));
 
