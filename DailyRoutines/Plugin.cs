@@ -22,7 +22,6 @@ public sealed class Plugin : IDalamudPlugin
     internal DalamudPluginInterface PluginInterface { get; init; }
     public Main? Main { get; private set; }
 
-    public TaskManager TaskManager = null!;
     public ModuleManager? ModuleManager;
     public WindowSystem WindowSystem = new("SamplePlugin");
     internal static Plugin P = null!;
@@ -34,8 +33,6 @@ public sealed class Plugin : IDalamudPlugin
 
         Service.Initialize(pluginInterface);
         ECommonsMain.Init(pluginInterface, this, Module.DalamudReflector);
-
-        TaskManager = new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = true};
 
         CommandHandler();
         WindowHandler();

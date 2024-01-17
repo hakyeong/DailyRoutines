@@ -26,6 +26,7 @@ public class Main : Window, IDisposable
 
     private static readonly List<Type> GeneralModules = new();
     private static readonly List<Type> GoldSaucerModules = new();
+    private static readonly List<Type> RetainerModules = new();
 
     public Main(Plugin plugin) : base("Daily Routines - Main")
     {
@@ -51,6 +52,9 @@ public class Main : Window, IDisposable
                 case ModuleCategories.GoldSaucer:
                     GoldSaucerModules.Add(type);
                     break;
+                case ModuleCategories.Retainer:
+                    RetainerModules.Add(type);
+                    break;
                 default:
                     Service.Log.Error("Unknown Modules");
                     break;
@@ -69,6 +73,18 @@ public class Main : Window, IDisposable
                     DrawModuleCheckbox(GeneralModules[i]);
                     DrawModuleUI(GeneralModules[i]);
                     if (i < GeneralModules.Count - 1) ImGui.Separator();
+                }
+
+                ImGui.EndTabItem();
+            }
+
+            if (ImGui.BeginTabItem(Service.Lang.GetText("Retainer")))
+            {
+                for (var i = 0; i < RetainerModules.Count; i++)
+                {
+                    DrawModuleCheckbox(RetainerModules[i]);
+                    DrawModuleUI(RetainerModules[i]);
+                    if (i < RetainerModules.Count - 1) ImGui.Separator();
                 }
 
                 ImGui.EndTabItem();
@@ -197,6 +213,8 @@ public class Main : Window, IDisposable
         Service.Lang = new LanguageManager(Service.Config.SelectedLanguage);
         Service.Config.Save();
 
+        _moduleInstanceCache.Clear();
+        _moduleCache.Clear();
         P.CommandHandler();
     }
 

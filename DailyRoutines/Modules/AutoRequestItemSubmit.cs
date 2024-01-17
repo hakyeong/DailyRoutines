@@ -3,6 +3,7 @@ using ClickLib.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
+using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.UI;
 
 namespace DailyRoutines.Modules;
@@ -12,8 +13,11 @@ public class AutoRequestItemSubmit : IDailyModule
 {
     public bool Initialized { get; set; }
 
+    private TaskManager? TaskManager;
+
     public void Init()
     {
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Request", OnAddonSetup);
 
         Initialized = true;
@@ -24,16 +28,16 @@ public class AutoRequestItemSubmit : IDailyModule
     private void OnAddonSetup(AddonEvent eventType, AddonArgs addonInfo)
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", OnAddonHqConfirm);
-        P.TaskManager.Enqueue(ClickRequestIcon);
-        P.TaskManager.Enqueue(ClickItemToSelect);
-        P.TaskManager.Enqueue(ClickHandOver);
-        P.TaskManager.Enqueue(ClickHqSubmit);
+        TaskManager.Enqueue(ClickRequestIcon);
+        TaskManager.Enqueue(ClickItemToSelect);
+        TaskManager.Enqueue(ClickHandOver);
+        TaskManager.Enqueue(ClickHqSubmit);
         Service.AddonLifecycle.UnregisterListener(OnAddonHqConfirm);
     }
 
     private void OnAddonHqConfirm(AddonEvent eventType, AddonArgs addonInfo)
     {
-        P.TaskManager.Enqueue(ClickHqSubmit);
+        TaskManager.Enqueue(ClickHqSubmit);
     }
 
     private unsafe bool? ClickRequestIcon()
@@ -103,6 +107,7 @@ public class AutoRequestItemSubmit : IDailyModule
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
         Service.AddonLifecycle.UnregisterListener(OnAddonHqConfirm);
+        TaskManager.Abort();
 
         Initialized = false;
     }

@@ -1,24 +1,23 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ClickLib;
 using ClickLib.Bases;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
+using ECommons.Automation;
 using ECommons.Reflection;
-using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using ImGuiNET;
 
 namespace DailyRoutines.Modules;
-
 
 [ModuleDescription("AutoMiniCactpotTitle", "AutoMiniCactpotDescription", ModuleCategories.GoldSaucer)]
 public class AutoMiniCactpot : IDailyModule
 {
     public bool Initialized { get; set; }
+
+    private static TaskManager? TaskManager;
 
     // 从左上到右下 From Top Left to Bottom Right  (Node ID - Callback Index)
     private static readonly Dictionary<uint, uint> BlockNodeIds = new()
@@ -37,13 +36,11 @@ public class AutoMiniCactpot : IDailyModule
     // 从左下到右上 From Bottom Left to Top Right
     private static readonly uint[] LineNodeIds = { 28, 27, 26, 21, 22, 23, 24, 25 };
 
-    public void UI()
-    {
-        
-    }
+    public void UI() { }
 
     public void Init()
     {
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "LotteryDaily", OnAddonSetup);
 
         Initialized = true;
@@ -54,25 +51,25 @@ public class AutoMiniCactpot : IDailyModule
         // 装了 ezMiniCactpot -> 取插件算出来的相对优解
         if (IsEzMiniCactpotInstalled())
         {
-            P.TaskManager.Enqueue(WaitLotteryDailyAddon);
-            P.TaskManager.Enqueue(ClickRecommendBlock);
-            P.TaskManager.Enqueue(WaitLotteryDailyAddon);
-            P.TaskManager.Enqueue(ClickRecommendBlock);
-            P.TaskManager.Enqueue(WaitLotteryDailyAddon);
-            P.TaskManager.Enqueue(ClickRecommendBlock);
-            P.TaskManager.Enqueue(WaitLotteryDailyAddon);
-            P.TaskManager.Enqueue(ClickRecommendLine);
-            P.TaskManager.Enqueue(WaitLotteryDailyAddon);
-            P.TaskManager.Enqueue(ClickExit);
+            TaskManager.Enqueue(WaitLotteryDailyAddon);
+            TaskManager.Enqueue(ClickRecommendBlock);
+            TaskManager.Enqueue(WaitLotteryDailyAddon);
+            TaskManager.Enqueue(ClickRecommendBlock);
+            TaskManager.Enqueue(WaitLotteryDailyAddon);
+            TaskManager.Enqueue(ClickRecommendBlock);
+            TaskManager.Enqueue(WaitLotteryDailyAddon);
+            TaskManager.Enqueue(ClickRecommendLine);
+            TaskManager.Enqueue(WaitLotteryDailyAddon);
+            TaskManager.Enqueue(ClickExit);
         }
         else // 没装 -> 随机取
         {
-            P.TaskManager.Enqueue(WaitLotteryDailyAddon);
-            P.TaskManager.Enqueue(ClickRandomBlocks);
-            P.TaskManager.Enqueue(WaitLotteryDailyAddon);
-            P.TaskManager.Enqueue(ClickRandomLine);
-            P.TaskManager.Enqueue(WaitLotteryDailyAddon);
-            P.TaskManager.Enqueue(ClickExit);
+            TaskManager.Enqueue(WaitLotteryDailyAddon);
+            TaskManager.Enqueue(ClickRandomBlocks);
+            TaskManager.Enqueue(WaitLotteryDailyAddon);
+            TaskManager.Enqueue(ClickRandomLine);
+            TaskManager.Enqueue(WaitLotteryDailyAddon);
+            TaskManager.Enqueue(ClickExit);
         }
     }
 
@@ -94,6 +91,7 @@ public class AutoMiniCactpot : IDailyModule
 
             return true;
         }
+
         return false;
     }
 
@@ -114,6 +112,7 @@ public class AutoMiniCactpot : IDailyModule
 
             return true;
         }
+
         return false;
     }
 
@@ -127,6 +126,7 @@ public class AutoMiniCactpot : IDailyModule
 
             return true;
         }
+
         return false;
     }
 
@@ -148,6 +148,7 @@ public class AutoMiniCactpot : IDailyModule
 
             return true;
         }
+
         return false;
     }
 
@@ -171,6 +172,7 @@ public class AutoMiniCactpot : IDailyModule
             clickHandler.ClickConfirmButton();
             return true;
         }
+
         return false;
     }
 
@@ -194,6 +196,7 @@ public class AutoMiniCactpot : IDailyModule
     public void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
+        TaskManager.Abort();
 
         Initialized = false;
     }
@@ -222,4 +225,3 @@ public class ClickLotteryDaily(nint addon = default)
         FireCallback(-1);
     }
 }
-

@@ -42,6 +42,7 @@ public class Service
 
     [PluginService] public static IClientState ClientState { get; private set; } = null!;
     [PluginService] public static Framework Framework { get; private set; } = null!;
+    [PluginService] public static IObjectTable ObjectTable { get; private set; } = null!;
     [PluginService] public static Condition Condition { get; private set; } = null!;
     [PluginService] public static IDataManager Data { get; private set; } = null!;
     [PluginService] public static ChatGui Chat { get; private set; } = null!;

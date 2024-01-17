@@ -4,10 +4,10 @@ using ClickLib.Bases;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
+using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using OmenTools.Helpers;
 using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
@@ -17,13 +17,14 @@ public class AutoPunchingMachine : IDailyModule
 {
     public bool Initialized { get; set; }
 
-    public void UI()
-    {
+    private static TaskManager TaskManager = null!;
 
-    }
+    public void UI() { }
 
     public void Init()
     {
+        TaskManager = new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "PunchingMachine", OnAddonSetup);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "GoldSaucerReward", OnAddonGSR);
 
@@ -38,14 +39,14 @@ public class AutoPunchingMachine : IDailyModule
 
     private static void EnqueueStartGame()
     {
-        P.TaskManager.Enqueue(WaitSelectStringAddon);
-        P.TaskManager.Enqueue(() => Click.TrySendClick("select_string1"));
+        TaskManager.Enqueue(WaitSelectStringAddon);
+        TaskManager.Enqueue(() => Click.TrySendClick("select_string1"));
     }
 
     private static void EnqueuePlayGame()
     {
-        P.TaskManager.Enqueue(WaitGameAddon);
-        P.TaskManager.Enqueue(ClickGameButton);
+        TaskManager.Enqueue(WaitGameAddon);
+        TaskManager.Enqueue(ClickGameButton);
     }
 
     private static unsafe bool? WaitSelectStringAddon()
@@ -89,6 +90,7 @@ public class AutoPunchingMachine : IDailyModule
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
         Service.AddonLifecycle.UnregisterListener(OnAddonGSR);
+        TaskManager.Abort();
 
         Initialized = false;
     }

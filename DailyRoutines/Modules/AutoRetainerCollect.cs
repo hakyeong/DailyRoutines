@@ -6,6 +6,7 @@ using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Memory;
+using ECommons.Automation;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
@@ -14,20 +15,21 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoRetainerCollectTitle", "AutoRetainerCollectDescription", ModuleCategories.General)]
+[ModuleDescription("AutoRetainerCollectTitle", "AutoRetainerCollectDescription", ModuleCategories.Retainer)]
 public class AutoRetainerCollect : IDailyModule
 {
     public bool Initialized { get; set; }
 
+    private static TaskManager? TaskManager;
+
     private static bool IsOnProcess;
 
-    public void UI()
-    {
-
-    }
+    public void UI() { }
 
     public void Init()
     {
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerList", OnRetainerList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Talk", SkipTalk);
 
@@ -37,10 +39,7 @@ public class AutoRetainerCollect : IDailyModule
     private static void SkipTalk(AddonEvent eventType, AddonArgs addonInfo)
     {
         if (!Service.Condition[ConditionFlag.OccupiedSummoningBell]) return;
-        if (EzThrottler.Throttle("AutoRetainerCollect-Talk", 100))
-        {
-            Click.SendClick("talk");
-        }
+        if (EzThrottler.Throttle("AutoRetainerCollect-Talk", 100)) Click.SendClick("talk");
     }
 
     private static unsafe void OnRetainerList(AddonEvent type, AddonArgs args)
@@ -59,38 +58,35 @@ public class AutoRetainerCollect : IDailyModule
                 if (retainerState - serverTime <= 0) completeRetainers.Add(i);
             }
 
-            for (var r = 0; r < completeRetainers.Count; r++)
-            {
-                EnqueueSingleRetainer(completeRetainers[r]);
-                // 防止卡住
-                if (r == completeRetainers.Count - 1)
-                {
-                    P.TaskManager.Enqueue(ExitToRetainerList);
-                }
-            }
+            foreach (var index in completeRetainers) EnqueueSingleRetainer(index, completeRetainers.Count);
 
             IsOnProcess = false;
         }
     }
 
-    private static void EnqueueSingleRetainer(int index)
+    private static void EnqueueSingleRetainer(int index, int completeRetainerCount)
     {
         // 雇员列表是否可用
-        P.TaskManager.Enqueue(WaitRetainerListAddon);
+        TaskManager.Enqueue(WaitRetainerListAddon);
         // 点击指定雇员
-        P.TaskManager.Enqueue(() => ClickSpecificRetainer(index));
+        TaskManager.Enqueue(() => ClickSpecificRetainer(index));
         // 等待选择界面
-        P.TaskManager.Enqueue(WaitSelectStringAddon);
+        TaskManager.Enqueue(WaitSelectStringAddon);
         // 点击查看探险情况
-        P.TaskManager.Enqueue(CheckVentureState);
+        TaskManager.Enqueue(CheckVentureState);
         // 重新派遣
-        P.TaskManager.Enqueue(ClickVentureReassign);
+        TaskManager.Enqueue(ClickVentureReassign);
         // 确认派遣
-        P.TaskManager.Enqueue(ClickVentureConfirm);
+        TaskManager.Enqueue(ClickVentureConfirm);
         // 回到雇员列表
-        P.TaskManager.Enqueue(ExitToRetainerList);
+        TaskManager.Enqueue(ExitToRetainerList);
         // 雇员列表是否可用
-        P.TaskManager.Enqueue(WaitRetainerListAddon);
+        TaskManager.Enqueue(WaitRetainerListAddon);
+        if (index == completeRetainerCount - 1)
+        {
+            TaskManager.Enqueue(ExitToRetainerList);
+            TaskManager.Enqueue(WaitRetainerListAddon);
+        }
     }
 
     private static unsafe bool? WaitRetainerListAddon()
@@ -122,8 +118,8 @@ public class AutoRetainerCollect : IDailyModule
             Service.Log.Debug(text);
             if (string.IsNullOrEmpty(text) || text.Contains('～'))
             {
-                P.TaskManager.Enqueue(ExitToRetainerList);
-                P.TaskManager.Abort();
+                TaskManager.Enqueue(ExitToRetainerList);
+                TaskManager.Abort();
                 IsOnProcess = false;
                 return false;
             }
@@ -174,7 +170,7 @@ public class AutoRetainerCollect : IDailyModule
         Service.AddonLifecycle.UnregisterListener(SkipTalk);
         Service.AddonLifecycle.UnregisterListener(OnRetainerList);
         IsOnProcess = false;
-        P.TaskManager.Abort();
+        TaskManager.Abort();
 
         Initialized = false;
     }

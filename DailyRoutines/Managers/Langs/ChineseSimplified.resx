@@ -126,6 +126,24 @@
   <data name="AutoCACTitle" xml:space="preserve">
     <value>自动重击伽美什</value>
   </data>
+  <data name="AutoLeveQuests-GetAreaLeveData" xml:space="preserve">
+    <value>获取当前区域理符任务数据</value>
+  </data>
+  <data name="AutoLeveQuests-ObtainLeveClientID" xml:space="preserve">
+    <value>获取理符委托人 ID</value>
+  </data>
+  <data name="AutoLeveQuests-ObtainLevemeteID" xml:space="preserve">
+    <value>获取理符发行人 ID</value>
+  </data>
+  <data name="AutoLeveQuests-SelectedLeve" xml:space="preserve">
+    <value>选择理符:</value>
+  </data>
+  <data name="AutoLeveQuests-Start" xml:space="preserve">
+    <value>开始</value>
+  </data>
+  <data name="AutoLeveQuests-Stop" xml:space="preserve">
+    <value>结束</value>
+  </data>
   <data name="AutoLeveQuestsDescription" xml:space="preserve">
     <value>自动重复完成指定的理符任务, 直至理符额度耗尽, 请确保背包内有足够的任务物品</value>
   </data>
@@ -181,6 +199,9 @@
   </data>
   <data name="Language" xml:space="preserve">
     <value>语言</value>
+  </data>
+  <data name="Retainer" xml:space="preserve">
+    <value>雇员</value>
   </data>
   <data name="Settings" xml:space="preserve">
     <value>设置</value>
