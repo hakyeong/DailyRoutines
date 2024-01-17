@@ -4,6 +4,7 @@
     "Punchline": "Help you finish some daily tasks.",
     "Description": "Cause I need to spend my time on more meaningful things",
     "IconUrl": "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/icon.png",
+    "RepoUrl": "https://github.com/AtmoOmen/DailyRoutines",
     "ApplicableVersion": "any",
     "Tags": [
         "Daily",
