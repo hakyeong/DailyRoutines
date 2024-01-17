@@ -7,7 +7,6 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Game.Gui.Toast;
 using ECommons.Automation;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;

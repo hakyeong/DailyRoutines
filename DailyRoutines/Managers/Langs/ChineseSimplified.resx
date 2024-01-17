@@ -157,6 +157,12 @@
   <data name="AutoMiniCactpotTitle" xml:space="preserve">
     <value>自动仙人微彩</value>
   </data>
+  <data name="AutoNoviceNetworkDescription" xml:space="preserve">
+    <value>当新人频道已满时, 自动重复尝试加入新人频道</value>
+  </data>
+  <data name="AutoNoviceNetworkTitle" xml:space="preserve">
+    <value>自动加入新人频道</value>
+  </data>
   <data name="AutoRequestItemSubmitDescription" xml:space="preserve">
     <value>在递交物品时, 自动选择物品并完成递交</value>
   </data>

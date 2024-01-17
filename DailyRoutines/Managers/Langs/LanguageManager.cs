@@ -5,11 +5,10 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using DailyRoutines.Managers;
 using Dalamud.Game.Text.SeStringHandling;
-using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Manager;
 
-public class LanguageManager
+public partial class LanguageManager
 {
     public static string LangsDirectory { get; private set; } = null!;
     public string Language { get; private set; }
@@ -35,7 +34,7 @@ public class LanguageManager
             if (LanguageNames.All(x => x.Language != languageName)) languageName = "English";
 
             var resourcePath = Path.Join(LangsDirectory, languageName + ".resx");
-            // if (!File.Exists(resourcePath)) LanguageUpdater.DownloadLanguageFilesAsync().GetAwaiter().GetResult();
+            if (!File.Exists(resourcePath)) LanguageUpdater.DownloadLanguageFilesAsync().GetAwaiter().GetResult();
             resourceData = LoadResourceFile(resourcePath);
         }
 
@@ -54,7 +53,7 @@ public class LanguageManager
 
         if (!File.Exists(filePath))
         {
-            // LanguageUpdater.DownloadLanguageFilesAsync().GetAwaiter().GetResult();
+            LanguageUpdater.DownloadLanguageFilesAsync().GetAwaiter().GetResult();
             if (!File.Exists(filePath)) return data;
         }
 
@@ -96,7 +95,7 @@ public class LanguageManager
                      fbResourceData.GetValueOrDefault(key);
 
         var ssb = new SeStringBuilder();
-        var regex = new Regex(@"\{(\d+)\}");
+        var regex = SeStringRegex();
 
         var lastIndex = 0;
         foreach (var match in regex.Matches(format).Cast<Match>())
@@ -128,6 +127,9 @@ public class LanguageManager
 
         return ssb.Build();
     }
+
+    [GeneratedRegex("\\{(\\d+)\\}")]
+    private static partial Regex SeStringRegex();
 }
 
 public class TranslationInfo
