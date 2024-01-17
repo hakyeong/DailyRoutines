@@ -44,23 +44,12 @@ public class AutoMiniCactpot : IDailyModule
 
     public void Init()
     {
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Talk", OnAddonTalk);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "LotteryDaily", OnAddonSetup);
 
         Initialized = true;
     }
 
-    private static void OnAddonTalk(AddonEvent type, AddonArgs args)
-    {
-        if (EzThrottler.Throttle("SkipTalkAutoMiniCactpot", 100))
-        {
-            var broker = Service.Target.Target;
-            if (broker == null || broker.DataId != 1010445) return;
-            Click.SendClick("talk");
-        }
-    }
-
-    private static unsafe void OnAddonSetup(AddonEvent type, AddonArgs args)
+    private static void OnAddonSetup(AddonEvent type, AddonArgs args)
     {
         // 装了 ezMiniCactpot -> 取插件算出来的相对优解
         if (IsEzMiniCactpotInstalled())
@@ -187,7 +176,7 @@ public class AutoMiniCactpot : IDailyModule
 
     internal static bool IsEzMiniCactpotInstalled()
     {
-        return DalamudReflector.TryGetDalamudPlugin("ezMiniCactpot", out _, true, true);
+        return DalamudReflector.TryGetDalamudPlugin("ezMiniCactpot", out _);
     }
 
     private static unsafe bool? WaitLotteryDailyAddon()
@@ -204,7 +193,6 @@ public class AutoMiniCactpot : IDailyModule
 
     public void Uninit()
     {
-        Service.AddonLifecycle.UnregisterListener(OnAddonTalk);
         Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
 
         Initialized = false;

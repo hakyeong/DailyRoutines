@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using DailyRoutines.Managers;
 using Dalamud.Game.Text.SeStringHandling;
+using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Manager;
 
@@ -100,6 +101,7 @@ public class LanguageManager
         var lastIndex = 0;
         foreach (var match in regex.Matches(format).Cast<Match>())
         {
+            ssb.AddUiForegroundOff();
             ssb.AddText(format.Substring(lastIndex, match.Index - lastIndex));
 
             var argIndex = int.Parse(match.Groups[1].Value);
@@ -108,14 +110,20 @@ public class LanguageManager
             {
                 var arg = args[argIndex];
                 if (arg is SeString seStringArg)
+                {
+                    ssb.AddUiForegroundOff();
                     ssb.Append(seStringArg);
+                }
                 else
+                {
+                    ssb.AddUiForegroundOff();
                     ssb.AddText(arg.ToString());
+                }
             }
 
             lastIndex = match.Index + match.Length;
         }
-
+        ssb.AddUiForegroundOff();
         ssb.AddText(format.Substring(lastIndex));
 
         return ssb.Build();

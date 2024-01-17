@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -6,6 +7,7 @@ using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Manager;
 using DailyRoutines.Managers;
+using DailyRoutines.Modules;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
@@ -14,14 +16,19 @@ namespace DailyRoutines.Windows;
 
 public class Main : Window, IDisposable
 {
+    private static readonly
+        ConcurrentDictionary<Type, (string Name, string Title, string Description, IDailyModule ModuleInstance)>
+        _moduleCache
+            = new();
+
+    private static readonly ConcurrentDictionary<Type, (string Name, IDailyModule ModuleInstance)> _moduleInstanceCache
+        = new();
+
     private static readonly List<Type> GeneralModules = new();
     private static readonly List<Type> GoldSaucerModules = new();
 
-    public Main(Plugin plugin) : base(
-        "Daily Routines - Main",
-        ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
+    public Main(Plugin plugin) : base("Daily Routines - Main")
     {
-
         var assembly = Assembly.GetExecutingAssembly();
         var moduleTypes = assembly.GetTypes()
                                   .Where(t => typeof(IDailyModule).IsAssignableFrom(t) && t.IsClass);
@@ -63,6 +70,7 @@ public class Main : Window, IDisposable
                     DrawModuleUI(GeneralModules[i]);
                     if (i < GeneralModules.Count - 1) ImGui.Separator();
                 }
+
                 ImGui.EndTabItem();
             }
 
@@ -74,6 +82,7 @@ public class Main : Window, IDisposable
                     DrawModuleUI(GoldSaucerModules[i]);
                     if (i < GoldSaucerModules.Count - 1) ImGui.Separator();
                 }
+
                 ImGui.EndTabItem();
             }
 
@@ -87,16 +96,18 @@ public class Main : Window, IDisposable
                     for (var i = 0; i < LanguageManager.LanguageNames.Length; i++)
                     {
                         var languageInfo = LanguageManager.LanguageNames[i];
-                        if (ImGui.Selectable(languageInfo.DisplayName, Service.Config.SelectedLanguage == languageInfo.Language))
-                        {
+                        if (ImGui.Selectable(languageInfo.DisplayName,
+                                             Service.Config.SelectedLanguage == languageInfo.Language))
                             LanguageSwitchHandler(languageInfo.Language);
-                        }
+
                         ImGuiOm.TooltipHover($"By: {string.Join(", ", languageInfo.Translators)}");
 
                         if (i + 1 != LanguageManager.LanguageNames.Length) ImGui.Separator();
                     }
+
                     ImGui.EndCombo();
                 }
+
                 ImGui.EndTabItem();
             }
 
@@ -104,10 +115,18 @@ public class Main : Window, IDisposable
             {
                 if (ImGui.Button("获取测试点击"))
                 {
-                    foreach (var clickName in Click.GetClickNames())
-                    {
-                        Service.Log.Debug(clickName);
-                    }
+                    foreach (var clickName in Click.GetClickNames()) Service.Log.Debug(clickName);
+                }
+
+                if (ImGui.Button("获取测试文本1"))
+                {
+                    var state = AutoMiniCactpot.IsEzMiniCactpotInstalled();
+                    Service.Log.Debug(state ? "装了" : "没装");
+                }
+
+                if (ImGui.Button("获取测试文本2"))
+                {
+                    Service.Log.Debug(Service.ExcelData.ItemNames.Count.ToString());
                 }
 
                 ImGui.EndTabItem();
@@ -119,21 +138,29 @@ public class Main : Window, IDisposable
 
     private static void DrawModuleCheckbox(Type module)
     {
-        var boolName = module.Name;
+        var (boolName, title, description, _) = _moduleCache.GetOrAdd(module, m =>
+        {
+            var attributes = m.GetCustomAttributes(typeof(ModuleDescriptionAttribute), false);
+            var title = string.Empty;
+            var description = string.Empty;
+            if (attributes.Length > 0)
+            {
+                var content = (ModuleDescriptionAttribute)attributes[0];
+                title = Service.Lang.GetText(content.TitleKey);
+                description = Service.Lang.GetText(content.DescriptionKey);
+            }
+
+            return (m.Name, title, description, null)!;
+        });
 
         if (!Service.Config.ModuleEnabled.TryGetValue(boolName, out var cbool)) return;
-
-        var attributes = module.GetCustomAttributes(typeof(ModuleDescriptionAttribute), false);
-        if (attributes.Length <= 0) return;
-
-        var content = (ModuleDescriptionAttribute)attributes[0];
-        var title = Service.Lang.GetText(content.TitleKey);
-        var description = Service.Lang.GetText(content.DescriptionKey);
+        if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(description)) return;
 
         if (ImGuiOm.CheckboxColored($"{title}##{module.Name}", ref cbool))
         {
             Service.Config.ModuleEnabled[boolName] = !Service.Config.ModuleEnabled[boolName];
-            var component = ModuleManager.Modules.FirstOrDefault(c => c.GetType() == module);
+            var component = _moduleCache[module].ModuleInstance ??
+                            ModuleManager.Modules.FirstOrDefault(c => c.GetType() == module);
             if (component != null)
             {
                 if (Service.Config.ModuleEnabled[boolName])
@@ -153,11 +180,15 @@ public class Main : Window, IDisposable
     private static void DrawModuleUI(Type module)
     {
         var boolName = module.Name;
-        if (!Service.Config.ModuleEnabled.TryGetValue(boolName, out var cbool)) return;
+        if (!Service.Config.ModuleEnabled.TryGetValue(boolName, out var cbool) || !cbool) return;
 
-        if (!cbool) return;
-        var moduleInstance = Activator.CreateInstance(module) as IDailyModule;
-        moduleInstance.UI();
+        var moduleInstance = _moduleInstanceCache.GetOrAdd(module, m =>
+        {
+            var instance = Activator.CreateInstance(m) as IDailyModule;
+            return (m.Name, instance)!;
+        }).ModuleInstance;
+
+        moduleInstance?.UI();
     }
 
     internal void LanguageSwitchHandler(string languageName)

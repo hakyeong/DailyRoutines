@@ -126,12 +126,24 @@
   <data name="AutoCACTitle" xml:space="preserve">
     <value>Auto Cuff-a-Cur</value>
   </data>
+  <data name="AutoLeveQuestsDescription" xml:space="preserve">
+    <value>自动重复完成指定的理符任务, 直至理符额度耗尽, 请确保背包内有足够的任务物品</value>
+  </data>
+  <data name="AutoLeveQuestsTitle" xml:space="preserve">
+    <value>自动批量完成理符任务</value>
+  </data>
   <data name="AutoMiniCactpotDescription" xml:space="preserve">
     <value>Automatically finished Mini Cactpot when you open the UI.
 (If ezMiniCactpot is installed, click according to its recommendations; if not, randomly select)</value>
   </data>
   <data name="AutoMiniCactpotTitle" xml:space="preserve">
     <value>Auto Mini Cactpot</value>
+  </data>
+  <data name="AutoRequestItemSubmitDescription" xml:space="preserve">
+    <value>在递交物品时, 自动选择物品并完成递交</value>
+  </data>
+  <data name="AutoRequestItemSubmitTitle" xml:space="preserve">
+    <value>自动选择并递交物品</value>
   </data>
   <data name="AutoRetainerCollectDescription" xml:space="preserve">
     <value>After opening the Retainer List interface, automatically confirm and reassign completed ventures.
@@ -145,6 +157,9 @@
   </data>
   <data name="AutoRetainerPriceAdjust-SinglePriceReductionValue" xml:space="preserve">
     <value>Single Price Reduction Value</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-WarnMessageReachLowestPrice" xml:space="preserve">
+    <value>物品: {0} (当前市场价: {1}) 已低于设定最低价: {2}, 跳过改价</value>
   </data>
   <data name="AutoRetainerPriceAdjustDescription" xml:space="preserve">
     <value>When opening the Retainer Sell List, automatically change the prices of all sold items to the current lowest market price minus the specified value.</value>

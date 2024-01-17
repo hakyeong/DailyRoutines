@@ -1,4 +1,5 @@
 using System.Linq;
+using DailyRoutines.Infos;
 using DailyRoutines.Manager;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
@@ -19,6 +20,7 @@ public class Service
         pluginInterface.Create<Service>();
 
         InitLanguage();
+        ExcelData = new();
     }
 
     private static void InitLanguage()
@@ -51,6 +53,7 @@ public class Service
     [PluginService] public static IAddonEventManager AddonEvent { get; private set; } = null!;
     [PluginService] public static ITextureProvider Texture { get; set; } = null!;
     public static SigScanner SigScanner { get; private set; } = new();
+    public static ExcelGameData ExcelData { get; set; } = null!;
     public static LanguageManager Lang { get; set; } = null!;
     public static Configuration Config { get; set; } = null!;
 }

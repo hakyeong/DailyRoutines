@@ -4,6 +4,7 @@ using ClickLib.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Memory;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -27,18 +28,17 @@ public class AutoRetainerCollect : IDailyModule
 
     public void Init()
     {
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Talk", SkipTalk);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerList", OnRetainerList);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Talk", SkipTalk);
 
         Initialized = true;
     }
 
     private static void SkipTalk(AddonEvent eventType, AddonArgs addonInfo)
     {
-        if (EzThrottler.Throttle("SkipTalkAutoRetainerCollect", 100))
+        if (!Service.Condition[ConditionFlag.OccupiedSummoningBell]) return;
+        if (EzThrottler.Throttle("AutoRetainerCollect-Talk", 100))
         {
-            var bell = Service.Target.Target;
-            if (bell == null || (bell.DataId != 2000401 && bell.DataId != 196630)) return;
             Click.SendClick("talk");
         }
     }

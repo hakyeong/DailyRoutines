@@ -3,6 +3,9 @@ using ClickLib.Bases;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
+using Dalamud.Game.Text;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -16,12 +19,16 @@ public class AutoRetainerPriceAdjust : IDailyModule
 {
     public bool Initialized { get; set; }
 
+    private static int ConfigPriceReduction;
+    private static int ConfigLowestPrice;
     private static int CurrentMarketLowestPrice;
 
     public void Init()
     {
-        Service.Config.ModuleConfigurations.TryAdd("AutoRetainerPriceAdjust-PriceReduction", (int)1);
-        Service.Config.ModuleConfigurations.TryAdd("AutoRetainerPriceAdjust-LowestAcceptablePrice", (int)1);
+        Service.Config.AddConfig(typeof(AutoRetainerPriceAdjust), "PriceReduction", "1");
+        Service.Config.AddConfig(typeof(AutoRetainerPriceAdjust), "LowestAcceptablePrice", "1");
+        ConfigPriceReduction = Service.Config.GetConfig<int>(typeof(AutoRetainerPriceAdjust), "PriceReduction");
+        ConfigLowestPrice = Service.Config.GetConfig<int>(typeof(AutoRetainerPriceAdjust), "LowestAcceptablePrice");
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSellList", OnRetainerSellList);
 
         Initialized = true;
@@ -29,32 +36,28 @@ public class AutoRetainerPriceAdjust : IDailyModule
 
     public void UI()
     {
-        var priceReduction = (int)Service.Config.ModuleConfigurations["AutoRetainerPriceAdjust-PriceReduction"];
-
         ImGui.AlignTextToFramePadding();
         ImGui.Text($"{Service.Lang.GetText("AutoRetainerPriceAdjust-SinglePriceReductionValue")}:");
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(240f);
-        if (ImGui.InputInt("##SinglePriceReductionValue", ref priceReduction))
+        if (ImGui.InputInt("##SinglePriceReductionValue", ref ConfigPriceReduction))
         {
-            priceReduction = Math.Max(1, priceReduction);
-            Service.Config.ModuleConfigurations["AutoRetainerPriceAdjust-PriceReduction"] = priceReduction;
-            Service.Config.Save();
+            ConfigPriceReduction = Math.Max(1, ConfigPriceReduction);
+            Service.Config.UpdateConfig(typeof(AutoRetainerPriceAdjust), "SinglePriceReductionValue",
+                                        ConfigPriceReduction.ToString());
         }
-
-        var lowestAcceptablePrice = (int)Service.Config.ModuleConfigurations["AutoRetainerPriceAdjust-PriceReduction"];
 
         ImGui.AlignTextToFramePadding();
         ImGui.Text($"{Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice")}:");
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(240f);
-        if (ImGui.InputInt("##LowestAcceptablePrice", ref lowestAcceptablePrice))
+        if (ImGui.InputInt("##LowestAcceptablePrice", ref ConfigLowestPrice))
         {
-            lowestAcceptablePrice = Math.Max(1, lowestAcceptablePrice);
-            Service.Config.ModuleConfigurations["AutoRetainerPriceAdjust-LowestAcceptablePrice"] = lowestAcceptablePrice;
-            Service.Config.Save();
+            ConfigLowestPrice = Math.Max(1, ConfigLowestPrice);
+            Service.Config.UpdateConfig(typeof(AutoRetainerPriceAdjust), "LowestAcceptablePrice",
+                                        ConfigLowestPrice.ToString());
         }
     }
 
@@ -161,18 +164,23 @@ public class AutoRetainerPriceAdjust : IDailyModule
 
     private static unsafe bool? FillLowestPrice()
     {
-        if (TryGetAddonByName<AtkUnitBase>("RetainerSell", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AddonRetainerSell>("RetainerSell", out var addon) && HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
-            var priceComponent =
-                (AtkComponentNumericInput*)addon->UldManager.NodeList[15]->GetComponent();
-            var priceReduction = (int)Service.Config.ModuleConfigurations["AutoRetainerPriceAdjust-PriceReduction"];
-            if (CurrentMarketLowestPrice != 0 && CurrentMarketLowestPrice - priceReduction > 1)
-                priceComponent->SetValue(CurrentMarketLowestPrice - priceReduction);
-            else
-                Service.Chat.PrintError("已到最低价");
+            var ui = &addon->AtkUnitBase;
+            var priceComponent = addon->AskingPrice;
+            Service.Log.Debug(CurrentMarketLowestPrice.ToString());
+            if (CurrentMarketLowestPrice < ConfigLowestPrice)
+            {
+                var itemName = addon->ItemName->NodeText.ExtractText();
+                var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-WarnMessageReachLowestPrice", SeString.CreateItemLink(Service.ExcelData.ItemNames[itemName]), CurrentMarketLowestPrice, ConfigLowestPrice);
+                Service.Chat.PrintError(message);
+            }
+            if (CurrentMarketLowestPrice > ConfigLowestPrice && CurrentMarketLowestPrice != 0 && CurrentMarketLowestPrice - ConfigPriceReduction > 1)
+                priceComponent->SetValue(CurrentMarketLowestPrice - ConfigPriceReduction);
+
             var handler = new ClickRetainerSell((nint)addon);
             handler.Confirm();
-            addon->Close(false);
+            ui->Close(false);
             return true;
         }
 
@@ -183,6 +191,7 @@ public class AutoRetainerPriceAdjust : IDailyModule
     {
         Service.AddonLifecycle.UnregisterListener(OnRetainerSellList);
         P.TaskManager.Abort();
+        Service.Config.Save();
 
         Initialized = false;
     }
