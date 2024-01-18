@@ -190,6 +190,12 @@
   <data name="AutoNoviceNetworkTitle" xml:space="preserve">
     <value>自动加入新人频道</value>
   </data>
+  <data name="AutoQTEDescription" xml:space="preserve">
+    <value>在副本中, 自动完成动态演练 (QTE)</value>
+  </data>
+  <data name="AutoQTETitle" xml:space="preserve">
+    <value>自动动态演练</value>
+  </data>
   <data name="AutoRequestItemSubmitDescription" xml:space="preserve">
     <value>在递交物品时, 自动选择物品并完成递交</value>
   </data>
