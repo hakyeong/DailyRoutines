@@ -1,6 +1,7 @@
 using System;
 using ClickLib;
 using ClickLib.Bases;
+using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
@@ -63,8 +64,8 @@ public class AutoPunchingMachine : IDailyModule
 
     private static bool? ClickGameButton()
     {
-        var handler = new ClickPunchingMachine();
-        return handler.ClickButton();
+        var handler = new ClickPunchingMachineDR();
+        return handler.Button();
     }
 
     private unsafe void OnAddonGSR(AddonEvent type, AddonArgs args)
@@ -93,20 +94,5 @@ public class AutoPunchingMachine : IDailyModule
         TaskManager?.Abort();
 
         Initialized = false;
-    }
-}
-
-public class ClickPunchingMachine(nint addon = default) : ClickBase<ClickPunchingMachine>("PunchingMachine", addon)
-{
-    public unsafe bool? ClickButton()
-    {
-        var ui = (AtkUnitBase*)AddonAddress;
-
-        var button = ui->GetButtonNodeById(23);
-        if (button == null || !button->IsEnabled) return false;
-
-        FireCallback(11, 3, new Random().Next(1700, 1999));
-
-        return true;
     }
 }

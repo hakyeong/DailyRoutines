@@ -1,5 +1,6 @@
 using System;
 using ClickLib.Bases;
+using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
@@ -140,7 +141,7 @@ public class AutoRetainerPriceAdjust : IDailyModule
     {
         if (TryGetAddonByName<AtkUnitBase>("RetainerSellList", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var handler = new ClickRetainerSellList((nint)addon);
+            var handler = new ClickRetainerSellListDR((nint)addon);
             return handler.ClickItem(index);
         }
 
@@ -151,7 +152,7 @@ public class AutoRetainerPriceAdjust : IDailyModule
     {
         if (TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var handler = new ClickRetainerSellListContextMenu((nint)addon);
+            var handler = new ClickRetainerSellListContextMenuDR((nint)addon);
             return handler.AdjustPrice();
         }
 
@@ -162,7 +163,7 @@ public class AutoRetainerPriceAdjust : IDailyModule
     {
         if (TryGetAddonByName<AtkUnitBase>("RetainerSell", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var handler = new ClickRetainerSell((nint)addon);
+            var handler = new ClickRetainerSellDR((nint)addon);
             return handler.ComparePrice();
         }
 
@@ -190,7 +191,7 @@ public class AutoRetainerPriceAdjust : IDailyModule
         {
             var ui = &addon->AtkUnitBase;
             var priceComponent = addon->AskingPrice;
-            var handler = new ClickRetainerSell((nint)addon);
+            var handler = new ClickRetainerSellDR((nint)addon);
             var itemName = addon->ItemName->NodeText.ExtractText();
             Service.Log.Debug(CurrentMarketLowestPrice.ToString());
             if (CurrentMarketLowestPrice < ConfigLowestPrice || CurrentMarketLowestPrice == 0 || CurrentMarketLowestPrice - ConfigPriceReduction <= 1)
@@ -224,73 +225,5 @@ public class AutoRetainerPriceAdjust : IDailyModule
         Service.Config.Save();
 
         Initialized = false;
-    }
-}
-
-public class ClickRetainerSellList(nint addon = default) : ClickBase<ClickRetainerSellList>("RetainerSellList", addon)
-{
-    public bool ClickItem(int index)
-    {
-        if (index is > 19 or < -1) return false;
-
-        FireCallback(0, index, 1);
-
-        return true;
-    }
-}
-
-public class ClickRetainerSell(nint addon = default)
-    : ClickBase<ClickRetainerSell, AddonRetainerSell>("RetainerSell", addon)
-{
-    public bool ComparePrice()
-    {
-        FireCallback(4);
-        return true;
-    }
-
-    public bool Confirm()
-    {
-        FireCallback(0);
-        return true;
-    }
-
-    public bool Cancel()
-    {
-        FireCallback(1);
-        return true;
-    }
-}
-
-public class ClickRetainerSellListContextMenu(nint addon = default)
-    : ClickBase<ClickRetainerSellListContextMenu>("ContextMenu", addon)
-{
-    public bool AdjustPrice()
-    {
-        Click(0);
-        return true;
-    }
-
-    public bool ReturnToRetainer()
-    {
-        Click(1);
-        return true;
-    }
-
-    public bool ReturnToInventory()
-    {
-        Click(2);
-        return true;
-    }
-
-    public bool Exit()
-    {
-        Click(-1);
-        return true;
-    }
-
-    public bool Click(int index)
-    {
-        FireCallback(0, index, 0, 0, 0);
-        return true;
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ClickLib.Bases;
+using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
@@ -80,13 +81,13 @@ public class AutoMiniCactpot : IDailyModule
             var ui = &addon->AtkUnitBase;
             var rnd = new Random();
             var selectedBlocks = BlockNodeIds.Keys.OrderBy(x => rnd.Next()).Take(4).ToArray();
-            var clickHandler = new ClickLotteryDaily((nint)ui);
+            var clickHandler = new ClickLotteryDailyDR((nint)ui);
             foreach (var id in selectedBlocks)
             {
                 var blockButton = ui->GetComponentNodeById(id);
                 if (blockButton == null) continue;
 
-                clickHandler.ClickBlockButton(BlockNodeIds[id]);
+                clickHandler.Block(BlockNodeIds[id]);
             }
 
             return true;
@@ -102,13 +103,13 @@ public class AutoMiniCactpot : IDailyModule
             var ui = &addon->AtkUnitBase;
             var rnd = new Random();
             var selectedLine = LineNodeIds.OrderBy(x => rnd.Next()).LastOrDefault();
-            var clickHandler = new ClickLotteryDaily((nint)ui);
+            var clickHandler = new ClickLotteryDailyDR((nint)ui);
 
             var radioButton = ui->GetComponentNodeById(selectedLine);
             if (radioButton == null) return false;
 
-            clickHandler.ClickLineButton((AtkComponentRadioButton*)radioButton);
-            clickHandler.ClickConfirmButton();
+            clickHandler.Line((AtkComponentRadioButton*)radioButton);
+            clickHandler.Confirm();
 
             return true;
         }
@@ -121,8 +122,8 @@ public class AutoMiniCactpot : IDailyModule
         if (TryGetAddonByName<AddonLotteryDaily>("LotteryDaily", out var addon) && IsAddonReady(&addon->AtkUnitBase))
         {
             var ui = &addon->AtkUnitBase;
-            var clickHandler = new ClickLotteryDaily((nint)ui);
-            clickHandler.ClickExitButton();
+            var clickHandler = new ClickLotteryDailyDR((nint)ui);
+            clickHandler.Exit();
 
             return true;
         }
@@ -135,13 +136,13 @@ public class AutoMiniCactpot : IDailyModule
         if (TryGetAddonByName<AddonLotteryDaily>("LotteryDaily", out var addon) && IsAddonReady(&addon->AtkUnitBase))
         {
             var ui = &addon->AtkUnitBase;
-            var clickHandler = new ClickLotteryDaily((nint)ui);
+            var clickHandler = new ClickLotteryDailyDR((nint)ui);
             foreach (var block in BlockNodeIds)
             {
                 var node = ui->GetComponentNodeById(block.Key)->AtkResNode;
                 if (node is { MultiplyBlue: 0, MultiplyRed: 0, MultiplyGreen: 100 })
                 {
-                    clickHandler.ClickBlockButton(block.Value);
+                    clickHandler.Block(block.Value);
                     break;
                 }
             }
@@ -157,19 +158,19 @@ public class AutoMiniCactpot : IDailyModule
         if (TryGetAddonByName<AddonLotteryDaily>("LotteryDaily", out var addon) && IsAddonReady(&addon->AtkUnitBase))
         {
             var ui = &addon->AtkUnitBase;
-            var clickHandler = new ClickLotteryDaily((nint)ui);
+            var clickHandler = new ClickLotteryDailyDR((nint)ui);
             foreach (var block in LineNodeIds)
             {
                 var node = ui->GetComponentNodeById(block)->AtkResNode;
                 var button = (AtkComponentRadioButton*)ui->GetComponentNodeById(block);
                 if (node is { MultiplyBlue: 0, MultiplyRed: 0, MultiplyGreen: 100 })
                 {
-                    clickHandler.ClickLineButton(button);
+                    clickHandler.Line(button);
                     break;
                 }
             }
 
-            clickHandler.ClickConfirmButton();
+            clickHandler.Confirm();
             return true;
         }
 
@@ -199,29 +200,5 @@ public class AutoMiniCactpot : IDailyModule
         TaskManager?.Abort();
 
         Initialized = false;
-    }
-}
-
-public class ClickLotteryDaily(nint addon = default)
-    : ClickBase<ClickLotteryDaily, AddonLotteryDaily>("LotteryDaily", addon)
-{
-    public void ClickBlockButton(uint index)
-    {
-        FireCallback(1, index);
-    }
-
-    public unsafe void ClickLineButton(AtkComponentRadioButton* button)
-    {
-        ClickAddonRadioButton(button, 8);
-    }
-
-    public void ClickConfirmButton()
-    {
-        FireCallback(2, 0);
-    }
-
-    public void ClickExitButton()
-    {
-        FireCallback(-1);
     }
 }

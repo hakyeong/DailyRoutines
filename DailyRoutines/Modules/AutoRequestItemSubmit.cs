@@ -1,5 +1,6 @@
 using ClickLib.Bases;
 using ClickLib.Clicks;
+using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
@@ -46,7 +47,7 @@ public class AutoRequestItemSubmit : IDailyModule
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
             var ui = &addon->AtkUnitBase;
-            var handler = new ClickRequestAutoSubmit();
+            var handler = new ClickRequestDR();
 
             handler.Click();
             return true;
@@ -61,7 +62,7 @@ public class AutoRequestItemSubmit : IDailyModule
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
             var ui = &addon->AtkUnitBase;
-            var handler = new ClickContextIconMenuAutoSubmit();
+            var handler = new ClickContextIconMenuDR();
             var imageNode =
                 addon->AtkComponentList240->AtkComponentBase.UldManager.NodeList[1]->GetAsAtkComponentNode()->Component
                         ->UldManager.NodeList[1]->GetAsAtkComponentNode()->Component->UldManager
@@ -110,25 +111,5 @@ public class AutoRequestItemSubmit : IDailyModule
         TaskManager?.Abort();
 
         Initialized = false;
-    }
-}
-
-public class ClickRequestAutoSubmit(nint addon = default) : ClickBase<ClickRequestAutoSubmit>("Request", addon)
-{
-    public bool Click()
-    {
-        FireCallback(2, 0, 44, 0);
-        return true;
-    }
-}
-
-public class ClickContextIconMenuAutoSubmit(nint addon = default)
-    : ClickBase<ClickContextIconMenuAutoSubmit, AddonContextIconMenu>("ContextIconMenu", addon)
-{
-    public bool ClickItem(int iconId, bool isHq)
-    {
-        var index = int.Parse($"{(isHq ? "10" : "")}{iconId}");
-        if (isHq) FireCallback(0, 0, index, 0, 0);
-        return true;
     }
 }

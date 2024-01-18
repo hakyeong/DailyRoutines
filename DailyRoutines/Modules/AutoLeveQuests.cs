@@ -3,6 +3,7 @@ using System.Linq;
 using ClickLib;
 using ClickLib.Bases;
 using ClickLib.Clicks;
+using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
@@ -220,8 +221,8 @@ public class AutoLeveQuests : IDailyModule
             if (TryGetAddonByName<AddonJournalDetail>("JournalDetail", out var addon1) &&
                 HelpersOm.IsAddonAndNodesReady(&addon1->AtkUnitBase))
             {
-                var handler2 = new ClickJournalDetailAutoLeveQuests();
-                handler2.ClickAccept((int)SelectedLeve.Value.Item1);
+                var handler2 = new ClickJournalDetailDR();
+                handler2.Accept((int)SelectedLeve.Value.Item1);
 
                 return true;
             }
@@ -235,8 +236,8 @@ public class AutoLeveQuests : IDailyModule
         if (TryGetAddonByName<AddonGuildLeve>("GuildLeve", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
-            var handler = new ClickGuildLeveAutoLeveQuests();
-            handler.ClickExit();
+            var handler = new ClickGuildLeveDR();
+            handler.Exit();
 
             return true;
         }
@@ -292,9 +293,9 @@ public class AutoLeveQuests : IDailyModule
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
             var handler = new ClickJournalResult();
-            var handler1 = new ClickJournalResultAutoLeveQuests();
+            var handler1 = new ClickJournalResultDR();
             handler.Complete();
-            handler1.ClickExit();
+            handler1.Exit();
 
             return true;
         }
@@ -307,95 +308,5 @@ public class AutoLeveQuests : IDailyModule
         EndProcessHandler();
 
         Initialized = false;
-    }
-}
-
-public class ClickGuildLeveAutoLeveQuests(nint addon = default)
-    : ClickBase<ClickGuildLeveAutoLeveQuests>("GuildLeve", addon)
-{
-    public static readonly Dictionary<uint, int> JobCategoryIndex = new()
-    {
-        { 9, 0 },  // 刻木匠
-        { 10, 1 }, // 锻铁匠
-        { 11, 2 }, // 铸甲匠
-        { 12, 3 }, // 雕金匠
-        { 13, 4 }, // 制革匠
-        { 14, 5 }, // 裁衣匠
-        { 15, 6 }, // 炼金术师
-        { 16, 7 }, // 烹调师
-        { 17, 0 }, // 采矿工
-        { 18, 1 }, // 园艺工
-        { 19, 2 }  // 捕鱼人
-    };
-
-    public bool? ClickLeveQuest(int index, int leveQuestId)
-    {
-        FireCallback(13, index, leveQuestId);
-
-        return true;
-    }
-
-    public unsafe bool? ClickSwitchJob(uint jobCategory)
-    {
-        if (TryGetAddonByName<AddonGuildLeve>("GuildLeve", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
-        {
-            if (!JobCategoryIndex.TryGetValue(jobCategory, out var index)) return false;
-            FireCallback(12, index);
-            return true;
-        }
-
-        return false;
-    }
-
-    public bool ClickExit()
-    {
-        FireCallback(-2);
-        FireCallback(-1);
-
-        return true;
-    }
-}
-
-public class ClickJournalDetailAutoLeveQuests(nint addon = default)
-    : ClickBase<ClickJournalDetailAutoLeveQuests>("JournalDetail", addon)
-{
-    public unsafe bool? ClickAccept(int leveQuestId)
-    {
-        if (TryGetAddonByName<AddonJournalDetail>("JournalDetail", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
-        {
-            FireCallback(3, leveQuestId);
-            return true;
-        }
-
-        return false;
-    }
-
-    public unsafe bool? ClickDecline(int leveQuestId)
-    {
-        if (TryGetAddonByName<AddonJournalDetail>("JournalDetail", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
-        {
-            FireCallback(7, leveQuestId);
-            return true;
-        }
-
-        return false;
-    }
-
-    public bool? ClickExit()
-    {
-        FireCallback(-2);
-        return true;
-    }
-}
-
-public class ClickJournalResultAutoLeveQuests(nint addon = default) : ClickBase<ClickJournalResultAutoLeveQuests>("JournalResult", addon)
-{
-    public bool? ClickExit()
-    {
-        FireCallback(-2);
-        return true;
     }
 }

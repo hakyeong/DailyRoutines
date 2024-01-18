@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using ClickLib;
 using ClickLib.Bases;
+using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
@@ -27,7 +28,7 @@ public class AutoNoviceNetwork : IDailyModule
     public void UI()
     {
         ImGui.BeginDisabled(IsOnProcessing);
-        if (ImGui.Button("开始"))
+        if (ImGui.Button(Service.Lang.GetText("AutoNoviceNetwork-Start")))
         {
             TryTimes = 0;
             Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectYesno", ClickYesButton);
@@ -39,10 +40,10 @@ public class AutoNoviceNetwork : IDailyModule
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button("结束")) EndProcess();
+        if (ImGui.Button(Service.Lang.GetText("AutoNoviceNetwork-Stop"))) EndProcess();
 
         ImGui.SameLine();
-        ImGui.TextWrapped("已尝试次数:");
+        ImGui.TextWrapped($"{Service.Lang.GetText("AutoNoviceNetwork-AttemptedTimes")}:");
 
         ImGui.SameLine();
         ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudYellow);
@@ -63,7 +64,7 @@ public class AutoNoviceNetwork : IDailyModule
             var buttonNode = addon->GetComponentNodeById(12);
             if (buttonNode != null)
             {
-                var handler = new ClickChatLog();
+                var handler = new ClickChatLogDR();
                 handler.NoviceNetworkButton();
                 TryTimes++;
 
@@ -100,11 +101,3 @@ public class AutoNoviceNetwork : IDailyModule
     }
 }
 
-public class ClickChatLog(nint addon = default) : ClickBase<ClickChatLog>("ChatLog", addon)
-{
-    public bool NoviceNetworkButton()
-    {
-        FireCallback(3);
-        return true;
-    }
-}
