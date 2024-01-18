@@ -47,15 +47,10 @@
 
     <ItemGroup>
       <EmbeddedResource Remove="Managers\Langs\ChineseSimplified.resx" />
-      <EmbeddedResource Remove="Managers\Langs\English.resx" />
     </ItemGroup>
 
     <ItemGroup>
       <None Include="Managers\Langs\ChineseSimplified.resx">
-        <Generator></Generator>
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Include="Managers\Langs\English.resx">
         <Generator></Generator>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>

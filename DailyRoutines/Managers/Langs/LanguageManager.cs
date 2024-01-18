@@ -18,7 +18,6 @@ public partial class LanguageManager
 
     public static readonly TranslationInfo[] LanguageNames =
     {
-        new() { Language = "English", DisplayName = "English", Translators = new string[1] { "AtmoOmen" } },
         new() { Language = "ChineseSimplified", DisplayName = "简体中文", Translators = new string[1] { "AtmoOmen" } },
     };
 
@@ -31,16 +30,14 @@ public partial class LanguageManager
             resourceData = LoadResourceFile(devLangPath);
         else
         {
-            if (LanguageNames.All(x => x.Language != languageName)) languageName = "English";
+            if (LanguageNames.All(x => x.Language != languageName)) languageName = "ChineseSimplified";
 
             var resourcePath = Path.Join(LangsDirectory, languageName + ".resx");
             if (!File.Exists(resourcePath)) LanguageUpdater.DownloadLanguageFilesAsync().GetAwaiter().GetResult();
             resourceData = LoadResourceFile(resourcePath);
         }
 
-        var fbResourcePath = languageName == "ChineseTraditional"
-                                 ? Path.Join(LangsDirectory, "ChineseSimplified.resx")
-                                 : Path.Join(LangsDirectory, "English.resx");
+        var fbResourcePath = Path.Join(LangsDirectory, "ChineseSimplified.resx");
 
         fbResourceData = LoadResourceFile(fbResourcePath);
 
