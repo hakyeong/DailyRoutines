@@ -62,10 +62,19 @@ public class AutoPunchingMachine : IDailyModule
         return result;
     }
 
-    private static bool? ClickGameButton()
+    private static unsafe bool? ClickGameButton()
     {
-        var handler = new ClickPunchingMachineDR();
-        return handler.Button();
+        if (TryGetAddonByName<AtkUnitBase>("PunchingMachine", out var addon) && IsAddonReady(addon))
+        {
+            var button = addon->GetButtonNodeById(23);
+            if (button == null || !button->IsEnabled) return false;
+
+            var handler = new ClickPunchingMachineDR();
+            handler.Button(new Random().Next(1700, 1999));
+            return true;
+        }
+
+        return false;
     }
 
     private unsafe void OnAddonGSR(AddonEvent type, AddonArgs args)

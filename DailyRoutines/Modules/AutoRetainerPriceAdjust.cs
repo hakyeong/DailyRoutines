@@ -142,7 +142,8 @@ public class AutoRetainerPriceAdjust : IDailyModule
         if (TryGetAddonByName<AtkUnitBase>("RetainerSellList", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             var handler = new ClickRetainerSellListDR((nint)addon);
-            return handler.ClickItem(index);
+            handler.ItemEntry(index);
+            return true;
         }
 
         return false;
@@ -153,7 +154,9 @@ public class AutoRetainerPriceAdjust : IDailyModule
         if (TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             var handler = new ClickRetainerSellListContextMenuDR((nint)addon);
-            return handler.AdjustPrice();
+            handler.AdjustPrice();
+
+            return true;
         }
 
         return false;
@@ -164,7 +167,9 @@ public class AutoRetainerPriceAdjust : IDailyModule
         if (TryGetAddonByName<AtkUnitBase>("RetainerSell", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             var handler = new ClickRetainerSellDR((nint)addon);
-            return handler.ComparePrice();
+            handler.ComparePrice();
+
+            return true;
         }
 
         return false;
@@ -201,7 +206,7 @@ public class AutoRetainerPriceAdjust : IDailyModule
                                                        CurrentMarketLowestPrice, ConfigLowestPrice);
                 Service.Chat.Print(message);
 
-                handler.Cancel();
+                handler.Decline();
                 ui->Close(true);
 
                 return true;

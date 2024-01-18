@@ -49,7 +49,7 @@ public class AutoRequestItemSubmit : IDailyModule
             var ui = &addon->AtkUnitBase;
             var handler = new ClickRequestDR();
 
-            handler.Click();
+            handler.IconBox();
             return true;
         }
 

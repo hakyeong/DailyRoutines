@@ -4,21 +4,9 @@ namespace DailyRoutines.Clicks;
 
 public class ClickTitleMenuDR(nint addon = default) : ClickBase<ClickTitleMenuDR>("_TitleMenu", addon)
 {
-    public bool Start()
-    {
-        FireCallback(1);
-        return true;
-    }
+    public void Start() => FireCallback(1);
 
-    public bool Config()
-    {
-        FireCallback(14);
-        return true;
-    }
+    public void Config() => FireCallback(14);
 
-    public bool MoviesAndTitle()
-    {
-        FireCallback(15);
-        return true;
-    }
+    public void MoviesAndTitle() => FireCallback(15);
 }

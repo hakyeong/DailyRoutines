@@ -2,36 +2,16 @@ using ClickLib.Bases;
 
 namespace DailyRoutines.Clicks;
 
-public class ClickRetainerSellListContextMenuDR(nint addon = default)
-    : ClickBase<ClickRetainerSellListContextMenuDR>("ContextMenu", addon)
+// 雇员出售列表专用
+public class ClickRetainerSellListContextMenuDR(nint addon = default) : ClickBase<ClickRetainerSellListContextMenuDR>("ContextMenu", addon)
 {
-    public bool AdjustPrice()
-    {
-        Click(0);
-        return true;
-    }
+    public void AdjustPrice() => Click(0);
 
-    public bool ReturnToRetainer()
-    {
-        Click(1);
-        return true;
-    }
+    public void ReturnToRetainer() => Click(1);
 
-    public bool ReturnToInventory()
-    {
-        Click(2);
-        return true;
-    }
+    public void ReturnToInventory() => Click(2);
 
-    public bool Exit()
-    {
-        Click(-1);
-        return true;
-    }
+    public void Exit() => Click(-1);
 
-    public bool Click(int index)
-    {
-        FireCallback(0, index, 0, 0, 0);
-        return true;
-    }
+    public void Click(int index) => FireCallback(0, index, 0, 0, 0);
 }

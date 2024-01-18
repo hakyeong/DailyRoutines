@@ -65,7 +65,7 @@ public class AutoNoviceNetwork : IDailyModule
             if (buttonNode != null)
             {
                 var handler = new ClickChatLogDR();
-                handler.NoviceNetworkButton();
+                handler.NoviceNetwork();
                 TryTimes++;
 
                 Task.Delay(500).ContinueWith(t => CheckJoinState());

@@ -1,5 +1,4 @@
 using ClickLib.Bases;
-using FFXIVClientStructs.FFXIV.Client.UI;
 using System.Collections.Generic;
 
 namespace DailyRoutines.Clicks;
@@ -21,32 +20,18 @@ public class ClickGuildLeveDR(nint addon = default) : ClickBase<ClickGuildLeveDR
         { 19, 2 }  // 捕鱼人
     };
 
-    public bool? LeveQuest(int index, int leveQuestId)
-    {
-        FireCallback(13, index, leveQuestId);
+    public void LeveQuest(int index, int leveQuestId) => FireCallback(13, index, leveQuestId);
 
-        return true;
-    }
-
-    public unsafe bool? SwitchJob(uint jobCategory)
-    {
-        if (TryGetAddonByName<AddonGuildLeve>("GuildLeve", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
-        {
-            if (!JobCategoryIndex.TryGetValue(jobCategory, out var index)) return false;
+    public void SwitchJob(uint jobCategory)
+    { 
+        if (JobCategoryIndex.TryGetValue(jobCategory, out var index))
             FireCallback(12, index);
-            return true;
-        }
-
-        return false;
     }
 
-    public bool Exit()
+    public void Exit()
     {
         FireCallback(-2);
         FireCallback(-1);
-
-        return true;
     }
 }
 
