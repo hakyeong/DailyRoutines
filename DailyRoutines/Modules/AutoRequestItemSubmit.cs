@@ -14,7 +14,7 @@ public class AutoRequestItemSubmit : IDailyModule
 {
     public bool Initialized { get; set; }
 
-    private TaskManager? TaskManager;
+    private static TaskManager? TaskManager;
 
     public void Init()
     {

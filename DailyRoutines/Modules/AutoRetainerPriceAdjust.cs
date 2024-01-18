@@ -46,7 +46,7 @@ public class AutoRetainerPriceAdjust : IDailyModule
     {
         ImGui.SetNextItemWidth(210f);
         if (ImGui.InputInt(
-                $"{Service.Lang.GetText("AutoRetainerPriceAdjust-SinglePriceReductionValue")}##SinglePriceReductionValue",
+                $"{Service.Lang.GetText("AutoRetainerPriceAdjust-SinglePriceReductionValue")}##AutoRetainerPriceAdjust-SinglePriceReductionValue",
                 ref ConfigPriceReduction))
         {
             ConfigPriceReduction = Math.Max(1, ConfigPriceReduction);
@@ -57,7 +57,7 @@ public class AutoRetainerPriceAdjust : IDailyModule
 
         ImGui.SetNextItemWidth(210f);
         if (ImGui.InputInt(
-                $"{Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice")}##LowestAcceptablePrice",
+                $"{Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice")}##AutoRetainerPriceAdjust-LowestAcceptablePrice",
                 ref ConfigLowestPrice))
         {
             ConfigLowestPrice = Math.Max(1, ConfigLowestPrice);
