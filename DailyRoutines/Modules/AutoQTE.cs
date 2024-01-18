@@ -14,17 +14,19 @@ public partial class AutoQTE : IDailyModule
 {
     public bool Initialized { get; set; }
 
-    [LibraryImport("user32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool PostMessage(IntPtr hWnd, uint Msg, int wParam, int lParam);
+    [DllImport("user32.dll", SetLastError = true)]
+    static extern bool PostMessage(IntPtr hWnd, uint Msg, int wParam, int lParam);
 
     private const uint WmKeydown = 0x0100;
     private const uint WmKeyup = 0x0101;
     private const int VkSpace = 0x20;
+    private const int VkW = 0x57;
 
     public void Init()
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "_QTEKeep", OnQTEAddon);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "_QTEMash", OnQTEAddon);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "_QTEKeepTime", OnQTEAddon);
 
         Initialized = true;
     }
@@ -35,14 +37,20 @@ public partial class AutoQTE : IDailyModule
     {
         if (EzThrottler.Throttle("AutoQTE", 100))
         {
+            Service.Log.Debug($"测试: {args.AddonName}");
             var windowHandle = Process.GetCurrentProcess().MainWindowHandle;
             PostMessage(windowHandle, WmKeydown, VkSpace, 0);
             Task.Delay(50).ContinueWith(_ => PostMessage(windowHandle, WmKeyup, VkSpace, 0));
+
+            PostMessage(windowHandle, WmKeydown, VkW, 0);
+            Task.Delay(50).ContinueWith(_ => PostMessage(windowHandle, WmKeyup, VkW, 0));
         }
     }
 
     public void Uninit()
     {
+        Service.AddonLifecycle.UnregisterListener(OnQTEAddon);
+        Service.AddonLifecycle.UnregisterListener(OnQTEAddon);
         Service.AddonLifecycle.UnregisterListener(OnQTEAddon);
 
         Initialized = false;
