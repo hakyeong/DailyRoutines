@@ -141,11 +141,6 @@ public class Main : Window, IDisposable
                     Service.Log.Debug(state ? "装了" : "没装");
                 }
 
-                if (ImGui.Button("获取测试文本2"))
-                {
-                    Service.Log.Debug(Service.ExcelData.ItemNames.Count.ToString());
-                }
-
                 ImGui.EndTabItem();
             }
 

@@ -77,9 +77,9 @@ public class AutoLeveQuests : IDailyModule
         {
             IsOnProcessing = true;
             Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Talk", SkipTalk);
-            Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "JournalResult", StartAnotherRound);
+            Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "JournalResult", OnAddonJournalResult);
 
-            EnqueueSingleLeveQuest();
+            TaskManager.Enqueue(InteractWithMete);
         }
 
         ImGui.EndDisabled();
@@ -106,22 +106,29 @@ public class AutoLeveQuests : IDailyModule
         ImGui.EndDisabled();
     }
 
-    private static void StartAnotherRound(AddonEvent eventType, AddonArgs addonInfo)
-    {
-        EnqueueSingleLeveQuest();
-    }
-
     private static void EndProcessHandler()
     {
         TaskManager?.Abort();
         Service.AddonLifecycle.UnregisterListener(SkipTalk);
-        Service.AddonLifecycle.UnregisterListener(StartAnotherRound);
+        Service.AddonLifecycle.UnregisterListener(OnAddonJournalResult);
         IsOnProcessing = false;
     }
 
     private static void SkipTalk(AddonEvent type, AddonArgs args)
     {
         if (EzThrottler.Throttle("AutoRetainerCollect-Talk", 100)) Click.SendClick("talk");
+    }
+
+    private static unsafe void OnAddonJournalResult(AddonEvent type, AddonArgs args)
+    {
+        if (TryGetAddonByName<AddonJournalResult>("JournalResult", out var addon) &&
+            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
+        {
+            var ui = &addon->AtkUnitBase;
+            var handler = new ClickJournalResult();
+            handler.Complete();
+            ui->Close(true);
+        }
     }
 
     private static void EnqueueSingleLeveQuest()
@@ -140,8 +147,6 @@ public class AutoLeveQuests : IDailyModule
         TaskManager.Enqueue(InteractWithReceiver);
         // 选中任务
         TaskManager.Enqueue(ClickSelectQuest);
-        // 确认提交任务
-        TaskManager.Enqueue(ClickJournalResultConfirm);
     }
 
     private static void GetRecentLeveQuests()
@@ -170,22 +175,27 @@ public class AutoLeveQuests : IDailyModule
 
     private static unsafe bool? InteractWithMete()
     {
-        if (Service.Condition[ConditionFlag.OccupiedInQuestEvent]) return false;
+        if (IsOccupied()) return false;
         if (FindObjectToInteractWith(LeveMeteDataId, out var foundObject))
         {
             TargetSystem.Instance()->InteractWithObject(foundObject);
+
+            TaskManager.Enqueue(ClickCraftingLeve);
             return true;
         }
 
         return false;
     }
 
-    private static unsafe bool? InteractWithReceiver()
+    private static unsafe bool? ClickCraftingLeve()
     {
-        if (Service.Condition[ConditionFlag.OccupiedInQuestEvent]) return false;
-        if (FindObjectToInteractWith(LeveReceiverDataId, out var foundObject))
+        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
         {
-            TargetSystem.Instance()->InteractWithObject(foundObject);
+            var handler = new ClickSelectString();
+            handler.SelectItem2();
+
+            TaskManager.Enqueue(ClickLeveQuest);
+
             return true;
         }
 
@@ -224,6 +234,8 @@ public class AutoLeveQuests : IDailyModule
                 var handler2 = new ClickJournalDetailDR();
                 handler2.Accept((int)SelectedLeve.Value.Item1);
 
+                TaskManager.Enqueue(ClickExit);
+
                 return true;
             }
         }
@@ -238,6 +250,8 @@ public class AutoLeveQuests : IDailyModule
         {
             var handler = new ClickGuildLeveDR();
             handler.Exit();
+
+            TaskManager.Enqueue(ClickSelectStringExit);
 
             return true;
         }
@@ -254,6 +268,21 @@ public class AutoLeveQuests : IDailyModule
             var handler = new ClickSelectString();
             handler.SelectItem4();
 
+            TaskManager.Enqueue(InteractWithReceiver);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private static unsafe bool? InteractWithReceiver()
+    {
+        if (IsOccupied()) return false;
+        if (FindObjectToInteractWith(LeveReceiverDataId, out var foundObject))
+        {
+            TargetSystem.Instance()->InteractWithObject(foundObject);
+            TaskManager.Enqueue(ClickSelectQuest);
             return true;
         }
 
@@ -268,36 +297,28 @@ public class AutoLeveQuests : IDailyModule
         {
             var i = 1;
 
+            var hasSpecificQuest = false;
             for (; i < 8; i++)
             {
                 var text =
                     addon->PopupMenu.PopupMenu.List->AtkComponentBase.UldManager.NodeList[i]->GetAsAtkComponentNode()->
                         Component->UldManager.NodeList[4]->GetAsAtkTextNode()->NodeText.ExtractText();
-                if (text == null) return false;
-                if (text == SelectedLeve.Value.Item2) break;
+                if (text == SelectedLeve.Value.Item2)
+                {
+                    hasSpecificQuest = true;
+                    break;
+                }
             }
 
-            var handler = new ClickSelectIconString();
-            handler.SelectItem((ushort)(i - 1));
+            if (hasSpecificQuest)
+            {
+                var handler = new ClickSelectIconString();
+                handler.SelectItem((ushort)(i - 1));
 
-            return true;
-        }
+                TaskManager.Enqueue(InteractWithMete);
 
-        return false;
-    }
-
-    private static unsafe bool? ClickJournalResultConfirm()
-    {
-        if (SelectedLeve == null) return false;
-        if (TryGetAddonByName<AddonJournalResult>("JournalResult", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
-        {
-            var handler = new ClickJournalResult();
-            var handler1 = new ClickJournalResultDR();
-            handler.Complete();
-            handler1.Exit();
-
-            return true;
+                return true;
+            }
         }
 
         return false;

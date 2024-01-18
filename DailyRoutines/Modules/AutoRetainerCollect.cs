@@ -82,11 +82,6 @@ public class AutoRetainerCollect : IDailyModule
         TaskManager.Enqueue(ExitToRetainerList);
         // 雇员列表是否可用
         TaskManager.Enqueue(WaitRetainerListAddon);
-        if (index == completeRetainerCount - 1)
-        {
-            TaskManager.Enqueue(ExitToRetainerList);
-            TaskManager.Enqueue(WaitRetainerListAddon);
-        }
     }
 
     private static unsafe bool? WaitRetainerListAddon()
