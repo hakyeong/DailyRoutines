@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ClickLib;
@@ -5,11 +6,13 @@ using ClickLib.Bases;
 using ClickLib.Clicks;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
+using DailyRoutines.Manager;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Game.ClientState.Conditions;
 using ECommons.Automation;
 using ECommons.Throttlers;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -39,11 +42,11 @@ public class AutoLeveQuests : IDailyModule
 
     public void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        Service.ClientState.TerritoryChanged += OnZoneChanged;
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = true };
 
         Initialized = true;
     }
-
     public void UI()
     {
         ImGui.BeginDisabled(IsOnProcessing);
@@ -55,28 +58,37 @@ public class AutoLeveQuests : IDailyModule
         if (ImGui.BeginCombo("##SelectedLeve",
                              SelectedLeve == null ? "" : $"{SelectedLeve.Value.Item1} | {SelectedLeve.Value.Item2}"))
         {
-            ImGui.SetNextItemWidth(-1f);
             if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-GetAreaLeveData"))) GetRecentLeveQuests();
-            ImGui.Separator();
 
-            foreach (var leveToSelect in LeveQuests)
+            ImGui.SetNextItemWidth(-1f);
+            ImGui.SameLine();
+            var searchString = string.Empty;
+            ImGui.InputText("##AutoLeveQuests-SearchLeveQuest", ref searchString, 100);
+
+            ImGui.Separator();
+            if (LeveQuests.Any())
             {
-                if (ImGui.Selectable($"{leveToSelect.Key} | {leveToSelect.Value.Item1}"))
-                    SelectedLeve = (leveToSelect.Key, leveToSelect.Value.Item1, leveToSelect.Value.Item2);
-                if (SelectedLeve != null && ImGui.IsWindowAppearing() && SelectedLeve.Value.Item1 == leveToSelect.Key)
-                    ImGui.SetScrollHereY();
+                foreach (var leveToSelect in LeveQuests)
+                {
+                    if (!string.IsNullOrEmpty(searchString) && !leveToSelect.Value.Item1.Contains(searchString, StringComparison.OrdinalIgnoreCase) && !leveToSelect.Key.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (ImGui.Selectable($"{leveToSelect.Key} | {leveToSelect.Value.Item1}"))
+                        SelectedLeve = (leveToSelect.Key, leveToSelect.Value.Item1, leveToSelect.Value.Item2);
+                    if (SelectedLeve != null && ImGui.IsWindowAppearing() && SelectedLeve.Value.Item1 == leveToSelect.Key)
+                        ImGui.SetScrollHereY();
+                }
             }
 
             ImGui.EndCombo();
         }
 
         ImGui.SameLine();
-        ImGui.BeginDisabled(SelectedLeve == null || LeveMeteDataId == LeveReceiverDataId || LeveMeteDataId == 0 ||
-                            LeveReceiverDataId == 0);
+        ImGui.BeginDisabled(!ModuleManager.Modules.FirstOrDefault(c => c.GetType() == typeof(AutoRequestItemSubmit)).Initialized || SelectedLeve == null || LeveMeteDataId == LeveReceiverDataId || LeveMeteDataId == 0 ||
+                                                         LeveReceiverDataId == 0);
         if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-Start")))
         {
             IsOnProcessing = true;
             Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Talk", SkipTalk);
+            Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectYesno", AlwaysYes);
             Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "JournalResult", OnAddonJournalResult);
 
             TaskManager.Enqueue(InteractWithMete);
@@ -110,13 +122,21 @@ public class AutoLeveQuests : IDailyModule
     {
         TaskManager?.Abort();
         Service.AddonLifecycle.UnregisterListener(SkipTalk);
+        Service.AddonLifecycle.UnregisterListener(AlwaysYes);
         Service.AddonLifecycle.UnregisterListener(OnAddonJournalResult);
         IsOnProcessing = false;
     }
 
+    private static void OnZoneChanged(object? sender, ushort e) => LeveQuests.Clear();
+
     private static void SkipTalk(AddonEvent type, AddonArgs args)
     {
         if (EzThrottler.Throttle("AutoRetainerCollect-Talk", 100)) Click.SendClick("talk");
+    }
+
+    private static void AlwaysYes(AddonEvent type, AddonArgs args)
+    {
+        Click.TrySendClick("select_yes");
     }
 
     private static unsafe void OnAddonJournalResult(AddonEvent type, AddonArgs args)
@@ -129,24 +149,6 @@ public class AutoLeveQuests : IDailyModule
             handler.Complete();
             ui->Close(true);
         }
-    }
-
-    private static void EnqueueSingleLeveQuest()
-    {
-        // 和理符发行人交互
-        TaskManager.Enqueue(InteractWithMete);
-        // 点击制作任务
-        TaskManager.Enqueue(() => Click.TrySendClick("select_string2"));
-        // 点击接取任务
-        TaskManager.Enqueue(ClickLeveQuest);
-        // 退出理符任务界面
-        TaskManager.Enqueue(ClickExit);
-        // 退出 SelectString
-        TaskManager.Enqueue(ClickSelectStringExit);
-        // 和理符委托人交互
-        TaskManager.Enqueue(InteractWithReceiver);
-        // 选中任务
-        TaskManager.Enqueue(ClickSelectQuest);
     }
 
     private static void GetRecentLeveQuests()
@@ -175,27 +177,28 @@ public class AutoLeveQuests : IDailyModule
 
     private static unsafe bool? InteractWithMete()
     {
+        // 防止 "要继续交货吗"
+        if (TryGetAddonByName<AddonSelectString>("SelectString", out var addon) && IsAddonReady(&addon->AtkUnitBase))
+        {
+            var i = 1;
+            for (; i < 8; i++)
+            {
+                var text =
+                    addon->PopupMenu.PopupMenu.List->AtkComponentBase.UldManager.NodeList[i]->GetAsAtkComponentNode()->
+                        Component->UldManager.NodeList[3]->GetAsAtkTextNode()->NodeText.ExtractText();
+                if (text.Contains("结束")) break;
+            }
+
+            var handler = new ClickSelectString();
+            handler.SelectItem((ushort)(i-1));
+        }
+
         if (IsOccupied()) return false;
         if (FindObjectToInteractWith(LeveMeteDataId, out var foundObject))
         {
             TargetSystem.Instance()->InteractWithObject(foundObject);
 
             TaskManager.Enqueue(ClickCraftingLeve);
-            return true;
-        }
-
-        return false;
-    }
-
-    private static unsafe bool? ClickCraftingLeve()
-    {
-        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
-        {
-            var handler = new ClickSelectString();
-            handler.SelectItem2();
-
-            TaskManager.Enqueue(ClickLeveQuest);
-
             return true;
         }
 
@@ -211,6 +214,21 @@ public class AutoLeveQuests : IDailyModule
                 return true;
             }
         foundObject = null;
+        return false;
+    }
+
+    private static unsafe bool? ClickCraftingLeve()
+    {
+        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
+        {
+            var handler = new ClickSelectString();
+            handler.SelectItem2();
+
+            TaskManager.Enqueue(ClickLeveQuest);
+
+            return true;
+        }
+
         return false;
     }
 
@@ -248,10 +266,13 @@ public class AutoLeveQuests : IDailyModule
         if (TryGetAddonByName<AddonGuildLeve>("GuildLeve", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
+            var ui = &addon->AtkUnitBase;
             var handler = new ClickGuildLeveDR();
             handler.Exit();
 
             TaskManager.Enqueue(ClickSelectStringExit);
+
+            ui->Close(true);
 
             return true;
         }
@@ -270,6 +291,8 @@ public class AutoLeveQuests : IDailyModule
 
             TaskManager.Enqueue(InteractWithReceiver);
 
+            addon->Close(true);
+
             return true;
         }
 
@@ -282,7 +305,18 @@ public class AutoLeveQuests : IDailyModule
         if (FindObjectToInteractWith(LeveReceiverDataId, out var foundObject))
         {
             TargetSystem.Instance()->InteractWithObject(foundObject);
-            TaskManager.Enqueue(ClickSelectQuest);
+
+            // 判断当前是否有多个待提交理符
+            var levesSpan = QuestManager.Instance()->LeveQuestsSpan;
+            var qualifiedCount = 0;
+
+            for (var i = 0; i < levesSpan.Length; i++)
+            {
+                if (LeveQuests.ContainsKey(levesSpan[i].LeveId)) qualifiedCount++;
+            }
+
+            TaskManager.Enqueue(qualifiedCount > 1 ? ClickSelectQuest : InteractWithMete);
+
             return true;
         }
 
@@ -296,8 +330,6 @@ public class AutoLeveQuests : IDailyModule
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
             var i = 1;
-
-            var hasSpecificQuest = false;
             for (; i < 8; i++)
             {
                 var text =
@@ -305,20 +337,15 @@ public class AutoLeveQuests : IDailyModule
                         Component->UldManager.NodeList[4]->GetAsAtkTextNode()->NodeText.ExtractText();
                 if (text == SelectedLeve.Value.Item2)
                 {
-                    hasSpecificQuest = true;
                     break;
                 }
             }
 
-            if (hasSpecificQuest)
-            {
-                var handler = new ClickSelectIconString();
-                handler.SelectItem((ushort)(i - 1));
+            var handler = new ClickSelectIconString();
+            handler.SelectItem((ushort)(i - 1));
 
-                TaskManager.Enqueue(InteractWithMete);
-
-                return true;
-            }
+            TaskManager.Enqueue(InteractWithMete);
+            return true;
         }
 
         return false;
@@ -326,6 +353,7 @@ public class AutoLeveQuests : IDailyModule
 
     public void Uninit()
     {
+        Service.ClientState.TerritoryChanged -= OnZoneChanged;
         EndProcessHandler();
 
         Initialized = false;

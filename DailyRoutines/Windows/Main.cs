@@ -11,6 +11,7 @@ using DailyRoutines.Managers;
 using DailyRoutines.Modules;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
 
 namespace DailyRoutines.Windows;
@@ -18,12 +19,9 @@ namespace DailyRoutines.Windows;
 public class Main : Window, IDisposable
 {
     private static readonly
-        ConcurrentDictionary<Type, (string Name, string Title, string Description, IDailyModule ModuleInstance)>
+        ConcurrentDictionary<Type, (string Name, string Title, string Description)>
         _moduleCache
             = new();
-
-    private static readonly ConcurrentDictionary<Type, (string Name, IDailyModule ModuleInstance)> _moduleInstanceCache
-        = new();
 
     private static readonly List<Type> GeneralModules = new();
     private static readonly List<Type> GoldSaucerModules = new();
@@ -137,8 +135,14 @@ public class Main : Window, IDisposable
 
                 if (ImGui.Button("获取测试文本1"))
                 {
-                    var state = AutoMiniCactpot.IsEzMiniCactpotInstalled();
-                    Service.Log.Debug(state ? "装了" : "没装");
+                    unsafe
+                    {
+                        var levesSpan = QuestManager.Instance()->LeveQuestsSpan;
+                        foreach (var leve in levesSpan)
+                        {
+                            Service.Log.Debug($"{leve.LeveId}");
+                        }
+                    }
                 }
 
                 ImGui.EndTabItem();
@@ -150,7 +154,7 @@ public class Main : Window, IDisposable
 
     private static void DrawModuleCheckbox(Type module)
     {
-        var (boolName, title, description, _) = _moduleCache.GetOrAdd(module, m =>
+        var (boolName, title, description) = _moduleCache.GetOrAdd(module, m =>
         {
             var attributes = m.GetCustomAttributes(typeof(ModuleDescriptionAttribute), false);
             var title = string.Empty;
@@ -162,7 +166,7 @@ public class Main : Window, IDisposable
                 description = Service.Lang.GetText(content.DescriptionKey);
             }
 
-            return (m.Name, title, description, null)!;
+            return (m.Name, title, description);
         });
 
         if (!Service.Config.ModuleEnabled.TryGetValue(boolName, out var cbool)) return;
@@ -171,8 +175,7 @@ public class Main : Window, IDisposable
         if (ImGuiOm.CheckboxColored($"{title}##{module.Name}", ref cbool))
         {
             Service.Config.ModuleEnabled[boolName] = !Service.Config.ModuleEnabled[boolName];
-            var component = _moduleCache[module].ModuleInstance ??
-                            ModuleManager.Modules.FirstOrDefault(c => c.GetType() == module);
+            var component = ModuleManager.Modules.FirstOrDefault(c => c.GetType() == module);
             if (component != null)
             {
                 if (Service.Config.ModuleEnabled[boolName])
@@ -194,11 +197,7 @@ public class Main : Window, IDisposable
         var boolName = module.Name;
         if (!Service.Config.ModuleEnabled.TryGetValue(boolName, out var cbool) || !cbool) return;
 
-        var moduleInstance = _moduleInstanceCache.GetOrAdd(module, m =>
-        {
-            var instance = Activator.CreateInstance(m) as IDailyModule;
-            return (m.Name, instance)!;
-        }).ModuleInstance;
+        var moduleInstance = ModuleManager.Modules.FirstOrDefault(c => c.GetType() == module);
 
         moduleInstance?.UI();
     }
@@ -209,7 +208,6 @@ public class Main : Window, IDisposable
         Service.Lang = new LanguageManager(Service.Config.SelectedLanguage);
         Service.Config.Save();
 
-        _moduleInstanceCache.Clear();
         _moduleCache.Clear();
         P.CommandHandler();
     }

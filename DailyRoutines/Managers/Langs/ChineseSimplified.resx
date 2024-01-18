@@ -145,7 +145,8 @@
     <value>结束</value>
   </data>
   <data name="AutoLeveQuestsDescription" xml:space="preserve">
-    <value>配置完成并点击开始后, 自动重复完成指定的生产理符任务, 直至理符额度耗尽, 请确保背包内有足够的任务物品</value>
+    <value>配置完成并点击开始后, 自动重复完成指定的生产理符任务, 直至理符额度耗尽, 请确保背包内有足够的任务物品
+(必须开启: 自动选择并递交物品)</value>
   </data>
   <data name="AutoLeveQuestsTitle" xml:space="preserve">
     <value>自动批量完成生产理符</value>

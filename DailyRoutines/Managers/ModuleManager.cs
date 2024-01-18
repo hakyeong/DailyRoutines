@@ -27,6 +27,12 @@ public class ModuleManager
         }
     }
 
+    public static bool IsModuleLoaded(IDailyModule? module)
+    {
+        return module is { Initialized: true };
+    }
+
+
     public static void Init()
     {
         foreach (var component in Modules)
