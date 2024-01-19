@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using ClickLib;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
@@ -131,8 +132,7 @@ public class AutoLogin : IDailyModule
     {
         if (TryGetAddonByName<AtkUnitBase>("_CharaSelectWorldServer", out var addon))
         {
-            var stringArray = Framework.Instance()->UIModule->GetRaptureAtkModule()->AtkModule.AtkArrayDataHolder
-                .StringArrays[1];
+            var stringArray = AtkStage.GetSingleton()->GetStringArrayData()[1];
             if (stringArray == null) return false;
 
             for (var i = 0; i < 16; i++)
@@ -140,7 +140,7 @@ public class AutoLogin : IDailyModule
                 var serverNamePtr = stringArray->StringArray[i];
                 if (serverNamePtr == null) continue;
 
-                var serverName = MemoryHelper.ReadStringNullTerminated(new IntPtr(serverNamePtr));
+                var serverName = Marshal.PtrToStringUTF8(new nint(serverNamePtr));
                 if (serverName.Trim().Length == 0) continue;
 
                 if (serverName != ConfigSelectedServer) continue;
@@ -153,8 +153,6 @@ public class AutoLogin : IDailyModule
 
                 return true;
             }
-
-            Service.Log.Error($"找寻目标服务器失败: {ConfigSelectedServer}");
         }
 
         return false;
