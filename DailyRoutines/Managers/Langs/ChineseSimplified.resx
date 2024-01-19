@@ -126,6 +126,12 @@
   <data name="AutoCACTitle" xml:space="preserve">
     <value>自动重击伽美什</value>
   </data>
+  <data name="AutoCTSDescription" xml:space="preserve">
+    <value>交互游戏机后, 自动开始重复游玩强袭水晶塔</value>
+  </data>
+  <data name="AutoCTSTitle" xml:space="preserve">
+    <value>自动强袭水晶塔</value>
+  </data>
   <data name="AutoExpertDelivery-Start" xml:space="preserve">
     <value>开始</value>
   </data>
@@ -187,6 +193,12 @@
   </data>
   <data name="AutoMiniCactpotTitle" xml:space="preserve">
     <value>自动仙人微彩</value>
+  </data>
+  <data name="AutoMTDescription" xml:space="preserve">
+    <value>交互游戏机后, 自动开始重复游玩怪物投篮</value>
+  </data>
+  <data name="AutoMTTitle" xml:space="preserve">
+    <value>自动怪物投篮</value>
   </data>
   <data name="AutoNoviceNetwork-AttemptedTimes" xml:space="preserve">
     <value>已尝试次数</value>

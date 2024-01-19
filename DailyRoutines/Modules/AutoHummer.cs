@@ -1,4 +1,3 @@
-using System;
 using ClickLib;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
@@ -12,8 +11,8 @@ using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoCACTitle", "AutoCACDescription", ModuleCategories.GoldSaucer)]
-public class AutoPunchingMachine : IDailyModule
+[ModuleDescription("AutoCTSTitle", "AutoCTSDescription", ModuleCategories.GoldSaucer)]
+public class AutoHummer : IDailyModule
 {
     public bool Initialized { get; set; }
 
@@ -25,12 +24,12 @@ public class AutoPunchingMachine : IDailyModule
     {
         TaskManager = new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "PunchingMachine", OnAddonSetup);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Hummer", OnAddonSetup);
 
         Initialized = true;
     }
 
-    private static void OnAddonSetup(AddonEvent type, AddonArgs args)
+    private void OnAddonSetup(AddonEvent type, AddonArgs args)
     {
         TaskManager.Enqueue(WaitSelectStringAddon);
         TaskManager.Enqueue(ClickGameButton);
@@ -48,16 +47,17 @@ public class AutoPunchingMachine : IDailyModule
 
     private static unsafe bool? ClickGameButton()
     {
-        if (TryGetAddonByName<AtkUnitBase>("PunchingMachine", out var addon) && IsAddonReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("Hummer", out var addon) && IsAddonReady(addon))
         {
-            var button = addon->GetButtonNodeById(23);
+            var button = addon->GetButtonNodeById(29);
             if (button == null || !button->IsEnabled) return false;
 
             addon->IsVisible = false;
 
-            var handler = new ClickPunchingMachineDR();
-            handler.Play(new Random().Next(1700, 1999));
+            var handler = new ClickHummerDR();
+            handler.Play(3);
 
+            TaskManager.DelayNext(5000); // 只是纯粹因为游玩动画太长了而已
             TaskManager.Enqueue(StartAnotherRound);
             return true;
         }
@@ -69,7 +69,7 @@ public class AutoPunchingMachine : IDailyModule
     {
         if (IsOccupied()) return false;
         var machineTarget = Service.Target.PreviousTarget;
-        var machine = machineTarget.DataId == 2005029 ? (GameObject*)machineTarget.Address : null;
+        var machine = machineTarget.DataId == 2005035 ? (GameObject*)machineTarget.Address : null;
 
         if (machine != null)
         {
