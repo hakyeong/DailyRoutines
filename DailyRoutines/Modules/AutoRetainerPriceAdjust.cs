@@ -1,5 +1,5 @@
 using System;
-using ClickLib.Bases;
+using System.Text.RegularExpressions;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -10,12 +10,11 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
-using static System.Text.RegularExpressions.Regex;
 
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoRetainerPriceAdjustTitle", "AutoRetainerPriceAdjustDescription", ModuleCategories.Retainer)]
-public class AutoRetainerPriceAdjust : IDailyModule
+public partial class AutoRetainerPriceAdjust : IDailyModule
 {
     public bool Initialized { get; set; }
 
@@ -80,7 +79,7 @@ public class AutoRetainerPriceAdjust : IDailyModule
         TaskManager.DelayNext(100);
         // 填写最低价
         TaskManager.Enqueue(FillLowestPrice);
-        TaskManager.DelayNext(1000);
+        TaskManager.DelayNext(500);
     }
 
     private static unsafe void OnRetainerSellList(AddonEvent type, AddonArgs args)
@@ -119,7 +118,7 @@ public class AutoRetainerPriceAdjust : IDailyModule
         TaskManager.DelayNext(100);
         // 填写最低价
         TaskManager.Enqueue(FillLowestPrice);
-        TaskManager.DelayNext(1000);
+        TaskManager.DelayNext(800);
     }
 
     private static unsafe void GetSellListItems(out uint availableItems)
@@ -179,9 +178,20 @@ public class AutoRetainerPriceAdjust : IDailyModule
     {
         if (TryGetAddonByName<AtkUnitBase>("ItemSearchResult", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
+            var disableText = addon->GetTextNodeById(5)->NodeText.ExtractText();
+            // "请稍后"/"没有搜索到任何结果"
+            if (!string.IsNullOrEmpty(disableText))
+            {
+                if (disableText.Contains("稍后")) return false;
+
+                CurrentMarketLowestPrice = 0;
+                return true;
+            }
+
             var text = addon->UldManager.NodeList[5]->GetAsAtkComponentNode()->Component->UldManager.NodeList[1]->
                 GetAsAtkComponentNode()->Component->UldManager.NodeList[10]->GetAsAtkTextNode()->NodeText.ToString();
-            if (!int.TryParse(Replace(text, "[^0-9]", ""), out CurrentMarketLowestPrice)) return false;
+            if (!int.TryParse(AutoRetainerPriceAdjustRegex().Replace(text, ""), out CurrentMarketLowestPrice))
+                return false;
             addon->Close(true);
             return true;
         }
@@ -199,7 +209,8 @@ public class AutoRetainerPriceAdjust : IDailyModule
             var handler = new ClickRetainerSellDR((nint)addon);
             var itemName = addon->ItemName->NodeText.ExtractText();
             Service.Log.Debug(CurrentMarketLowestPrice.ToString());
-            if (CurrentMarketLowestPrice < ConfigLowestPrice || CurrentMarketLowestPrice == 0 || CurrentMarketLowestPrice - ConfigPriceReduction <= 1)
+            if (CurrentMarketLowestPrice < ConfigLowestPrice || CurrentMarketLowestPrice == 0 ||
+                CurrentMarketLowestPrice - ConfigPriceReduction <= 1)
             {
                 var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-WarnMessageReachLowestPrice",
                                                        SeString.CreateItemLink(Service.ExcelData.ItemNames[itemName]),
@@ -231,4 +242,7 @@ public class AutoRetainerPriceAdjust : IDailyModule
 
         Initialized = false;
     }
+
+    [GeneratedRegex("[^0-9]")]
+    private static partial Regex AutoRetainerPriceAdjustRegex();
 }

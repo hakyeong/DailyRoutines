@@ -22,16 +22,18 @@ public class Main : Window, IDisposable
 {
     private static readonly ConcurrentDictionary<Type, (string Name, string Title, string Description)> ModuleCache = new();
 
-    private static readonly List<Type> BaseModules = new();
-    private static readonly List<Type> GeneralModules = new();
-    private static readonly List<Type> GoldSaucerModules = new();
-    private static readonly List<Type> RetainerModules = new();
+    private static readonly Dictionary<ModuleCategories, List<Type>> ModuleCategories = new();
 
     public Main(Plugin plugin) : base("Daily Routines - Main")
     {
         var assembly = Assembly.GetExecutingAssembly();
         var moduleTypes = assembly.GetTypes()
                                   .Where(t => typeof(IDailyModule).IsAssignableFrom(t) && t.IsClass);
+
+        foreach (ModuleCategories category in Enum.GetValues(typeof(ModuleCategories)))
+        {
+            ModuleCategories[category] = new();
+        }
 
         foreach (var type in moduleTypes)
             CheckAndCache(type);
@@ -43,24 +45,7 @@ public class Main : Window, IDisposable
             var attr = type.GetCustomAttribute<ModuleDescriptionAttribute>();
             if (attr == null) return;
 
-            switch (attr.Category)
-            {
-                case ModuleCategories.General:
-                    GeneralModules.Add(type);
-                    break;
-                case ModuleCategories.GoldSaucer:
-                    GoldSaucerModules.Add(type);
-                    break;
-                case ModuleCategories.Retainer:
-                    RetainerModules.Add(type);
-                    break;
-                case ModuleCategories.Base:
-                    BaseModules.Add(type);
-                    break;
-                default:
-                    Service.Log.Error("Unknown Modules");
-                    break;
-            }
+            ModuleCategories[attr.Category].Add(type);
         }
     }
 
@@ -68,10 +53,10 @@ public class Main : Window, IDisposable
     {
         if (ImGui.BeginTabBar("BasicTab"))
         {
-            DrawTabItemModules(BaseModules, ModuleCategories.Base);
-            DrawTabItemModules(GeneralModules, ModuleCategories.General);
-            DrawTabItemModules(GoldSaucerModules, ModuleCategories.GoldSaucer);
-            DrawTabItemModules(RetainerModules, ModuleCategories.Retainer);
+            foreach (var module in ModuleCategories)
+            {
+                DrawTabItemModules(module.Value, module.Key);
+            }
 
             if (ImGui.BeginTabItem(Service.Lang.GetText("Settings")))
             {

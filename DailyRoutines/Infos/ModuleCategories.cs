@@ -4,6 +4,7 @@ public enum ModuleCategories
 {
     Base = 0,
     General = 1,
-    GoldSaucer = 2,
-    Retainer = 3,
+    Duty = 2,
+    GoldSaucer = 3,
+    Retainer = 4,
 }

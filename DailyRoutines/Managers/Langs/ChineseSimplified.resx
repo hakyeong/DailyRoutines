@@ -126,6 +126,18 @@
   <data name="AutoCACTitle" xml:space="preserve">
     <value>自动重击伽美什</value>
   </data>
+  <data name="AutoExpertDelivery-Start" xml:space="preserve">
+    <value>开始</value>
+  </data>
+  <data name="AutoExpertDelivery-Stop" xml:space="preserve">
+    <value>停止</value>
+  </data>
+  <data name="AutoExpertDeliveryDescription" xml:space="preserve">
+    <value>打开筹备任务界面, 并点击开始后, 自动上交装备兑换军票</value>
+  </data>
+  <data name="AutoExpertDeliveryTitle" xml:space="preserve">
+    <value>自动筹备稀有品</value>
+  </data>
   <data name="AutoLeveQuests-GetAreaLeveData" xml:space="preserve">
     <value>获取当前区域理符任务数据</value>
   </data>
@@ -145,7 +157,7 @@
     <value>结束</value>
   </data>
   <data name="AutoLeveQuestsDescription" xml:space="preserve">
-    <value>配置完成并点击开始后, 自动重复完成指定的生产理符任务, 直至理符额度耗尽, 请确保背包内有足够的任务物品
+    <value>配置完成并点击开始后, 自动重复完成指定的生产理符任务, 直至理符额度耗尽
 (必须开启: 自动选择并递交物品)</value>
   </data>
   <data name="AutoLeveQuestsTitle" xml:space="preserve">
@@ -192,7 +204,8 @@
     <value>自动加入新人频道</value>
   </data>
   <data name="AutoQTEDescription" xml:space="preserve">
-    <value>在副本中, 自动完成动态演练 (QTE)</value>
+    <value>在副本中, 自动完成动态演练 (QTE)
+(即便启用, 仍然建议你时刻关注进度条, 以避免出现意外事故)</value>
   </data>
   <data name="AutoQTETitle" xml:space="preserve">
     <value>自动动态演练</value>
@@ -231,6 +244,9 @@
   </data>
   <data name="CommandHelp" xml:space="preserve">
     <value>打开主界面</value>
+  </data>
+  <data name="Duty" xml:space="preserve">
+    <value>副本</value>
   </data>
   <data name="Enable" xml:space="preserve">
     <value>启用</value>

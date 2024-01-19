@@ -9,7 +9,7 @@ using ECommons.Throttlers;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoQTETitle", "AutoQTEDescription", ModuleCategories.General)]
+[ModuleDescription("AutoQTETitle", "AutoQTEDescription", ModuleCategories.Duty)]
 public class AutoQTE : IDailyModule
 {
     public bool Initialized { get; set; }
