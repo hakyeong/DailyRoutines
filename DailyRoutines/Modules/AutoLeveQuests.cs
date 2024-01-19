@@ -44,7 +44,7 @@ public class AutoLeveQuests : IDailyModule
     public void Init()
     {
         Service.ClientState.TerritoryChanged += OnZoneChanged;
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = true };
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
 
         Initialized = true;
     }
