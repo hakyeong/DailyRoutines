@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Runtime.InteropServices;
 using ClickLib.Clicks;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
@@ -90,10 +91,10 @@ public class AutoExpertDelivery : IDailyModule
         if (TryGetAddonByName<AddonGrandCompanySupplyList>("GrandCompanySupplyList", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
-            var disabledText = addon->AtkUnitBase.GetTextNodeById(9)->NodeText.ExtractText();
-            if (!string.IsNullOrEmpty(disabledText)) return true;
+            var isNoItems = addon->AtkUnitBase.GetTextNodeById(9)->AtkResNode.IsVisible;
+            if (isNoItems) return true;
 
-            var amountText = addon->SealCountTextNode->NodeText.ExtractText();
+            var amountText = Marshal.PtrToStringUTF8((nint)AtkStage.GetSingleton()->GetStringArrayData()[32]->StringArray[2]);
             var parts = amountText.Split('/');
             var currentAmount = int.Parse(parts[0].Replace(",", ""));
             var capAmount = int.Parse(parts[1].Replace(",", ""));

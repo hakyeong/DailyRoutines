@@ -3,26 +3,27 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using ClickLib;
-using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Manager;
 using DailyRoutines.Managers;
-using DailyRoutines.Modules;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
-using FFXIVClientStructs.FFXIV.Client.Game;
+using ECommons.Automation;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
-using Lumina.Data;
-using static FFXIVClientStructs.FFXIV.Client.Graphics.Scene.CharacterBase;
 
 namespace DailyRoutines.Windows;
 
 public class Main : Window, IDisposable
 {
-    private static readonly ConcurrentDictionary<Type, (string Name, string Title, string Description)> ModuleCache = new();
+    private static readonly ConcurrentDictionary<Type, (string Name, string Title, string Description)> ModuleCache =
+        new();
 
     private static readonly Dictionary<ModuleCategories, List<Type>> ModuleCategories = new();
+
+    private static bool IsKeep = false;
 
     public Main(Plugin plugin) : base("Daily Routines - Main")
     {
@@ -31,9 +32,7 @@ public class Main : Window, IDisposable
                                   .Where(t => typeof(IDailyModule).IsAssignableFrom(t) && t.IsClass);
 
         foreach (ModuleCategories category in Enum.GetValues(typeof(ModuleCategories)))
-        {
-            ModuleCategories[category] = new();
-        }
+            ModuleCategories[category] = new List<Type>();
 
         foreach (var type in moduleTypes)
             CheckAndCache(type);
@@ -53,10 +52,7 @@ public class Main : Window, IDisposable
     {
         if (ImGui.BeginTabBar("BasicTab"))
         {
-            foreach (var module in ModuleCategories)
-            {
-                DrawTabItemModules(module.Value, module.Key);
-            }
+            foreach (var module in ModuleCategories) DrawTabItemModules(module.Value, module.Key);
 
             if (ImGui.BeginTabItem(Service.Lang.GetText("Settings")))
             {
@@ -86,24 +82,28 @@ public class Main : Window, IDisposable
             if (ImGui.BeginTabItem("Dev"))
             {
                 if (ImGui.Button("获取测试点击"))
-                {
-                    foreach (var clickName in Click.GetClickNames()) Service.Log.Debug(clickName);
-                }
+                    foreach (var clickName in Click.GetClickNames())
+                        Service.Log.Debug(clickName);
 
-                if (ImGui.Button("获取测试文本1"))
+                unsafe
                 {
-                    unsafe
+                    if (ImGui.Button("测试点击"))
                     {
-                        var levesSpan = QuestManager.Instance()->LeveQuestsSpan;
-                        foreach (var leve in levesSpan)
-                        {
-                            Service.Log.Debug($"{leve.LeveId}");
-                        }
+                        var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("Hummer");
+                        if (addon != null) Callback.Fire(addon, true, 11, 4, 0);
+                    }
+
+                    if (ImGui.Button("获取测试文本2"))
+                    {
+                        var text = AtkStage.GetSingleton()->GetStringArrayData()[32]->StringArray;
+                        Service.Log.Debug(Marshal.PtrToStringUTF8(new nint(text[2])));
                     }
                 }
 
+
                 ImGui.EndTabItem();
             }
+
             ImGui.EndTabBar();
         }
     }

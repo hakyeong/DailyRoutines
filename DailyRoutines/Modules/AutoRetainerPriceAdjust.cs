@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
@@ -178,12 +179,12 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
     {
         if (TryGetAddonByName<AtkUnitBase>("ItemSearchResult", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var disableText = addon->GetTextNodeById(5)->NodeText.ExtractText();
-            // "请稍后"/"没有搜索到任何结果"
-            if (!string.IsNullOrEmpty(disableText))
-            {
-                if (disableText.Contains("稍后")) return false;
+            var searchResult = Marshal.PtrToStringUTF8((nint)AtkStage.GetSingleton()->GetStringArrayData()[33]->StringArray[202]);
+            if (string.IsNullOrEmpty(searchResult)) return false; // 请稍后
 
+            // 搜索结果 0
+            if (int.Parse(AutoRetainerPriceAdjustRegex().Replace(searchResult, "")) == 0)
+            {
                 CurrentMarketLowestPrice = 0;
                 return true;
             }
