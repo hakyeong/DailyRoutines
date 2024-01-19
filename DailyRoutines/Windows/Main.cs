@@ -114,15 +114,16 @@ public class Main : Window, IDisposable
         {
             for (var i = 0; i < modules.Count; i++)
             {
+                ImGui.PushID($"{modules[i]}_{category}");
                 DrawModuleCheckbox(modules[i]);
                 DrawModuleUI(modules[i]);
                 if (i < modules.Count - 1) ImGui.Separator();
+                ImGui.PopID();
             }
 
             ImGui.EndTabItem();
         }
     }
-
 
     private static void DrawModuleCheckbox(Type module)
     {
