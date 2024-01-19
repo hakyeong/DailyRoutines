@@ -1,114 +1,129 @@
-using ClickLib.Bases;
+using System.Collections.Generic;
 using ClickLib.Clicks;
-using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
 using ECommons.Automation;
+using ECommons.DalamudServices;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoRequestItemSubmitTitle", "AutoRequestItemSubmitDescription", ModuleCategories.General)]
+[ModuleDescription("AutoRequestItemSubmitTitle", "AutoRequestItemSubmitDescription", ModuleCategories.Base)]
 public class AutoRequestItemSubmit : IDailyModule
 {
     public bool Initialized { get; set; }
 
     private static TaskManager? TaskManager;
+    private static readonly List<int> SlotsFilled = new();
 
     public void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Request", OnAddonSetup);
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = true };
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Request", OnAddonRequest);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Request", OnAddonRequest);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "Request", OnAddonRequest);
 
         Initialized = true;
     }
 
     public void UI() { }
 
-    private void OnAddonSetup(AddonEvent eventType, AddonArgs addonInfo)
+    private void OnAddonRequest(AddonEvent type, AddonArgs args)
     {
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", OnAddonHqConfirm);
-        TaskManager.Enqueue(ClickRequestIcon);
-        TaskManager.Enqueue(ClickItemToSelect);
-        TaskManager.Enqueue(ClickHandOver);
-        TaskManager.Enqueue(ClickHqSubmit);
-        Service.AddonLifecycle.UnregisterListener(OnAddonHqConfirm);
+        switch (type)
+        {
+            case AddonEvent.PostSetup:
+                Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", OnAddonSelectYesno);
+                break;
+            case AddonEvent.PostDraw:
+                ClickRequestIcon();
+                break;
+            case AddonEvent.PreFinalize:
+                SlotsFilled.Clear();
+                TaskManager.Abort();
+                Service.AddonLifecycle.UnregisterListener(OnAddonSelectYesno);
+                break;
+        }
     }
 
-    private void OnAddonHqConfirm(AddonEvent eventType, AddonArgs addonInfo)
+    private static unsafe void OnAddonSelectYesno(AddonEvent type, AddonArgs args)
     {
-        TaskManager.Enqueue(ClickHqSubmit);
-    }
-
-    private static unsafe bool? ClickRequestIcon()
-    {
-        if (TryGetAddonByName<AddonRequest>("Request", out var addon) &&
+        if (TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
-            var ui = &addon->AtkUnitBase;
-            var handler = new ClickRequestDR();
-
-            handler.IconBox();
-            return true;
+            var text = addon->PromptText->NodeText.ExtractText();
+            if (text != null && text.Contains("优质"))
+            {
+                var handler = new ClickSelectYesNo();
+                handler.Yes();
+            }
         }
-
-        return false;
     }
 
-    private static unsafe bool? ClickItemToSelect()
+    private static unsafe void ClickRequestIcon()
     {
-        if (TryGetAddonByName<AddonContextIconMenu>("ContextIconMenu", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
+        if (EzThrottler.Throttle("AutoRequestItemSubmit", 100))
         {
-            var ui = &addon->AtkUnitBase;
-            var handler = new ClickContextIconMenuDR();
-            var imageNode =
-                addon->AtkComponentList240->AtkComponentBase.UldManager.NodeList[1]->GetAsAtkComponentNode()->Component
-                        ->UldManager.NodeList[1]->GetAsAtkComponentNode()->Component->UldManager
-                    .NodeList[0]->GetAsAtkImageNode();
-            var iconId = imageNode->PartsList->Parts[imageNode->PartId].UldAsset->AtkTexture.Resource->IconID;
-            handler.ClickItem((ushort)iconId, true);
-            handler.ClickItem((ushort)iconId, false);
-            return true;
+            if (TryGetAddonByName<AddonRequest>("Request", out var addon))
+            {
+                for (var i = 1; i <= addon->EntryCount; i++)
+                {
+                    if (SlotsFilled.Contains(addon->EntryCount)) ClickHandOver();
+                    if (SlotsFilled.Contains(i)) return;
+                    var index = i;
+                    TaskManager.DelayNext($"AutoRequestItemSubmit{index}", 10);
+                    TaskManager.Enqueue(() => TryClickItem(addon, index));
+                }
+            }
+            else
+            {
+                SlotsFilled.Clear();
+                TaskManager.Abort();
+            }
         }
-
-        return false;
     }
 
-    private static unsafe bool? ClickHandOver()
+    private static unsafe bool? TryClickItem(AddonRequest* addon, int i)
+    {
+        if (SlotsFilled.Contains(i)) return true;
+
+        var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextIconMenu");
+
+        if (contextMenu is null || !contextMenu->IsVisible)
+        {
+            var slot = i - 1;
+
+            Callback.Fire(&addon->AtkUnitBase, false, 2, slot, 0, 0);
+
+            return false;
+        }
+
+        Callback.Fire(contextMenu, false, 0, 0, 1021003, 0, 0);
+        SlotsFilled.Add(i);
+        return true;
+    }
+
+    private static unsafe void ClickHandOver()
     {
         if (TryGetAddonByName<AddonRequest>("Request", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
             var handler = new ClickRequest();
-
             handler.HandOver();
-            return true;
         }
-
-        return false;
-    }
-
-    private static unsafe bool? ClickHqSubmit()
-    {
-        if (TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
-        {
-            var handler = new ClickSelectYesNo();
-
-            handler.Yes();
-            return true;
-        }
-
-        return false;
     }
 
     public void Uninit()
     {
-        Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
-        Service.AddonLifecycle.UnregisterListener(OnAddonHqConfirm);
+        Service.AddonLifecycle.UnregisterListener(OnAddonRequest);
+        Service.AddonLifecycle.UnregisterListener(OnAddonRequest);
+        Service.AddonLifecycle.UnregisterListener(OnAddonRequest);
+        Service.AddonLifecycle.UnregisterListener(OnAddonSelectYesno);
         TaskManager?.Abort();
+        SlotsFilled.Clear();
 
         Initialized = false;
     }

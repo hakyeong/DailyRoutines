@@ -37,6 +37,7 @@ public class AutoLeveQuests : IDailyModule
     private static uint LeveMeteDataId;
     private static uint LeveReceiverDataId;
     private static int Allowances;
+    private static string SearchString = string.Empty;
 
     private static bool IsOnProcessing;
 
@@ -62,15 +63,14 @@ public class AutoLeveQuests : IDailyModule
 
             ImGui.SetNextItemWidth(-1f);
             ImGui.SameLine();
-            var searchString = string.Empty;
-            ImGui.InputText("##AutoLeveQuests-SearchLeveQuest", ref searchString, 100);
+            ImGui.InputText("##AutoLeveQuests-SearchLeveQuest", ref SearchString, 100);
 
             ImGui.Separator();
             if (LeveQuests.Any())
             {
                 foreach (var leveToSelect in LeveQuests)
                 {
-                    if (!string.IsNullOrEmpty(searchString) && !leveToSelect.Value.Item1.Contains(searchString, StringComparison.OrdinalIgnoreCase) && !leveToSelect.Key.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (!string.IsNullOrEmpty(SearchString) && !leveToSelect.Value.Item1.Contains(SearchString, StringComparison.OrdinalIgnoreCase) && !leveToSelect.Key.ToString().Contains(SearchString, StringComparison.OrdinalIgnoreCase)) continue;
                     if (ImGui.Selectable($"{leveToSelect.Key} | {leveToSelect.Value.Item1}"))
                         SelectedLeve = (leveToSelect.Key, leveToSelect.Value.Item1, leveToSelect.Value.Item2);
                     if (SelectedLeve != null && ImGui.IsWindowAppearing() && SelectedLeve.Value.Item1 == leveToSelect.Key)
@@ -286,8 +286,17 @@ public class AutoLeveQuests : IDailyModule
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(addon))
         {
+            var i = 1;
+            for (; i < 8; i++)
+            {
+                var text =
+                    ((AddonSelectString*)addon)->PopupMenu.PopupMenu.List->AtkComponentBase.UldManager.NodeList[i]->GetAsAtkComponentNode()->
+                        Component->UldManager.NodeList[3]->GetAsAtkTextNode()->NodeText.ExtractText();
+                if (text.Contains("取消")) break;
+            }
+
             var handler = new ClickSelectString();
-            handler.SelectItem4();
+            handler.SelectItem((ushort)(i - 1));
 
             TaskManager.Enqueue(InteractWithReceiver);
 

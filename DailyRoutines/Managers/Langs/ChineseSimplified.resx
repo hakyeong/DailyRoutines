@@ -226,6 +226,9 @@
   <data name="AutoRetainerPriceAdjustTitle" xml:space="preserve">
     <value>自动雇员改价</value>
   </data>
+  <data name="Base" xml:space="preserve">
+    <value>基础</value>
+  </data>
   <data name="CommandHelp" xml:space="preserve">
     <value>打开主界面</value>
   </data>

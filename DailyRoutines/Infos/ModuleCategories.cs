@@ -2,7 +2,8 @@ namespace DailyRoutines.Infos;
 
 public enum ModuleCategories
 {
-    General = 0,
-    GoldSaucer = 1,
-    Retainer = 2,
+    Base = 0,
+    General = 1,
+    GoldSaucer = 2,
+    Retainer = 3,
 }

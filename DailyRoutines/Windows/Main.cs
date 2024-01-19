@@ -13,16 +13,16 @@ using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
+using Lumina.Data;
+using static FFXIVClientStructs.FFXIV.Client.Graphics.Scene.CharacterBase;
 
 namespace DailyRoutines.Windows;
 
 public class Main : Window, IDisposable
 {
-    private static readonly
-        ConcurrentDictionary<Type, (string Name, string Title, string Description)>
-        _moduleCache
-            = new();
+    private static readonly ConcurrentDictionary<Type, (string Name, string Title, string Description)> ModuleCache = new();
 
+    private static readonly List<Type> BaseModules = new();
     private static readonly List<Type> GeneralModules = new();
     private static readonly List<Type> GoldSaucerModules = new();
     private static readonly List<Type> RetainerModules = new();
@@ -54,6 +54,9 @@ public class Main : Window, IDisposable
                 case ModuleCategories.Retainer:
                     RetainerModules.Add(type);
                     break;
+                case ModuleCategories.Base:
+                    BaseModules.Add(type);
+                    break;
                 default:
                     Service.Log.Error("Unknown Modules");
                     break;
@@ -65,41 +68,10 @@ public class Main : Window, IDisposable
     {
         if (ImGui.BeginTabBar("BasicTab"))
         {
-            if (ImGui.BeginTabItem(Service.Lang.GetText("General")))
-            {
-                for (var i = 0; i < GeneralModules.Count; i++)
-                {
-                    DrawModuleCheckbox(GeneralModules[i]);
-                    DrawModuleUI(GeneralModules[i]);
-                    if (i < GeneralModules.Count - 1) ImGui.Separator();
-                }
-
-                ImGui.EndTabItem();
-            }
-
-            if (ImGui.BeginTabItem(Service.Lang.GetText("Retainer")))
-            {
-                for (var i = 0; i < RetainerModules.Count; i++)
-                {
-                    DrawModuleCheckbox(RetainerModules[i]);
-                    DrawModuleUI(RetainerModules[i]);
-                    if (i < RetainerModules.Count - 1) ImGui.Separator();
-                }
-
-                ImGui.EndTabItem();
-            }
-
-            if (ImGui.BeginTabItem(Service.Lang.GetText("GoldSaucer")))
-            {
-                for (var i = 0; i < GoldSaucerModules.Count; i++)
-                {
-                    DrawModuleCheckbox(GoldSaucerModules[i]);
-                    DrawModuleUI(GoldSaucerModules[i]);
-                    if (i < GoldSaucerModules.Count - 1) ImGui.Separator();
-                }
-
-                ImGui.EndTabItem();
-            }
+            DrawTabItemModules(BaseModules, ModuleCategories.Base);
+            DrawTabItemModules(GeneralModules, ModuleCategories.General);
+            DrawTabItemModules(GoldSaucerModules, ModuleCategories.GoldSaucer);
+            DrawTabItemModules(RetainerModules, ModuleCategories.Retainer);
 
             if (ImGui.BeginTabItem(Service.Lang.GetText("Settings")))
             {
@@ -147,14 +119,29 @@ public class Main : Window, IDisposable
 
                 ImGui.EndTabItem();
             }
-
             ImGui.EndTabBar();
         }
     }
 
+    private static void DrawTabItemModules(IReadOnlyList<Type> modules, ModuleCategories category)
+    {
+        if (ImGui.BeginTabItem(Service.Lang.GetText(category.ToString())))
+        {
+            for (var i = 0; i < modules.Count; i++)
+            {
+                DrawModuleCheckbox(modules[i]);
+                DrawModuleUI(modules[i]);
+                if (i < modules.Count - 1) ImGui.Separator();
+            }
+
+            ImGui.EndTabItem();
+        }
+    }
+
+
     private static void DrawModuleCheckbox(Type module)
     {
-        var (boolName, title, description) = _moduleCache.GetOrAdd(module, m =>
+        var (boolName, title, description) = ModuleCache.GetOrAdd(module, m =>
         {
             var attributes = m.GetCustomAttributes(typeof(ModuleDescriptionAttribute), false);
             var title = string.Empty;
@@ -208,7 +195,7 @@ public class Main : Window, IDisposable
         Service.Lang = new LanguageManager(Service.Config.SelectedLanguage);
         Service.Config.Save();
 
-        _moduleCache.Clear();
+        ModuleCache.Clear();
         P.CommandHandler();
     }
 
