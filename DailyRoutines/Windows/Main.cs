@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Manager;
@@ -23,7 +22,7 @@ public class Main : Window, IDisposable
 
     private static readonly Dictionary<ModuleCategories, List<Type>> ModuleCategories = new();
 
-    private static bool IsKeep = false;
+    private static string SearchString = string.Empty;
 
     public Main(Plugin plugin) : base("Daily Routines - Main")
     {
@@ -50,6 +49,10 @@ public class Main : Window, IDisposable
 
     public override void Draw()
     {
+        ImGui.SetNextItemWidth(-1f);
+        ImGui.InputTextWithHint("##MainWindow-SearchInput", $"{Service.Lang.GetText("PleaseSearch")}...", ref SearchString, 100);
+        ImGui.Separator();
+
         if (ImGui.BeginTabBar("BasicTab"))
         {
             foreach (var module in ModuleCategories) DrawTabItemModules(module.Value, module.Key);
@@ -82,8 +85,10 @@ public class Main : Window, IDisposable
             if (ImGui.BeginTabItem("Dev"))
             {
                 if (ImGui.Button("获取测试点击"))
+                {
                     foreach (var clickName in Click.GetClickNames())
                         Service.Log.Debug(clickName);
+                }
 
                 unsafe
                 {
@@ -92,14 +97,7 @@ public class Main : Window, IDisposable
                         var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("Hummer");
                         if (addon != null) Callback.Fire(addon, true, 11, 4, 0);
                     }
-
-                    if (ImGui.Button("获取测试文本2"))
-                    {
-                        var text = AtkStage.GetSingleton()->GetStringArrayData()[32]->StringArray;
-                        Service.Log.Debug(Marshal.PtrToStringUTF8(new nint(text[2])));
-                    }
                 }
-
 
                 ImGui.EndTabItem();
             }
@@ -115,9 +113,7 @@ public class Main : Window, IDisposable
             for (var i = 0; i < modules.Count; i++)
             {
                 ImGui.PushID($"{modules[i]}_{category}");
-                DrawModuleCheckbox(modules[i]);
-                DrawModuleUI(modules[i]);
-                if (i < modules.Count - 1) ImGui.Separator();
+                DrawModuleCheckbox(modules[i], modules.Count, i);
                 ImGui.PopID();
             }
 
@@ -125,7 +121,7 @@ public class Main : Window, IDisposable
         }
     }
 
-    private static void DrawModuleCheckbox(Type module)
+    private static void DrawModuleCheckbox(Type module, int modulesCount, int index)
     {
         var (boolName, title, description) = ModuleCache.GetOrAdd(module, m =>
         {
@@ -142,35 +138,35 @@ public class Main : Window, IDisposable
             return (m.Name, title, description);
         });
 
-        if (!Service.Config.ModuleEnabled.TryGetValue(boolName, out var cbool)) return;
+        if (!Service.Config.ModuleEnabled.TryGetValue(boolName, out var tempModuleBool)) return;
         if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(description)) return;
 
-        if (ImGuiOm.CheckboxColored($"{title}##{module.Name}", ref cbool))
+        if (!string.IsNullOrEmpty(SearchString))
+            if (!title.Contains(SearchString) && !description.Contains(SearchString))
+                return;
+
+        if (ImGuiOm.CheckboxColored($"{title}##{module.Name}", ref tempModuleBool))
         {
             Service.Config.ModuleEnabled[boolName] = !Service.Config.ModuleEnabled[boolName];
-            var component = ModuleManager.Modules.FirstOrDefault(c => c.GetType() == module);
-            if (component != null)
-            {
-                if (Service.Config.ModuleEnabled[boolName])
-                    ModuleManager.Load(component);
-                else
-                    ModuleManager.Unload(component);
-            }
+            var component = ModuleManager.Modules[module];
+            if (Service.Config.ModuleEnabled[boolName])
+                ModuleManager.Load(component);
             else
-                Service.Log.Error($"Fail to fetch module {module.Name}");
+                ModuleManager.Unload(component);
 
             Service.Config.Save();
         }
 
         ImGuiOm.TextDisabledWrapped(description);
+
+        if (tempModuleBool) DrawModuleUI(module);
+
+        if (index < modulesCount - 1) ImGui.Separator();
     }
 
     private static void DrawModuleUI(Type module)
     {
-        var boolName = module.Name;
-        if (!Service.Config.ModuleEnabled.TryGetValue(boolName, out var cbool) || !cbool) return;
-
-        var moduleInstance = ModuleManager.Modules.FirstOrDefault(c => c.GetType() == module);
+        var moduleInstance = ModuleManager.Modules[module];
 
         moduleInstance?.UI();
     }

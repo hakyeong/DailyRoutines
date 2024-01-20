@@ -86,7 +86,7 @@ public class AutoLeveQuests : IDailyModule
 
         ImGui.SameLine();
         ImGui.BeginDisabled(
-            !ModuleManager.Modules.FirstOrDefault(c => c.GetType() == typeof(AutoRequestItemSubmit)).Initialized ||
+            !ModuleManager.Modules[typeof(AutoRequestItemSubmit)].Initialized ||
             SelectedLeve == null || LeveMeteDataId == LeveReceiverDataId || LeveMeteDataId == 0 ||
             LeveReceiverDataId == 0);
         if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-Start")))

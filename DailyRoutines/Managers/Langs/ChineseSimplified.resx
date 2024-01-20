@@ -278,6 +278,9 @@
   <data name="Language" xml:space="preserve">
     <value>语言</value>
   </data>
+  <data name="PleaseSearch" xml:space="preserve">
+    <value>请搜索</value>
+  </data>
   <data name="Retainer" xml:space="preserve">
     <value>雇员</value>
   </data>

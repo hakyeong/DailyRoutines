@@ -10,7 +10,7 @@ namespace DailyRoutines.Manager;
 
 public class ModuleManager
 {
-    public static List<IDailyModule> Modules = new();
+    public static Dictionary<Type, IDailyModule> Modules = new();
 
     public ModuleManager()
     {
@@ -23,7 +23,7 @@ public class ModuleManager
         foreach (var type in types)
         {
             var instance = Activator.CreateInstance(type);
-            if (instance is IDailyModule component) Modules.Add(component);
+            if (instance is IDailyModule component) Modules.Add(type, component);
         }
     }
 
@@ -35,7 +35,7 @@ public class ModuleManager
 
     public static void Init()
     {
-        foreach (var component in Modules)
+        foreach (var component in Modules.Values)
         {
             if (Service.Config.ModuleEnabled.TryGetValue(component.GetType().Name, out var enabled))
             {
@@ -67,7 +67,7 @@ public class ModuleManager
 
     public static void Load(IDailyModule component)
     {
-        if (Modules.Contains(component))
+        if (Modules.ContainsValue(component))
         {
             try
             {
@@ -90,7 +90,7 @@ public class ModuleManager
 
     public static void Unload(IDailyModule component)
     {
-        if (Modules.Contains(component))
+        if (Modules.ContainsValue(component))
         {
             component.Uninit();
             Service.Log.Debug($"Unloaded {component.GetType().Name} module");
@@ -99,7 +99,7 @@ public class ModuleManager
 
     public static void Uninit()
     {
-        foreach (var component in Modules)
+        foreach (var component in Modules.Values)
         {
             component.Uninit();
             Service.Log.Debug($"Unloaded {component.GetType().Name} module");

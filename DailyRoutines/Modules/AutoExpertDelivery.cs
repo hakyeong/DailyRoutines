@@ -81,7 +81,7 @@ public class AutoExpertDelivery : IDailyModule
     public static void EndHandOver()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonSupplyReward);
-        TaskManager.Abort();
+        TaskManager?.Abort();
         IsOnProcess = false;
     }
 
