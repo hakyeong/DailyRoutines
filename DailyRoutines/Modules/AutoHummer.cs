@@ -38,9 +38,7 @@ public class AutoHummer : IDailyModule
     private static unsafe bool? WaitSelectStringAddon()
     {
         if (TryGetAddonByName<AddonSelectString>("SelectString", out var addon) && IsAddonReady(&addon->AtkUnitBase))
-        {
             return Click.TrySendClick("select_string1");
-        }
 
         return false;
     }
@@ -57,7 +55,8 @@ public class AutoHummer : IDailyModule
             var handler = new ClickHummerDR();
             handler.Play(3);
 
-            TaskManager.DelayNext(5000); // 只是纯粹因为游玩动画太长了而已
+            // 只是纯粹因为游玩动画太长了而已
+            TaskManager.DelayNext(5000);
             TaskManager.Enqueue(StartAnotherRound);
             return true;
         }

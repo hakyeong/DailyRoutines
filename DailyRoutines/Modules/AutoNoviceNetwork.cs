@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using ClickLib;
-using ClickLib.Bases;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -68,7 +67,7 @@ public class AutoNoviceNetwork : IDailyModule
                 handler.NoviceNetwork();
                 TryTimes++;
 
-                Task.Delay(500).ContinueWith(t => CheckJoinState());
+                Task.Delay(500).ContinueWith(_ => CheckJoinState());
             }
             else
                 EndProcess();
@@ -100,4 +99,3 @@ public class AutoNoviceNetwork : IDailyModule
         Initialized = false;
     }
 }
-

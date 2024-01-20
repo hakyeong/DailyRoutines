@@ -28,10 +28,9 @@ public class AutoRetainerCollect : IDailyModule
 
     public void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
-
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerList", OnRetainerList);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Talk", SkipTalk);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Talk", SkipTalk); // 因为界面会被多次调用, 还是放在这里比较好
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
 
         Initialized = true;
     }

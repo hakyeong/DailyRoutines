@@ -17,14 +17,14 @@ public class AutoRequestItemSubmit : IDailyModule
     public bool Initialized { get; set; }
 
     private static TaskManager? TaskManager;
-    private static readonly List<int> SlotsFilled = new();
+    private static readonly List<int> SlotsFilled = [];
 
     public void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = true };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Request", OnAddonRequest);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Request", OnAddonRequest);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "Request", OnAddonRequest);
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = true };
 
         Initialized = true;
     }

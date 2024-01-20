@@ -39,9 +39,7 @@ public class AutoPunchingMachine : IDailyModule
     private static unsafe bool? WaitSelectStringAddon()
     {
         if (TryGetAddonByName<AddonSelectString>("SelectString", out var addon) && IsAddonReady(&addon->AtkUnitBase))
-        {
             return Click.TrySendClick("select_string1");
-        }
 
         return false;
     }

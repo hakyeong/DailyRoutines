@@ -15,7 +15,7 @@ public class AutoQTE : IDailyModule
     public bool Initialized { get; set; }
 
     [DllImport("user32.dll", SetLastError = true)]
-    static extern bool PostMessage(IntPtr hWnd, uint Msg, int wParam, int lParam);
+    private static extern bool PostMessage(IntPtr hWnd, uint Msg, int wParam, int lParam);
 
     private const uint WmKeydown = 0x0100;
     private const uint WmKeyup = 0x0101;
@@ -35,7 +35,7 @@ public class AutoQTE : IDailyModule
 
     private static void OnQTEAddon(AddonEvent type, AddonArgs args)
     {
-        if (EzThrottler.Throttle("AutoQTE", 100))
+        if (EzThrottler.Throttle("AutoQTE", 50))
         {
             Service.Log.Debug($"测试: {args.AddonName}");
             var windowHandle = Process.GetCurrentProcess().MainWindowHandle;

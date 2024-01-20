@@ -2,14 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ClickLib;
-using ClickLib.Bases;
 using ClickLib.Clicks;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Manager;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
-using Dalamud.Game.ClientState.Conditions;
 using ECommons.Automation;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -27,8 +25,8 @@ public class AutoLeveQuests : IDailyModule
 {
     public bool Initialized { get; set; }
 
-    private static Dictionary<uint, (string, uint)> LeveQuests = new();
-    private static readonly HashSet<uint> QualifiedLeveCategories = new() { 9, 10, 11, 12, 13, 14, 15, 16 };
+    private static Dictionary<uint, (string, uint)> LeveQuests = [];
+    private static readonly HashSet<uint> QualifiedLeveCategories = [9, 10, 11, 12, 13, 14, 15, 16];
 
     private static (uint, string, uint)? SelectedLeve; // Leve ID - Leve Name - Leve Job Category
 
@@ -48,6 +46,7 @@ public class AutoLeveQuests : IDailyModule
 
         Initialized = true;
     }
+
     public void UI()
     {
         ImGui.BeginDisabled(IsOnProcessing);
@@ -70,10 +69,14 @@ public class AutoLeveQuests : IDailyModule
             {
                 foreach (var leveToSelect in LeveQuests)
                 {
-                    if (!string.IsNullOrEmpty(SearchString) && !leveToSelect.Value.Item1.Contains(SearchString, StringComparison.OrdinalIgnoreCase) && !leveToSelect.Key.ToString().Contains(SearchString, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (!string.IsNullOrEmpty(SearchString) &&
+                        !leveToSelect.Value.Item1.Contains(SearchString, StringComparison.OrdinalIgnoreCase) &&
+                        !leveToSelect.Key.ToString().Contains(SearchString, StringComparison.OrdinalIgnoreCase))
+                        continue;
                     if (ImGui.Selectable($"{leveToSelect.Key} | {leveToSelect.Value.Item1}"))
                         SelectedLeve = (leveToSelect.Key, leveToSelect.Value.Item1, leveToSelect.Value.Item2);
-                    if (SelectedLeve != null && ImGui.IsWindowAppearing() && SelectedLeve.Value.Item1 == leveToSelect.Key)
+                    if (SelectedLeve != null && ImGui.IsWindowAppearing() &&
+                        SelectedLeve.Value.Item1 == leveToSelect.Key)
                         ImGui.SetScrollHereY();
                 }
             }
@@ -82,8 +85,10 @@ public class AutoLeveQuests : IDailyModule
         }
 
         ImGui.SameLine();
-        ImGui.BeginDisabled(!ModuleManager.Modules.FirstOrDefault(c => c.GetType() == typeof(AutoRequestItemSubmit)).Initialized || SelectedLeve == null || LeveMeteDataId == LeveReceiverDataId || LeveMeteDataId == 0 ||
-                                                         LeveReceiverDataId == 0);
+        ImGui.BeginDisabled(
+            !ModuleManager.Modules.FirstOrDefault(c => c.GetType() == typeof(AutoRequestItemSubmit)).Initialized ||
+            SelectedLeve == null || LeveMeteDataId == LeveReceiverDataId || LeveMeteDataId == 0 ||
+            LeveReceiverDataId == 0);
         if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-Start")))
         {
             IsOnProcessing = true;
@@ -101,7 +106,8 @@ public class AutoLeveQuests : IDailyModule
         if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-Stop"))) EndProcessHandler();
 
         ImGui.BeginDisabled(IsOnProcessing);
-        if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-ObtainLevemeteID"))) GetCurrentTargetDataID(out LeveMeteDataId);
+        if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-ObtainLevemeteID")))
+            GetCurrentTargetDataID(out LeveMeteDataId);
 
         ImGui.SameLine();
         ImGui.Text(LeveMeteDataId.ToString());
@@ -110,7 +116,8 @@ public class AutoLeveQuests : IDailyModule
         ImGui.Spacing();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-ObtainLeveClientID"))) GetCurrentTargetDataID(out LeveReceiverDataId);
+        if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-ObtainLeveClientID")))
+            GetCurrentTargetDataID(out LeveReceiverDataId);
 
         ImGui.SameLine();
         ImGui.Text(LeveReceiverDataId.ToString());
@@ -127,7 +134,10 @@ public class AutoLeveQuests : IDailyModule
         IsOnProcessing = false;
     }
 
-    private static void OnZoneChanged(object? sender, ushort e) => LeveQuests.Clear();
+    private static void OnZoneChanged(object? sender, ushort e)
+    {
+        LeveQuests.Clear();
+    }
 
     private static void SkipTalk(AddonEvent type, AddonArgs args)
     {
@@ -190,7 +200,7 @@ public class AutoLeveQuests : IDailyModule
             }
 
             var handler = new ClickSelectString();
-            handler.SelectItem((ushort)(i-1));
+            handler.SelectItem((ushort)(i - 1));
         }
 
         if (IsOccupied()) return false;
@@ -213,6 +223,7 @@ public class AutoLeveQuests : IDailyModule
                 foundObject = (GameObject*)obj.Address;
                 return true;
             }
+
         foundObject = null;
         return false;
     }
@@ -290,8 +301,9 @@ public class AutoLeveQuests : IDailyModule
             for (; i < 8; i++)
             {
                 var text =
-                    ((AddonSelectString*)addon)->PopupMenu.PopupMenu.List->AtkComponentBase.UldManager.NodeList[i]->GetAsAtkComponentNode()->
-                        Component->UldManager.NodeList[3]->GetAsAtkTextNode()->NodeText.ExtractText();
+                    ((AddonSelectString*)addon)->PopupMenu.PopupMenu.List->AtkComponentBase.UldManager.NodeList[i]->
+                    GetAsAtkComponentNode()->
+                    Component->UldManager.NodeList[3]->GetAsAtkTextNode()->NodeText.ExtractText();
                 if (text.Contains("取消")) break;
             }
 
@@ -320,9 +332,8 @@ public class AutoLeveQuests : IDailyModule
             var qualifiedCount = 0;
 
             for (var i = 0; i < levesSpan.Length; i++)
-            {
-                if (LeveQuests.ContainsKey(levesSpan[i].LeveId)) qualifiedCount++;
-            }
+                if (LeveQuests.ContainsKey(levesSpan[i].LeveId))
+                    qualifiedCount++;
 
             TaskManager.Enqueue(qualifiedCount > 1 ? ClickSelectQuest : InteractWithMete);
 
@@ -344,10 +355,7 @@ public class AutoLeveQuests : IDailyModule
                 var text =
                     addon->PopupMenu.PopupMenu.List->AtkComponentBase.UldManager.NodeList[i]->GetAsAtkComponentNode()->
                         Component->UldManager.NodeList[4]->GetAsAtkTextNode()->NodeText.ExtractText();
-                if (text == SelectedLeve.Value.Item2)
-                {
-                    break;
-                }
+                if (text == SelectedLeve.Value.Item2) break;
             }
 
             var handler = new ClickSelectIconString();

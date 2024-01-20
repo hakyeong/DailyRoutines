@@ -1,14 +1,11 @@
-using System;
 using System.Runtime.InteropServices;
 using ClickLib;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
-using Dalamud.Memory;
 using ECommons.Automation;
 using ECommons.Throttlers;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -109,8 +106,6 @@ public class AutoLogin : IDailyModule
         {
             var currentServer = addon->GetTextNodeById(8)->NodeText.ExtractText();
             if (string.IsNullOrEmpty(currentServer)) return false;
-
-            Service.Log.Debug($"当前服务器: {currentServer}, 目标服务器: {ConfigSelectedServer}");
 
             if (currentServer == ConfigSelectedServer)
             {

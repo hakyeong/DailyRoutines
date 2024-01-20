@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ClickLib.Bases;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -54,9 +53,7 @@ public class AutoMiniCactpot : IDailyModule
         {
             TaskManager.Enqueue(WaitLotteryDailyAddon);
             TaskManager.Enqueue(ClickRecommendBlock);
-            TaskManager.Enqueue(WaitLotteryDailyAddon);
             TaskManager.Enqueue(ClickRecommendBlock);
-            TaskManager.Enqueue(WaitLotteryDailyAddon);
             TaskManager.Enqueue(ClickRecommendBlock);
             TaskManager.Enqueue(WaitLotteryDailyAddon);
             TaskManager.Enqueue(ClickRecommendLine);

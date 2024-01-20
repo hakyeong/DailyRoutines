@@ -179,7 +179,8 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
     {
         if (TryGetAddonByName<AtkUnitBase>("ItemSearchResult", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var searchResult = Marshal.PtrToStringUTF8((nint)AtkStage.GetSingleton()->GetStringArrayData()[33]->StringArray[202]);
+            var searchResult =
+                Marshal.PtrToStringUTF8((nint)AtkStage.GetSingleton()->GetStringArrayData()[33]->StringArray[202]);
             if (string.IsNullOrEmpty(searchResult)) return false; // 请稍后
 
             // 搜索结果 0
