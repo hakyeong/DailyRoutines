@@ -1,4 +1,3 @@
-using System;
 using ClickLib;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
@@ -12,20 +11,18 @@ using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoCACTitle", "AutoCACDescription", ModuleCategories.GoldSaucer)]
-public class AutoPunchingMachine : IDailyModule
+[ModuleDescription("AutoTMPTitle", "AutoTMPDescription", ModuleCategories.GoldSaucer)]
+public class AutoUfoCatcher : IDailyModule
 {
     public bool Initialized { get; set; }
 
     private static TaskManager? TaskManager;
 
-    public void UI() { }
-
     public void Init()
     {
         TaskManager = new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "PunchingMachine", OnAddonSetup);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "UfoCatcher", OnAddonSetup);
 
         Initialized = true;
     }
@@ -46,16 +43,18 @@ public class AutoPunchingMachine : IDailyModule
 
     private static unsafe bool? ClickGameButton()
     {
-        if (TryGetAddonByName<AtkUnitBase>("PunchingMachine", out var addon) && IsAddonReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("UfoCatcher", out var addon) && IsAddonReady(addon))
         {
-            var button = addon->GetButtonNodeById(23);
+            var button = addon->GetButtonNodeById(2);
             if (button == null || !button->IsEnabled) return false;
 
             addon->IsVisible = false;
 
-            var handler = new ClickPunchingMachineDR();
-            handler.Play(new Random().Next(1700, 1999));
+            var handler = new ClickUfoCatcherDR();
+            handler.BigBall();
 
+            // 只是纯粹因为游玩动画太长了而已
+            TaskManager.DelayNext(5000);
             TaskManager.Enqueue(StartAnotherRound);
             return true;
         }
@@ -67,7 +66,7 @@ public class AutoPunchingMachine : IDailyModule
     {
         if (IsOccupied()) return false;
         var machineTarget = Service.Target.PreviousTarget;
-        var machine = machineTarget.DataId == 2005029 ? (GameObject*)machineTarget.Address : null;
+        var machine = machineTarget.DataId == 2005036 ? (GameObject*)machineTarget.Address : null;
 
         if (machine != null)
         {
@@ -76,6 +75,11 @@ public class AutoPunchingMachine : IDailyModule
         }
 
         return false;
+    }
+
+    public void UI()
+    {
+
     }
 
     public void Uninit()

@@ -16,7 +16,7 @@ public class AutoBasketBall : IDailyModule
 {
     public bool Initialized { get; set; }
 
-    private static TaskManager TaskManager = null!;
+    private static TaskManager? TaskManager;
 
     public void UI() { }
 

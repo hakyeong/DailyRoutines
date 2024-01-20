@@ -251,6 +251,12 @@
   <data name="AutoRetainerPriceAdjustTitle" xml:space="preserve">
     <value>自动雇员改价</value>
   </data>
+  <data name="AutoTMPDescription" xml:space="preserve">
+    <value>交互游戏机后, 自动开始重复游玩莫古抓球机</value>
+  </data>
+  <data name="AutoTMPTitle" xml:space="preserve">
+    <value>自动莫古抓球机</value>
+  </data>
   <data name="Base" xml:space="preserve">
     <value>基础</value>
   </data>

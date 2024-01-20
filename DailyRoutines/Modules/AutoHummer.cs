@@ -16,7 +16,7 @@ public class AutoHummer : IDailyModule
 {
     public bool Initialized { get; set; }
 
-    private static TaskManager TaskManager = null!;
+    private static TaskManager? TaskManager;
 
     public void UI() { }
 
@@ -29,7 +29,7 @@ public class AutoHummer : IDailyModule
         Initialized = true;
     }
 
-    private void OnAddonSetup(AddonEvent type, AddonArgs args)
+    private static void OnAddonSetup(AddonEvent type, AddonArgs args)
     {
         TaskManager.Enqueue(WaitSelectStringAddon);
         TaskManager.Enqueue(ClickGameButton);
