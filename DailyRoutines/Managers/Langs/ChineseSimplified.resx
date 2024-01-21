@@ -134,7 +134,7 @@
   </data>
   <data name="AutoCutSceneSkipDescription" xml:space="preserve">
     <value>进入过场动画时, 自动跳过
-(本模块无法跳过本就无法跳过的动画)</value>
+(无法跳过原本就无法跳过的动画)</value>
   </data>
   <data name="AutoCutSceneSkipTitle" xml:space="preserve">
     <value>自动跳过过场动画</value>

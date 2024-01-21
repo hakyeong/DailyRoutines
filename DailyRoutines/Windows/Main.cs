@@ -19,7 +19,9 @@ namespace DailyRoutines.Windows;
 
 public class Main : Window, IDisposable
 {
-    private static readonly ConcurrentDictionary<Type, (string Name, string Title, string Description)> ModuleCache = new();
+    private static readonly ConcurrentDictionary<Type, (string Name, string Title, string Description)> ModuleCache =
+        new();
+
     private static readonly Dictionary<ModuleCategories, List<Type>> ModuleCategories = new();
     private static string SearchString = string.Empty;
 
@@ -144,7 +146,8 @@ public class Main : Window, IDisposable
 
         if (!Service.Config.ModuleEnabled.TryGetValue(boolName, out var tempModuleBool) ||
             string.IsNullOrEmpty(title) || string.IsNullOrEmpty(description) ||
-            (!string.IsNullOrEmpty(SearchString) && !title.Contains(SearchString) && !description.Contains(SearchString)))
+            (!string.IsNullOrEmpty(SearchString) && !title.Contains(SearchString) &&
+             !description.Contains(SearchString)))
             return;
 
         var isWithUI = ModuleManager.Modules[module].WithUI;
@@ -163,32 +166,47 @@ public class Main : Window, IDisposable
         var moduleText = $"[{module.Name}]";
         ImGui.SameLine();
         var origCursorPos = ImGui.GetCursorPosX();
-        ImGui.SetCursorPosX(ImGui.GetWindowWidth() - ImGui.CalcTextSize(moduleText).X - (2 * ImGui.GetStyle().FramePadding.X));
+        ImGui.SetCursorPosX(ImGui.GetWindowWidth() - ImGui.CalcTextSize(moduleText).X -
+                            (2 * ImGui.GetStyle().FramePadding.X));
         ImGui.TextDisabled(moduleText);
 
         ImGui.SameLine();
         ImGui.SetCursorPosX(origCursorPos);
 
-        if (!tempModuleBool) ImGui.TextWrapped(title);
-        else if (isWithUI)
+        if (tempModuleBool)
         {
-            ImGui.PushStyleColor(ImGuiCol.Header, ImGui.ColorConvertFloat4ToU32(new Vector4(0)));
-            if (ImGui.CollapsingHeader($"{title}##{module.Name}"))
+            if (isWithUI)
             {
-                ImGui.SetCursorPosX(origCursorPos);
-                ImGui.BeginGroup();
-                DrawModuleUI(module);
-                ImGui.EndGroup();
+                if (CollapsingHeader())
+                {
+                    ImGui.SetCursorPosX(origCursorPos);
+                    ImGui.BeginGroup();
+                    DrawModuleUI(module);
+                    ImGui.EndGroup();
+                }
             }
-            ImGui.PopStyleColor();
+            else
+                ImGui.TextColored(ImGuiColors.DalamudYellow, title);
         }
-        else ImGui.Text(title);
+        else
+            ImGui.Text(title);
 
         ImGui.SetCursorPosX(origCursorPos);
         ImGuiOm.TextDisabledWrapped(description);
         if (index < modulesCount - 1) ImGui.Separator();
-    }
 
+        return;
+
+        bool CollapsingHeader()
+        {
+            ImGui.PushStyleColor(ImGuiCol.Text, tempModuleBool ? ImGuiColors.DalamudYellow : ImGuiColors.DalamudWhite);
+            ImGui.PushStyleColor(ImGuiCol.Header, ImGui.ColorConvertFloat4ToU32(new Vector4(0)));
+            var collapsingHeader = ImGui.CollapsingHeader($"{title}##{module.Name}");
+            ImGui.PopStyleColor(2);
+
+            return collapsingHeader;
+        }
+    }
 
     private static void DrawModuleUI(Type module)
     {

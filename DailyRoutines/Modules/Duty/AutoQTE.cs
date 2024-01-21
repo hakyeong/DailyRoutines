@@ -38,7 +38,6 @@ public class AutoQTE : IDailyModule
     {
         if (EzThrottler.Throttle("AutoQTE", 50))
         {
-            Service.Log.Debug($"测试: {args.AddonName}");
             var windowHandle = Process.GetCurrentProcess().MainWindowHandle;
             PostMessage(windowHandle, WmKeydown, VkSpace, 0);
             Task.Delay(50).ContinueWith(_ => PostMessage(windowHandle, WmKeyup, VkSpace, 0));
