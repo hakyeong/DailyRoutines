@@ -136,37 +136,26 @@ public class Main : Window, IDisposable
         var (boolName, title, description) = ModuleCache.GetOrAdd(module, m =>
         {
             var attributes = m.GetCustomAttributes(typeof(ModuleDescriptionAttribute), false);
-            var title = string.Empty;
-            var description = string.Empty;
-            if (attributes.Length > 0)
-            {
-                var content = (ModuleDescriptionAttribute)attributes[0];
-                title = Service.Lang.GetText(content.TitleKey);
-                description = Service.Lang.GetText(content.DescriptionKey);
-            }
+            if (attributes.Length == 0) return (m.Name, string.Empty, string.Empty);
 
-            return (m.Name, title, description);
+            var content = (ModuleDescriptionAttribute)attributes[0];
+            return (m.Name, Service.Lang.GetText(content.TitleKey), Service.Lang.GetText(content.DescriptionKey));
         });
 
-        if (!Service.Config.ModuleEnabled.TryGetValue(boolName, out var tempModuleBool)) return;
-        if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(description)) return;
-
-        if (!string.IsNullOrEmpty(SearchString))
-        {
-            if (!title.Contains(SearchString) && !description.Contains(SearchString))
-                return;
-        }
+        if (!Service.Config.ModuleEnabled.TryGetValue(boolName, out var tempModuleBool) ||
+            string.IsNullOrEmpty(title) || string.IsNullOrEmpty(description) ||
+            (!string.IsNullOrEmpty(SearchString) && !title.Contains(SearchString) && !description.Contains(SearchString)))
+            return;
 
         var isWithUI = ModuleManager.Modules[module].WithUI;
+        var moduleChanged = ImGuiOm.CheckboxColored($"##{module.Name}", ref tempModuleBool);
 
-        if (ImGuiOm.CheckboxColored($"##{module.Name}", ref tempModuleBool))
+        if (moduleChanged)
         {
-            Service.Config.ModuleEnabled[boolName] = !Service.Config.ModuleEnabled[boolName];
+            var enabled = Service.Config.ModuleEnabled[boolName] = !Service.Config.ModuleEnabled[boolName];
             var component = ModuleManager.Modules[module];
-            if (Service.Config.ModuleEnabled[boolName])
-                ModuleManager.Load(component);
-            else
-                ModuleManager.Unload(component);
+            if (enabled) ModuleManager.Load(component);
+            else ModuleManager.Unload(component);
 
             Service.Config.Save();
         }
@@ -179,31 +168,27 @@ public class Main : Window, IDisposable
 
         ImGui.SameLine();
         ImGui.SetCursorPosX(origCursorPos);
-        if (!tempModuleBool)
-        {
-            ImGui.TextWrapped($"{title}");
-        }
-        else
-        {
-            if (isWithUI)
-            {
-                ImGui.PushStyleColor(ImGuiCol.Header, ImGui.ColorConvertFloat4ToU32(new Vector4(0)));
-                if (ImGui.CollapsingHeader($"{title}##{module.Name}"))
-                {
-                    DrawModuleUI(module);
-                }
-                ImGui.PopStyleColor();
-            }
-            else
-            {
-                ImGui.Text($"{title}");
-            }
-        }
 
+        if (!tempModuleBool) ImGui.TextWrapped(title);
+        else if (isWithUI)
+        {
+            ImGui.PushStyleColor(ImGuiCol.Header, ImGui.ColorConvertFloat4ToU32(new Vector4(0)));
+            if (ImGui.CollapsingHeader($"{title}##{module.Name}"))
+            {
+                ImGui.SetCursorPosX(origCursorPos);
+                ImGui.BeginGroup();
+                DrawModuleUI(module);
+                ImGui.EndGroup();
+            }
+            ImGui.PopStyleColor();
+        }
+        else ImGui.Text(title);
+
+        ImGui.SetCursorPosX(origCursorPos);
         ImGuiOm.TextDisabledWrapped(description);
-
         if (index < modulesCount - 1) ImGui.Separator();
     }
+
 
     private static void DrawModuleUI(Type module)
     {
