@@ -4,14 +4,13 @@ using System.Linq;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game;
 using Dalamud.Game.AddonLifecycle;
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Plugin;
+using Dalamud.Plugin.Internal.Types.Manifest;
 using ECommons.Automation;
 using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
@@ -180,7 +179,7 @@ public class AutoMiniCactpot : IDailyModule
 
     internal static bool IsEzMiniCactpotInstalled()
     {
-        return DalamudReflector.TryGetDalamudPlugin("ezMiniCactpot", out _);
+        return P.PluginInterface.InstalledPlugins.Any(plugin => plugin is { Name: "ezMiniCactpot", IsLoaded: true });
     }
 
     private static unsafe bool? WaitLotteryDailyAddon()

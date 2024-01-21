@@ -10,7 +10,6 @@ using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using ECommons;
-using ECommons.Automation;
 
 namespace DailyRoutines;
 
@@ -23,7 +22,7 @@ public sealed class Plugin : IDalamudPlugin
     public Main? Main { get; private set; }
 
     public ModuleManager? ModuleManager;
-    public WindowSystem WindowSystem = new("SamplePlugin");
+    public WindowSystem WindowSystem = new("DailyRoutines");
     internal static Plugin P = null!;
 
     public Plugin(DalamudPluginInterface pluginInterface)

@@ -9,6 +9,7 @@ using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Manager;
 using DailyRoutines.Managers;
+using DailyRoutines.Modules;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
@@ -78,6 +79,11 @@ public class Main : Window, IDisposable
                     {
                         foreach (var clickName in Click.GetClickNames())
                             Service.Log.Debug(clickName);
+                    }
+
+                    if (ImGui.Button("是否装了"))
+                    {
+                        Service.Log.Debug(AutoMiniCactpot.IsEzMiniCactpotInstalled() ? "装了" : "没装");
                     }
 
                     ImGui.EndTabItem();
