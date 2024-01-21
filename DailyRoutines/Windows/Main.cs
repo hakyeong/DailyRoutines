@@ -80,32 +80,11 @@ public class Main : Window, IDisposable
                             Service.Log.Debug(clickName);
                     }
 
-                    unsafe
-                    {
-                        if (ImGui.Button("测试点击"))
-                        {
-                            HPEdit();
-                        }
-                    }
-
                     ImGui.EndTabItem();
                 }
             }
 
             ImGui.EndTabBar();
-        }
-    }
-
-    private unsafe void HPEdit()
-    {
-        var target = Service.Target.Target;
-        if (target != null)
-        {
-            Service.Log.Debug("测试");
-            var address = target.Address;
-            var currentHP = ((BattleNpc)target).MaxHp;
-            Service.Log.Debug(currentHP.ToString());
-            MemoryHelper.Write(address + 424 + 32, 0f);
         }
     }
 
@@ -240,7 +219,7 @@ public class Main : Window, IDisposable
             // 第二列
             ImGui.SameLine();
             ImGui.BeginGroup();
-            ImGuiOm.TextIcon(FontAwesomeIcon.Keyboard, $"{"阻止热键"}:");
+            ImGuiOm.TextIcon(FontAwesomeIcon.Keyboard, $"{Service.Lang.GetText("ConflictKey")}:");
 
             ImGui.SameLine();
             ImGui.SetNextItemWidth(150f);
