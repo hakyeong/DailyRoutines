@@ -85,14 +85,10 @@ public class AutoLeveQuests : IDailyModule
         }
 
         ImGui.SameLine();
-        ImGui.BeginDisabled(
-            !ModuleManager.Modules[typeof(AutoRequestItemSubmit)].Initialized ||
-            SelectedLeve == null || LeveMeteDataId == LeveReceiverDataId || LeveMeteDataId == 0 ||
-            LeveReceiverDataId == 0);
+        ImGui.BeginDisabled(SelectedLeve == null || LeveMeteDataId == LeveReceiverDataId || LeveMeteDataId == 0 || LeveReceiverDataId == 0);
         if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-Start")))
         {
             IsOnProcessing = true;
-            Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Talk", SkipTalk);
             Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectYesno", AlwaysYes);
             Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "JournalResult", OnAddonJournalResult);
 
@@ -128,7 +124,6 @@ public class AutoLeveQuests : IDailyModule
     private static void EndProcessHandler()
     {
         TaskManager?.Abort();
-        Service.AddonLifecycle.UnregisterListener(SkipTalk);
         Service.AddonLifecycle.UnregisterListener(AlwaysYes);
         Service.AddonLifecycle.UnregisterListener(OnAddonJournalResult);
         IsOnProcessing = false;
@@ -137,11 +132,6 @@ public class AutoLeveQuests : IDailyModule
     private static void OnZoneChanged(object? sender, ushort e)
     {
         LeveQuests.Clear();
-    }
-
-    private static void SkipTalk(AddonEvent type, AddonArgs args)
-    {
-        if (EzThrottler.Throttle("AutoRetainerCollect-Talk", 100)) Click.SendClick("talk");
     }
 
     private static void AlwaysYes(AddonEvent type, AddonArgs args)

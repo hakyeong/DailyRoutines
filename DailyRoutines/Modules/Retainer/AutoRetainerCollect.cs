@@ -29,16 +29,9 @@ public class AutoRetainerCollect : IDailyModule
     public void Init()
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerList", OnRetainerList);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Talk", SkipTalk); // 因为界面会被多次调用, 还是放在这里比较好
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
 
         Initialized = true;
-    }
-
-    private static void SkipTalk(AddonEvent eventType, AddonArgs addonInfo)
-    {
-        if (!Service.Condition[ConditionFlag.OccupiedSummoningBell]) return;
-        if (EzThrottler.Throttle("AutoRetainerCollect-Talk", 100)) Click.SendClick("talk");
     }
 
     private static unsafe void OnRetainerList(AddonEvent type, AddonArgs args)
@@ -65,12 +58,8 @@ public class AutoRetainerCollect : IDailyModule
 
     private static void EnqueueSingleRetainer(int index, int completeRetainerCount)
     {
-        // 雇员列表是否可用
-        TaskManager.Enqueue(WaitRetainerListAddon);
         // 点击指定雇员
         TaskManager.Enqueue(() => ClickSpecificRetainer(index));
-        // 等待选择界面
-        TaskManager.Enqueue(WaitSelectStringAddon);
         // 点击查看探险情况
         TaskManager.Enqueue(CheckVentureState);
         // 重新派遣
@@ -79,25 +68,19 @@ public class AutoRetainerCollect : IDailyModule
         TaskManager.Enqueue(ClickVentureConfirm);
         // 回到雇员列表
         TaskManager.Enqueue(ExitToRetainerList);
-        // 雇员列表是否可用
-        TaskManager.Enqueue(WaitRetainerListAddon);
     }
 
-    private static unsafe bool? WaitRetainerListAddon()
+    private static unsafe bool? ClickSpecificRetainer(int index)
     {
-        return TryGetAddonByName<AddonRetainerList>("RetainerList", out var addon) && IsAddonReady(&addon->AtkUnitBase);
-    }
+        if (TryGetAddonByName<AddonRetainerList>("RetainerList", out var addon) &&
+            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
+        {
+            var handler = new ClickRetainerList();
+            handler.Retainer(index);
+            return true;
+        }
 
-    private static bool? ClickSpecificRetainer(int index)
-    {
-        var handler = new ClickRetainerList();
-        handler.Retainer(index);
-        return true;
-    }
-
-    private static unsafe bool? WaitSelectStringAddon()
-    {
-        return TryGetAddonByName<AddonSelectString>("SelectString", out var addon) && IsAddonReady(&addon->AtkUnitBase);
+        return false;
     }
 
     internal static unsafe bool? CheckVentureState()
@@ -112,8 +95,8 @@ public class AutoRetainerCollect : IDailyModule
             Service.Log.Debug(text);
             if (string.IsNullOrEmpty(text) || text.Contains('～'))
             {
-                TaskManager.Enqueue(ExitToRetainerList);
                 TaskManager?.Abort();
+                TaskManager.Enqueue(ExitToRetainerList);
                 IsOnProcess = false;
                 return false;
             }
@@ -161,7 +144,6 @@ public class AutoRetainerCollect : IDailyModule
 
     public void Uninit()
     {
-        Service.AddonLifecycle.UnregisterListener(SkipTalk);
         Service.AddonLifecycle.UnregisterListener(OnRetainerList);
         IsOnProcess = false;
         TaskManager?.Abort();

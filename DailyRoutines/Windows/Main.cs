@@ -8,6 +8,7 @@ using DailyRoutines.Infos;
 using DailyRoutines.Manager;
 using DailyRoutines.Managers;
 using Dalamud.Interface;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Windowing;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -17,11 +18,8 @@ namespace DailyRoutines.Windows;
 
 public class Main : Window, IDisposable
 {
-    private static readonly ConcurrentDictionary<Type, (string Name, string Title, string Description)> ModuleCache =
-        new();
-
+    private static readonly ConcurrentDictionary<Type, (string Name, string Title, string Description)> ModuleCache = new();
     private static readonly Dictionary<ModuleCategories, List<Type>> ModuleCategories = new();
-
     private static string SearchString = string.Empty;
 
     public Main(Plugin plugin) : base("Daily Routines - Main")
@@ -50,7 +48,8 @@ public class Main : Window, IDisposable
     public override void Draw()
     {
         ImGui.SetNextItemWidth(-1f);
-        ImGui.InputTextWithHint("##MainWindow-SearchInput", $"{Service.Lang.GetText("PleaseSearch")}...", ref SearchString, 100);
+        ImGui.InputTextWithHint("##MainWindow-SearchInput", $"{Service.Lang.GetText("PleaseSearch")}...",
+                                ref SearchString, 100);
         ImGui.Separator();
 
         if (ImGui.BeginTabBar("BasicTab"))
@@ -62,6 +61,7 @@ public class Main : Window, IDisposable
                 ImGuiOm.TextIcon(FontAwesomeIcon.Globe, $"{Service.Lang.GetText("Language")}:");
 
                 ImGui.SameLine();
+                ImGui.SetNextItemWidth(240f);
                 if (ImGui.BeginCombo("##LanguagesList", Service.Config.SelectedLanguage))
                 {
                     for (var i = 0; i < LanguageManager.LanguageNames.Length; i++)
@@ -79,27 +79,36 @@ public class Main : Window, IDisposable
                     ImGui.EndCombo();
                 }
 
+                ImGui.Separator();
+
+                ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("Settings-TipMessage0")}:");
+                ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage1"));
+                ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage2"));
+
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("Dev"))
+            if (P.PluginInterface.IsDev)
             {
-                if (ImGui.Button("获取测试点击"))
+                if (ImGui.BeginTabItem("Dev"))
                 {
-                    foreach (var clickName in Click.GetClickNames())
-                        Service.Log.Debug(clickName);
-                }
-
-                unsafe
-                {
-                    if (ImGui.Button("测试点击"))
+                    if (ImGui.Button("获取点击名"))
                     {
-                        var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("Hummer");
-                        if (addon != null) Callback.Fire(addon, true, 11, 4, 0);
+                        foreach (var clickName in Click.GetClickNames())
+                            Service.Log.Debug(clickName);
                     }
-                }
 
-                ImGui.EndTabItem();
+                    unsafe
+                    {
+                        if (ImGui.Button("测试点击"))
+                        {
+                            var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("Hummer");
+                            if (addon != null) Callback.Fire(addon, true, 11, 4, 0);
+                        }
+                    }
+
+                    ImGui.EndTabItem();
+                }
             }
 
             ImGui.EndTabBar();
@@ -142,8 +151,10 @@ public class Main : Window, IDisposable
         if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(description)) return;
 
         if (!string.IsNullOrEmpty(SearchString))
+        {
             if (!title.Contains(SearchString) && !description.Contains(SearchString))
                 return;
+        }
 
         if (ImGuiOm.CheckboxColored($"{title}##{module.Name}", ref tempModuleBool))
         {
@@ -156,6 +167,11 @@ public class Main : Window, IDisposable
 
             Service.Config.Save();
         }
+
+        var moduleText = $"[{module.Name}]";
+        ImGui.SameLine();
+        ImGui.SetCursorPosX(ImGui.GetWindowWidth() - ImGui.CalcTextSize(moduleText).X - (2 * ImGui.GetStyle().FramePadding.X));
+        ImGui.TextDisabled(moduleText);
 
         ImGuiOm.TextDisabledWrapped(description);
 

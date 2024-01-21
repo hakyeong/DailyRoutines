@@ -164,7 +164,7 @@
   </data>
   <data name="AutoLeveQuestsDescription" xml:space="preserve">
     <value>配置完成并点击开始后, 自动重复完成指定的生产理符任务, 直至理符额度耗尽
-(必须开启: 自动选择并递交物品)</value>
+(前置模块: 自动选择并递交物品, 自动跳过对话)</value>
   </data>
   <data name="AutoLeveQuestsTitle" xml:space="preserve">
     <value>自动批量完成生产理符</value>
@@ -230,7 +230,7 @@
   </data>
   <data name="AutoRetainerCollectDescription" xml:space="preserve">
     <value>打开雇员列表界面后, 自动确认已探索结束雇员的探险结果并重新委派
-(需要挂机定时收请使用 AutoRetainer)</value>
+(前置模块: 自动跳过对话)</value>
   </data>
   <data name="AutoRetainerCollectTitle" xml:space="preserve">
     <value>自动收取雇员</value>
@@ -250,6 +250,12 @@
   </data>
   <data name="AutoRetainerPriceAdjustTitle" xml:space="preserve">
     <value>自动雇员改价</value>
+  </data>
+  <data name="AutoTalkSkipDescription" xml:space="preserve">
+    <value>出现对话框时, 自动快进跳过</value>
+  </data>
+  <data name="AutoTalkSkipTitle" xml:space="preserve">
+    <value>自动跳过对话</value>
   </data>
   <data name="AutoTMPDescription" xml:space="preserve">
     <value>交互游戏机后, 自动开始重复游玩莫古抓球机</value>
@@ -286,5 +292,14 @@
   </data>
   <data name="Settings" xml:space="preserve">
     <value>设置</value>
+  </data>
+  <data name="Settings-TipMessage0" xml:space="preserve">
+    <value>提示信息</value>
+  </data>
+  <data name="Settings-TipMessage1" xml:space="preserve">
+    <value>1. 某一模块的功能可能被不同的插件以不同方式实现, 请勿在不同插件间重复开启, 以避免出现兼容性问题</value>
+  </data>
+  <data name="Settings-TipMessage2" xml:space="preserve">
+    <value>2. 若模块描述中出现"前置模块", 则代表该模块必须要有指定模块的辅助才能正常工作, 前置模块可以使用其他插件的类似功能进行替代</value>
   </data>
 </root>
