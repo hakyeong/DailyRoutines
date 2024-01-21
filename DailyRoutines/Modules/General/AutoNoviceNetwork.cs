@@ -15,6 +15,7 @@ namespace DailyRoutines.Modules;
 public class AutoNoviceNetwork : IDailyModule
 {
     public bool Initialized { get; set; }
+    public bool WithUI => true;
 
     private static bool IsOnProcessing;
     private static int TryTimes;

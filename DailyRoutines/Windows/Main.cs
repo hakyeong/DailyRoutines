@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using ClickLib;
 using DailyRoutines.Infos;
@@ -156,7 +157,9 @@ public class Main : Window, IDisposable
                 return;
         }
 
-        if (ImGuiOm.CheckboxColored($"{title}##{module.Name}", ref tempModuleBool))
+        var isWithUI = ModuleManager.Modules[module].WithUI;
+
+        if (ImGuiOm.CheckboxColored($"##{module.Name}", ref tempModuleBool))
         {
             Service.Config.ModuleEnabled[boolName] = !Service.Config.ModuleEnabled[boolName];
             var component = ModuleManager.Modules[module];
@@ -170,12 +173,34 @@ public class Main : Window, IDisposable
 
         var moduleText = $"[{module.Name}]";
         ImGui.SameLine();
+        var origCursorPos = ImGui.GetCursorPosX();
         ImGui.SetCursorPosX(ImGui.GetWindowWidth() - ImGui.CalcTextSize(moduleText).X - (2 * ImGui.GetStyle().FramePadding.X));
         ImGui.TextDisabled(moduleText);
 
-        ImGuiOm.TextDisabledWrapped(description);
+        ImGui.SameLine();
+        ImGui.SetCursorPosX(origCursorPos);
+        if (!tempModuleBool)
+        {
+            ImGui.TextWrapped($"{title}");
+        }
+        else
+        {
+            if (isWithUI)
+            {
+                ImGui.PushStyleColor(ImGuiCol.Header, ImGui.ColorConvertFloat4ToU32(new Vector4(0)));
+                if (ImGui.CollapsingHeader($"{title}##{module.Name}"))
+                {
+                    DrawModuleUI(module);
+                }
+                ImGui.PopStyleColor();
+            }
+            else
+            {
+                ImGui.Text($"{title}");
+            }
+        }
 
-        if (tempModuleBool) DrawModuleUI(module);
+        ImGuiOm.TextDisabledWrapped(description);
 
         if (index < modulesCount - 1) ImGui.Separator();
     }

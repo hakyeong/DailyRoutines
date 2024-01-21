@@ -24,6 +24,7 @@ namespace DailyRoutines.Modules;
 public class AutoLeveQuests : IDailyModule
 {
     public bool Initialized { get; set; }
+    public bool WithUI => true;
 
     private static Dictionary<uint, (string, uint)> LeveQuests = [];
     private static readonly HashSet<uint> QualifiedLeveCategories = [9, 10, 11, 12, 13, 14, 15, 16];

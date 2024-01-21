@@ -13,6 +13,7 @@ namespace DailyRoutines.Modules;
 public class AutoQTE : IDailyModule
 {
     public bool Initialized { get; set; }
+    public bool WithUI => false;
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool PostMessage(IntPtr hWnd, uint Msg, int wParam, int lParam);

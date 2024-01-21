@@ -132,6 +132,13 @@
   <data name="AutoCTSTitle" xml:space="preserve">
     <value>自动强袭水晶塔</value>
   </data>
+  <data name="AutoCutSceneSkipDescription" xml:space="preserve">
+    <value>进入过场动画时, 自动跳过
+(本模块无法跳过本就无法跳过的动画)</value>
+  </data>
+  <data name="AutoCutSceneSkipTitle" xml:space="preserve">
+    <value>自动跳过过场动画</value>
+  </data>
   <data name="AutoExpertDelivery-Start" xml:space="preserve">
     <value>开始</value>
   </data>
@@ -300,6 +307,6 @@
     <value>1. 某一模块的功能可能被不同的插件以不同方式实现, 请勿在不同插件间重复开启, 以避免出现兼容性问题</value>
   </data>
   <data name="Settings-TipMessage2" xml:space="preserve">
-    <value>2. 若模块描述中出现"前置模块", 则代表该模块必须要有指定模块的辅助才能正常工作, 前置模块可以使用其他插件的类似功能进行替代</value>
+    <value>2. 若模块描述中出现"前置模块", 则代表该模块必须要有指定模块的辅助才能正常工作, 前置模块可以被其他插件的类似功能替代</value>
   </data>
 </root>

@@ -15,6 +15,7 @@ namespace DailyRoutines.Modules;
 public class AutoLogin : IDailyModule
 {
     public bool Initialized { get; set; }
+    public bool WithUI => true;
 
     private static TaskManager? TaskManager;
 

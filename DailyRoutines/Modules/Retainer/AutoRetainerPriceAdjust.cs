@@ -18,6 +18,7 @@ namespace DailyRoutines.Modules;
 public partial class AutoRetainerPriceAdjust : IDailyModule
 {
     public bool Initialized { get; set; }
+    public bool WithUI => true;
 
     private static TaskManager? TaskManager;
 

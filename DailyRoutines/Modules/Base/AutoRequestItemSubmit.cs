@@ -15,6 +15,7 @@ namespace DailyRoutines.Modules;
 public class AutoRequestItemSubmit : IDailyModule
 {
     public bool Initialized { get; set; }
+    public bool WithUI => false;
 
     private static TaskManager? TaskManager;
     private static readonly List<int> SlotsFilled = [];

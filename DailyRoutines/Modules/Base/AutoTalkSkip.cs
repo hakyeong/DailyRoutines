@@ -10,6 +10,7 @@ namespace DailyRoutines.Modules;
 public class AutoTalkSkip : IDailyModule
 {
     public bool Initialized { get; set; }
+    public bool WithUI => false;
 
     public void Init()
     {

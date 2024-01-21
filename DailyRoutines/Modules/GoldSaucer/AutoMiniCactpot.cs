@@ -16,6 +16,7 @@ namespace DailyRoutines.Modules;
 public class AutoMiniCactpot : IDailyModule
 {
     public bool Initialized { get; set; }
+    public bool WithUI => false;
 
     private static TaskManager? TaskManager;
 

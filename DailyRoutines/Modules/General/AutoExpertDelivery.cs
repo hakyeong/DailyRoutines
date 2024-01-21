@@ -18,6 +18,7 @@ namespace DailyRoutines.Modules;
 public class AutoExpertDelivery : IDailyModule
 {
     public bool Initialized { get; set; }
+    public bool WithUI => true;
     internal static AutoExpertDeliveryOverlay? Overlay { get; private set; }
 
     private static TaskManager? TaskManager;
