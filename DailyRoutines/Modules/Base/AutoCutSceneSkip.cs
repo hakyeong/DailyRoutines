@@ -49,11 +49,8 @@ public class AutoCutSceneSkip : IDailyModule
 
     private static void OnAddonLoading(AddonEvent type, AddonArgs args)
     {
-        if (EzThrottler.Throttle("AutoCutSceneSkip"))
-        {
-            PressEsc();
-            ClickExit();
-        }
+        PressEsc();
+        ClickExit();
     }
 
     private static void PressEsc()
