@@ -8,6 +8,7 @@ using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Game.ClientState.Conditions;
 using ECommons.Automation;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace DailyRoutines.Modules;
@@ -30,7 +31,7 @@ public class AutoCutSceneSkip : IDailyModule
     public void Init()
     {
         Service.Condition.ConditionChange += OnConditionChanged;
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = true };
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
 
         Initialized = true;
     }
@@ -48,8 +49,11 @@ public class AutoCutSceneSkip : IDailyModule
 
     private static void OnAddonLoading(AddonEvent type, AddonArgs args)
     {
-        PressEsc();
-        ClickExit();
+        if (EzThrottler.Throttle("AutoCutSceneSkip"))
+        {
+            PressEsc();
+            ClickExit();
+        }
     }
 
     private static void PressEsc()
@@ -61,6 +65,13 @@ public class AutoCutSceneSkip : IDailyModule
 
     private static unsafe void ClickExit()
     {
+        if (TryGetAddonByName<AtkUnitBase>("SystemMenu", out var menu))
+        {
+            menu->Close(true);
+            Service.AddonLifecycle.UnregisterListener(OnAddonLoading);
+            TaskManager.Abort();
+            return;
+        }
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
         {
             if (addon->GetTextNodeById(2)->NodeText.ExtractText().Contains("要跳过这段过场动画吗"))

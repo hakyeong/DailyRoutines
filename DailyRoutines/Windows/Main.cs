@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,10 +9,17 @@ using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Manager;
 using DailyRoutines.Managers;
+using Dalamud.Game.ClientState.Keys;
+using Dalamud.Game.ClientState.Objects.SubKinds;
+using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Windowing;
+using Dalamud.Memory;
+using Dalamud.Utility;
 using ECommons.Automation;
+using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -24,6 +32,7 @@ public class Main : Window, IDisposable
 
     private static readonly Dictionary<ModuleCategories, List<Type>> ModuleCategories = new();
     private static string SearchString = string.Empty;
+    private static string ConflictKeySearchString = string.Empty;
 
     public Main(Plugin plugin) : base("Daily Routines - Main")
     {
@@ -59,37 +68,7 @@ public class Main : Window, IDisposable
         {
             foreach (var module in ModuleCategories) DrawTabItemModules(module.Value, module.Key);
 
-            if (ImGui.BeginTabItem(Service.Lang.GetText("Settings")))
-            {
-                ImGuiOm.TextIcon(FontAwesomeIcon.Globe, $"{Service.Lang.GetText("Language")}:");
-
-                ImGui.SameLine();
-                ImGui.SetNextItemWidth(240f);
-                if (ImGui.BeginCombo("##LanguagesList", Service.Config.SelectedLanguage))
-                {
-                    for (var i = 0; i < LanguageManager.LanguageNames.Length; i++)
-                    {
-                        var languageInfo = LanguageManager.LanguageNames[i];
-                        if (ImGui.Selectable(languageInfo.DisplayName,
-                                             Service.Config.SelectedLanguage == languageInfo.Language))
-                            LanguageSwitchHandler(languageInfo.Language);
-
-                        ImGuiOm.TooltipHover($"By: {string.Join(", ", languageInfo.Translators)}");
-
-                        if (i + 1 != LanguageManager.LanguageNames.Length) ImGui.Separator();
-                    }
-
-                    ImGui.EndCombo();
-                }
-
-                ImGui.Separator();
-
-                ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("Settings-TipMessage0")}:");
-                ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage1"));
-                ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage2"));
-
-                ImGui.EndTabItem();
-            }
+            DrawTabSettings();
 
             if (P.PluginInterface.IsDev)
             {
@@ -105,8 +84,7 @@ public class Main : Window, IDisposable
                     {
                         if (ImGui.Button("测试点击"))
                         {
-                            var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("Hummer");
-                            if (addon != null) Callback.Fire(addon, true, 11, 4, 0);
+                            HPEdit();
                         }
                     }
 
@@ -115,6 +93,19 @@ public class Main : Window, IDisposable
             }
 
             ImGui.EndTabBar();
+        }
+    }
+
+    private unsafe void HPEdit()
+    {
+        var target = Service.Target.Target;
+        if (target != null)
+        {
+            Service.Log.Debug("测试");
+            var address = target.Address;
+            var currentHP = ((BattleNpc)target).MaxHp;
+            Service.Log.Debug(currentHP.ToString());
+            MemoryHelper.Write(address + 424 + 32, 0f);
         }
     }
 
@@ -146,8 +137,8 @@ public class Main : Window, IDisposable
 
         if (!Service.Config.ModuleEnabled.TryGetValue(boolName, out var tempModuleBool) ||
             string.IsNullOrEmpty(title) || string.IsNullOrEmpty(description) ||
-            (!string.IsNullOrEmpty(SearchString) && !title.Contains(SearchString) &&
-             !description.Contains(SearchString)))
+            (!string.IsNullOrWhiteSpace(SearchString) && !title.Contains(SearchString, StringComparison.OrdinalIgnoreCase) &&
+             !description.Contains(SearchString, StringComparison.OrdinalIgnoreCase)))
             return;
 
         var isWithUI = ModuleManager.Modules[module].WithUI;
@@ -215,7 +206,86 @@ public class Main : Window, IDisposable
         moduleInstance?.UI();
     }
 
-    internal void LanguageSwitchHandler(string languageName)
+    private static void DrawTabSettings()
+    {
+        if (ImGui.BeginTabItem(Service.Lang.GetText("Settings")))
+        {
+            // 第一列
+            ImGui.BeginGroup();
+            ImGuiOm.TextIcon(FontAwesomeIcon.Globe, $"{Service.Lang.GetText("Language")}:");
+
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(240f);
+            if (ImGui.BeginCombo("##LanguagesList", Service.Config.SelectedLanguage))
+            {
+                for (var i = 0; i < LanguageManager.LanguageNames.Length; i++)
+                {
+                    var languageInfo = LanguageManager.LanguageNames[i];
+                    if (ImGui.Selectable(languageInfo.DisplayName,
+                                         Service.Config.SelectedLanguage == languageInfo.Language))
+                        LanguageSwitchHandler(languageInfo.Language);
+
+                    ImGuiOm.TooltipHover($"By: {string.Join(", ", languageInfo.Translators)}");
+
+                    if (i + 1 != LanguageManager.LanguageNames.Length) ImGui.Separator();
+                }
+
+                ImGui.EndCombo();
+            }
+            ImGui.EndGroup();
+
+            ImGui.SameLine();
+            ImGui.Spacing();
+
+            // 第二列
+            ImGui.SameLine();
+            ImGui.BeginGroup();
+            ImGuiOm.TextIcon(FontAwesomeIcon.Keyboard, $"{"阻止热键"}:");
+
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(150f);
+            if (ImGui.BeginCombo("##GlobalConflictHotkey", Service.Config.ConflictKey.ToString()))
+            {
+                ImGui.SetNextItemWidth(-1f);
+                ImGui.InputTextWithHint("##ConflictKeySearchBar", $"{Service.Lang.GetText("PleaseSearch")}...",
+                                        ref ConflictKeySearchString, 20);
+                ImGui.Separator();
+
+                foreach (VirtualKey keyToSelect in Enum.GetValues(typeof(VirtualKey)))
+                {
+                    if (!string.IsNullOrWhiteSpace(ConflictKeySearchString) && !keyToSelect.ToString().Contains(ConflictKeySearchString, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (ImGui.Selectable(keyToSelect.ToString()))
+                    {
+                        Service.Config.ConflictKey = keyToSelect;
+                    }
+                }
+                ImGui.EndCombo();
+            }
+            ImGuiOm.HelpMarker(Service.Lang.GetText("ConflictKeyHelp"));
+
+            ImGui.EndGroup();
+
+            ImGui.Separator();
+
+            ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("Contact")}:");
+
+            if (ImGui.Button("GitHub"))
+            {
+                Util.OpenLink("https://github.com/AtmoOmen/DailyRoutines");
+            }
+
+            ImGui.Separator();
+
+            ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("Settings-TipMessage0")}:");
+            ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage1"));
+            ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage2"));
+
+            ImGui.EndTabItem();
+        }
+
+    }
+
+    private static void LanguageSwitchHandler(string languageName)
     {
         Service.Config.SelectedLanguage = languageName;
         Service.Lang = new LanguageManager(Service.Config.SelectedLanguage);
@@ -225,5 +295,8 @@ public class Main : Window, IDisposable
         P.CommandHandler();
     }
 
-    public void Dispose() { }
+    public void Dispose()
+    {
+        Service.Config.Save();
+    }
 }

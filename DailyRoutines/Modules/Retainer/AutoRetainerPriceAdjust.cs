@@ -4,9 +4,12 @@ using System.Text.RegularExpressions;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using Dalamud.Game;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Interface.Internal.Notifications;
 using ECommons.Automation;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -40,11 +43,15 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSellList", OnRetainerSellList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSell", OnRetainerSell);
 
+        Service.Framework.Update += OnUpdate;
+
         Initialized = true;
     }
 
     public void UI()
     {
+        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
+
         ImGui.SetNextItemWidth(210f);
         if (ImGui.InputInt(
                 $"{Service.Lang.GetText("AutoRetainerPriceAdjust-SinglePriceReductionValue")}##AutoRetainerPriceAdjust-SinglePriceReductionValue",
@@ -64,6 +71,17 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
             ConfigLowestPrice = Math.Max(1, ConfigLowestPrice);
             Service.Config.UpdateConfig(typeof(AutoRetainerPriceAdjust), "LowestAcceptablePrice",
                                         ConfigLowestPrice.ToString());
+        }
+    }
+
+    private static void OnUpdate(Framework framework)
+    {
+        if (!TaskManager.IsBusy) return;
+
+        if (Service.KeyState[Service.Config.ConflictKey])
+        {
+            TaskManager.Abort();
+            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"), "Daily Routines", NotificationType.Success);
         }
     }
 
@@ -238,6 +256,7 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
 
     public void Uninit()
     {
+        Service.Framework.Update -= OnUpdate;
         Service.AddonLifecycle.UnregisterListener(OnRetainerSellList);
         Service.AddonLifecycle.UnregisterListener(OnRetainerSell);
         TaskManager?.Abort();

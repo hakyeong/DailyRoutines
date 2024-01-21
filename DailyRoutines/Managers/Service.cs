@@ -3,6 +3,7 @@ using DailyRoutines.Infos;
 using DailyRoutines.Manager;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Gui;
 using Dalamud.IoC;
@@ -42,6 +43,7 @@ public class Service
 
     [PluginService] public static IClientState ClientState { get; private set; } = null!;
     [PluginService] public static Framework Framework { get; private set; } = null!;
+    [PluginService] public static KeyState KeyState { get; private set; } = null!;
     [PluginService] public static IObjectTable ObjectTable { get; private set; } = null!;
     [PluginService] public static Condition Condition { get; private set; } = null!;
     [PluginService] public static IDataManager Data { get; private set; } = null!;
