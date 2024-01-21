@@ -3,7 +3,9 @@ using ClickLib;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using Dalamud.Game;
 using Dalamud.Game.AddonLifecycle;
+using Dalamud.Interface.Internal.Notifications;
 using ECommons.Automation;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -35,11 +37,15 @@ public class AutoLogin : IDailyModule
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = true };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "_TitleMenu", OnTitleMenu);
 
+        Service.Framework.Update += OnUpdate;
+
         Initialized = true;
     }
 
     public void UI()
     {
+        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
+
         ImGui.AlignTextToFramePadding();
         ImGui.Text($"{Service.Lang.GetText("AutoLogin-ServerName")}:");
 
@@ -82,6 +88,17 @@ public class AutoLogin : IDailyModule
         }
 
         ImGuiOm.TooltipHover(Service.Lang.GetText("AutoLogin-CharaIndexInputTooltip"));
+    }
+
+    private static void OnUpdate(Framework framework)
+    {
+        if (Service.ClientState.IsLoggedIn || !TaskManager.IsBusy) return;
+
+        if (Service.KeyState[Service.Config.ConflictKey])
+        {
+            TaskManager.Abort();
+            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"), "Daily Routines", NotificationType.Success);
+        }
     }
 
     private static unsafe void OnTitleMenu(AddonEvent eventType, AddonArgs? addonInfo)
@@ -160,6 +177,7 @@ public class AutoLogin : IDailyModule
         Service.AddonLifecycle.UnregisterListener(OnTitleMenu);
         TaskManager?.Abort();
         HasLoginOnce = false;
+        Service.Framework.Update -= OnUpdate;
 
         Initialized = false;
     }

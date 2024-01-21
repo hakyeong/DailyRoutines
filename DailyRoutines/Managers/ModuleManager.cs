@@ -27,12 +27,6 @@ public class ModuleManager
         }
     }
 
-    public static bool IsModuleLoaded(IDailyModule? module)
-    {
-        return module is { Initialized: true };
-    }
-
-
     public static void Init()
     {
         foreach (var component in Modules.Values)
@@ -59,6 +53,7 @@ public class ModuleManager
             }
             catch (Exception ex)
             {
+                Service.Config.ModuleEnabled[component.GetType().Name] = false;
                 Service.Log.Error($"Failed to load module {component.GetType().Name} due to error: {ex.Message}");
                 Service.Log.Warning(ex.StackTrace ?? "Unknown");
             }
@@ -81,6 +76,7 @@ public class ModuleManager
             }
             catch (Exception ex)
             {
+                Service.Config.ModuleEnabled[component.GetType().Name] = false;
                 Service.Log.Error($"Failed to load component {component.GetType().Name} due to error: {ex.Message}");
             }
         }

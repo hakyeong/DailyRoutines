@@ -201,6 +201,9 @@
   <data name="AutoMiniCactpotTitle" xml:space="preserve">
     <value>自动仙人微彩</value>
   </data>
+  <data name="AutoMT-InterruptNotice" xml:space="preserve">
+    <value>注: 仅支持在两场游戏间打断, 若要在游戏过程中打断, 请手动卸载模块</value>
+  </data>
   <data name="AutoMTDescription" xml:space="preserve">
     <value>交互游戏机后, 自动开始重复游玩怪物投篮</value>
   </data>
@@ -282,7 +285,7 @@
     <value>打开主界面</value>
   </data>
   <data name="ConflictKey" xml:space="preserve">
-    <value>阻止热键</value>
+    <value>打断热键</value>
   </data>
   <data name="ConflictKey-InterruptMessage" xml:space="preserve">
     <value>已成功打断当前操作</value>

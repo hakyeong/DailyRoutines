@@ -2,11 +2,14 @@ using ClickLib;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using Dalamud.Game;
 using Dalamud.Game.AddonLifecycle;
+using Dalamud.Interface.Internal.Notifications;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using ImGuiNET;
 using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
@@ -15,23 +18,39 @@ namespace DailyRoutines.Modules;
 public class AutoUfoCatcher : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => false;
+    public bool WithUI => true;
 
     private static TaskManager? TaskManager;
 
     public void Init()
     {
         TaskManager = new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
-
+        Service.Framework.Update += OnUpdate;
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "UfoCatcher", OnAddonSetup);
 
         Initialized = true;
+    }
+
+    public void UI()
+    {
+        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
     }
 
     private static void OnAddonSetup(AddonEvent type, AddonArgs args)
     {
         TaskManager.Enqueue(WaitSelectStringAddon);
         TaskManager.Enqueue(ClickGameButton);
+    }
+
+    private static void OnUpdate(Framework framework)
+    {
+        if (!TaskManager.IsBusy) return;
+
+        if (Service.KeyState[Service.Config.ConflictKey])
+        {
+            TaskManager.Abort();
+            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"), "Daily Routines", NotificationType.Success);
+        }
     }
 
     private static unsafe bool? WaitSelectStringAddon()
@@ -78,13 +97,9 @@ public class AutoUfoCatcher : IDailyModule
         return false;
     }
 
-    public void UI()
-    {
-
-    }
-
     public void Uninit()
     {
+        Service.Framework.Update -= OnUpdate;
         Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
         TaskManager?.Abort();
 
