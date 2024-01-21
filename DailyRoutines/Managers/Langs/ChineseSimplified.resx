@@ -261,7 +261,7 @@
     <value>自动跳过神兵要塞帝国南方堡、最终决战天幕魔导城和究极神兵破坏作战的过场动画</value>
   </data>
   <data name="AutoSkipPraetoriumTitle" xml:space="preserve">
-    <value>自动跳过不可跳过过场动画</value>
+    <value>自动跳过主随过场动画</value>
   </data>
   <data name="AutoTalkSkipDescription" xml:space="preserve">
     <value>出现对话框时, 自动快进跳过</value>

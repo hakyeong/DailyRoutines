@@ -18,56 +18,34 @@ public class AutoSkipPraetorium : IDailyModule
     {
         Address = new CutsceneAddressResolver();
         Address.Setup(Service.SigScanner);
-        if (Address.Valid)
-            SetEnabled(true);
-        else
-            Uninit();
-
+        SetEnabled(Address.Valid);
         Initialized = true;
     }
 
     public void SetEnabled(bool isEnable)
     {
         if (!Address.Valid) return;
-        if (isEnable)
-        {
-            SafeMemory.Write<short>(Address.Offset1, -28528);
-            SafeMemory.Write<short>(Address.Offset2, -28528);
-        }
-        else
-        {
-            SafeMemory.Write<short>(Address.Offset1, 13173);
-            SafeMemory.Write<short>(Address.Offset2, 6260);
-        }
+
+        var value1 = isEnable ? (short)-28528 : (short)13173;
+        var value2 = isEnable ? (short)-28528 : (short)6260;
+
+        SafeMemory.Write(Address.Offset1, value1);
+        SafeMemory.Write(Address.Offset2, value2);
     }
 
     public void UI() { }
 
     public void Uninit()
     {
-        if (Initialized)
-        {
-            SetEnabled(false);
-            GC.SuppressFinalize(this);
-        }
-
+        if (Initialized) SetEnabled(false);
         Initialized = false;
     }
 }
 
 public class CutsceneAddressResolver : BaseAddressResolver
 {
-    public bool Valid
-    {
-        get
-        {
-            if (Offset1 != IntPtr.Zero) return Offset2 != IntPtr.Zero;
-            return false;
-        }
-    }
-
+    public bool Valid => Offset1 != IntPtr.Zero && Offset2 != IntPtr.Zero;
     public nint Offset1 { get; private set; }
-
     public nint Offset2 { get; private set; }
 
     protected override void Setup64Bit(SigScanner sig)
@@ -76,3 +54,4 @@ public class CutsceneAddressResolver : BaseAddressResolver
         Offset2 = sig.ScanText("74 18 8B D7 48 8D 0D");
     }
 }
+
