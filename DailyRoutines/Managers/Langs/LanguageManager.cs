@@ -17,9 +17,9 @@ public partial class LanguageManager
     private readonly Dictionary<string, string>? fbResourceData;
 
     public static readonly TranslationInfo[] LanguageNames =
-    {
-        new() { Language = "ChineseSimplified", DisplayName = "简体中文", Translators = new string[1] { "AtmoOmen" } },
-    };
+    [
+        new TranslationInfo { Language = "ChineseSimplified", DisplayName = "简体中文", Translators = ["AtmoOmen"] }
+    ];
 
     public LanguageManager(string languageName, bool isDev = false, string devLangPath = "")
     {
@@ -68,8 +68,7 @@ public partial class LanguageManager
 
     public string GetText(string key, params object[] args)
     {
-        var format = resourceData.TryGetValue(key, out var resValue) ? resValue :
-                     fbResourceData.GetValueOrDefault(key);
+        var format = resourceData.TryGetValue(key, out var resValue) ? resValue : fbResourceData.GetValueOrDefault(key);
 
         if (string.IsNullOrEmpty(format))
         {
@@ -82,14 +81,12 @@ public partial class LanguageManager
 
     public string GetOrigText(string key)
     {
-        return resourceData.TryGetValue(key, out var resValue) ? resValue :
-               fbResourceData.GetValueOrDefault(key, key);
+        return resourceData.TryGetValue(key, out var resValue) ? resValue : fbResourceData.GetValueOrDefault(key, key);
     }
 
     public SeString GetSeString(string key, params object[] args)
     {
-        var format = resourceData.TryGetValue(key, out var resValue) ? resValue :
-                     fbResourceData.GetValueOrDefault(key);
+        var format = resourceData.TryGetValue(key, out var resValue) ? resValue : fbResourceData.GetValueOrDefault(key);
 
         var ssb = new SeStringBuilder();
         var regex = SeStringRegex();
@@ -119,6 +116,7 @@ public partial class LanguageManager
 
             lastIndex = match.Index + match.Length;
         }
+
         ssb.AddUiForegroundOff();
         ssb.AddText(format.Substring(lastIndex));
 

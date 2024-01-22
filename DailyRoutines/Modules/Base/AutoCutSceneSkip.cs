@@ -61,13 +61,14 @@ public class AutoCutSceneSkip : IDailyModule
 
     private static unsafe void ClickExit()
     {
-        if (TryGetAddonByName<AtkUnitBase>("SystemMenu", out var menu))
+        if (TryGetAddonByName<AtkUnitBase>("SystemMenu", out var menu) && IsAddonReady(menu))
         {
             Callback.Fire(menu, true, -1);
             Service.AddonLifecycle.UnregisterListener(OnAddonLoading);
             TaskManager.Abort();
             return;
         }
+
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
         {
             if (addon->GetTextNodeById(2)->NodeText.ExtractText().Contains("要跳过这段过场动画吗"))

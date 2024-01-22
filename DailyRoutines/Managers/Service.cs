@@ -6,6 +6,7 @@ using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Gui;
+using Dalamud.Game.Gui.Toast;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
@@ -55,6 +56,7 @@ public class Service
     [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
     [PluginService] public static IAddonEventManager AddonEvent { get; private set; } = null!;
     [PluginService] public static ITextureProvider Texture { get; set; } = null!;
+    [PluginService] public static ToastGui Toast { get; set; } = null!;
     public static SigScanner SigScanner { get; private set; } = new();
     public static ExcelGameData ExcelData { get; set; } = null!;
     public static LanguageManager Lang { get; set; } = null!;
