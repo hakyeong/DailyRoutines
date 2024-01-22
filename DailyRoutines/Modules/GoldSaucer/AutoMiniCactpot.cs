@@ -5,10 +5,7 @@ using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
-using Dalamud.Plugin;
-using Dalamud.Plugin.Internal.Types.Manifest;
 using ECommons.Automation;
-using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
@@ -37,7 +34,19 @@ public class AutoMiniCactpot : IDailyModule
     };
 
     // 从左下到右上 From Bottom Left to Top Right
-    private static readonly uint[] LineNodeIds = { 28, 27, 26, 21, 22, 23, 24, 25 };
+    private static readonly uint[] LineNodeIds = [28, 27, 26, 21, 22, 23, 24, 25];
+
+    private static readonly Dictionary<uint, List<uint>> LineToBlocks = new()
+    {
+        { 28, [36, 37, 38] }, // 左下水平线
+        { 27, [33, 34, 35] }, // 中间水平线
+        { 26, [30, 31, 32] }, // 左上水平线
+        { 21, [30, 34, 38] }, // 左上对角线
+        { 22, [30, 33, 36] }, // 左侧垂直线
+        { 23, [31, 34, 37] }, // 中间垂直线
+        { 24, [32, 35, 38] }, // 右侧垂直线
+        { 25, [32, 34, 36] }  // 右上对角线
+    };
 
     public void UI() { }
 
@@ -105,10 +114,11 @@ public class AutoMiniCactpot : IDailyModule
             var selectedLine = LineNodeIds.OrderBy(x => rnd.Next()).LastOrDefault();
             var clickHandler = new ClickLotteryDailyDR((nint)ui);
 
-            var radioButton = ui->GetComponentNodeById(selectedLine);
-            if (radioButton == null) return false;
+            var blocks = LineToBlocks[selectedLine];
 
-            clickHandler.Line((AtkComponentRadioButton*)radioButton);
+            clickHandler.LineByBlocks((AtkComponentCheckBox*)ui->GetComponentNodeById(blocks[0]),
+                                      (AtkComponentCheckBox*)ui->GetComponentNodeById(blocks[1]),
+                                      (AtkComponentCheckBox*)ui->GetComponentNodeById(blocks[2]));
             clickHandler.Confirm();
 
             return true;
@@ -165,7 +175,10 @@ public class AutoMiniCactpot : IDailyModule
                 var button = (AtkComponentRadioButton*)ui->GetComponentNodeById(block);
                 if (node is { MultiplyBlue: 0, MultiplyRed: 0, MultiplyGreen: 100 })
                 {
-                    clickHandler.Line(button);
+                    var blocks = LineToBlocks[node.NodeID];
+                    clickHandler.LineByBlocks((AtkComponentCheckBox*)ui->GetComponentNodeById(blocks[0]),
+                                              (AtkComponentCheckBox*)ui->GetComponentNodeById(blocks[1]),
+                                              (AtkComponentCheckBox*)ui->GetComponentNodeById(blocks[2]));
                     break;
                 }
             }
