@@ -266,12 +266,24 @@
   <data name="AutoSkipPraetoriumTitle" xml:space="preserve">
     <value>自动跳过主随过场动画</value>
   </data>
+  <data name="AutoSubmarineCollect-FailGettingSubmarineInfo" xml:space="preserve">
+    <value>获取潜水艇信息失败, 请重试</value>
+  </data>
+  <data name="AutoSubmarineCollect-Start" xml:space="preserve">
+    <value>开始</value>
+  </data>
+  <data name="AutoSubmarineCollect-Stop" xml:space="preserve">
+    <value>停止</value>
+  </data>
+  <data name="AutoSubmarineCollect-WhatIsTheList" xml:space="preserve">
+    <value>什么是潜水艇列表?</value>
+  </data>
   <data name="AutoSubmarineCollectDescription" xml:space="preserve">
     <value>打开潜水艇列表, 并点击开始后, 自动确认潜水艇探索结果并重新委派
 (前置模块: 自动跳过过场动画)</value>
   </data>
   <data name="AutoSubmarineCollectTitle" xml:space="preserve">
-    <value>自动收取潜水艇</value>
+    <value>自动收取潜水艇 (测试/不稳定)</value>
   </data>
   <data name="AutoTalkSkipDescription" xml:space="preserve">
     <value>出现对话框时, 自动快进跳过</value>
@@ -301,7 +313,10 @@
     <value>部分模块会读取此处的热键设置, 以便让你使用热键对模块操作进行打断</value>
   </data>
   <data name="Contact" xml:space="preserve">
-    <value>联系</value>
+    <value>联系/反馈</value>
+  </data>
+  <data name="ContactHelp" xml:space="preserve">
+    <value>本插件开源免费, 如有任何疑问, 请点击左侧按钮, 在页面内提交 Issue</value>
   </data>
   <data name="Duty" xml:space="preserve">
     <value>副本</value>
@@ -314,6 +329,9 @@
   </data>
   <data name="GoldSaucer" xml:space="preserve">
     <value>金碟</value>
+  </data>
+  <data name="ImageLoading" xml:space="preserve">
+    <value>图片加载中</value>
   </data>
   <data name="Language" xml:space="preserve">
     <value>语言</value>

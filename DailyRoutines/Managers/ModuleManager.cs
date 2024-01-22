@@ -53,9 +53,10 @@ public class ModuleManager
             }
             catch (Exception ex)
             {
+                component.Uninit();
                 Service.Config.ModuleEnabled[component.GetType().Name] = false;
                 Service.Log.Error($"Failed to load module {component.GetType().Name} due to error: {ex.Message}");
-                Service.Log.Warning(ex.StackTrace ?? "Unknown");
+                Service.Log.Error(ex.StackTrace ?? "Unknown");
             }
         }
     }
@@ -76,8 +77,10 @@ public class ModuleManager
             }
             catch (Exception ex)
             {
+                component.Uninit();
                 Service.Config.ModuleEnabled[component.GetType().Name] = false;
                 Service.Log.Error($"Failed to load component {component.GetType().Name} due to error: {ex.Message}");
+                Service.Log.Error(ex.StackTrace ?? "Unknown");
             }
         }
         else

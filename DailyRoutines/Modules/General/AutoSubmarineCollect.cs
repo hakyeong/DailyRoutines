@@ -1,8 +1,5 @@
-using System;
 using System.Numerics;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using ClickLib;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
@@ -26,7 +23,7 @@ public partial class AutoSubmarineCollect : IDailyModule
     public bool WithUI => true;
 
     private static TaskManager? TaskManager;
-    private static int CurrentIndex = 0;
+    private static int CurrentIndex;
 
     public void Init()
     {
@@ -43,7 +40,7 @@ public partial class AutoSubmarineCollect : IDailyModule
             "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoSubmarineCollect-1.png",
             out var imageHandler);
 
-        ImGui.TextColored(ImGuiColors.ParsedOrange, "什么是潜水艇列表?");
+        ImGui.TextColored(ImGuiColors.ParsedOrange, Service.Lang.GetText("AutoSubmarineCollect-WhatIsTheList"));
 
         ImGui.SameLine();
         ImGui.PushFont(UiBuilder.IconFont);
@@ -54,28 +51,18 @@ public partial class AutoSubmarineCollect : IDailyModule
         {
             ImGui.BeginTooltip();
             if (infoImageState)
-            {
                 ImGui.Image(imageHandler.ImGuiHandle, new Vector2(400, 222));
-            }
             else
-            {
-                ImGui.TextDisabled("图片加载中...");
-            }
+                ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
             ImGui.EndTooltip();
         }
 
         ImGui.BeginDisabled(TaskManager.IsBusy);
-        if (ImGui.Button("开始"))
-        {
-            GetSubmarineInfos();
-        }
+        if (ImGui.Button(Service.Lang.GetText("AutoSubmarineCollect-Start"))) GetSubmarineInfos();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button("结束"))
-        {
-            TaskManager.Abort();
-        }
+        if (ImGui.Button(Service.Lang.GetText("AutoSubmarineCollect-Stop"))) TaskManager.Abort();
     }
 
     private static void AlwaysYes(AddonEvent type, AddonArgs args)
@@ -85,21 +72,24 @@ public partial class AutoSubmarineCollect : IDailyModule
         Click.SendClick("select_yes");
     }
 
-    internal static unsafe void GetSubmarineInfos()
+    internal static unsafe bool? GetSubmarineInfos()
     {
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             var infoText = addon->GetTextNodeById(2)->NodeText.ExtractText();
-            var submarineCount = int.TryParse(SubmarineInfoRegex().Match(infoText).Groups[1].Value, out var denominator) ? denominator : -1;
+            var submarineCount = int.TryParse(SubmarineInfoRegex().Match(infoText).Groups[1].Value, out var denominator)
+                                     ? denominator
+                                     : -1;
 
             if (submarineCount == -1)
             {
-                Service.Chat.PrintError("获取潜水艇信息失败, 请重试");
-                return;
+                Service.Chat.PrintError(Service.Lang.GetText("AutoSubmarineCollect-FailGettingSubmarineInfo"));
+                return false;
             }
 
             // 索引从 1 开始
-            var listComponent = ((AddonSelectString*)addon)->PopupMenu.PopupMenu.List->AtkComponentBase.UldManager.NodeList;
+            var listComponent = ((AddonSelectString*)addon)->PopupMenu.PopupMenu.List->AtkComponentBase.UldManager
+                .NodeList;
             for (var i = 1; i <= submarineCount; i++)
             {
                 var stateText =
@@ -109,14 +99,17 @@ public partial class AutoSubmarineCollect : IDailyModule
                 {
                     CurrentIndex = i;
                     EnqueueSubmarineCollect(CurrentIndex);
-                    break;
+                    return true;
                 }
             }
         }
         else
         {
-            Service.Chat.PrintError("获取潜水艇信息失败, 请重试");
+            Service.Chat.PrintError(Service.Lang.GetText("AutoSubmarineCollect-FailGettingSubmarineInfo"));
+            return false;
         }
+
+        return false;
     }
 
     private static unsafe void OnErrorToast(ref SeString message, ref bool isHandled)
@@ -181,7 +174,8 @@ public partial class AutoSubmarineCollect : IDailyModule
 
     private static unsafe bool? RepairSubmarines()
     {
-        if (TryGetAddonByName<AtkUnitBase>("CompanyCraftSupply", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("CompanyCraftSupply", out var addon) &&
+            HelpersOm.IsAddonAndNodesReady(addon))
         {
             var handler = new ClickCompanyCraftSupplyDR();
 
@@ -204,7 +198,8 @@ public partial class AutoSubmarineCollect : IDailyModule
 
     private static unsafe bool? RepairSingleSubmarine(int index)
     {
-        if (TryGetAddonByName<AtkUnitBase>("CompanyCraftSupply", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("CompanyCraftSupply", out var addon) &&
+            HelpersOm.IsAddonAndNodesReady(addon))
         {
             var handler = new ClickCompanyCraftSupplyDR();
             handler.Component(index);

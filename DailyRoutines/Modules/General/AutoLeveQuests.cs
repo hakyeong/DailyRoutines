@@ -137,7 +137,7 @@ public class AutoLeveQuests : IDailyModule
 
     private static void AlwaysYes(AddonEvent type, AddonArgs args)
     {
-        Click.TrySendClick("select_yes");
+        Click.SendClick("select_yes");
     }
 
     private static unsafe void OnAddonJournalResult(AddonEvent type, AddonArgs args)

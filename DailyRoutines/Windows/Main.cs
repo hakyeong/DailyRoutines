@@ -1,28 +1,18 @@
 using System;
-using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using ClickLib;
-using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Manager;
 using DailyRoutines.Managers;
-using DailyRoutines.Modules;
 using Dalamud.Game.ClientState.Keys;
-using Dalamud.Game.ClientState.Objects.SubKinds;
-using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Windowing;
-using Dalamud.Memory;
 using Dalamud.Utility;
-using ECommons.Automation;
-using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Game.Object;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
 namespace DailyRoutines.Windows;
@@ -82,11 +72,6 @@ public class Main : Window, IDisposable
                             Service.Log.Debug(clickName);
                     }
 
-                    if (ImGui.Button("是否装了"))
-                    {
-                        Service.Log.Debug(AutoMiniCactpot.IsEzMiniCactpotInstalled() ? "装了" : "没装");
-                    }
-
                     ImGui.EndTabItem();
                 }
             }
@@ -123,7 +108,8 @@ public class Main : Window, IDisposable
 
         if (!Service.Config.ModuleEnabled.TryGetValue(boolName, out var tempModuleBool) ||
             string.IsNullOrEmpty(title) || string.IsNullOrEmpty(description) ||
-            (!string.IsNullOrWhiteSpace(SearchString) && !title.Contains(SearchString, StringComparison.OrdinalIgnoreCase) &&
+            (!string.IsNullOrWhiteSpace(SearchString) &&
+             !title.Contains(SearchString, StringComparison.OrdinalIgnoreCase) &&
              !description.Contains(SearchString, StringComparison.OrdinalIgnoreCase)))
             return;
 
@@ -218,6 +204,7 @@ public class Main : Window, IDisposable
 
                 ImGui.EndCombo();
             }
+
             ImGui.EndGroup();
 
             ImGui.SameLine();
@@ -239,14 +226,14 @@ public class Main : Window, IDisposable
 
                 foreach (VirtualKey keyToSelect in Enum.GetValues(typeof(VirtualKey)))
                 {
-                    if (!string.IsNullOrWhiteSpace(ConflictKeySearchString) && !keyToSelect.ToString().Contains(ConflictKeySearchString, StringComparison.OrdinalIgnoreCase)) continue;
-                    if (ImGui.Selectable(keyToSelect.ToString()))
-                    {
-                        Service.Config.ConflictKey = keyToSelect;
-                    }
+                    if (!string.IsNullOrWhiteSpace(ConflictKeySearchString) && !keyToSelect.ToString()
+                            .Contains(ConflictKeySearchString, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (ImGui.Selectable(keyToSelect.ToString())) Service.Config.ConflictKey = keyToSelect;
                 }
+
                 ImGui.EndCombo();
             }
+
             ImGuiOm.HelpMarker(Service.Lang.GetText("ConflictKeyHelp"));
 
             ImGui.EndGroup();
@@ -255,10 +242,10 @@ public class Main : Window, IDisposable
 
             ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("Contact")}:");
 
-            if (ImGui.Button("GitHub"))
-            {
-                Util.OpenLink("https://github.com/AtmoOmen/DailyRoutines");
-            }
+            if (ImGui.Button("GitHub")) Util.OpenLink("https://github.com/AtmoOmen/DailyRoutines");
+
+            ImGui.SameLine();
+            ImGui.TextColored(ImGuiColors.DalamudOrange, Service.Lang.GetText("ContactHelp"));
 
             ImGui.Separator();
 
@@ -268,7 +255,6 @@ public class Main : Window, IDisposable
 
             ImGui.EndTabItem();
         }
-
     }
 
     private static void LanguageSwitchHandler(string languageName)

@@ -4,12 +4,14 @@ using ClickLib.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
+using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Memory;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
@@ -17,20 +19,35 @@ namespace DailyRoutines.Modules;
 public class AutoRetainerCollect : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => false;
+    public bool WithUI => true;
 
     private static TaskManager? TaskManager;
 
     private static bool IsOnProcess;
 
-    public void UI() { }
+    public void UI()
+    {
+        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
+    }
 
     public void Init()
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerList", OnRetainerList);
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        Service.Framework.Update += OnUpdate;
 
         Initialized = true;
+    }
+
+    private static void OnUpdate(Dalamud.Game.Framework framework)
+    {
+        if (!TaskManager.IsBusy) return;
+
+        if (Service.KeyState[Service.Config.ConflictKey])
+        {
+            TaskManager.Abort();
+            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"), "Daily Routines", NotificationType.Success);
+        }
     }
 
     private static unsafe void OnRetainerList(AddonEvent type, AddonArgs args)
@@ -143,6 +160,7 @@ public class AutoRetainerCollect : IDailyModule
 
     public void Uninit()
     {
+        Service.Framework.Update -= OnUpdate;
         Service.AddonLifecycle.UnregisterListener(OnRetainerList);
         IsOnProcess = false;
         TaskManager?.Abort();
