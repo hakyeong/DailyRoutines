@@ -8,7 +8,6 @@ using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Game.ClientState.Conditions;
 using ECommons.Automation;
-using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace DailyRoutines.Modules;
@@ -64,7 +63,7 @@ public class AutoCutSceneSkip : IDailyModule
     {
         if (TryGetAddonByName<AtkUnitBase>("SystemMenu", out var menu))
         {
-            menu->Close(true);
+            Callback.Fire(menu, true, -1);
             Service.AddonLifecycle.UnregisterListener(OnAddonLoading);
             TaskManager.Abort();
             return;
