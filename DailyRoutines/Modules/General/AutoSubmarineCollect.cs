@@ -77,6 +77,12 @@ public partial class AutoSubmarineCollect : IDailyModule
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             var infoText = addon->GetTextNodeById(2)->NodeText.ExtractText();
+            if (string.IsNullOrEmpty(infoText))
+            {
+                TaskManager.Abort();
+                return false;
+            }
+
             var submarineCount = int.TryParse(SubmarineInfoRegex().Match(infoText).Groups[1].Value, out var denominator)
                                      ? denominator
                                      : -1;
