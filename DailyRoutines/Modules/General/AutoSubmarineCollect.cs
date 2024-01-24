@@ -103,11 +103,6 @@ public partial class AutoSubmarineCollect : IDailyModule
                 }
             }
         }
-        else
-        {
-            Service.Chat.PrintError(Service.Lang.GetText("AutoSubmarineCollect-FailGettingSubmarineInfo"));
-            return false;
-        }
 
         return false;
     }
@@ -122,7 +117,15 @@ public partial class AutoSubmarineCollect : IDailyModule
             TaskManager.Abort();
             var handler = new ClickAirShipExplorationDetailDR();
             handler.Cancel();
+            addon->Close(true);
 
+            TaskManager.Enqueue(() => Click.TrySendClick("select_string4"));
+            TaskManager.Enqueue(RepairSubmarines);
+        }
+        else if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon1) &&
+                 HelpersOm.IsAddonAndNodesReady(addon1))
+        {
+            TaskManager.Abort();
             TaskManager.Enqueue(() => Click.TrySendClick("select_string4"));
             TaskManager.Enqueue(RepairSubmarines);
         }

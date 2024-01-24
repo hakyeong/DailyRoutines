@@ -35,8 +35,11 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
 
-        Service.Config.AddConfig(typeof(AutoRetainerPriceAdjust), "PriceReduction", "1");
-        Service.Config.AddConfig(typeof(AutoRetainerPriceAdjust), "LowestAcceptablePrice", "1");
+        if (!Service.Config.ConfigExists(typeof(AutoRetainerPriceAdjust), "PriceReduction"))
+            Service.Config.AddConfig(typeof(AutoRetainerPriceAdjust), "PriceReduction", 1);
+        if (!Service.Config.ConfigExists(typeof(AutoRetainerPriceAdjust), "LowestAcceptablePrice"))
+            Service.Config.AddConfig(typeof(AutoRetainerPriceAdjust), "LowestAcceptablePrice", 100);
+
         ConfigPriceReduction = Service.Config.GetConfig<int>(typeof(AutoRetainerPriceAdjust), "PriceReduction");
         ConfigLowestPrice = Service.Config.GetConfig<int>(typeof(AutoRetainerPriceAdjust), "LowestAcceptablePrice");
 
@@ -58,8 +61,7 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
                 ref ConfigPriceReduction))
         {
             ConfigPriceReduction = Math.Max(1, ConfigPriceReduction);
-            Service.Config.UpdateConfig(typeof(AutoRetainerPriceAdjust), "SinglePriceReductionValue",
-                                        ConfigPriceReduction.ToString());
+            Service.Config.AddConfig(typeof(AutoRetainerPriceAdjust), "SinglePriceReductionValue", ConfigPriceReduction);
         }
 
 
@@ -69,8 +71,7 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
                 ref ConfigLowestPrice))
         {
             ConfigLowestPrice = Math.Max(1, ConfigLowestPrice);
-            Service.Config.UpdateConfig(typeof(AutoRetainerPriceAdjust), "LowestAcceptablePrice",
-                                        ConfigLowestPrice.ToString());
+            Service.Config.AddConfig(typeof(AutoRetainerPriceAdjust), "LowestAcceptablePrice", ConfigLowestPrice);
         }
     }
 
@@ -99,7 +100,6 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
         TaskManager.DelayNext(100);
         // 填写最低价
         TaskManager.Enqueue(FillLowestPrice);
-        TaskManager.DelayNext(500);
     }
 
     private static unsafe void OnRetainerSellList(AddonEvent type, AddonArgs args)

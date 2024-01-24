@@ -201,6 +201,30 @@
   <data name="AutoMiniCactpotTitle" xml:space="preserve">
     <value>自动仙人微彩</value>
   </data>
+  <data name="AutoMJIGather-CollectGatherPointsHelp" xml:space="preserve">
+    <value>由于物体渲染距离限制, 初次使用请先开启数据采集模式, 然后飞遍全岛一次记录各采集点数据, 后续使用无需再次采集数据</value>
+  </data>
+  <data name="AutoMJIGather-CollectGatherPointsInfo" xml:space="preserve">
+    <value>{0}获取采集点数据</value>
+  </data>
+  <data name="AutoMJIGather-GatherProcessInfo" xml:space="preserve">
+    <value>当前进度: {0} / {1}</value>
+  </data>
+  <data name="AutoMJIGather-NodesInfo" xml:space="preserve">
+    <value>已获取 {0} 类采集点, 已选择 {1} 类, 共 {2} 个</value>
+  </data>
+  <data name="AutoMJIGather-Start" xml:space="preserve">
+    <value>开始</value>
+  </data>
+  <data name="AutoMJIGather-Stop" xml:space="preserve">
+    <value>停止</value>
+  </data>
+  <data name="AutoMJIGatherDescription" xml:space="preserve">
+    <value>配置完成并点击开始后, 自动循环采集无人岛素材</value>
+  </data>
+  <data name="AutoMJIGatherTitle" xml:space="preserve">
+    <value>自动无人岛采集</value>
+  </data>
   <data name="AutoMT-InterruptNotice" xml:space="preserve">
     <value>注: 仅支持在两场游戏间打断, 若要在游戏过程中打断, 请手动卸载模块</value>
   </data>

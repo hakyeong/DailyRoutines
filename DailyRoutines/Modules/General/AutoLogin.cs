@@ -28,8 +28,10 @@ public class AutoLogin : IDailyModule
 
     public void Init()
     {
-        Service.Config.AddConfig(typeof(AutoLogin), "SelectedServer", "");
-        Service.Config.AddConfig(typeof(AutoLogin), "SelectedCharaIndex", "0");
+        if (!Service.Config.ConfigExists(typeof(AutoLogin), "SelectedServer"))
+            Service.Config.AddConfig(typeof(AutoLogin), "SelectedServer", string.Empty);
+        if (!Service.Config.ConfigExists(typeof(AutoLogin), "SelectedCharaIndex"))
+            Service.Config.AddConfig(typeof(AutoLogin), "SelectedCharaIndex", 0);
 
         ConfigSelectedServer = Service.Config.GetConfig<string>(typeof(AutoLogin), "SelectedServer");
         ConfigSelectedCharaIndex = Service.Config.GetConfig<int>(typeof(AutoLogin), "SelectedCharaIndex");
@@ -51,12 +53,11 @@ public class AutoLogin : IDailyModule
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(150f);
-        if (ImGui.InputText("##AutoLogin-EnterServerName", ref ConfigSelectedServer, 16,
-                            ImGuiInputTextFlags.EnterReturnsTrue))
+        if (ImGui.InputText("##AutoLogin-EnterServerName", ref ConfigSelectedServer, 16, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             if (TryGetWorldByName(ConfigSelectedServer, out _))
             {
-                Service.Config.UpdateConfig(typeof(AutoLogin), "SelectedServer", ConfigSelectedServer);
+                Service.Config.AddConfig(typeof(AutoLogin), "SelectedServer", ConfigSelectedServer);
                 HasLoginOnce = false;
             }
             else
@@ -81,8 +82,7 @@ public class AutoLogin : IDailyModule
             if (ConfigSelectedCharaIndex is < 0 or > 8) ConfigSelectedCharaIndex = 0;
             else
             {
-                Service.Config.UpdateConfig(typeof(AutoLogin), "SelectedCharaIndex",
-                                            ConfigSelectedCharaIndex.ToString());
+                Service.Config.AddConfig(typeof(AutoLogin), "SelectedCharaIndex", ConfigSelectedCharaIndex);
                 HasLoginOnce = false;
             }
         }
