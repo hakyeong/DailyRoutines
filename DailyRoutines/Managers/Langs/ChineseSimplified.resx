@@ -139,6 +139,12 @@
   <data name="AutoCutSceneSkipTitle" xml:space="preserve">
     <value>自动跳过过场动画</value>
   </data>
+  <data name="AutoDismountDescription" xml:space="preserve">
+    <value>当使用技能时, 如果正在骑乘坐骑, 则自动下坐骑</value>
+  </data>
+  <data name="AutoDismountTitle" xml:space="preserve">
+    <value>自动下坐骑</value>
+  </data>
   <data name="AutoExpertDelivery-Start" xml:space="preserve">
     <value>开始</value>
   </data>
