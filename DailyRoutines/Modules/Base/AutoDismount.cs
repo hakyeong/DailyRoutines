@@ -32,8 +32,7 @@ public class AutoDismount : IDailyModule
     public void UI() { }
 
     private unsafe nint UseActionSelf(
-        long actionManager, uint actionType, uint actionId, long actionTarget, int a5, int actionReleased, int a7,
-        byte[] a8)
+        long actionManager, uint actionType, uint actionId, long actionTarget, int a5, int actionReleased, int a7, byte[] a8)
     {
         var shouldDismount = false;
         try
