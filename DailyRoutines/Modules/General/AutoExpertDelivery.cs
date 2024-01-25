@@ -7,7 +7,6 @@ using DailyRoutines.Managers;
 using DailyRoutines.Windows.Overlays;
 using Dalamud.Game.AddonLifecycle;
 using ECommons.Automation;
-using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -30,8 +29,6 @@ public class AutoExpertDelivery : IDailyModule
         Overlay ??= new AutoExpertDeliveryOverlay();
         if (!P.WindowSystem.Windows.Contains(Overlay)) P.WindowSystem.AddWindow(Overlay);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "GrandCompanySupplyList", OnAddonSupplyList);
-
-        Initialized = true;
     }
 
     public void UI()
@@ -96,7 +93,8 @@ public class AutoExpertDelivery : IDailyModule
             var isNoItems = addon->AtkUnitBase.GetTextNodeById(9)->AtkResNode.IsVisible;
             if (isNoItems) return true;
 
-            var amountText = Marshal.PtrToStringUTF8((nint)AtkStage.GetSingleton()->GetStringArrayData()[32]->StringArray[2]);
+            var amountText =
+                Marshal.PtrToStringUTF8((nint)AtkStage.GetSingleton()->GetStringArrayData()[32]->StringArray[2]);
             var parts = amountText.Split('/');
             var currentAmount = int.Parse(parts[0].Replace(",", ""));
             var capAmount = int.Parse(parts[1].Replace(",", ""));
@@ -149,7 +147,5 @@ public class AutoExpertDelivery : IDailyModule
         Overlay?.Dispose();
         if (P.WindowSystem.Windows.Contains(Overlay)) P.WindowSystem.RemoveWindow(Overlay);
         Service.AddonLifecycle.UnregisterListener(OnAddonSupplyList);
-
-        Initialized = false;
     }
 }

@@ -40,8 +40,6 @@ public class AutoLogin : IDailyModule
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "_TitleMenu", OnTitleMenu);
 
         Service.Framework.Update += OnUpdate;
-
-        Initialized = true;
     }
 
     public void UI()
@@ -178,7 +176,5 @@ public class AutoLogin : IDailyModule
         TaskManager?.Abort();
         HasLoginOnce = false;
         Service.Framework.Update -= OnUpdate;
-
-        Initialized = false;
     }
 }

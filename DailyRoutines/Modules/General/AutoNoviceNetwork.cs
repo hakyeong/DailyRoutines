@@ -20,10 +20,7 @@ public class AutoNoviceNetwork : IDailyModule
     private static bool IsOnProcessing;
     private static int TryTimes;
 
-    public void Init()
-    {
-        Initialized = true;
-    }
+    public void Init() { }
 
     public void UI()
     {
@@ -96,7 +93,5 @@ public class AutoNoviceNetwork : IDailyModule
         Service.AddonLifecycle.UnregisterListener(ClickYesButton);
         IsOnProcessing = false;
         TryTimes = 0;
-
-        Initialized = false;
     }
 }

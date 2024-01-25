@@ -26,8 +26,6 @@ public class AutoRequestItemSubmit : IDailyModule
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Request", OnAddonRequest);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "Request", OnAddonRequest);
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
-
-        Initialized = true;
     }
 
     public void UI() { }
@@ -125,7 +123,5 @@ public class AutoRequestItemSubmit : IDailyModule
         Service.AddonLifecycle.UnregisterListener(OnAddonSelectYesno);
         TaskManager?.Abort();
         SlotsFilled.Clear();
-
-        Initialized = false;
     }
 }

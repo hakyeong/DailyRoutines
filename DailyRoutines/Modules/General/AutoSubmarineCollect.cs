@@ -30,8 +30,6 @@ public partial class AutoSubmarineCollect : IDailyModule
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = true };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectYesno", AlwaysYes);
         Service.Toast.ErrorToast += OnErrorToast;
-
-        Initialized = true;
     }
 
     public void UI()
@@ -224,8 +222,6 @@ public partial class AutoSubmarineCollect : IDailyModule
         Service.AddonLifecycle.UnregisterListener(AlwaysYes);
         Service.Toast.ErrorToast -= OnErrorToast;
         TaskManager?.Abort();
-
-        Initialized = false;
     }
 
 

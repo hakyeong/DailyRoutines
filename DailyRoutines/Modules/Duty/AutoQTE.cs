@@ -28,8 +28,6 @@ public class AutoQTE : IDailyModule
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "_QTEKeep", OnQTEAddon);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "_QTEMash", OnQTEAddon);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "_QTEKeepTime", OnQTEAddon);
-
-        Initialized = true;
     }
 
     public void UI() { }

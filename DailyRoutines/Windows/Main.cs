@@ -72,6 +72,11 @@ public class Main : Window, IDisposable
                             Service.Log.Debug(clickName);
                     }
 
+                    if (Service.ClientState.LocalPlayer != null)
+                    {
+                        ImGui.Text($"本地玩家ID: {Service.ClientState.LocalContentId}");
+                    }
+
                     ImGui.EndTabItem();
                 }
             }

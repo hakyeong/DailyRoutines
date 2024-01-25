@@ -46,6 +46,7 @@ public class ModuleManager
                 if (!component.Initialized)
                 {
                     component.Init();
+                    component.Initialized = true;
                     Service.Log.Debug($"Loaded {component.GetType().Name} module");
                 }
                 else
@@ -54,7 +55,9 @@ public class ModuleManager
             catch (Exception ex)
             {
                 component.Uninit();
+                component.Initialized = false;
                 Service.Config.ModuleEnabled[component.GetType().Name] = false;
+
                 Service.Log.Error($"Failed to load module {component.GetType().Name} due to error: {ex.Message}");
                 Service.Log.Error(ex.StackTrace ?? "Unknown");
             }
@@ -70,6 +73,7 @@ public class ModuleManager
                 if (!component.Initialized)
                 {
                     component.Init();
+                    component.Initialized = true;
                     Service.Log.Debug($"Loaded {component.GetType().Name} module");
                 }
                 else
@@ -79,6 +83,8 @@ public class ModuleManager
             {
                 component.Uninit();
                 Service.Config.ModuleEnabled[component.GetType().Name] = false;
+                component.Initialized = false;
+
                 Service.Log.Error($"Failed to load component {component.GetType().Name} due to error: {ex.Message}");
                 Service.Log.Error(ex.StackTrace ?? "Unknown");
             }
@@ -92,6 +98,8 @@ public class ModuleManager
         if (Modules.ContainsValue(component))
         {
             component.Uninit();
+            component.Initialized = false;
+
             Service.Log.Debug($"Unloaded {component.GetType().Name} module");
         }
     }
@@ -101,6 +109,8 @@ public class ModuleManager
         foreach (var component in Modules.Values)
         {
             component.Uninit();
+            component.Initialized = false;
+
             Service.Log.Debug($"Unloaded {component.GetType().Name} module");
         }
     }

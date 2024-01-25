@@ -19,7 +19,6 @@ public class AutoSkipPraetorium : IDailyModule
         Address = new CutsceneAddressResolver();
         Address.Setup(Service.SigScanner);
         SetEnabled(Address.Valid);
-        Initialized = true;
     }
 
     public void SetEnabled(bool isEnable)
@@ -38,7 +37,6 @@ public class AutoSkipPraetorium : IDailyModule
     public void Uninit()
     {
         if (Initialized) SetEnabled(false);
-        Initialized = false;
     }
 }
 

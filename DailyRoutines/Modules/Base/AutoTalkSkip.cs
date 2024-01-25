@@ -15,8 +15,6 @@ public class AutoTalkSkip : IDailyModule
     public void Init()
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Talk", OnAddonDraw);
-
-        Initialized = true;
     }
 
     public void UI() { }
@@ -32,7 +30,5 @@ public class AutoTalkSkip : IDailyModule
     public void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonDraw);
-
-        Initialized = false;
     }
 }

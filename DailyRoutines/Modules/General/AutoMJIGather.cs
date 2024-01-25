@@ -8,6 +8,7 @@ using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Memory;
 using ECommons.Automation;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.MJI;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
@@ -82,8 +83,6 @@ public class AutoMJIGather : IDailyModule
 
         GatherNodes =
             Service.Config.GetConfig<Dictionary<string, AutoMJIGatherGroup>>(typeof(AutoMJIGather), "GatherNodes");
-
-        Initialized = true;
     }
 
     public void UI()
@@ -304,8 +303,6 @@ public class AutoMJIGather : IDailyModule
         CurrentGatherIndex = 0;
         TaskManager?.Abort();
         Service.Config.Save();
-
-        Initialized = false;
     }
 }
 

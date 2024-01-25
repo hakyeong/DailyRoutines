@@ -31,8 +31,6 @@ public class AutoCutSceneSkip : IDailyModule
     {
         Service.Condition.ConditionChange += OnConditionChanged;
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
-
-        Initialized = true;
     }
 
     private static void OnConditionChanged(ConditionFlag flag, bool value)
@@ -85,7 +83,5 @@ public class AutoCutSceneSkip : IDailyModule
         Service.AddonLifecycle.UnregisterListener(OnAddonLoading);
         Service.Condition.ConditionChange -= OnConditionChanged;
         TaskManager?.Abort();
-
-        Initialized = true;
     }
 }
