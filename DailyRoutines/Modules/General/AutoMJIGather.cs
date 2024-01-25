@@ -25,6 +25,35 @@ public class AutoMJIGather : IDailyModule
 
     private static TaskManager? TaskManager;
 
+    private static readonly HashSet<Vector3> FarmCorpsPos =
+    [
+        // 第一行
+        new Vector3(-240, 57.9f, 101),
+        new Vector3(-240, 57.9f, 106.5f),
+        new Vector3(-240, 57.9f, 112),
+        new Vector3(-240, 57.9f, 117.5f),
+        new Vector3(-240, 57.9f, 123),
+        new Vector3(-240, 57.9f, 101),
+        // 第二行
+        new Vector3(-216, 60.4f, 97),
+        new Vector3(-216, 60.4f, 102.5f),
+        new Vector3(-216, 60.4f, 108),
+        new Vector3(-216, 60.4f, 113.5f),
+        new Vector3(-216, 60.4f, 119),
+        // 第三行
+        new Vector3(-189, 66.4f, 105),
+        new Vector3(-189, 66.4f, 110.5f),
+        new Vector3(-189, 66.4f, 116),
+        new Vector3(-189, 66.4f, 121.5f),
+        new Vector3(-189, 66.4f, 127),
+        // 第四行
+        new Vector3(-179, 66.4f, 105),
+        new Vector3(-179, 66.4f, 110.5f),
+        new Vector3(-179, 66.4f, 116),
+        new Vector3(-179, 66.4f, 121.5f),
+        new Vector3(-179, 66.4f, 127)
+    ];
+
     private static Dictionary<string, AutoMJIGatherGroup> GatherNodes = [];
     private static Thread? DataCollectThread;
     private static int CurrentGatherIndex;
@@ -62,9 +91,18 @@ public class AutoMJIGather : IDailyModule
         ImGui.BeginDisabled(Service.ClientState.TerritoryType != 1055 || IsOnGathering);
         ImGui.SetNextItemWidth(420f);
         var gatherNodes = GatherNodes;
-        if (ImGui.BeginCombo("##AutoMJIGather-GatherNodes", Service.Lang.GetText("AutoMJIGather-NodesInfo", gatherNodes.Count, gatherNodes.Count(x => x.Value.Enabled), GatherNodes.Values.Where(group => group.Enabled).SelectMany(group => group.Nodes).Count()), ImGuiComboFlags.HeightLarge))
+        if (ImGui.BeginCombo("##AutoMJIGather-GatherNodes",
+                             Service.Lang.GetText("AutoMJIGather-NodesInfo", gatherNodes.Count,
+                                                  gatherNodes.Count(x => x.Value.Enabled),
+                                                  GatherNodes.Values.Where(group => group.Enabled)
+                                                             .SelectMany(group => group.Nodes).Count()),
+                             ImGuiComboFlags.HeightLarge))
         {
-            if (ImGui.Button(Service.Lang.GetText("AutoMJIGather-CollectGatherPointsInfo", IsOnDataCollecting ? Service.Lang.GetText("AutoMJIGather-Stop") : Service.Lang.GetText("AutoMJIGather-Start")))) IsOnDataCollecting = !IsOnDataCollecting;
+            if (ImGui.Button(Service.Lang.GetText("AutoMJIGather-CollectGatherPointsInfo",
+                                                  IsOnDataCollecting
+                                                      ? Service.Lang.GetText("AutoMJIGather-Stop")
+                                                      : Service.Lang.GetText("AutoMJIGather-Start"))))
+                IsOnDataCollecting = !IsOnDataCollecting;
 
             ImGuiOm.HelpMarker(Service.Lang.GetText("AutoMJIGather-CollectGatherPointsHelp"));
 
@@ -130,6 +168,7 @@ public class AutoMJIGather : IDailyModule
                 Gather(QueuedGatheringList);
             }
         }
+
         ImGui.EndDisabled();
         ImGui.EndDisabled();
 
@@ -141,7 +180,8 @@ public class AutoMJIGather : IDailyModule
         }
 
         ImGui.SameLine();
-        ImGui.Text(Service.Lang.GetText("AutoMJIGather-GatherProcessInfo", CurrentGatherIndex, QueuedGatheringList.Count));
+        ImGui.Text(Service.Lang.GetText("AutoMJIGather-GatherProcessInfo", CurrentGatherIndex,
+                                        QueuedGatheringList.Count));
     }
 
     private static void CollectGatheringPointData()
@@ -151,10 +191,10 @@ public class AutoMJIGather : IDailyModule
             {
                 foreach (var obj in Service.ObjectTable)
                 {
-                    if (obj.ObjectKind != ObjectKind.CardStand) continue;
+                    if (obj.ObjectKind != ObjectKind.CardStand || FarmCorpsPos.Contains(obj.Position)) continue;
 
                     var objName = obj.Name.ExtractText();
-                    if (objName.Contains("海岛") || string.IsNullOrWhiteSpace(objName)) continue;
+                    if (string.IsNullOrWhiteSpace(objName)) continue;
                     if (!GatherNodes.ContainsKey(objName)) GatherNodes.Add(objName, new AutoMJIGatherGroup(false, []));
                     if (GatherNodes[objName].Nodes.Add(obj.Position))
                         Service.Config.UpdateConfig(typeof(AutoMJIGather), "GatherNodes", GatherNodes);
@@ -233,7 +273,8 @@ public class AutoMJIGather : IDailyModule
                                              2).ToList();
         if (!nearObjects.Any())
         {
-            Service.Log.Warning("没有找到采集点, 正在重新定位坐标"); ;
+            Service.Log.Warning("没有找到采集点, 正在重新定位坐标");
+            ;
             Teleport(node with { Y = node.Y - 1 });
             return false;
         }
