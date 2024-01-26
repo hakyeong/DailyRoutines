@@ -66,6 +66,7 @@ public class AutoDismount : IDailyModule
         if ((ActionType)actionType == ActionType.Mount) return false;
 
         var actionRange = ActionManager.GetActionRange(actionId);
+
         // 技能必须要有目标
         if (actionRange != 0)
         {
@@ -84,6 +85,7 @@ public class AutoDismount : IDailyModule
         }
 
         var actionStatus = ActionManager.Instance()->GetActionStatus((ActionType)actionType, actionId, actionTarget);
+
         // 该技能无须下坐骑
         if (actionStatus == 0) return false;
         // 技能正在冷却
