@@ -37,8 +37,10 @@ public class AutoDismount : IDailyModule
         var shouldDismount = false;
         try
         {
+            /*
             if (P.PluginInterface.IsDev)
                 Service.Log.Debug($"技能类型: {(ActionType)actionType} 技能ID: {actionId} 技能目标ID: {actionTarget:X}");
+            */
 
             if (IsNeedToDismount(actionType, actionId, actionTarget)) shouldDismount = true;
         }
@@ -73,7 +75,6 @@ public class AutoDismount : IDailyModule
             // 无法对目标使用技能
             if (!ActionManager.CanUseActionOnTarget(actionId, (GameObject*)Service.Target.Target.Address)) return false;
         }
-
         // 使用的技能无须下坐骑
         if (ActionManager.Instance()->GetActionStatus((ActionType)actionType, actionId, actionTarget) == 0)
             return false;

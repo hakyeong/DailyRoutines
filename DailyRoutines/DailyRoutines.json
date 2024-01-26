@@ -2,7 +2,7 @@
     "Author": "AtmoOmen",
     "Name": "Daily Routines",
     "Punchline": "帮忙解决一些日常重复性劳动",
-    "Description": "一些简单的自动化功能合集, 帮你从一些无意义重复性工作中解放出来\n\n注: 插件仅支持在线安装",
+    "Description": "一些简单的自动化功能/易用性改动合集, 帮你从一些无意义重复性工作中解放出来\n\n注: 插件仅支持在线安装, 建议/联系/反馈都请到插件 GitHub 页面提交 Issue",
     "IconUrl": "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/icon.png",
     "RepoUrl": "https://github.com/AtmoOmen/DailyRoutines",
     "ApplicableVersion": "any",
