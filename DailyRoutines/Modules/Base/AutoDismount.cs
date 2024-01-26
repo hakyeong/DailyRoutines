@@ -1,10 +1,10 @@
 using System;
 using System.Numerics;
-using System.Threading.Tasks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
+using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 
@@ -22,36 +22,38 @@ public class AutoDismount : IDailyModule
 
     private Hook<UseActionSelfDelegate>? useActionSelfHook;
 
+    private static TaskManager? TaskManager;
+
     public void Init()
     {
         var useActionSelfPtr = Service.SigScanner.ScanText(UseActionSig);
         useActionSelfHook = Hook<UseActionSelfDelegate>.FromAddress(useActionSelfPtr, UseActionSelf);
         useActionSelfHook.Enable();
+
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
 
     public void UI() { }
 
-    private unsafe nint UseActionSelf(
-        long actionManager, uint actionType, uint actionId, long actionTarget, int a5, int actionReleased, int a7, byte[] a8)
+    private unsafe nint UseActionSelf(long actionManager, uint actionType, uint actionId, long actionTarget, int a5, int actionReleased, int a7, byte[] a8)
     {
-        var shouldDismount = false;
         try
         {
-            /*
             if (P.PluginInterface.IsDev)
                 Service.Log.Debug($"技能类型: {(ActionType)actionType} 技能ID: {actionId} 技能目标ID: {actionTarget:X}");
-            */
 
-            if (IsNeedToDismount(actionType, actionId, actionTarget)) shouldDismount = true;
+            TaskManager.Abort();
+            if (IsNeedToDismount(actionType, actionId, actionTarget))
+            {
+                TaskManager.Enqueue(() => useActionSelfHook.Original(actionManager, 13, 99999, actionTarget, a5, actionReleased, a7, a8));
+                TaskManager.Enqueue(() => ActionManager.Instance()->UseAction((ActionType)actionType, actionId, actionTarget));
+            }
         }
         catch (Exception e)
         {
             Service.Log.Warning(e.Message);
             Service.Log.Warning(e.StackTrace ?? "Unknown");
         }
-
-        if (shouldDismount)
-            Task.Delay(10).ContinueWith(_ => ActionManager.Instance()->UseAction(ActionType.Mount, 99999));
 
         return useActionSelfHook.Original(actionManager, actionType, actionId, actionTarget, a5, actionReleased, a7, a8);
     }
@@ -62,22 +64,30 @@ public class AutoDismount : IDailyModule
         if (!IsOnMount()) return false;
         // 使用的技能是坐骑
         if ((ActionType)actionType == ActionType.Mount) return false;
-        // 技能必须要有目标才能释放但是当前没有目标
-        var actionRange = ActionManager.GetActionRange(actionId);
-        if (actionRange != 0 && Service.Target.Target == null) return false;
-        // 对非自身的目标使用技能
-        if (actionTarget != 3758096384L)
-        {
-            // 目标在技能射程之外
-            if (CalculateDistance(Service.ClientState.LocalPlayer.Position, Service.Target.Target.Position) - 2 >
-                actionRange) return false;
 
-            // 无法对目标使用技能
-            if (!ActionManager.CanUseActionOnTarget(actionId, (GameObject*)Service.Target.Target.Address)) return false;
+        var actionRange = ActionManager.GetActionRange(actionId);
+        // 技能必须要有目标
+        if (actionRange != 0)
+        {
+            // 但是当前没有目标
+            if (Service.Target.Target == null) return false;
+            // 对非自身的目标使用技能
+            if (actionTarget != 3758096384L)
+            {
+                // 目标在技能射程之外
+                if (CalculateDistance(Service.ClientState.LocalPlayer.Position, Service.Target.Target.Position) - 2 > actionRange) return false;
+                // 无法对目标使用技能
+                if (!ActionManager.CanUseActionOnTarget(actionId, (GameObject*)Service.Target.Target.Address)) return false;
+                // 看不到目标
+                if (ActionManager.GetActionInRangeOrLoS(actionId, (GameObject*)Service.ClientState.LocalPlayer.Address, (GameObject*)Service.Target.Target.Address) != 0) return false;
+            }
         }
-        // 使用的技能无须下坐骑
-        if (ActionManager.Instance()->GetActionStatus((ActionType)actionType, actionId, actionTarget) == 0)
-            return false;
+
+        var actionStatus = ActionManager.Instance()->GetActionStatus((ActionType)actionType, actionId, actionTarget);
+        // 该技能无须下坐骑
+        if (actionStatus == 0) return false;
+        // 技能正在冷却
+        if (actionStatus == 582) return false;
 
         return true;
     }
@@ -99,5 +109,6 @@ public class AutoDismount : IDailyModule
     public void Uninit()
     {
         useActionSelfHook.Dispose();
+        TaskManager?.Abort();
     }
 }
