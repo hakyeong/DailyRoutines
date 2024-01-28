@@ -8,7 +8,7 @@ using Dalamud.Game.AddonLifecycle;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoQTETitle", "AutoQTEDescription", ModuleCategories.Duty)]
+[ModuleDescription("AutoQTETitle", "AutoQTEDescription", ModuleCategories.Combat)]
 public class AutoQTE : IDailyModule
 {
     public bool Initialized { get; set; }

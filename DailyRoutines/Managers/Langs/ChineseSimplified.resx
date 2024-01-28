@@ -127,7 +127,7 @@
     <value>自动重击伽美什</value>
   </data>
   <data name="AutoCancelCastDescription" xml:space="preserve">
-    <value>当目标死亡时, 自动中断咏唱</value>
+    <value>当目标死亡或不可选中时, 自动中断咏唱</value>
   </data>
   <data name="AutoCancelCastTitle" xml:space="preserve">
     <value>自动中断咏唱</value>
@@ -139,14 +139,13 @@
     <value>自动强袭水晶塔</value>
   </data>
   <data name="AutoCutSceneSkipDescription" xml:space="preserve">
-    <value>进入过场动画时, 自动跳过
-(无法跳过原本就无法跳过的动画)</value>
+    <value>(本模块无法跳过原本就无法跳过的动画)</value>
   </data>
   <data name="AutoCutSceneSkipTitle" xml:space="preserve">
     <value>自动跳过过场动画</value>
   </data>
   <data name="AutoDismountDescription" xml:space="preserve">
-    <value>当使用技能时, 如果正在骑乘坐骑, 则自动下坐骑</value>
+    <value>当骑乘坐骑时, 若尝试使用可用技能, 自动下坐骑并使用技能</value>
   </data>
   <data name="AutoDismountTitle" xml:space="preserve">
     <value>自动下坐骑</value>
@@ -336,6 +335,9 @@
   <data name="Base" xml:space="preserve">
     <value>基础</value>
   </data>
+  <data name="Combat" xml:space="preserve">
+    <value>战斗</value>
+  </data>
   <data name="CommandHelp" xml:space="preserve">
     <value>打开主界面</value>
   </data>
@@ -353,9 +355,6 @@
   </data>
   <data name="ContactHelp" xml:space="preserve">
     <value>本插件开源免费, 如有任何疑问, 请点击左侧按钮, 在页面内提交 Issue</value>
-  </data>
-  <data name="Duty" xml:space="preserve">
-    <value>副本</value>
   </data>
   <data name="Enable" xml:space="preserve">
     <value>启用</value>

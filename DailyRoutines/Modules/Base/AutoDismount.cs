@@ -13,7 +13,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Object;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoDismountTitle", "AutoDismountDescription", ModuleCategories.Base)]
+[ModuleDescription("AutoDismountTitle", "AutoDismountDescription", ModuleCategories.Combat)]
 public class AutoDismount : IDailyModule
 {
     public bool Initialized { get; set; }
@@ -75,7 +75,7 @@ public class AutoDismount : IDailyModule
             if (actionTarget != 3758096384L)
             {
                 // 目标在技能射程之外
-                if (GetTargetDistance(Service.ClientState.LocalPlayer.Position, Service.Target.Target.Position) - 4 > actionRange) return false;
+                if (GetTargetDistance(Service.ClientState.LocalPlayer.Position, Service.Target.Target.Position) > actionRange) return false;
                 // 无法对目标使用技能
                 if (!ActionManager.CanUseActionOnTarget(actionId, (GameObject*)Service.Target.Target.Address)) return false;
                 // 看不到目标
@@ -100,7 +100,7 @@ public class AutoDismount : IDailyModule
 
     private static float GetTargetDistance(Vector3 playerPos, Vector3 objPos)
     {
-        return MathF.Sqrt(MathF.Pow(playerPos.X - objPos.X, 2) + MathF.Pow(playerPos.Y - objPos.Y, 2));
+        return MathF.Sqrt(MathF.Pow(playerPos.X - objPos.X, 2) + MathF.Pow(playerPos.Y - objPos.Y, 2)) - 4;
     }
 
     public void Uninit()
