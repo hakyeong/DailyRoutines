@@ -126,6 +126,12 @@
   <data name="AutoCACTitle" xml:space="preserve">
     <value>自动重击伽美什</value>
   </data>
+  <data name="AutoCancelCastDescription" xml:space="preserve">
+    <value>当目标死亡时, 自动中断咏唱</value>
+  </data>
+  <data name="AutoCancelCastTitle" xml:space="preserve">
+    <value>自动中断咏唱</value>
+  </data>
   <data name="AutoCTSDescription" xml:space="preserve">
     <value>交互游戏机后, 自动开始重复游玩强袭水晶塔</value>
   </data>
