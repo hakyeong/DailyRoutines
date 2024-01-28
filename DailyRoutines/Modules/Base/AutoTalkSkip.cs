@@ -21,10 +21,7 @@ public class AutoTalkSkip : IDailyModule
 
     private static void OnAddonDraw(AddonEvent type, AddonArgs args)
     {
-        if (EzThrottler.Throttle("AutoTalkSkip", 50))
-        {
-            Click.SendClick("talk");
-        }
+        Click.SendClick("talk");
     }
 
     public void Uninit()

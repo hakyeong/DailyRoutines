@@ -50,7 +50,7 @@ public class AutoNoviceNetwork : IDailyModule
 
     private static void ClickYesButton(AddonEvent type, AddonArgs args)
     {
-        if (EzThrottler.Throttle("AutoNoviceNetwork-ClickYesButton", 100)) Click.SendClick("select_yes");
+        Click.SendClick("select_yes");
     }
 
     private static unsafe void ClickNoviceNetworkButton()

@@ -64,24 +64,21 @@ public class AutoRequestItemSubmit : IDailyModule
 
     private static unsafe void ClickRequestIcon()
     {
-        if (EzThrottler.Throttle("AutoRequestItemSubmit", 100))
+        if (TryGetAddonByName<AddonRequest>("Request", out var addon))
         {
-            if (TryGetAddonByName<AddonRequest>("Request", out var addon))
+            for (var i = 1; i <= addon->EntryCount; i++)
             {
-                for (var i = 1; i <= addon->EntryCount; i++)
-                {
-                    if (SlotsFilled.Contains(addon->EntryCount)) ClickHandOver();
-                    if (SlotsFilled.Contains(i)) return;
-                    var index = i;
-                    TaskManager.DelayNext($"AutoRequestItemSubmit{index}", 10);
-                    TaskManager.Enqueue(() => TryClickItem(addon, index));
-                }
+                if (SlotsFilled.Contains(addon->EntryCount)) ClickHandOver();
+                if (SlotsFilled.Contains(i)) return;
+                var index = i;
+                TaskManager.DelayNext($"AutoRequestItemSubmit{index}", 10);
+                TaskManager.Enqueue(() => TryClickItem(addon, index));
             }
-            else
-            {
-                SlotsFilled.Clear();
-                TaskManager.Abort();
-            }
+        }
+        else
+        {
+            SlotsFilled.Clear();
+            TaskManager.Abort();
         }
     }
 

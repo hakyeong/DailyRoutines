@@ -12,6 +12,7 @@ using ECommons.Automation;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -27,13 +28,15 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
 
     private static int ConfigPriceReduction;
     private static int ConfigLowestPrice;
+
     private static int CurrentMarketLowestPrice;
+    private static uint CurrentItemSearchItemID;
     private static unsafe RetainerManager.RetainerList.Retainer* CurrentRetainer;
 
 
     public void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
         if (!Service.Config.ConfigExists(typeof(AutoRetainerPriceAdjust), "PriceReduction"))
             Service.Config.AddConfig(typeof(AutoRetainerPriceAdjust), "PriceReduction", 1);
@@ -90,10 +93,12 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
     {
         if (TaskManager.IsBusy) return;
 
+        TaskManager.Abort();
+
         // 点击比价
         TaskManager.Enqueue(ClickComparePrice);
-        TaskManager.DelayNext(500);
         TaskManager.AbortOnTimeout = false;
+        TaskManager.DelayNext(500);
         // 获取当前最低价，并退出
         TaskManager.Enqueue(GetLowestPrice);
         TaskManager.AbortOnTimeout = true;
@@ -198,21 +203,27 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
     {
         if (TryGetAddonByName<AtkUnitBase>("ItemSearchResult", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var searchResult =
-                Marshal.PtrToStringUTF8((nint)AtkStage.GetSingleton()->GetStringArrayData()[33]->StringArray[202]);
+            // 同一物品
+            if (AgentItemSearch.Instance()->ResultItemID == CurrentItemSearchItemID)
+            {
+                addon->Close(true);
+                return true;
+            }
+
+            CurrentItemSearchItemID = AgentItemSearch.Instance()->ResultItemID;
+            var searchResult = addon->GetTextNodeById(29)->NodeText.ExtractText();
             if (string.IsNullOrEmpty(searchResult)) return false; // 请稍后
 
             // 搜索结果 0
             if (int.Parse(AutoRetainerPriceAdjustRegex().Replace(searchResult, "")) == 0)
             {
                 CurrentMarketLowestPrice = 0;
+                addon->Close(true);
                 return true;
             }
 
-            var text = addon->UldManager.NodeList[5]->GetAsAtkComponentNode()->Component->UldManager.NodeList[1]->
-                GetAsAtkComponentNode()->Component->UldManager.NodeList[10]->GetAsAtkTextNode()->NodeText.ToString();
-            if (!int.TryParse(AutoRetainerPriceAdjustRegex().Replace(text, ""), out CurrentMarketLowestPrice))
-                return false;
+            var text = addon->UldManager.NodeList[5]->GetAsAtkComponentNode()->Component->UldManager.NodeList[1]->GetAsAtkComponentNode()->Component->UldManager.NodeList[10]->GetAsAtkTextNode()->NodeText.ToString();
+            if (!int.TryParse(AutoRetainerPriceAdjustRegex().Replace(text, ""), out CurrentMarketLowestPrice)) return false;
             addon->Close(true);
             return true;
         }
@@ -222,20 +233,15 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
 
     private static unsafe bool? FillLowestPrice()
     {
-        if (TryGetAddonByName<AddonRetainerSell>("RetainerSell", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
+        if (TryGetAddonByName<AddonRetainerSell>("RetainerSell", out var addon) && HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
             var ui = &addon->AtkUnitBase;
             var priceComponent = addon->AskingPrice;
             var handler = new ClickRetainerSellDR((nint)addon);
-            var itemName = addon->ItemName->NodeText.ExtractText();
-            Service.Log.Debug(CurrentMarketLowestPrice.ToString());
             if (CurrentMarketLowestPrice < ConfigLowestPrice || CurrentMarketLowestPrice == 0 ||
                 CurrentMarketLowestPrice - ConfigPriceReduction <= 1)
             {
-                var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-WarnMessageReachLowestPrice",
-                                                       SeString.CreateItemLink(Service.ExcelData.ItemNames[itemName]),
-                                                       CurrentMarketLowestPrice, ConfigLowestPrice);
+                var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-WarnMessageReachLowestPrice", SeString.CreateItemLink(CurrentItemSearchItemID), CurrentMarketLowestPrice, ConfigLowestPrice);
                 Service.Chat.Print(message);
 
                 handler.Decline();

@@ -102,17 +102,14 @@ public class AutoLogin : IDailyModule
     private static unsafe void OnTitleMenu(AddonEvent eventType, AddonArgs? addonInfo)
     {
         if (string.IsNullOrEmpty(ConfigSelectedServer) || ConfigSelectedCharaIndex == -1) return;
-        if (EzThrottler.Throttle("AutoLogin-OnTitleMenu"))
+        if (HasLoginOnce) return;
+        if (TryGetAddonByName<AtkUnitBase>("_TitleMenu", out var addon) && IsAddonReady(addon))
         {
-            if (HasLoginOnce) return;
-            if (TryGetAddonByName<AtkUnitBase>("_TitleMenu", out var addon) && IsAddonReady(addon))
-            {
-                HasLoginOnce = true;
-                var handler = new ClickTitleMenuDR();
-                handler.Start();
+            HasLoginOnce = true;
+            var handler = new ClickTitleMenuDR();
+            handler.Start();
 
-                TaskManager.Enqueue(WaitAddonCharaSelectListMenu);
-            }
+            TaskManager.Enqueue(WaitAddonCharaSelectListMenu);
         }
     }
 
