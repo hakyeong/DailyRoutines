@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
+using Dalamud.Utility.Signatures;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
@@ -16,19 +19,19 @@ public class AutoDismount : IDailyModule
     public bool Initialized { get; set; }
     public bool WithUI => false;
 
-    private const string UseActionSig = "E8 ?? ?? ?? ?? EB 64 B1 01 ?? ?? ?? ?? ?? ?? ??";
-
     private delegate nint UseActionSelfDelegate(long a1, uint a2, uint a3, long a4, int a5, int a6, int a7, byte[] a8);
 
+    [Signature("E8 ?? ?? ?? ?? EB 64 B1 01 ?? ?? ?? ?? ?? ?? ??", DetourName = nameof(UseActionSelf))]
     private Hook<UseActionSelfDelegate>? useActionSelfHook;
 
+    private static HashSet<uint>? CanTargetSelfActions;
     private static TaskManager? TaskManager;
 
     public void Init()
     {
-        var useActionSelfPtr = Service.SigScanner.ScanText(UseActionSig);
-        useActionSelfHook = Hook<UseActionSelfDelegate>.FromAddress(useActionSelfPtr, UseActionSelf);
-        useActionSelfHook.Enable();
+        SignatureHelper.Initialise(this);
+        useActionSelfHook?.Enable();
+        CanTargetSelfActions ??= Service.ExcelData.Actions.Where(x => x.Value.CanTargetSelf).Select(x => x.Key).ToHashSet();
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
@@ -39,9 +42,6 @@ public class AutoDismount : IDailyModule
     {
         try
         {
-            if (P.PluginInterface.IsDev)
-                Service.Log.Debug($"技能类型: {(ActionType)actionType} 技能ID: {actionId} 技能目标ID: {actionTarget:X}");
-
             TaskManager.Abort();
             if (IsNeedToDismount(actionType, actionId, actionTarget))
             {
@@ -66,9 +66,8 @@ public class AutoDismount : IDailyModule
         if ((ActionType)actionType == ActionType.Mount) return false;
 
         var actionRange = ActionManager.GetActionRange(actionId);
-
-        // 技能必须要有目标
-        if (actionRange != 0)
+        // 技能必须要有目标且目标不会是自己
+        if (actionRange != 0 && !CanTargetSelfActions.Contains(actionId))
         {
             // 但是当前没有目标
             if (Service.Target.Target == null) return false;
@@ -76,7 +75,7 @@ public class AutoDismount : IDailyModule
             if (actionTarget != 3758096384L)
             {
                 // 目标在技能射程之外
-                if (CalculateDistance(Service.ClientState.LocalPlayer.Position, Service.Target.Target.Position) - 2 > actionRange) return false;
+                if (GetTargetDistance(Service.ClientState.LocalPlayer.Position, Service.Target.Target.Position) - 4 > actionRange) return false;
                 // 无法对目标使用技能
                 if (!ActionManager.CanUseActionOnTarget(actionId, (GameObject*)Service.Target.Target.Address)) return false;
                 // 看不到目标
@@ -99,18 +98,14 @@ public class AutoDismount : IDailyModule
         return Service.Condition[ConditionFlag.Mounted] || Service.Condition[ConditionFlag.Mounted2];
     }
 
-    private static float CalculateDistance(Vector3 vector1, Vector3 vector2)
+    private static float GetTargetDistance(Vector3 playerPos, Vector3 objPos)
     {
-        var deltaX = vector1.X - vector2.X;
-        var deltaY = vector1.Y - vector2.Y;
-        var deltaZ = vector1.Z - vector2.Z;
-
-        return (float)Math.Sqrt((deltaX * deltaX) + (deltaY * deltaY) + (deltaZ * deltaZ));
+        return MathF.Sqrt(MathF.Pow(playerPos.X - objPos.X, 2) + MathF.Pow(playerPos.Y - objPos.Y, 2));
     }
 
     public void Uninit()
     {
-        useActionSelfHook.Dispose();
+        useActionSelfHook?.Dispose();
         TaskManager?.Abort();
     }
 }
