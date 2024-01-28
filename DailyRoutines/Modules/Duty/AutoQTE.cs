@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
-using ECommons.Throttlers;
 
 namespace DailyRoutines.Modules;
 

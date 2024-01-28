@@ -8,6 +8,7 @@ using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Manager;
 using DailyRoutines.Managers;
+using DailyRoutines.Modules;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
@@ -70,11 +71,6 @@ public class Main : Window, IDisposable
                     {
                         foreach (var clickName in Click.GetClickNames())
                             Service.Log.Debug(clickName);
-                    }
-
-                    if (Service.ClientState.LocalPlayer != null)
-                    {
-                        ImGui.Text($"本地玩家ID: {Service.ClientState.LocalContentId}");
                     }
 
                     ImGui.EndTabItem();
