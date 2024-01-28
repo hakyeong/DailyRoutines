@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 using System.Text.RegularExpressions;
 using ClickLib;
@@ -29,7 +30,7 @@ public partial class AutoSubmarineCollect : IDailyModule
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectYesno", AlwaysYes);
-        Service.Toast.ErrorToast += OnErrorToast;
+        Service.Chat.ChatMessage += OnErrorText;
     }
 
     public void UI()
@@ -111,9 +112,9 @@ public partial class AutoSubmarineCollect : IDailyModule
         return false;
     }
 
-    private static unsafe void OnErrorToast(ref SeString message, ref bool isHandled)
+    private static unsafe void OnErrorText(Dalamud.Game.Text.XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
-        if (!TaskManager.IsBusy || !message.TextValue.Contains("无法进行出港") || CurrentIndex == 0) return;
+        if (!TaskManager.IsBusy || !message.ExtractText().Contains("无法进行出港，需要修理配件") || CurrentIndex == 0) return;
 
         if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(addon))
@@ -220,7 +221,7 @@ public partial class AutoSubmarineCollect : IDailyModule
     public void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(AlwaysYes);
-        Service.Toast.ErrorToast -= OnErrorToast;
+        Service.Chat.ChatMessage -= OnErrorText;
         TaskManager?.Abort();
     }
 
