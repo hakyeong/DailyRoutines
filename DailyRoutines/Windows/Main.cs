@@ -4,17 +4,26 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Threading;
 using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Manager;
 using DailyRoutines.Managers;
 using DailyRoutines.Modules;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Windowing;
+using Dalamud.Memory;
 using Dalamud.Utility;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
+using static System.Windows.Forms.Design.AxImporter;
+using Action = System.Action;
+using Map = Lumina.Excel.GeneratedSheets.Map;
 
 namespace DailyRoutines.Windows;
 
@@ -24,11 +33,17 @@ public class Main : Window, IDisposable
         new();
 
     private static readonly Dictionary<ModuleCategories, List<Type>> ModuleCategories = new();
+    private Thread? TeleportThread;
+    private static bool IsTeleportThreadRunning = true;
+    private static Queue<Action> TeleportQueue = new();
     private static string SearchString = string.Empty;
     private static string ConflictKeySearchString = string.Empty;
 
     public Main(Plugin plugin) : base("Daily Routines - Main")
     {
+        TeleportThread ??= new Thread(TeleportSeparate);
+        TeleportThread.Start();
+
         var assembly = Assembly.GetExecutingAssembly();
         var moduleTypes = assembly.GetTypes()
                                   .Where(t => typeof(IDailyModule).IsAssignableFrom(t) && t.IsClass);
@@ -73,12 +88,120 @@ public class Main : Window, IDisposable
                             Service.Log.Debug(clickName);
                     }
 
+                    unsafe
+                    {
+                        if (ImGui.Button("传送到FLAG地图"))
+                        {
+                            var territoryId = AgentMap.Instance()->FlagMapMarker.TerritoryId;
+                            if (Service.ClientState.TerritoryType != territoryId)
+                            {
+                                var aetheryte = territoryId == 399
+                                                    ? Service.Data.GetExcelSheet<Map>().GetRow(territoryId)?.TerritoryType?.Value?.Aetheryte.Value
+                                                    : Service.Data.GetExcelSheet<Aetheryte>().FirstOrDefault(x => x.IsAetheryte && x.Territory.Row == territoryId);
+
+                                if (aetheryte != null)
+                                {
+                                    Telepo.Instance()->Teleport(aetheryte.RowId, 0);
+                                }
+                            }
+                        }
+
+                        if (ImGui.Button("传送到FLAG"))
+                        {
+                            var currentPos = Service.ClientState.LocalPlayer.Position;
+                            var targetPos = new Vector3(AgentMap.Instance()->FlagMapMarker.XFloat, 0,
+                                                        AgentMap.Instance()->FlagMapMarker.YFloat);
+                            if (Service.Condition[ConditionFlag.BoundByDuty] || Service.Condition[ConditionFlag.BoundByDuty56] || Service.Condition[ConditionFlag.BoundByDuty95] || Service.Condition[ConditionFlag.BoundToDuty97])
+                            {
+                                Teleport(targetPos);
+                                return;
+                            }
+                            var queue = CalculateIntermediatePositions(currentPos, targetPos);
+                            if (queue.Count <= 1) Teleport(targetPos);
+                            else
+                            {
+                                foreach (var action in queue)
+                                {
+                                    Service.Log.Debug($"已加入队列 {action}");
+                                    TeleportQueue.Enqueue(() => Teleport(action));
+                                }
+                            }
+                        }
+
+                        if (ImGui.Button("取消队列"))
+                        {
+                            TeleportQueue.Clear();
+                        }
+
+                        if (ImGui.Button("Y + 5"))
+                        {
+                            var currentPos = Service.ClientState.LocalPlayer.Position;
+                            Teleport(currentPos with { Y = currentPos.Y + 5 });
+                        }
+
+                        if (ImGui.Button("Y - 5"))
+                        {
+                            var currentPos = Service.ClientState.LocalPlayer.Position;
+                            Teleport(currentPos with { Y = currentPos.Y - 5 });
+                        }
+                    }
+
                     ImGui.EndTabItem();
                 }
             }
 
             ImGui.EndTabBar();
         }
+    }
+
+    private static bool? Teleport(Vector3 pos)
+    {
+        if (IsOccupied()) return false;
+
+        if (Service.ClientState.LocalPlayer != null)
+        {
+            var address = Service.ClientState.LocalPlayer.Address;
+            MemoryHelper.Write(address + 176, pos.X);
+            MemoryHelper.Write(address + 180, pos.Y);
+            MemoryHelper.Write(address + 184, pos.Z);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private void TeleportSeparate()
+    {
+        while (IsTeleportThreadRunning)
+        {
+            if (TeleportQueue.Count > 0)
+            {
+                var action = TeleportQueue.Dequeue();
+                action();
+                Thread.Sleep(1000);
+            }
+        }
+    }
+
+    private List<Vector3> CalculateIntermediatePositions(Vector3 currentPosition, Vector3 targetPosition)
+    {
+        const int maxStepDistance = 10;
+        var positions = new List<Vector3>();
+        var direction = targetPosition - currentPosition;
+        direction = Vector3.Normalize(direction);
+        var totalDistance = Vector3.Distance(currentPosition, targetPosition);
+
+        var steps = (int)Math.Ceiling(totalDistance / maxStepDistance);
+
+        for (var i = 1; i <= steps; i++)
+        {
+            var stepDistance = Math.Min(i * maxStepDistance, totalDistance);
+            var stepPosition = currentPosition + (direction * stepDistance);
+            positions.Add(stepPosition);
+        }
+
+        return positions;
     }
 
     private static void DrawTabItemModules(IReadOnlyList<Type> modules, ModuleCategories category)
@@ -270,6 +393,7 @@ public class Main : Window, IDisposable
 
     public void Dispose()
     {
+        IsTeleportThreadRunning = false;
         Service.Config.Save();
     }
 }
