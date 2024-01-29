@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using DailyRoutines.Managers;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 
 namespace DailyRoutines.Manager;
 
@@ -87,39 +88,28 @@ public partial class LanguageManager
     public SeString GetSeString(string key, params object[] args)
     {
         var format = resourceData.TryGetValue(key, out var resValue) ? resValue : fbResourceData.GetValueOrDefault(key);
-
         var ssb = new SeStringBuilder();
-        var regex = SeStringRegex();
-
         var lastIndex = 0;
-        foreach (var match in regex.Matches(format).Cast<Match>())
+
+        foreach (Match match in SeStringRegex().Matches(format))
         {
-            ssb.AddUiForegroundOff();
-            ssb.AddText(format.Substring(lastIndex, match.Index - lastIndex));
+            ssb.AddUiForeground(format[lastIndex..match.Index], 2);
+            lastIndex = match.Index + match.Length;
 
-            var argIndex = int.Parse(match.Groups[1].Value);
-
-            if (argIndex >= 0 && argIndex < args.Length)
+            if (int.TryParse(match.Groups[1].Value, out var argIndex) && argIndex >= 0 && argIndex < args.Length)
             {
-                var arg = args[argIndex];
-                if (arg is SeString seStringArg)
+                if (args[argIndex] is SeString)
                 {
-                    ssb.AddUiForegroundOff();
-                    ssb.Append(seStringArg);
+                    ssb.Append((SeString)args[argIndex]);
                 }
                 else
                 {
-                    ssb.AddUiForegroundOff();
-                    ssb.AddText(arg.ToString());
+                    ssb.AddUiForeground(args[argIndex].ToString(), 2);
                 }
             }
-
-            lastIndex = match.Index + match.Length;
         }
 
-        ssb.AddUiForegroundOff();
-        ssb.AddText(format.Substring(lastIndex));
-
+        ssb.AddUiForeground(format[lastIndex..], 2);
         return ssb.Build();
     }
 

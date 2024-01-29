@@ -116,6 +116,8 @@ public partial class AutoSubmarineCollect : IDailyModule
     {
         if (!TaskManager.IsBusy || !message.ExtractText().Contains("无法进行出港，需要修理配件") || CurrentIndex == 0) return;
 
+        Service.Log.Debug("准备进行潜水艇修理");
+
         if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(addon))
         {
@@ -127,7 +129,8 @@ public partial class AutoSubmarineCollect : IDailyModule
             TaskManager.Enqueue(() => Click.TrySendClick("select_string4"));
             TaskManager.Enqueue(RepairSubmarines);
         }
-        else if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon1) &&
+
+        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon1) &&
                  HelpersOm.IsAddonAndNodesReady(addon1))
         {
             TaskManager.Abort();

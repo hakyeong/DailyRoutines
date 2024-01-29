@@ -202,13 +202,6 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
     {
         if (TryGetAddonByName<AtkUnitBase>("ItemSearchResult", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            // 同一物品
-            if (AgentItemSearch.Instance()->ResultItemID == CurrentItemSearchItemID)
-            {
-                addon->Close(true);
-                return true;
-            }
-
             CurrentItemSearchItemID = AgentItemSearch.Instance()->ResultItemID;
             var searchResult = addon->GetTextNodeById(29)->NodeText.ExtractText();
             if (string.IsNullOrEmpty(searchResult)) return false; // 请稍后
