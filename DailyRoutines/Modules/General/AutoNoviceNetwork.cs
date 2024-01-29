@@ -5,7 +5,7 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Interface.Colors;
-using ECommons.Throttlers;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -28,7 +28,7 @@ public class AutoNoviceNetwork : IDailyModule
         if (ImGui.Button(Service.Lang.GetText("AutoNoviceNetwork-Start")))
         {
             TryTimes = 0;
-            Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectYesno", ClickYesButton);
+            Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", ClickYesButton);
             IsOnProcessing = true;
 
             ClickNoviceNetworkButton();
@@ -48,13 +48,20 @@ public class AutoNoviceNetwork : IDailyModule
         ImGui.PopStyleColor();
     }
 
-    private static void ClickYesButton(AddonEvent type, AddonArgs args)
+    private static unsafe void ClickYesButton(AddonEvent type, AddonArgs args)
     {
-        Click.SendClick("select_yes");
+        if (TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) && HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
+        {
+            if (addon->PromptText->NodeText.ExtractText().Contains("新人频道"))
+            {
+                Click.SendClick("select_yes");
+            }
+        }
     }
 
     private static unsafe void ClickNoviceNetworkButton()
     {
+        if (!IsOnProcessing) return;
         if (TryGetAddonByName<AtkUnitBase>("ChatLog", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(addon))
         {

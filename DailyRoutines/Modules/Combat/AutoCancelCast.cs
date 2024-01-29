@@ -18,7 +18,7 @@ public unsafe class AutoCancelCast : IDailyModule
     public bool WithUI => false;
 
     [StructLayout(LayoutKind.Explicit)]
-    private struct ActionManagerEX
+    internal struct ActionManagerEX
     {
         [FieldOffset(0x28)]
         public uint CastActionType;
@@ -30,7 +30,7 @@ public unsafe class AutoCancelCast : IDailyModule
         public uint CastTargetObjectID;
     }
 
-    private static ActionManagerEX ActionManagerData => *(ActionManagerEX*)ActionManager.Addresses.Instance.Value;
+    internal static ActionManagerEX ActionManagerData => *(ActionManagerEX*)ActionManager.Addresses.Instance.Value;
 
     [Signature("48 83 EC 38 33 D2 C7 44 24 20 00 00 00 00 45 33 C9")]
     private readonly delegate* unmanaged<void> CancelCast;
