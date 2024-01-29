@@ -9,7 +9,6 @@ using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Manager;
 using DailyRoutines.Managers;
-using DailyRoutines.Modules;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
@@ -21,7 +20,6 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
-using static System.Windows.Forms.Design.AxImporter;
 using Action = System.Action;
 using Map = Lumina.Excel.GeneratedSheets.Map;
 
