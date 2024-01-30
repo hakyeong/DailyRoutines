@@ -30,7 +30,7 @@ public unsafe class AutoCancelCast : IDailyModule
         public uint CastTargetObjectID;
     }
 
-    internal static ActionManagerEX ActionManagerData => *(ActionManagerEX*)ActionManager.Addresses.Instance.Value;
+    internal static ActionManagerEX ActionManagerData => *(ActionManagerEX*)ActionManager.StaticAddressPointers.pInstance;
 
     [Signature("48 83 EC 38 33 D2 C7 44 24 20 00 00 00 00 45 33 C9")]
     private readonly delegate* unmanaged<void> CancelCast;
