@@ -34,6 +34,7 @@ public unsafe class AutoDismount : IDailyModule
     public void Init()
     {
         SignatureHelper.Initialise(this);
+        useActionSelfHook = Hook<UseActionSelfDelegate>.FromAddress((nint)ActionManager.MemberFunctionPointers.UseAction, UseActionSelf);
         useActionSelfHook?.Enable();
 
         CanTargetSelfActions ??=
@@ -52,13 +53,8 @@ public unsafe class AutoDismount : IDailyModule
         TaskManager.Abort();
         if (IsNeedToDismount(actionType, actionId, actionTarget))
         {
-            var dismountState = useActionSelfHook.Original(actionManager, 5, 23, 0);
-            if (dismountState)
-            {
-                TaskManager.Enqueue(
-                    () => useActionSelfHook.Original(actionManager, actionType, actionId, actionTarget, a5, a6, a7,
-                                                     a8));
-            }
+            useActionSelfHook.Original(actionManager, 5, 23, 0);
+            TaskManager.Enqueue(() => ActionManager.Instance()->UseAction((ActionType)actionType, actionId, (long)actionTarget, a5, a6, a7, a8));
         }
 
         return useActionSelfHook.Original(ActionManager.StaticAddressPointers.pInstance, actionType, actionId,
@@ -73,13 +69,8 @@ public unsafe class AutoDismount : IDailyModule
         // 使用的技能是坐骑
         if ((ActionType)actionType == ActionType.Mount) return false;
 
-        // 技能正在冷却
-        if (ActionManager.Instance()->GetRecastTime((ActionType)actionType, actionId) -
-            ActionManager.Instance()->GetRecastTimeElapsed((ActionType)actionType, actionId) > 0.5) return false;
-
-        // 技能无须下坐骑
-        if (ActionManager.Instance()->GetActionStatus((ActionType)actionType, actionId, (long)actionTarget, false,
-                                                      false) == 0) return false;
+        // 0 - 该技能无须下坐骑
+        if (ActionManager.Instance()->GetActionStatus((ActionType)actionType, actionId, (long)actionTarget, false, false) == 0) return false;
 
         // 地面类技能
         if (TargetAreaActions.Contains(actionId)) return true;
@@ -95,11 +86,8 @@ public unsafe class AutoDismount : IDailyModule
             // 对非自身的目标使用技能
             if (actionTarget != 3758096384L)
             {
-                var losMessage =
-                    ActionManager.GetActionInRangeOrLoS(actionId, (GameObject*)Service.ClientState.LocalPlayer.Address,
-                                                        actionObject);
                 // 562 - 看不到目标; 566 - 目标在射程外
-                if (losMessage is 562 or 566) return false;
+                if (ActionManager.GetActionInRangeOrLoS(actionId, (GameObject*)Service.ClientState.LocalPlayer.Address, actionObject) is 562 or 566) return false;
                 // 目标在范围外
                 if (!HelpersOm.CanUseActionOnObject((GameObject*)Service.ClientState.LocalPlayer.Address, actionObject,
                                                     actionRange)) return false;
