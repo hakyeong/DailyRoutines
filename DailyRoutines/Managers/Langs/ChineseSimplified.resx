@@ -266,6 +266,12 @@
   <data name="AutoQTETitle" xml:space="preserve">
     <value>自动动态演练</value>
   </data>
+  <data name="AutoRefocusDescription" xml:space="preserve">
+    <value>在副本内, 若丢失的焦点目标再次出现, 则自动重新焦点</value>
+  </data>
+  <data name="AutoRefocusTitle" xml:space="preserve">
+    <value>自动重新焦点目标</value>
+  </data>
   <data name="AutoRequestItemSubmitDescription" xml:space="preserve">
     <value>在递交物品时, 自动选择物品并完成递交</value>
   </data>

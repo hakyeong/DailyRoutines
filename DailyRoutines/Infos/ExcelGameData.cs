@@ -7,12 +7,18 @@ namespace DailyRoutines.Infos;
 
 public class ExcelGameData
 {
-    public Dictionary<uint, Action>? Actions { get; private set; } = new();
+    public Dictionary<uint, Action>? Actions { get; private set; }
+    public Dictionary<uint, ContentFinderCondition>? Contents { get; private set; }
 
     public ExcelGameData()
     {
         Actions = Service.Data.GetExcelSheet<Action>()
                          ?.Where(x => x.ClassJobCategory.Row > 0 && x.ActionCategory.Row <= 4 && x.RowId > 8)
                          .ToDictionary(x => x.RowId, x => x);
+
+        Contents = Service.Data.GetExcelSheet<ContentFinderCondition>()
+                          .Where(x => !x.Name.ToString().IsNullOrEmpty())
+                          .DistinctBy(x => x.TerritoryType.Row)
+                          .ToDictionary(x => x.TerritoryType.Row, x => x);
     }
 }
