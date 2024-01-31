@@ -6,6 +6,7 @@ using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Gui;
+using Dalamud.Game.Gui.PartyFinder;
 using Dalamud.Game.Gui.Toast;
 using Dalamud.IoC;
 using Dalamud.Plugin;
@@ -51,6 +52,7 @@ public class Service
     [PluginService] public static ChatGui Chat { get; private set; } = null!;
     [PluginService] public static ICommandManager Command { get; set; } = null!;
     [PluginService] public static IPluginLog Log { get; private set; } = null!;
+    [PluginService] public static PartyFinderGui PartyFinder { get; private set; } = null!;
     [PluginService] public static IGameGui Gui { get; private set; } = null!;
     [PluginService] public static ITargetManager Target { get; private set; } = null!;
     [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
