@@ -34,7 +34,9 @@ public unsafe class AutoDismount : IDailyModule
     public void Init()
     {
         SignatureHelper.Initialise(this);
-        useActionSelfHook = Hook<UseActionSelfDelegate>.FromAddress((nint)ActionManager.MemberFunctionPointers.UseAction, UseActionSelf);
+        useActionSelfHook =
+            Hook<UseActionSelfDelegate>.FromAddress((nint)ActionManager.MemberFunctionPointers.UseAction,
+                                                    UseActionSelf);
         useActionSelfHook?.Enable();
 
         CanTargetSelfActions ??=
@@ -54,7 +56,9 @@ public unsafe class AutoDismount : IDailyModule
         if (IsNeedToDismount(actionType, actionId, actionTarget))
         {
             useActionSelfHook.Original(actionManager, 5, 23, 0);
-            TaskManager.Enqueue(() => ActionManager.Instance()->UseAction((ActionType)actionType, actionId, (long)actionTarget, a5, a6, a7, a8));
+            TaskManager.Enqueue(
+                () => ActionManager.Instance()->UseAction((ActionType)actionType, actionId, (long)actionTarget, a5, a6,
+                                                          a7, a8));
         }
 
         return useActionSelfHook.Original(ActionManager.StaticAddressPointers.pInstance, actionType, actionId,
@@ -70,7 +74,8 @@ public unsafe class AutoDismount : IDailyModule
         if ((ActionType)actionType == ActionType.Mount) return false;
 
         // 0 - 该技能无须下坐骑
-        if (ActionManager.Instance()->GetActionStatus((ActionType)actionType, actionId, (long)actionTarget, false, false) == 0) return false;
+        if (ActionManager.Instance()->GetActionStatus((ActionType)actionType, actionId, (long)actionTarget, false,
+                                                      false) == 0) return false;
 
         // 地面类技能
         if (TargetAreaActions.Contains(actionId)) return true;
@@ -87,7 +92,8 @@ public unsafe class AutoDismount : IDailyModule
             if (actionTarget != 3758096384L)
             {
                 // 562 - 看不到目标; 566 - 目标在射程外
-                if (ActionManager.GetActionInRangeOrLoS(actionId, (GameObject*)Service.ClientState.LocalPlayer.Address, actionObject) is 562 or 566) return false;
+                if (ActionManager.GetActionInRangeOrLoS(actionId, (GameObject*)Service.ClientState.LocalPlayer.Address,
+                                                        actionObject) is 562 or 566) return false;
                 // 目标在范围外
                 if (!HelpersOm.CanUseActionOnObject((GameObject*)Service.ClientState.LocalPlayer.Address, actionObject,
                                                     actionRange)) return false;
@@ -96,15 +102,13 @@ public unsafe class AutoDismount : IDailyModule
                 if (!ActionManager.CanUseActionOnTarget(actionId, actionObject))
                     return false;
             }
+            else if (Service.Target.Target == null) return false;
         }
 
         return true;
     }
 
-    private static bool IsOnMount()
-    {
-        return Service.Condition[ConditionFlag.Mounted] || Service.Condition[ConditionFlag.Mounted2];
-    }
+    private static bool IsOnMount() => Service.Condition[ConditionFlag.Mounted] || Service.Condition[ConditionFlag.Mounted2];
 
     public void Uninit()
     {
