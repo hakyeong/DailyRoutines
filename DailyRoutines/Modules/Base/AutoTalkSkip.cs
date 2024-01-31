@@ -2,7 +2,6 @@ using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
-using ECommons.Throttlers;
 
 namespace DailyRoutines.Modules;
 
@@ -14,7 +13,7 @@ public class AutoTalkSkip : IDailyModule
 
     public void Init()
     {
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Talk", OnAddonDraw);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreDraw, "Talk", OnAddonDraw);
     }
 
     public void UI() { }

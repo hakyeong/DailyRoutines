@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Threading;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Memory;
 using ECommons.Automation;
@@ -56,9 +57,7 @@ public class AutoMJIGather : IDailyModule
     ];
 
     private static Dictionary<string, AutoMJIGatherGroup> GatherNodes = [];
-    private static Thread? DataCollectThread;
     private static int CurrentGatherIndex;
-    private static bool IsDataCollectThreadRunning = true;
     private static bool IsOnDataCollecting;
     private static bool IsOnGathering;
     private static List<Vector3> QueuedGatheringList = [];
@@ -66,17 +65,6 @@ public class AutoMJIGather : IDailyModule
     public void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
-        DataCollectThread ??= new Thread(CollectGatheringPointData);
-        switch (DataCollectThread.ThreadState)
-        {
-            case ThreadState.Unstarted:
-                DataCollectThread.Start();
-                break;
-            case ThreadState.Stopped:
-                DataCollectThread = new Thread(CollectGatheringPointData);
-                DataCollectThread.Start();
-                break;
-        }
 
         if (!Service.Config.ConfigExists(typeof(AutoMJIGather), "GatherNodes"))
             Service.Config.AddConfig(typeof(AutoMJIGather), "GatherNodes", GatherNodes);
@@ -101,7 +89,18 @@ public class AutoMJIGather : IDailyModule
                                                   IsOnDataCollecting
                                                       ? Service.Lang.GetText("AutoMJIGather-Stop")
                                                       : Service.Lang.GetText("AutoMJIGather-Start"))))
-                IsOnDataCollecting = !IsOnDataCollecting;
+            {
+                if (IsOnDataCollecting)
+                {
+                    Service.Framework.Update -= OnUpdate;
+                    IsOnDataCollecting = false;
+                }
+                else
+                {
+                    Service.Framework.Update += OnUpdate;
+                    IsOnDataCollecting = true;
+                }
+            }
 
             ImGuiOm.HelpMarker(Service.Lang.GetText("AutoMJIGather-CollectGatherPointsHelp"));
 
@@ -183,22 +182,24 @@ public class AutoMJIGather : IDailyModule
                                         QueuedGatheringList.Count));
     }
 
-    private static void CollectGatheringPointData()
+    private static void OnUpdate(Framework framework)
     {
-        while (IsDataCollectThreadRunning)
-            if (IsOnDataCollecting)
-            {
-                foreach (var obj in Service.ObjectTable)
-                {
-                    if (obj.ObjectKind != ObjectKind.CardStand || FarmCorpsPos.Contains(obj.Position)) continue;
+        if (!IsOnDataCollecting)
+        {
+            Service.Framework.Update -= OnUpdate;
+            return;
+        }
 
-                    var objName = obj.Name.ExtractText();
-                    if (string.IsNullOrWhiteSpace(objName)) continue;
-                    if (!GatherNodes.ContainsKey(objName)) GatherNodes.Add(objName, new AutoMJIGatherGroup(false, []));
-                    if (GatherNodes[objName].Nodes.Add(obj.Position))
-                        Service.Config.UpdateConfig(typeof(AutoMJIGather), "GatherNodes", GatherNodes);
-                }
-            }
+        foreach (var obj in Service.ObjectTable)
+        {
+            if (obj.ObjectKind != ObjectKind.CardStand || FarmCorpsPos.Contains(obj.Position)) continue;
+
+            var objName = obj.Name.ExtractText();
+            if (string.IsNullOrWhiteSpace(objName)) continue;
+            if (!GatherNodes.ContainsKey(objName)) GatherNodes.Add(objName, new AutoMJIGatherGroup(false, []));
+            if (GatherNodes[objName].Nodes.Add(obj.Position))
+                Service.Config.UpdateConfig(typeof(AutoMJIGather), "GatherNodes", GatherNodes);
+        }
     }
 
     private static bool? Gather(IReadOnlyList<Vector3> nodes)
@@ -298,11 +299,13 @@ public class AutoMJIGather : IDailyModule
     public void Uninit()
     {
         Service.Config.UpdateConfig(typeof(AutoMJIGather), "GatherNodes", GatherNodes);
+        Service.Config.Save();
+
+        Service.Framework.Update -= OnUpdate;
         QueuedGatheringList.Clear();
-        IsOnGathering = IsDataCollectThreadRunning = IsOnDataCollecting = false;
+        IsOnGathering = IsOnDataCollecting = false;
         CurrentGatherIndex = 0;
         TaskManager?.Abort();
-        Service.Config.Save();
     }
 }
 
