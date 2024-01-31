@@ -15,14 +15,12 @@ public unsafe class AutoRefocus : IDailyModule
     public bool Initialized { get; set; }
     public bool WithUI => false;
 
-
     private delegate void SetFocusTargetByObjectIDDelegate(TargetSystem* targetSystem, long objectID);
-
     [Signature("E8 ?? ?? ?? ?? BA 0C 00 00 00 48 8D 0D", DetourName = nameof(SetFocusTargetByObjectID))]
     private Hook<SetFocusTargetByObjectIDDelegate>? setFocusTargetByObjectIDHook;
 
     private static HashSet<uint>? ContentTerritories;
-    private static (string Name, ulong ObjectID)? FocusTarget;
+    private static ulong? FocusTarget;
 
     public void Init()
     {
@@ -38,25 +36,17 @@ public unsafe class AutoRefocus : IDailyModule
 
     private void OnZoneChange(object? sender, ushort e)
     {
+        FocusTarget = null;
         if (ContentTerritories.Contains(Service.ClientState.TerritoryType))
-        {
-            FocusTarget = null;
             Service.Framework.Update += OnUpdate;
-        }
         else
-        {
-            FocusTarget = null;
             Service.Framework.Update -= OnUpdate;
-            Service.Framework.Update -= OnUpdate;
-            Service.Framework.Update -= OnUpdate;
-        }
     }
 
     private void OnUpdate(Framework framework)
     {
         if (FocusTarget != null && Service.Target.FocusTarget == null)
-            setFocusTargetByObjectIDHook.Original(TargetSystem.StaticAddressPointers.pInstance,
-                                                  (long)FocusTarget.Value.ObjectID);
+            setFocusTargetByObjectIDHook.Original(TargetSystem.StaticAddressPointers.pInstance, (long)FocusTarget);
     }
 
     private void SetFocusTargetByObjectID(TargetSystem* targetSystem, long objectID)
@@ -64,35 +54,21 @@ public unsafe class AutoRefocus : IDailyModule
         if (objectID == 0xE000_0000)
         {
             objectID = Service.Target.Target?.ObjectId ?? 0xE000_0000;
-            if (Service.Target.Target == null)
-            {
-                FocusTarget = null;
-                Service.Log.Debug("已清除焦点目标");
-            }
+            FocusTarget = Service.Target.Target?.ObjectId;
         }
         else
         {
-            var targetInfo = (Service.Target.Target.Name.ExtractText(), Service.Target.Target.ObjectId);
-            FocusTarget = targetInfo;
-            Service.Log.Debug($"已设置焦点目标为 {targetInfo}");
+            FocusTarget = Service.Target.Target.ObjectId;
         }
-
         setFocusTargetByObjectIDHook.Original(targetSystem, objectID);
     }
 
-    public static bool IsBoundByDuty()
-    {
-        return Service.Condition[ConditionFlag.BoundByDuty] ||
-               Service.Condition[ConditionFlag.BoundByDuty56] ||
-               Service.Condition[ConditionFlag.BoundByDuty95];
-    }
+    public static bool IsBoundByDuty() => Service.Condition[ConditionFlag.BoundByDuty] || Service.Condition[ConditionFlag.BoundByDuty56] || Service.Condition[ConditionFlag.BoundByDuty95];
 
     public void Uninit()
     {
         setFocusTargetByObjectIDHook.Dispose();
         Service.ClientState.TerritoryChanged -= OnZoneChange;
-        Service.Framework.Update -= OnUpdate;
-        Service.Framework.Update -= OnUpdate;
         Service.Framework.Update -= OnUpdate;
     }
 }
