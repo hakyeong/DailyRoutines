@@ -112,31 +112,36 @@ public partial class AutoSubmarineCollect : IDailyModule
         return false;
     }
 
-    private static unsafe void OnErrorText(Dalamud.Game.Text.XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
+    private static void OnErrorText(Dalamud.Game.Text.XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
-        if (!TaskManager.IsBusy || !message.ExtractText().Contains("无法进行出港，需要修理配件") || CurrentIndex == 0) return;
-
+        if (!TaskManager.IsBusy || !message.ExtractText().Contains("需要修理配件") || CurrentIndex == 0) return;
+        Service.Log.Debug(message.ExtractText());
         Service.Log.Debug("准备进行潜水艇修理");
 
-        if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(addon))
+        TaskManager.Abort();
+        TaskManager.Enqueue(ReadyToRepairSubmarines);
+    }
+
+    private static unsafe bool? ReadyToRepairSubmarines()
+    {
+        if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var addon))
         {
-            TaskManager.Abort();
             var handler = new ClickAirShipExplorationDetailDR();
             handler.Cancel();
             addon->Close(true);
 
             TaskManager.Enqueue(() => Click.TrySendClick("select_string4"));
             TaskManager.Enqueue(RepairSubmarines);
+            return true;
         }
-
-        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon1) &&
-                 HelpersOm.IsAddonAndNodesReady(addon1))
+        else if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon1))
         {
-            TaskManager.Abort();
             TaskManager.Enqueue(() => Click.TrySendClick("select_string4"));
             TaskManager.Enqueue(RepairSubmarines);
+            return true;
         }
+
+        return false;
     }
 
     private static void EnqueueSubmarineCollect(int index)
@@ -195,8 +200,10 @@ public partial class AutoSubmarineCollect : IDailyModule
             {
                 var i1 = i;
                 TaskManager.Enqueue(() => RepairSingleSubmarine(i1));
+                TaskManager.DelayNext(100);
             }
 
+            TaskManager.Enqueue(CloseRepairUI);
             TaskManager.Enqueue(() => Click.TrySendClick("select_string2"));
             TaskManager.Enqueue(ConfirmVoyageResult);
 
@@ -214,6 +221,22 @@ public partial class AutoSubmarineCollect : IDailyModule
         {
             var handler = new ClickCompanyCraftSupplyDR();
             handler.Component(index);
+
+            Service.Log.Debug($"已修理第 {index} 个");
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private static unsafe bool? CloseRepairUI()
+    {
+        if (TryGetAddonByName<AtkUnitBase>("CompanyCraftSupply", out var addon) &&
+            HelpersOm.IsAddonAndNodesReady(addon))
+        {
+            var handler = new ClickCompanyCraftSupplyDR();
+            handler.Close();
 
             return true;
         }
