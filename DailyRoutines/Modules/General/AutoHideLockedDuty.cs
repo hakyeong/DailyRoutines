@@ -20,7 +20,8 @@ public class AutoHideLockedDuty : IDailyModule
 
     private void OnListReceived(PartyFinderListing listing, PartyFinderListingEventArgs args)
     {
-        args.Visible = UIState.IsInstanceContentUnlocked(listing.Duty.Value.Content);
+        if (listing.Category is DutyCategory.Duty or (DutyCategory)128 && listing.Duty.Value.RowId != 0)
+            args.Visible = UIState.IsInstanceContentUnlocked(listing.Duty.Value.Content);
     }
 
     public void Uninit()

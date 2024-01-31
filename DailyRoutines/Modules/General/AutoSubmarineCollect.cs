@@ -134,7 +134,8 @@ public partial class AutoSubmarineCollect : IDailyModule
             TaskManager.Enqueue(RepairSubmarines);
             return true;
         }
-        else if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon1))
+
+        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon1))
         {
             TaskManager.Enqueue(() => Click.TrySendClick("select_string4"));
             TaskManager.Enqueue(RepairSubmarines);
