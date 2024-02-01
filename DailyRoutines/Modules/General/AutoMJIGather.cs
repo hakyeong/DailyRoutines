@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -75,10 +74,9 @@ public class AutoMJIGather : IDailyModule
     {
         ImGui.BeginDisabled(Service.ClientState.TerritoryType != 1055 || IsOnGathering);
         ImGui.SetNextItemWidth(420f);
-        var gatherNodes = GatherNodes;
         if (ImGui.BeginCombo("##AutoMJIGather-GatherNodes",
-                             Service.Lang.GetText("AutoMJIGather-NodesInfo", gatherNodes.Count,
-                                                  gatherNodes.Count(x => x.Value.Enabled),
+                             Service.Lang.GetText("AutoMJIGather-NodesInfo", GatherNodes.Count,
+                                                  GatherNodes.Count(x => x.Value.Enabled),
                                                   GatherNodes.Values.Where(group => group.Enabled)
                                                              .SelectMany(group => group.Nodes).Count()),
                              ImGuiComboFlags.HeightLarge))
@@ -95,6 +93,13 @@ public class AutoMJIGather : IDailyModule
                 }
                 else
                 {
+                    var keysToRemove = GatherNodes
+                                       .Where(pair => pair.Value.Nodes == null ||
+                                                      pair.Value.Nodes.Any(node => node.Y < 0))
+                                       .Select(pair => pair.Key)
+                                       .ToList();
+
+                    foreach (var key in keysToRemove) GatherNodes.Remove(key);
                     Service.Framework.Update += OnUpdate;
                     IsOnDataCollecting = true;
                 }
@@ -158,11 +163,13 @@ public class AutoMJIGather : IDailyModule
                                              .SelectMany(group => group.Nodes ?? Enumerable.Empty<Vector3>())
                                              .ToList();
 
-            if (QueuedGatheringList.Any() && QueuedGatheringList.Count > 20)
+            if (QueuedGatheringList.Any() && QueuedGatheringList.Count > 10)
             {
                 IsOnGathering = true;
                 Gather(QueuedGatheringList);
             }
+            else
+                Service.Chat.PrintError(Service.Lang.GetText("AutoMJIGather-InsufficientGatherNodes"));
         }
 
         ImGui.EndDisabled();
@@ -176,7 +183,8 @@ public class AutoMJIGather : IDailyModule
         }
 
         ImGui.SameLine();
-        ImGui.Text(Service.Lang.GetText("AutoMJIGather-GatherProcessInfo", CurrentGatherIndex,
+        ImGui.Text(Service.Lang.GetText("AutoMJIGather-GatherProcessInfo",
+                                        QueuedGatheringList.Count == 0 ? 0 : CurrentGatherIndex + 1,
                                         QueuedGatheringList.Count));
     }
 
@@ -190,7 +198,8 @@ public class AutoMJIGather : IDailyModule
 
         foreach (var obj in Service.ObjectTable)
         {
-            if (obj.ObjectKind != ObjectKind.CardStand || FarmCorpsPos.Contains(obj.Position)) continue;
+            if (obj.Position.Y < 0 || obj.ObjectKind != ObjectKind.CardStand ||
+                FarmCorpsPos.Contains(obj.Position)) continue;
 
             var objName = obj.Name.ExtractText();
             if (string.IsNullOrWhiteSpace(objName)) continue;
@@ -203,14 +212,21 @@ public class AutoMJIGather : IDailyModule
     private static bool? Gather(IReadOnlyList<Vector3> nodes)
     {
         if (IsOccupied()) return false;
-        if (CurrentGatherIndex >= nodes.Count - 1) CurrentGatherIndex = 0;
 
         TaskManager.Enqueue(() => Teleport(nodes[CurrentGatherIndex]));
         TaskManager.DelayNext(500);
         TaskManager.Enqueue(() => InteractWithNearestObject(nodes[CurrentGatherIndex]));
         TaskManager.DelayNext(2000);
-        CurrentGatherIndex++;
         TaskManager.Enqueue(() => Gather(QueuedGatheringList));
+        if (CurrentGatherIndex + 1 >= nodes.Count)
+        {
+            TaskManager.Abort();
+            TaskManager.Enqueue(() => CurrentGatherIndex = 0);
+            TaskManager.Enqueue(() => Gather(QueuedGatheringList));
+        }
+        else
+            TaskManager.Enqueue(() => CurrentGatherIndex++);
+
         return true;
     }
 
@@ -246,7 +262,7 @@ public class AutoMJIGather : IDailyModule
 
     private static bool? Teleport(Vector3 pos)
     {
-        if (IsOccupied()) return false;
+        if (IsGathering()) return false;
 
         if (Service.ClientState.LocalPlayer != null)
         {
@@ -267,31 +283,28 @@ public class AutoMJIGather : IDailyModule
 
         var nearObjects = Service.ObjectTable
                                  .Where(x => x.ObjectKind is ObjectKind.CardStand &&
-                                             CalculateDistance(Service.ClientState.LocalPlayer.Position, x.Position) <=
-                                             2).ToList();
+                                             HelpersOm.GetGameDistanceFromObject(
+                                                 (GameObject*)Service.ClientState.LocalPlayer.Address,
+                                                 (GameObject*)x.Address) <= 2).ToArray();
         if (!nearObjects.Any())
         {
             Service.Log.Warning("没有找到采集点, 正在重新定位坐标");
-            ;
             Teleport(node with { Y = node.Y - 1 });
             return false;
         }
 
-        if (Service.Condition[ConditionFlag.Jumping] || Service.Condition[ConditionFlag.Jumping61] ||
-            IsOccupied()) return false;
+        if (IsGathering()) return false;
 
         TargetSystem.Instance()->InteractWithObject((GameObject*)nearObjects.FirstOrDefault().Address);
 
         return true;
     }
 
-    private static float CalculateDistance(Vector3 vector1, Vector3 vector2)
+    private static bool IsGathering()
     {
-        var deltaX = vector1.X - vector2.X;
-        var deltaY = vector1.Y - vector2.Y;
-        var deltaZ = vector1.Z - vector2.Z;
-
-        return (float)Math.Sqrt((deltaX * deltaX) + (deltaY * deltaY) + (deltaZ * deltaZ));
+        return Service.Condition[ConditionFlag.Jumping] ||
+               Service.Condition[ConditionFlag.Jumping61] ||
+               Service.Condition[ConditionFlag.OccupiedInQuestEvent];
     }
 
     public void Uninit()
