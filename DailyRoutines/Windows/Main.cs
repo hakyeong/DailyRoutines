@@ -20,28 +20,20 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
-using Action = System.Action;
 using Map = Lumina.Excel.GeneratedSheets.Map;
 
 namespace DailyRoutines.Windows;
 
 public class Main : Window, IDisposable
 {
-    private static readonly ConcurrentDictionary<Type, (string Name, string Title, string Description)> ModuleCache =
-        new();
+    private static readonly ConcurrentDictionary<Type, (string Name, string Title, string Description)> ModuleCache = new();
 
     private static readonly Dictionary<ModuleCategories, List<Type>> ModuleCategories = new();
-    private Thread? TeleportThread;
-    private static bool IsTeleportThreadRunning = true;
-    private static Queue<Action> TeleportQueue = new();
-    private static string SearchString = string.Empty;
+    internal static string SearchString = string.Empty;
     private static string ConflictKeySearchString = string.Empty;
 
     public Main(Plugin plugin) : base("Daily Routines - Main")
     {
-        TeleportThread ??= new Thread(TeleportSeparate);
-        TeleportThread.Start();
-
         var assembly = Assembly.GetExecutingAssembly();
         var moduleTypes = assembly.GetTypes()
                                   .Where(t => typeof(IDailyModule).IsAssignableFrom(t) && t.IsClass);
@@ -106,29 +98,9 @@ public class Main : Window, IDisposable
 
                         if (ImGui.Button("传送到FLAG"))
                         {
-                            var currentPos = Service.ClientState.LocalPlayer.Position;
                             var targetPos = new Vector3(AgentMap.Instance()->FlagMapMarker.XFloat, 0,
                                                         AgentMap.Instance()->FlagMapMarker.YFloat);
-                            if (Service.Condition[ConditionFlag.BoundByDuty] || Service.Condition[ConditionFlag.BoundByDuty56] || Service.Condition[ConditionFlag.BoundByDuty95] || Service.Condition[ConditionFlag.BoundToDuty97])
-                            {
-                                Teleport(targetPos);
-                                return;
-                            }
-                            var queue = CalculateIntermediatePositions(currentPos, targetPos);
-                            if (queue.Count <= 1) Teleport(targetPos);
-                            else
-                            {
-                                foreach (var action in queue)
-                                {
-                                    Service.Log.Debug($"已加入队列 {action}");
-                                    TeleportQueue.Enqueue(() => Teleport(action));
-                                }
-                            }
-                        }
-
-                        if (ImGui.Button("取消队列"))
-                        {
-                            TeleportQueue.Clear();
+                            Teleport(targetPos);
                         }
 
                         if (ImGui.Button("Y + 5"))
@@ -167,39 +139,6 @@ public class Main : Window, IDisposable
         }
 
         return false;
-    }
-
-    private void TeleportSeparate()
-    {
-        while (IsTeleportThreadRunning)
-        {
-            if (TeleportQueue.Count > 0)
-            {
-                var action = TeleportQueue.Dequeue();
-                action();
-                Thread.Sleep(1000);
-            }
-        }
-    }
-
-    private List<Vector3> CalculateIntermediatePositions(Vector3 currentPosition, Vector3 targetPosition)
-    {
-        const int maxStepDistance = 10;
-        var positions = new List<Vector3>();
-        var direction = targetPosition - currentPosition;
-        direction = Vector3.Normalize(direction);
-        var totalDistance = Vector3.Distance(currentPosition, targetPosition);
-
-        var steps = (int)Math.Ceiling(totalDistance / maxStepDistance);
-
-        for (var i = 1; i <= steps; i++)
-        {
-            var stepDistance = Math.Min(i * maxStepDistance, totalDistance);
-            var stepPosition = currentPosition + (direction * stepDistance);
-            positions.Add(stepPosition);
-        }
-
-        return positions;
     }
 
     private static void DrawTabItemModules(IReadOnlyList<Type> modules, ModuleCategories category)
@@ -391,7 +330,6 @@ public class Main : Window, IDisposable
 
     public void Dispose()
     {
-        IsTeleportThreadRunning = false;
         Service.Config.Save();
     }
 }

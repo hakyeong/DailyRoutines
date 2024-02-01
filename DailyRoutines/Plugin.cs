@@ -62,7 +62,15 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OnCommand(string command, string args)
     {
-        Main.IsOpen = !Main.IsOpen;
+        if (!string.IsNullOrEmpty(args) && args != Main.SearchString)
+        {
+            Main.SearchString = args;
+            Main.IsOpen = true;
+        }
+        else
+        {
+            Main.IsOpen = !Main.IsOpen;
+        }
     }
 
     private void DrawUI()

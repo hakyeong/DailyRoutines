@@ -2,12 +2,14 @@ using System.Collections.Generic;
 using ClickLib.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using Dalamud.Game;
 using Dalamud.Game.AddonLifecycle;
+using Dalamud.Interface.Internal.Notifications;
 using ECommons.Automation;
 using ECommons.DalamudServices;
-using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
@@ -15,23 +17,41 @@ namespace DailyRoutines.Modules;
 public class AutoRequestItemSubmit : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => false;
+    public bool WithUI => true;
+
+    private static bool ConfigIsSubmitHQItem;
 
     private static TaskManager? TaskManager;
     private static readonly List<int> SlotsFilled = [];
 
     public void Init()
     {
+        if (!Service.Config.ConfigExists(typeof(AutoRequestItemSubmit), "IsSubmitHQItem"))
+            Service.Config.AddConfig(typeof(AutoRequestItemSubmit), "IsSubmitHQItem", true);
+
+        ConfigIsSubmitHQItem = Service.Config.GetConfig<bool>(typeof(AutoRequestItemSubmit), "IsSubmitHQItem");
+
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Request", OnAddonRequest);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Request", OnAddonRequest);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "Request", OnAddonRequest);
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
 
-    public void UI() { }
+    public void UI()
+    {
+        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
+        if (ImGui.Checkbox("递交优质道具", ref ConfigIsSubmitHQItem))
+            Service.Config.UpdateConfig(typeof(AutoRequestItemSubmit), "IsSubmitHQItem", ConfigIsSubmitHQItem);
+    }
 
     private void OnAddonRequest(AddonEvent type, AddonArgs args)
     {
+        if (Service.KeyState[Service.Config.ConflictKey])
+        {
+            AbortActions();
+            return;
+        }
+
         switch (type)
         {
             case AddonEvent.PostSetup:
@@ -41,15 +61,21 @@ public class AutoRequestItemSubmit : IDailyModule
                 ClickRequestIcon();
                 break;
             case AddonEvent.PreFinalize:
-                SlotsFilled.Clear();
-                TaskManager.Abort();
-                Service.AddonLifecycle.UnregisterListener(OnAddonSelectYesno);
+                AbortActions();
                 break;
         }
     }
 
+    private static void AbortActions()
+    {
+        SlotsFilled.Clear();
+        TaskManager?.Abort();
+        Service.AddonLifecycle.UnregisterListener(OnAddonSelectYesno);
+    }
+
     private static unsafe void OnAddonSelectYesno(AddonEvent type, AddonArgs args)
     {
+        if (!ConfigIsSubmitHQItem) return;
         if (TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
@@ -114,11 +140,9 @@ public class AutoRequestItemSubmit : IDailyModule
 
     public void Uninit()
     {
+        Service.Config.Save();
+
         Service.AddonLifecycle.UnregisterListener(OnAddonRequest);
-        Service.AddonLifecycle.UnregisterListener(OnAddonRequest);
-        Service.AddonLifecycle.UnregisterListener(OnAddonRequest);
-        Service.AddonLifecycle.UnregisterListener(OnAddonSelectYesno);
-        TaskManager?.Abort();
-        SlotsFilled.Clear();
+        AbortActions();
     }
 }

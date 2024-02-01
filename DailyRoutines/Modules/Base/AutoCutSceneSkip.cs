@@ -8,8 +8,10 @@ using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Interface.Internal.Notifications;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
@@ -17,9 +19,7 @@ namespace DailyRoutines.Modules;
 public class AutoCutSceneSkip : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => false;
-
-    private static TaskManager? TaskManager;
+    public bool WithUI => true;
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool PostMessage(IntPtr hWnd, uint Msg, int wParam, int lParam);
@@ -31,15 +31,26 @@ public class AutoCutSceneSkip : IDailyModule
     public void Init()
     {
         Service.Condition.ConditionChange += OnConditionChanged;
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+    }
+
+    public void UI()
+    {
+        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
+        ImGuiOm.HelpMarker(Service.Lang.GetText("AutoCutSceneSkip-InterruptNotice"));
     }
 
     private static void OnConditionChanged(ConditionFlag flag, bool value)
     {
+
         if (flag is ConditionFlag.OccupiedInCutSceneEvent or ConditionFlag.WatchingCutscene78)
         {
             if (value)
             {
+                if (Service.KeyState[Service.Config.ConflictKey])
+                {
+                    P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"), "Daily Routines", NotificationType.Success);
+                    return;
+                }
                 Task.Delay(1000)
                     .ContinueWith(_ => Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "NowLoading", OnAddonLoading));
                 Service.Toast.ErrorToast += OnErrorToast;
@@ -94,12 +105,9 @@ public class AutoCutSceneSkip : IDailyModule
 
     private static void AbortActions()
     {
-        TaskManager?.Abort();
         Service.AddonLifecycle.UnregisterListener(OnAddonLoading);
         Service.Toast.ErrorToast -= OnErrorToast;
     }
-
-    public void UI() { }
 
     public void Uninit()
     {
