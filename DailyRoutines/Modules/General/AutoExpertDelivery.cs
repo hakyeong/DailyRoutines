@@ -30,8 +30,8 @@ public class AutoExpertDelivery : IDailyModule
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         Overlay ??= new Overlay(this);
-        if (!P.WindowSystem.Windows.Contains(Overlay)) P.WindowSystem.AddWindow(Overlay);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "GrandCompanySupplyList", OnAddonSupplyList);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "GrandCompanySupplyList", OnAddonSupplyList);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "GrandCompanySupplyList", OnAddonSupplyList);
     }
 
     public void ConfigUI()
@@ -69,7 +69,15 @@ public class AutoExpertDelivery : IDailyModule
 
     private static void OnAddonSupplyList(AddonEvent type, AddonArgs args)
     {
-        Overlay.IsOpen = IsAddonSupplyListReady();
+        switch (type)
+        {
+            case AddonEvent.PostSetup:
+                Overlay.IsOpen = true;
+                break;
+            case AddonEvent.PreFinalize:
+                Overlay.IsOpen = false;
+                break;
+        }
     }
 
     private static unsafe void OnAddonSupplyReward(AddonEvent type, AddonArgs args)
@@ -80,12 +88,6 @@ public class AutoExpertDelivery : IDailyModule
             var handler = new ClickGrandCompanySupplyReward();
             handler.Deliver();
         }
-    }
-
-    private static unsafe bool IsAddonSupplyListReady()
-    {
-        return TryGetAddonByName<AtkUnitBase>("GrandCompanySupplyList", out var addon) &&
-               HelpersOm.IsAddonAndNodesReady(addon);
     }
 
     public static void StartHandOver()
@@ -128,7 +130,11 @@ public class AutoExpertDelivery : IDailyModule
             var firstItem =
                 addon->ExpertDeliveryList->AtkComponentBase.UldManager.NodeList[2]->GetAsAtkComponentNode()->Component->
                     UldManager.NodeList[4]->GetAsAtkTextNode()->NodeText.ExtractText();
-            if (string.IsNullOrEmpty(firstItem)) return true; // 不存在第一件物品
+            if (string.IsNullOrEmpty(firstItem))
+            {
+                TaskManager.Abort();
+                return false;
+            }
             var firstItemAmount = int.Parse(firstItem);
 
             return firstItemAmount + currentAmount > capAmount;
