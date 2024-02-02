@@ -165,12 +165,6 @@
   <data name="AutoExpertDeliveryTitle" xml:space="preserve">
     <value>自动筹备稀有品</value>
   </data>
-  <data name="AutoHideLockedDutyDescription" xml:space="preserve">
-    <value>在队员招募界面, 自动隐藏未开放任务</value>
-  </data>
-  <data name="AutoHideLockedDutyTitle" xml:space="preserve">
-    <value>自动隐藏未开放任务</value>
-  </data>
   <data name="AutoLeveQuests-GetAreaLeveData" xml:space="preserve">
     <value>获取当前区域理符任务数据</value>
   </data>
