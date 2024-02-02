@@ -1,11 +1,9 @@
-using System.Collections.Generic;
 using ClickLib;
 using ClickLib.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Interface.Internal.Notifications;
-using Dalamud.Memory;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
@@ -22,10 +20,6 @@ public class AutoRetainerCollect : IDailyModule
     public bool WithConfigUI => true;
 
     private static TaskManager? TaskManager;
-
-    private static bool IsOnProcess;
-
-    
 
     public void Init()
     {
@@ -55,27 +49,21 @@ public class AutoRetainerCollect : IDailyModule
 
     private static unsafe void OnRetainerList(AddonEvent type, AddonArgs args)
     {
-        if (!IsOnProcess)
+        var retainerManager = RetainerManager.Instance();
+        var serverTime = Framework.GetServerTime();
+        for (var i = 0; i < 10; i++)
         {
-            IsOnProcess = true;
-
-            var retainerManager = RetainerManager.Instance();
-            var serverTime = Framework.GetServerTime();
-            var completeRetainers = new List<int>();
-            for (var i = 0; i < 10; i++)
+            var retainerState = retainerManager->GetRetainerBySortedIndex((uint)i)->VentureComplete;
+            if (retainerState == 0) continue;
+            if (retainerState - serverTime <= 0)
             {
-                var retainerState = retainerManager->GetRetainerBySortedIndex((uint)i)->VentureComplete;
-                if (retainerState == 0) continue;
-                if (retainerState - serverTime <= 0) completeRetainers.Add(i);
+                EnqueueSingleRetainer(i);
+                break;
             }
-
-            foreach (var index in completeRetainers) EnqueueSingleRetainer(index, completeRetainers.Count);
-
-            IsOnProcess = false;
         }
     }
 
-    private static void EnqueueSingleRetainer(int index, int completeRetainerCount)
+    private static void EnqueueSingleRetainer(int index)
     {
         // 点击指定雇员
         TaskManager.Enqueue(() => ClickSpecificRetainer(index));
@@ -106,18 +94,13 @@ public class AutoRetainerCollect : IDailyModule
     {
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
         {
-            var text = MemoryHelper
-                       .ReadSeString(
-                           &addon->UldManager.NodeList[2]->GetAsAtkComponentNode()->Component->UldManager.NodeList[6]->
-                               GetAsAtkComponentNode()->Component->UldManager.NodeList[3]->GetAsAtkTextNode()->NodeText)
-                       .ExtractText().Trim();
-            Service.Log.Debug(text);
+            var text = addon->UldManager.NodeList[2]->GetAsAtkComponentNode()->Component->UldManager.NodeList[6]->
+                               GetAsAtkComponentNode()->Component->UldManager.NodeList[3]->GetAsAtkTextNode()->NodeText.ExtractText().Trim();
             if (string.IsNullOrEmpty(text) || text.Contains('～'))
             {
                 TaskManager?.Abort();
                 TaskManager.Enqueue(ExitToRetainerList);
-                IsOnProcess = false;
-                return false;
+                return true;
             }
 
             if (Click.TrySendClick("select_string6")) return true;
@@ -165,7 +148,6 @@ public class AutoRetainerCollect : IDailyModule
     {
         Service.Framework.Update -= OnUpdate;
         Service.AddonLifecycle.UnregisterListener(OnRetainerList);
-        IsOnProcess = false;
         TaskManager?.Abort();
 
         Initialized = false;
