@@ -43,12 +43,12 @@ public class Configuration : IPluginConfiguration
         pluginInterface!.SavePluginConfig(this);
     }
 
-    public T GetConfig<T>(Type module, string key)
+    public T GetConfig<T>(IDailyModule module, string key)
     {
         try
         {
             var configDirectory = P.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, module.Name + ".json");
+            var configFile = Path.Combine(configDirectory, module.GetType().Name + ".json");
 
             if (!File.Exists(configFile))
             {
@@ -90,17 +90,17 @@ public class Configuration : IPluginConfiguration
         }
         catch (Exception ex)
         {
-            Service.Log.Error(ex, $"Failed to get config for {module.Name}");
+            Service.Log.Error(ex, $"Failed to get config for {module.GetType().Name}");
             return default;
         }
     }
 
-    public bool AddConfig(Type module, string key, object config)
+    public bool AddConfig(IDailyModule module, string key, object config)
     {
         try
         {
             var configDirectory = P.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, module.Name + ".json");
+            var configFile = Path.Combine(configDirectory, module.GetType().Name + ".json");
 
             Dictionary<string, object>? existingConfig;
 
@@ -108,10 +108,17 @@ public class Configuration : IPluginConfiguration
             {
                 var existingJson = File.ReadAllText(configFile);
                 existingConfig = JsonConvert.DeserializeObject<Dictionary<string, object>>(existingJson);
+                if (existingConfig != null && existingConfig.ContainsKey(key))
+                {
+                    return false;
+                }
             }
             else
-                existingConfig = [];
+            {
+                existingConfig = new();
+            }
 
+            existingConfig ??= new Dictionary<string, object>();
             existingConfig[key] = config;
 
             var jsonString = JsonConvert.SerializeObject(existingConfig, Formatting.Indented);
@@ -122,21 +129,21 @@ public class Configuration : IPluginConfiguration
         }
         catch (Exception ex)
         {
-            Service.Log.Error(ex, $"Failed to write config for {module.Name}");
+            Service.Log.Error(ex, $"Failed to write config for {module.GetType().Name}");
             return false;
         }
     }
 
-    public bool UpdateConfig(Type module, string key, object newConfig)
+    public bool UpdateConfig(IDailyModule module, string key, object newConfig)
     {
         try
         {
             var configDirectory = P.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, module.Name + ".json");
+            var configFile = Path.Combine(configDirectory, module.GetType().Name + ".json");
 
             if (!File.Exists(configFile))
             {
-                Service.Log.Error($"Config file for {module.Name} does not exist.");
+                Service.Log.Error($"Config file for {module.GetType().Name} does not exist.");
                 return false;
             }
 
@@ -145,7 +152,7 @@ public class Configuration : IPluginConfiguration
 
             if (!existingConfig.ContainsKey(key))
             {
-                Service.Log.Error($"Key '{key}' does not exist in the config for {module.Name}.");
+                Service.Log.Error($"Key '{key}' does not exist in the config for {module.GetType().Name}.");
                 return false;
             }
 
@@ -158,17 +165,17 @@ public class Configuration : IPluginConfiguration
         }
         catch (Exception ex)
         {
-            Service.Log.Error(ex, $"Failed to update config for {module.Name}");
+            Service.Log.Error(ex, $"Failed to update config for {module.GetType().Name}");
             return false;
         }
     }
 
-    public bool RemoveConfig(Type module, string key)
+    public bool RemoveConfig(IDailyModule module, string key)
     {
         try
         {
             var configDirectory = P.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, module.Name + ".json");
+            var configFile = Path.Combine(configDirectory, module.GetType().Name + ".json");
 
             Dictionary<string, object>? existingConfig;
 
@@ -190,31 +197,7 @@ public class Configuration : IPluginConfiguration
         }
         catch (Exception ex)
         {
-            Service.Log.Error(ex, $"Failed to remove config for {module.Name}");
-            return false;
-        }
-    }
-
-    public bool ConfigExists(Type module, string key)
-    {
-        try
-        {
-            var configDirectory = P.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, module.Name + ".json");
-
-            if (!File.Exists(configFile))
-            {
-                return false;
-            }
-
-            var existingJson = File.ReadAllText(configFile);
-            var existingConfig = JsonConvert.DeserializeObject<Dictionary<string, object>>(existingJson);
-
-            return existingConfig.ContainsKey(key);
-        }
-        catch (Exception ex)
-        {
-            Service.Log.Error(ex, $"Failed to check key existence for {module.Name}");
+            Service.Log.Error(ex, $"Failed to remove config for {module.GetType().Name}");
             return false;
         }
     }
