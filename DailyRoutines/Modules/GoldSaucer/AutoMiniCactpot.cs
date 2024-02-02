@@ -15,7 +15,7 @@ namespace DailyRoutines.Modules;
 public class AutoMiniCactpot : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => false;
+    public bool WithConfigUI => false;
 
     private static TaskManager? TaskManager;
 
@@ -48,7 +48,9 @@ public class AutoMiniCactpot : IDailyModule
         { 25, [32, 34, 36] }  // 右上对角线
     };
 
-    public void UI() { }
+    public void ConfigUI() { }
+
+    public void OverlayUI() { }
 
     public void Init()
     {

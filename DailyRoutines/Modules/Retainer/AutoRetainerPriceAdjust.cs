@@ -21,7 +21,7 @@ namespace DailyRoutines.Modules;
 public partial class AutoRetainerPriceAdjust : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => true;
+    public bool WithConfigUI => true;
 
     private static TaskManager? TaskManager;
 
@@ -31,7 +31,6 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
     private static int CurrentMarketLowestPrice;
     private static uint CurrentItemSearchItemID;
     private static unsafe RetainerManager.RetainerList.Retainer* CurrentRetainer;
-
 
     public void Init()
     {
@@ -53,7 +52,7 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
         Initialized = true;
     }
 
-    public void UI()
+    public void ConfigUI()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
 
@@ -76,6 +75,8 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
             Service.Config.AddConfig(typeof(AutoRetainerPriceAdjust), "LowestAcceptablePrice", ConfigLowestPrice);
         }
     }
+
+    public void OverlayUI() { }
 
     private static void OnUpdate(Framework framework)
     {

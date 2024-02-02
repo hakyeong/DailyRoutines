@@ -19,16 +19,13 @@ namespace DailyRoutines.Modules;
 public class AutoRetainerCollect : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => true;
+    public bool WithConfigUI => true;
 
     private static TaskManager? TaskManager;
 
     private static bool IsOnProcess;
 
-    public void UI()
-    {
-        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
-    }
+    
 
     public void Init()
     {
@@ -38,6 +35,12 @@ public class AutoRetainerCollect : IDailyModule
 
         Initialized = true;
     }
+    public void ConfigUI()
+    {
+        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
+    }
+
+    public void OverlayUI() { }
 
     private static void OnUpdate(Dalamud.Game.Framework framework)
     {

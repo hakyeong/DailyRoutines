@@ -9,14 +9,16 @@ namespace DailyRoutines.Modules;
 public class AutoHideLockedDuty : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => false;
+    public bool WithConfigUI => false;
 
     public void Init()
     {
         Service.PartyFinder.ReceiveListing += OnListReceived;
     }
 
-    public void UI() { }
+    public void ConfigUI() { }
+
+    public void OverlayUI() { }
 
     private void OnListReceived(PartyFinderListing listing, PartyFinderListingEventArgs args)
     {

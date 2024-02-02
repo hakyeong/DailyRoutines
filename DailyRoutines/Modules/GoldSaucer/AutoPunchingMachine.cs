@@ -19,14 +19,9 @@ namespace DailyRoutines.Modules;
 public class AutoPunchingMachine : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => true;
+    public bool WithConfigUI => true;
 
     private static TaskManager? TaskManager;
-
-    public void UI()
-    {
-        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
-    }
 
     public void Init()
     {
@@ -36,6 +31,12 @@ public class AutoPunchingMachine : IDailyModule
 
         Initialized = true;
     }
+    public void ConfigUI()
+    {
+        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
+    }
+
+    public void OverlayUI() { }
 
     private static void OnUpdate(Framework framework)
     {

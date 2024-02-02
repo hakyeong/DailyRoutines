@@ -11,7 +11,7 @@ namespace DailyRoutines.Modules;
 public class AutoSkipPraetorium : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => false;
+    public bool WithConfigUI => false;
     public CutsceneAddressResolver? Address { get; set; }
 
     public void Init()
@@ -32,7 +32,9 @@ public class AutoSkipPraetorium : IDailyModule
         SafeMemory.Write(Address.Offset2, value2);
     }
 
-    public void UI() { }
+    public void ConfigUI() { }
+
+    public void OverlayUI() { }
 
     public void Uninit()
     {

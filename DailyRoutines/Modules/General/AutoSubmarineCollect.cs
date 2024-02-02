@@ -21,7 +21,7 @@ namespace DailyRoutines.Modules;
 public partial class AutoSubmarineCollect : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => true;
+    public bool WithConfigUI => true;
 
     private static TaskManager? TaskManager;
     private static int CurrentIndex;
@@ -33,7 +33,7 @@ public partial class AutoSubmarineCollect : IDailyModule
         Service.Chat.ChatMessage += OnErrorText;
     }
 
-    public void UI()
+    public void ConfigUI()
     {
         var infoImageState = ThreadLoadImageHandler.TryGetTextureWrap(
             "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoSubmarineCollect-1.png",
@@ -63,6 +63,8 @@ public partial class AutoSubmarineCollect : IDailyModule
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("AutoSubmarineCollect-Stop"))) TaskManager.Abort();
     }
+
+    public void OverlayUI() { }
 
     private static void AlwaysYes(AddonEvent type, AddonArgs args)
     {

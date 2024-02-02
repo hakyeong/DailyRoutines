@@ -15,7 +15,7 @@ namespace DailyRoutines.Modules;
 public unsafe class AutoCancelCast : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => false;
+    public bool WithConfigUI => false;
 
     [StructLayout(LayoutKind.Explicit)]
     internal struct ActionManagerEX
@@ -48,7 +48,9 @@ public unsafe class AutoCancelCast : IDailyModule
         TargetAreaActions ??= Service.ExcelData.Actions.Where(x => x.Value.TargetArea).Select(x => x.Key).ToHashSet();
     }
 
-    public void UI() { }
+    public void ConfigUI() { }
+
+    public void OverlayUI() { }
 
     private void OnConditionChanged(ConditionFlag flag, bool value)
     {

@@ -4,11 +4,13 @@ public interface IDailyModule
 {
     bool Initialized { get; set; }
 
-    bool WithUI { get; }
+    bool WithConfigUI { get; }
 
     void Init();
 
-    void UI();
+    void ConfigUI();
+
+    void OverlayUI();
 
     void Uninit();
 }

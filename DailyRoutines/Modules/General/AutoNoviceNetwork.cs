@@ -15,14 +15,14 @@ namespace DailyRoutines.Modules;
 public class AutoNoviceNetwork : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => true;
+    public bool WithConfigUI => true;
 
     private static bool IsOnProcessing;
     private static int TryTimes;
 
     public void Init() { }
 
-    public void UI()
+    public void ConfigUI()
     {
         ImGui.BeginDisabled(IsOnProcessing);
         if (ImGui.Button(Service.Lang.GetText("AutoNoviceNetwork-Start")))
@@ -47,6 +47,8 @@ public class AutoNoviceNetwork : IDailyModule
         ImGui.TextWrapped(TryTimes.ToString());
         ImGui.PopStyleColor();
     }
+
+    public void OverlayUI() { }
 
     private static unsafe void ClickYesButton(AddonEvent type, AddonArgs args)
     {

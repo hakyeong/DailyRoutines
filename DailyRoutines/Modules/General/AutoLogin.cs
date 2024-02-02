@@ -17,7 +17,7 @@ namespace DailyRoutines.Modules;
 public class AutoLogin : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => true;
+    public bool WithConfigUI => true;
 
     private static TaskManager? TaskManager;
 
@@ -42,7 +42,7 @@ public class AutoLogin : IDailyModule
         Service.Framework.Update += OnUpdate;
     }
 
-    public void UI()
+    public void ConfigUI()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
 
@@ -87,6 +87,8 @@ public class AutoLogin : IDailyModule
 
         ImGuiOm.TooltipHover(Service.Lang.GetText("AutoLogin-CharaIndexInputTooltip"));
     }
+
+    public void OverlayUI() { }
 
     private static void OnUpdate(Framework framework)
     {

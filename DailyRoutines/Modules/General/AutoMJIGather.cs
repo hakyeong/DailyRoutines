@@ -20,7 +20,7 @@ namespace DailyRoutines.Modules;
 public class AutoMJIGather : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => true;
+    public bool WithConfigUI => true;
 
     private static TaskManager? TaskManager;
 
@@ -70,7 +70,7 @@ public class AutoMJIGather : IDailyModule
             Service.Config.GetConfig<Dictionary<string, AutoMJIGatherGroup>>(typeof(AutoMJIGather), "GatherNodes");
     }
 
-    public void UI()
+    public void ConfigUI()
     {
         ImGui.BeginDisabled(Service.ClientState.TerritoryType != 1055 || IsOnGathering);
         ImGui.SetNextItemWidth(420f);
@@ -187,6 +187,8 @@ public class AutoMJIGather : IDailyModule
                                         QueuedGatheringList.Count == 0 ? 0 : CurrentGatherIndex + 1,
                                         QueuedGatheringList.Count));
     }
+
+    public void OverlayUI() { }
 
     private static void OnUpdate(Framework framework)
     {

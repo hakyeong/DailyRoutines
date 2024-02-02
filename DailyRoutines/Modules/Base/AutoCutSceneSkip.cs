@@ -19,7 +19,7 @@ namespace DailyRoutines.Modules;
 public class AutoCutSceneSkip : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => true;
+    public bool WithConfigUI => true;
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool PostMessage(IntPtr hWnd, uint Msg, int wParam, int lParam);
@@ -33,11 +33,13 @@ public class AutoCutSceneSkip : IDailyModule
         Service.Condition.ConditionChange += OnConditionChanged;
     }
 
-    public void UI()
+    public void ConfigUI()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoCutSceneSkip-InterruptNotice"));
     }
+
+    public void OverlayUI() { }
 
     private static void OnConditionChanged(ConditionFlag flag, bool value)
     {

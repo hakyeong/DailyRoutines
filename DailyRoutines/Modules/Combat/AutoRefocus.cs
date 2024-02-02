@@ -13,7 +13,7 @@ namespace DailyRoutines.Modules;
 public unsafe class AutoRefocus : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => false;
+    public bool WithConfigUI => false;
 
     private delegate void SetFocusTargetByObjectIDDelegate(TargetSystem* targetSystem, long objectID);
     [Signature("E8 ?? ?? ?? ?? BA 0C 00 00 00 48 8D 0D", DetourName = nameof(SetFocusTargetByObjectID))]
@@ -32,7 +32,9 @@ public unsafe class AutoRefocus : IDailyModule
         Service.ClientState.TerritoryChanged += OnZoneChange;
     }
 
-    public void UI() { }
+    public void ConfigUI() { }
+
+    public void OverlayUI() { }
 
     private void OnZoneChange(object? sender, ushort e)
     {

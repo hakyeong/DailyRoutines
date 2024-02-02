@@ -18,7 +18,7 @@ namespace DailyRoutines.Modules;
 public class AutoHummer : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => true;
+    public bool WithConfigUI => true;
 
     private static TaskManager? TaskManager;
 
@@ -31,10 +31,12 @@ public class AutoHummer : IDailyModule
         Initialized = true;
     }
 
-    public void UI()
+    public void ConfigUI()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
     }
+
+    public void OverlayUI() { }
 
     private static void OnUpdate(Framework framework)
     {

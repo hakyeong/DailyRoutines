@@ -1,11 +1,14 @@
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using ClickLib.Clicks;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using DailyRoutines.Windows.Overlays;
+using DailyRoutines.Windows;
 using Dalamud.Game.AddonLifecycle;
+using Dalamud.Interface;
+using Dalamud.Interface.Colors;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -17,22 +20,45 @@ namespace DailyRoutines.Modules;
 public class AutoExpertDelivery : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => true;
-    internal static AutoExpertDeliveryOverlay? Overlay { get; private set; }
+    public bool WithConfigUI => true;
+    internal static Overlay? Overlay { get; private set; }
 
     private static TaskManager? TaskManager;
-    public static bool IsOnProcess;
+    private static bool IsOnProcess;
 
     public void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
-        Overlay ??= new AutoExpertDeliveryOverlay();
+        Overlay ??= new Overlay(this);
         if (!P.WindowSystem.Windows.Contains(Overlay)) P.WindowSystem.AddWindow(Overlay);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "GrandCompanySupplyList", OnAddonSupplyList);
     }
 
-    public void UI()
+    public void ConfigUI()
     {
+        ImGui.BeginDisabled(IsOnProcess);
+        if (ImGui.Button(Service.Lang.GetText("AutoExpertDelivery-Start"))) StartHandOver();
+        ImGui.EndDisabled();
+
+        ImGui.SameLine();
+        if (ImGui.Button(Service.Lang.GetText("AutoExpertDelivery-Stop"))) EndHandOver();
+    }
+
+    public unsafe void OverlayUI()
+    {
+        var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("GrandCompanySupplyList");
+        if (addon == null) return;
+
+        var pos = new Vector2(addon->GetX() - ImGui.GetWindowSize().X, addon->GetY() + 6);
+        ImGui.SetWindowPos(pos);
+
+        ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("AutoExpertDeliveryTitle"));
+        ImGui.PushTextWrapPos(300f * ImGuiHelpers.GlobalScale);
+        ImGui.TextDisabled(Service.Lang.GetText("AutoExpertDeliveryDescription"));
+        ImGui.PopTextWrapPos();
+
+        ImGui.Separator();
+
         ImGui.BeginDisabled(IsOnProcess);
         if (ImGui.Button(Service.Lang.GetText("AutoExpertDelivery-Start"))) StartHandOver();
         ImGui.EndDisabled();
@@ -144,8 +170,10 @@ public class AutoExpertDelivery : IDailyModule
     public void Uninit()
     {
         EndHandOver();
-        Overlay?.Dispose();
+
         if (P.WindowSystem.Windows.Contains(Overlay)) P.WindowSystem.RemoveWindow(Overlay);
+        Overlay = null;
+
         Service.AddonLifecycle.UnregisterListener(OnAddonSupplyList);
     }
 }

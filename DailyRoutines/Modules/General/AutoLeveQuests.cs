@@ -24,7 +24,7 @@ namespace DailyRoutines.Modules;
 public class AutoLeveQuests : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => true;
+    public bool WithConfigUI => true;
 
     private static Dictionary<uint, (string, uint)> LeveQuests = [];
     private static readonly HashSet<uint> QualifiedLeveCategories = [9, 10, 11, 12, 13, 14, 15, 16];
@@ -46,7 +46,7 @@ public class AutoLeveQuests : IDailyModule
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
     }
 
-    public void UI()
+    public void ConfigUI()
     {
         ImGui.BeginDisabled(IsOnProcessing);
         ImGui.AlignTextToFramePadding();
@@ -119,6 +119,8 @@ public class AutoLeveQuests : IDailyModule
 
         ImGui.EndDisabled();
     }
+
+    public void OverlayUI() { }
 
     private static void EndProcessHandler()
     {

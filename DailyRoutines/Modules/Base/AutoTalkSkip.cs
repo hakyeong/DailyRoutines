@@ -10,17 +10,19 @@ namespace DailyRoutines.Modules;
 public class AutoTalkSkip : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => true;
+    public bool WithConfigUI => true;
 
     public void Init()
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreDraw, "Talk", OnAddonDraw);
     }
 
-    public void UI()
+    public void ConfigUI()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
     }
+
+    public void OverlayUI() { }
 
     private static void OnAddonDraw(AddonEvent type, AddonArgs args)
     {

@@ -26,7 +26,8 @@ namespace DailyRoutines.Windows;
 
 public class Main : Window, IDisposable
 {
-    private static readonly ConcurrentDictionary<Type, (string Name, string Title, string Description)> ModuleCache = new();
+    private static readonly ConcurrentDictionary<Type, (string Name, string Title, string Description)> ModuleCache =
+        new();
 
     private static readonly Dictionary<ModuleCategories, List<Type>> ModuleCategories = new();
     internal static string SearchString = string.Empty;
@@ -86,13 +87,13 @@ public class Main : Window, IDisposable
                             if (Service.ClientState.TerritoryType != territoryId)
                             {
                                 var aetheryte = territoryId == 399
-                                                    ? Service.Data.GetExcelSheet<Map>().GetRow(territoryId)?.TerritoryType?.Value?.Aetheryte.Value
-                                                    : Service.Data.GetExcelSheet<Aetheryte>().FirstOrDefault(x => x.IsAetheryte && x.Territory.Row == territoryId);
+                                                    ? Service.Data.GetExcelSheet<Map>().GetRow(territoryId)
+                                                             ?.TerritoryType?.Value?.Aetheryte.Value
+                                                    : Service.Data.GetExcelSheet<Aetheryte>()
+                                                             .FirstOrDefault(
+                                                                 x => x.IsAetheryte && x.Territory.Row == territoryId);
 
-                                if (aetheryte != null)
-                                {
-                                    Telepo.Instance()->Teleport(aetheryte.RowId, 0);
-                                }
+                                if (aetheryte != null) Telepo.Instance()->Teleport(aetheryte.RowId, 0);
                             }
                         }
 
@@ -174,7 +175,7 @@ public class Main : Window, IDisposable
              !description.Contains(SearchString, StringComparison.OrdinalIgnoreCase)))
             return;
 
-        var isWithUI = ModuleManager.Modules[module].WithUI;
+        var isWithUI = ModuleManager.Modules[module].WithConfigUI;
         var moduleChanged = ImGuiOm.CheckboxColored($"##{module.Name}", ref tempModuleBool);
 
         if (moduleChanged)
@@ -236,7 +237,7 @@ public class Main : Window, IDisposable
     {
         var moduleInstance = ModuleManager.Modules[module];
 
-        moduleInstance?.UI();
+        moduleInstance?.ConfigUI();
     }
 
     private static void DrawTabSettings()

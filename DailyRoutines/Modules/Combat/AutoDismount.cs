@@ -15,7 +15,7 @@ namespace DailyRoutines.Modules;
 public unsafe class AutoDismount : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => false;
+    public bool WithConfigUI => false;
 
     private delegate bool UseActionSelfDelegate(
         ActionManager* actionManager, uint actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
@@ -46,7 +46,9 @@ public unsafe class AutoDismount : IDailyModule
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
 
-    public void UI() { }
+    public void ConfigUI() { }
+
+    public void OverlayUI() { }
 
     private bool UseActionSelf(
         ActionManager* actionManager, uint actionType, uint actionId, ulong actionTarget, uint a5, uint a6, uint a7,

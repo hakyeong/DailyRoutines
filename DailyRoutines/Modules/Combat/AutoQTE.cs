@@ -12,7 +12,7 @@ namespace DailyRoutines.Modules;
 public class AutoQTE : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => false;
+    public bool WithConfigUI => false;
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool PostMessage(IntPtr hWnd, uint Msg, int wParam, int lParam);
@@ -29,7 +29,7 @@ public class AutoQTE : IDailyModule
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, QTETypes, OnQTEAddon);
     }
 
-    public void UI() { }
+    public void ConfigUI() { }
 
     private static void OnQTEAddon(AddonEvent type, AddonArgs args)
     {
@@ -40,6 +40,8 @@ public class AutoQTE : IDailyModule
         PostMessage(windowHandle, WmKeydown, VkW, 0);
         Task.Delay(50).ContinueWith(_ => PostMessage(windowHandle, WmKeyup, VkW, 0));
     }
+
+    public void OverlayUI() { }
 
     public void Uninit()
     {

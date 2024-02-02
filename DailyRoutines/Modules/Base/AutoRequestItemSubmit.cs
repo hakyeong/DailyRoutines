@@ -17,7 +17,7 @@ namespace DailyRoutines.Modules;
 public class AutoRequestItemSubmit : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithUI => true;
+    public bool WithConfigUI => true;
 
     private static bool ConfigIsSubmitHQItem;
 
@@ -37,12 +37,14 @@ public class AutoRequestItemSubmit : IDailyModule
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
 
-    public void UI()
+    public void ConfigUI()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
         if (ImGui.Checkbox("递交优质道具", ref ConfigIsSubmitHQItem))
             Service.Config.UpdateConfig(typeof(AutoRequestItemSubmit), "IsSubmitHQItem", ConfigIsSubmitHQItem);
     }
+
+    public void OverlayUI() { }
 
     private void OnAddonRequest(AddonEvent type, AddonArgs args)
     {
