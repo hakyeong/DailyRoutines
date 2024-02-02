@@ -28,13 +28,11 @@ public class AutoLogin : IDailyModule
 
     public void Init()
     {
-        if (!Service.Config.ConfigExists(typeof(AutoLogin), "SelectedServer"))
-            Service.Config.AddConfig(typeof(AutoLogin), "SelectedServer", string.Empty);
-        if (!Service.Config.ConfigExists(typeof(AutoLogin), "SelectedCharaIndex"))
-            Service.Config.AddConfig(typeof(AutoLogin), "SelectedCharaIndex", 0);
+        Service.Config.AddConfig(this, "SelectedServer", string.Empty);
+        Service.Config.AddConfig(this, "SelectedCharaIndex", 0);
 
-        ConfigSelectedServer = Service.Config.GetConfig<string>(typeof(AutoLogin), "SelectedServer");
-        ConfigSelectedCharaIndex = Service.Config.GetConfig<int>(typeof(AutoLogin), "SelectedCharaIndex");
+        ConfigSelectedServer = Service.Config.GetConfig<string>(this, "SelectedServer");
+        ConfigSelectedCharaIndex = Service.Config.GetConfig<int>(this, "SelectedCharaIndex");
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = true };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "_TitleMenu", OnTitleMenu);
@@ -55,7 +53,7 @@ public class AutoLogin : IDailyModule
         {
             if (TryGetWorldByName(ConfigSelectedServer, out _))
             {
-                Service.Config.AddConfig(typeof(AutoLogin), "SelectedServer", ConfigSelectedServer);
+                Service.Config.AddConfig(this, "SelectedServer", ConfigSelectedServer);
                 HasLoginOnce = false;
             }
             else
@@ -80,7 +78,7 @@ public class AutoLogin : IDailyModule
             if (ConfigSelectedCharaIndex is < 0 or > 8) ConfigSelectedCharaIndex = 0;
             else
             {
-                Service.Config.AddConfig(typeof(AutoLogin), "SelectedCharaIndex", ConfigSelectedCharaIndex);
+                Service.Config.AddConfig(this, "SelectedCharaIndex", ConfigSelectedCharaIndex);
                 HasLoginOnce = false;
             }
         }

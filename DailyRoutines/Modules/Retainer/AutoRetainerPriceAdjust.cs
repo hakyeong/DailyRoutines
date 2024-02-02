@@ -36,13 +36,11 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
-        if (!Service.Config.ConfigExists(typeof(AutoRetainerPriceAdjust), "PriceReduction"))
-            Service.Config.AddConfig(typeof(AutoRetainerPriceAdjust), "PriceReduction", 1);
-        if (!Service.Config.ConfigExists(typeof(AutoRetainerPriceAdjust), "LowestAcceptablePrice"))
-            Service.Config.AddConfig(typeof(AutoRetainerPriceAdjust), "LowestAcceptablePrice", 100);
+        Service.Config.AddConfig(this, "PriceReduction", 1);
+        Service.Config.AddConfig(this, "LowestAcceptablePrice", 100);
 
-        ConfigPriceReduction = Service.Config.GetConfig<int>(typeof(AutoRetainerPriceAdjust), "PriceReduction");
-        ConfigLowestPrice = Service.Config.GetConfig<int>(typeof(AutoRetainerPriceAdjust), "LowestAcceptablePrice");
+        ConfigPriceReduction = Service.Config.GetConfig<int>(this, "PriceReduction");
+        ConfigLowestPrice = Service.Config.GetConfig<int>(this, "LowestAcceptablePrice");
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSellList", OnRetainerSellList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSell", OnRetainerSell);
@@ -62,7 +60,7 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
                 ref ConfigPriceReduction))
         {
             ConfigPriceReduction = Math.Max(1, ConfigPriceReduction);
-            Service.Config.AddConfig(typeof(AutoRetainerPriceAdjust), "SinglePriceReductionValue", ConfigPriceReduction);
+            Service.Config.AddConfig(this, "SinglePriceReductionValue", ConfigPriceReduction);
         }
 
 
@@ -72,7 +70,7 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
                 ref ConfigLowestPrice))
         {
             ConfigLowestPrice = Math.Max(1, ConfigLowestPrice);
-            Service.Config.AddConfig(typeof(AutoRetainerPriceAdjust), "LowestAcceptablePrice", ConfigLowestPrice);
+            Service.Config.AddConfig(this, "LowestAcceptablePrice", ConfigLowestPrice);
         }
     }
 
@@ -259,7 +257,6 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
         Service.AddonLifecycle.UnregisterListener(OnRetainerSellList);
         Service.AddonLifecycle.UnregisterListener(OnRetainerSell);
         TaskManager?.Abort();
-        Service.Config.Save();
 
         Initialized = false;
     }

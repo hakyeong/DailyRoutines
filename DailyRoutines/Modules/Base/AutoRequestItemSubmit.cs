@@ -26,10 +26,9 @@ public class AutoRequestItemSubmit : IDailyModule
 
     public void Init()
     {
-        if (!Service.Config.ConfigExists(typeof(AutoRequestItemSubmit), "IsSubmitHQItem"))
-            Service.Config.AddConfig(typeof(AutoRequestItemSubmit), "IsSubmitHQItem", true);
+        Service.Config.AddConfig(this, "IsSubmitHQItem", true);
 
-        ConfigIsSubmitHQItem = Service.Config.GetConfig<bool>(typeof(AutoRequestItemSubmit), "IsSubmitHQItem");
+        ConfigIsSubmitHQItem = Service.Config.GetConfig<bool>(this, "IsSubmitHQItem");
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Request", OnAddonRequest);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Request", OnAddonRequest);
@@ -41,7 +40,7 @@ public class AutoRequestItemSubmit : IDailyModule
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
         if (ImGui.Checkbox("递交优质道具", ref ConfigIsSubmitHQItem))
-            Service.Config.UpdateConfig(typeof(AutoRequestItemSubmit), "IsSubmitHQItem", ConfigIsSubmitHQItem);
+            Service.Config.UpdateConfig(this, "IsSubmitHQItem", ConfigIsSubmitHQItem);
     }
 
     public void OverlayUI() { }
@@ -142,8 +141,6 @@ public class AutoRequestItemSubmit : IDailyModule
 
     public void Uninit()
     {
-        Service.Config.Save();
-
         Service.AddonLifecycle.UnregisterListener(OnAddonRequest);
         AbortActions();
     }

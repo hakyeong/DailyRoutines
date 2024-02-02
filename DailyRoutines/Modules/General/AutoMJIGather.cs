@@ -63,11 +63,10 @@ public class AutoMJIGather : IDailyModule
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
-        if (!Service.Config.ConfigExists(typeof(AutoMJIGather), "GatherNodes"))
-            Service.Config.AddConfig(typeof(AutoMJIGather), "GatherNodes", GatherNodes);
+        Service.Config.AddConfig(this, "GatherNodes", GatherNodes);
 
         GatherNodes =
-            Service.Config.GetConfig<Dictionary<string, AutoMJIGatherGroup>>(typeof(AutoMJIGather), "GatherNodes");
+            Service.Config.GetConfig<Dictionary<string, AutoMJIGatherGroup>>(this, "GatherNodes");
     }
 
     public void ConfigUI()
@@ -118,7 +117,7 @@ public class AutoMJIGather : IDailyModule
                     if (ImGui.Checkbox($"##{nodeGroup.Key}", ref groupState))
                     {
                         GatherNodes[nodeGroup.Key] = new AutoMJIGatherGroup(groupState, nodeGroup.Value.Nodes);
-                        Service.Config.UpdateConfig(typeof(AutoMJIGather), "GatherNodes", GatherNodes);
+                        Service.Config.UpdateConfig(this, "GatherNodes", GatherNodes);
                         CurrentGatherIndex = 0;
                         QueuedGatheringList.Clear();
                     }
@@ -190,7 +189,7 @@ public class AutoMJIGather : IDailyModule
 
     public void OverlayUI() { }
 
-    private static void OnUpdate(Framework framework)
+    private void OnUpdate(Framework framework)
     {
         if (!IsOnDataCollecting)
         {
@@ -207,7 +206,7 @@ public class AutoMJIGather : IDailyModule
             if (string.IsNullOrWhiteSpace(objName)) continue;
             if (!GatherNodes.ContainsKey(objName)) GatherNodes.Add(objName, new AutoMJIGatherGroup(false, []));
             if (GatherNodes[objName].Nodes.Add(obj.Position))
-                Service.Config.UpdateConfig(typeof(AutoMJIGather), "GatherNodes", GatherNodes);
+                Service.Config.UpdateConfig(this, "GatherNodes", GatherNodes);
         }
     }
 
@@ -311,8 +310,7 @@ public class AutoMJIGather : IDailyModule
 
     public void Uninit()
     {
-        Service.Config.UpdateConfig(typeof(AutoMJIGather), "GatherNodes", GatherNodes);
-        Service.Config.Save();
+        Service.Config.UpdateConfig(this, "GatherNodes", GatherNodes);
 
         Service.Framework.Update -= OnUpdate;
         QueuedGatheringList.Clear();
