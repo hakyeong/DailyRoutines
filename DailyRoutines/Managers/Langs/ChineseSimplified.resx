@@ -279,6 +279,18 @@
   <data name="AutoRefocusTitle" xml:space="preserve">
     <value>自动重新焦点目标</value>
   </data>
+  <data name="AutoRefreshPartyFinder-OnlyInactive" xml:space="preserve">
+    <value>仅未操作状态下</value>
+  </data>
+  <data name="AutoRefreshPartyFinder-RefreshInterval" xml:space="preserve">
+    <value>刷新间隔(秒)</value>
+  </data>
+  <data name="AutoRefreshPartyFinderDescription" xml:space="preserve">
+    <value>打开队员招募, 每经过固定间隔时间后, 自动刷新一次招募板</value>
+  </data>
+  <data name="AutoRefreshPartyFinderTitle" xml:space="preserve">
+    <value>自动刷新招募板</value>
+  </data>
   <data name="AutoRequestItemSubmitDescription" xml:space="preserve">
     <value>在递交物品时, 自动选择物品并完成递交</value>
   </data>

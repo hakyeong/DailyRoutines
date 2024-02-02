@@ -11,7 +11,7 @@ public class Overlay : Window
 
     public Overlay(IDailyModule module) : base($"###{module}")
     {
-        Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar;
+        Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar;
         RespectCloseHotkey = false;
         Module = module;
 
