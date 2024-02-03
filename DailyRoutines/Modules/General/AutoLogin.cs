@@ -90,7 +90,7 @@ public class AutoLogin : IDailyModule
 
     private static void OnUpdate(Framework framework)
     {
-        if (Service.ClientState.IsLoggedIn || !TaskManager.IsBusy) return;
+        if (!TaskManager.IsBusy) return;
 
         if (Service.KeyState[Service.Config.ConflictKey])
         {
