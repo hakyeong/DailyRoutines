@@ -24,7 +24,6 @@ public partial class AutoSubmarineCollect : IDailyModule
     public bool WithConfigUI => true;
 
     private static TaskManager? TaskManager;
-    private static int CurrentIndex;
 
     public void Init()
     {
@@ -68,7 +67,7 @@ public partial class AutoSubmarineCollect : IDailyModule
 
     private static void AlwaysYes(AddonEvent type, AddonArgs args)
     {
-        if (!TaskManager.IsBusy || CurrentIndex == 0) return;
+        if (!TaskManager.IsBusy) return;
 
         Click.SendClick("select_yes");
     }
@@ -104,11 +103,12 @@ public partial class AutoSubmarineCollect : IDailyModule
                         NodeText.ExtractText();
                 if (stateText.Contains("探索完成"))
                 {
-                    CurrentIndex = i;
-                    EnqueueSubmarineCollect(CurrentIndex);
+                    EnqueueSubmarineCollect(i);
                     return true;
                 }
             }
+
+            TaskManager.Abort();
         }
 
         return false;
@@ -116,9 +116,7 @@ public partial class AutoSubmarineCollect : IDailyModule
 
     private static void OnErrorText(Dalamud.Game.Text.XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
-        if (!TaskManager.IsBusy || !message.ExtractText().Contains("需要修理配件") || CurrentIndex == 0) return;
-        Service.Log.Debug(message.ExtractText());
-        Service.Log.Debug("准备进行潜水艇修理");
+        if (!TaskManager.IsBusy || !message.ExtractText().Contains("需要修理配件")) return;
 
         TaskManager.Abort();
         TaskManager.Enqueue(ReadyToRepairSubmarines);
@@ -203,9 +201,10 @@ public partial class AutoSubmarineCollect : IDailyModule
             {
                 var i1 = i;
                 TaskManager.Enqueue(() => RepairSingleSubmarine(i1));
-                TaskManager.DelayNext(100);
+                TaskManager.DelayNext(1000);
             }
 
+            TaskManager.DelayNext(1000);
             TaskManager.Enqueue(CloseRepairUI);
             TaskManager.Enqueue(() => Click.TrySendClick("select_string2"));
             TaskManager.Enqueue(ConfirmVoyageResult);
@@ -240,6 +239,7 @@ public partial class AutoSubmarineCollect : IDailyModule
         {
             var handler = new ClickCompanyCraftSupplyDR();
             handler.Close();
+            addon->Close(true);
 
             return true;
         }
