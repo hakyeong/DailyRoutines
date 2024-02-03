@@ -406,6 +406,9 @@
   <data name="ImageLoading" xml:space="preserve">
     <value>图片加载中</value>
   </data>
+  <data name="Interface" xml:space="preserve">
+    <value>界面</value>
+  </data>
   <data name="Language" xml:space="preserve">
     <value>语言</value>
   </data>

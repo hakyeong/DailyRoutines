@@ -14,7 +14,7 @@ using Timer = System.Timers.Timer;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoRefreshPartyFinderTitle", "AutoRefreshPartyFinderDescription", ModuleCategories.General)]
+[ModuleDescription("AutoRefreshPartyFinderTitle", "AutoRefreshPartyFinderDescription", ModuleCategories.Interface)]
 public class AutoRefreshPartyFinder : IDailyModule
 {
     public bool Initialized { get; set; }

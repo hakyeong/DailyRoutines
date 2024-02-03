@@ -5,7 +5,6 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using DailyRoutines.Managers;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 
 namespace DailyRoutines.Manager;
 
@@ -91,16 +90,17 @@ public partial class LanguageManager
         var ssb = new SeStringBuilder();
         var lastIndex = 0;
 
-        foreach (Match match in SeStringRegex().Matches(format))
+        ssb.AddUiForeground("[Daily Routines]", 34);
+        foreach (var match in SeStringRegex().Matches(format).Cast<Match>())
         {
             ssb.AddUiForeground(format[lastIndex..match.Index], 2);
             lastIndex = match.Index + match.Length;
 
             if (int.TryParse(match.Groups[1].Value, out var argIndex) && argIndex >= 0 && argIndex < args.Length)
             {
-                if (args[argIndex] is SeString)
+                if (args[argIndex] is SeString @seString)
                 {
-                    ssb.Append((SeString)args[argIndex]);
+                    ssb.Append(@seString);
                 }
                 else
                 {

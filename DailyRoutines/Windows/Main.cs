@@ -4,18 +4,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
-using System.Threading;
+using System.Runtime.CompilerServices;
 using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Manager;
 using DailyRoutines.Managers;
-using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Windowing;
 using Dalamud.Memory;
 using Dalamud.Utility;
+using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
@@ -35,6 +35,8 @@ public class Main : Window, IDisposable
 
     public Main(Plugin plugin) : base("Daily Routines - Main")
     {
+        Flags = ImGuiWindowFlags.NoScrollbar;
+
         var assembly = Assembly.GetExecutingAssembly();
         var moduleTypes = assembly.GetTypes()
                                   .Where(t => typeof(IDailyModule).IsAssignableFrom(t) && t.IsClass);
@@ -77,6 +79,18 @@ public class Main : Window, IDisposable
                     {
                         foreach (var clickName in Click.GetClickNames())
                             Service.Log.Debug(clickName);
+                    }
+
+                    if (ImGui.Button("显示通知"))
+                    {
+                        if (DalamudReflector.TryGetDalamudPlugin("NotificationMaster", out var instance, true, true))
+                        {
+                            Safe(delegate
+                            {
+                                instance.GetType().Assembly.GetType("NotificationMaster.TrayIconManager", true).GetMethod("ShowToast").Invoke(null,
+                                    ["测试通知", P.Name]);
+                            }, true);
+                        }
                     }
 
                     unsafe
