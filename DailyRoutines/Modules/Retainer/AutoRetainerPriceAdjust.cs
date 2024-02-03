@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
@@ -6,6 +7,7 @@ using DailyRoutines.Managers;
 using Dalamud.Game;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.Internal.Notifications;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -26,20 +28,28 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
 
     private static int ConfigPriceReduction;
     private static int ConfigLowestPrice;
+    private static int ConfigMaxPriceReduction;
+    private static bool ConfigSeparateNQAndHQ;
 
+    private static int CurrentItemPrice;
     private static int CurrentMarketLowestPrice;
     private static uint CurrentItemSearchItemID;
+    private static bool IsCurrentItemHQ;
     private static unsafe RetainerManager.RetainerList.Retainer* CurrentRetainer;
 
     public void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
-        
+
         Service.Config.AddConfig(this, "PriceReduction", 1);
         Service.Config.AddConfig(this, "LowestAcceptablePrice", 100);
+        Service.Config.AddConfig(this, "SeparateNQAndHQ", false);
+        Service.Config.AddConfig(this, "MaxPriceReduction", 0);
 
         ConfigPriceReduction = Service.Config.GetConfig<int>(this, "PriceReduction");
         ConfigLowestPrice = Service.Config.GetConfig<int>(this, "LowestAcceptablePrice");
+        ConfigSeparateNQAndHQ = Service.Config.GetConfig<bool>(this, "SeparateNQAndHQ");
+        ConfigMaxPriceReduction = Service.Config.GetConfig<int>(this, "MaxPriceReduction");
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSellList", OnRetainerSellList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSell", OnRetainerSell);
@@ -57,21 +67,40 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
         ImGui.SetNextItemWidth(210f);
         if (ImGui.InputInt(
                 $"{Service.Lang.GetText("AutoRetainerPriceAdjust-SinglePriceReductionValue")}##AutoRetainerPriceAdjust-SinglePriceReductionValue",
-                ref ConfigPriceReduction))
+                ref ConfigPriceReduction, 100))
         {
             ConfigPriceReduction = Math.Max(1, ConfigPriceReduction);
-            Service.Config.AddConfig(this, "SinglePriceReductionValue", ConfigPriceReduction);
+            Service.Config.UpdateConfig(this, "SinglePriceReductionValue", ConfigPriceReduction);
         }
 
 
         ImGui.SetNextItemWidth(210f);
         if (ImGui.InputInt(
                 $"{Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice")}##AutoRetainerPriceAdjust-LowestAcceptablePrice",
-                ref ConfigLowestPrice))
+                ref ConfigLowestPrice, 100))
         {
             ConfigLowestPrice = Math.Max(1, ConfigLowestPrice);
-            Service.Config.AddConfig(this, "LowestAcceptablePrice", ConfigLowestPrice);
+            Service.Config.UpdateConfig(this, "LowestAcceptablePrice", ConfigLowestPrice);
         }
+
+        ImGui.SetNextItemWidth(210f);
+        if (ImGui.InputInt(
+                $"{Service.Lang.GetText("AutoRetainerPriceAdjust-MaxPriceReduction")}##AutoRetainerPriceAdjust-MaxPriceReduction",
+                ref ConfigMaxPriceReduction, 100))
+        {
+            ConfigMaxPriceReduction = Math.Max(0, ConfigMaxPriceReduction);
+            Service.Config.UpdateConfig(this, "MaxPriceReduction", ConfigMaxPriceReduction);
+        }
+
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip(Service.Lang.GetText("AutoRetainerPriceAdjust-MaxPriceReductionInputHelp"));
+
+        if (ImGui.Checkbox(
+                $"{Service.Lang.GetText("AutoRetainerPriceAdjust-SeparateNQAndHQ")}##AutoRetainerPriceAdjust-SeparateNQAndHQ",
+                ref ConfigSeparateNQAndHQ))
+            Service.Config.UpdateConfig(this, "SeparateNQAndHQ", ConfigSeparateNQAndHQ);
+
+        ImGuiOm.HelpMarker(Service.Lang.GetText("AutoRetainerPriceAdjust-SeparateNQAndHQHelp"));
     }
 
     public void OverlayUI() { }
@@ -83,7 +112,8 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
         if (Service.KeyState[Service.Config.ConflictKey])
         {
             TaskManager.Abort();
-            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"), "Daily Routines", NotificationType.Success);
+            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"),
+                                                        "Daily Routines", NotificationType.Success);
         }
     }
 
@@ -194,6 +224,9 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
     {
         if (TryGetAddonByName<AtkUnitBase>("RetainerSell", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
+            CurrentItemPrice = addon->AtkValues[5].Int;
+            IsCurrentItemHQ = Marshal.PtrToStringUTF8((nint)addon->AtkValues[1].String).Contains(''); // 是游戏里的 HQ 符号
+
             var handler = new ClickRetainerSellDR((nint)addon);
             handler.ComparePrice();
 
@@ -219,8 +252,43 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
                 return true;
             }
 
-            var text = addon->UldManager.NodeList[5]->GetAsAtkComponentNode()->Component->UldManager.NodeList[1]->GetAsAtkComponentNode()->Component->UldManager.NodeList[10]->GetAsAtkTextNode()->NodeText.ToString();
-            if (!int.TryParse(AutoRetainerPriceAdjustRegex().Replace(text, ""), out CurrentMarketLowestPrice)) return false;
+            // 区分 HQ 和 NQ
+            if (ConfigSeparateNQAndHQ && IsCurrentItemHQ)
+            {
+                var foundHQItem = false;
+                for (var i = 1; i <= 12 && !foundHQItem; i++)
+                {
+                    var listing =
+                        addon->UldManager.NodeList[5]->GetAsAtkComponentNode()->Component->UldManager.NodeList[i]
+                            ->GetAsAtkComponentNode()->Component->UldManager.NodeList;
+                    if (listing[13]->GetAsAtkImageNode()->AtkResNode.IsVisible)
+                    {
+                        var priceText = listing[10]->GetAsAtkTextNode()->NodeText.ExtractText();
+                        if (int.TryParse(AutoRetainerPriceAdjustRegex().Replace(priceText, ""),
+                                         out CurrentMarketLowestPrice))
+                            foundHQItem = true;
+                    }
+                }
+
+                if (!foundHQItem)
+                {
+                    var priceText = addon->UldManager.NodeList[5]->GetAsAtkComponentNode()->Component->UldManager
+                                .NodeList[1]
+                            ->GetAsAtkComponentNode()->Component->UldManager.NodeList[10]->GetAsAtkTextNode()->NodeText
+                        .ExtractText();
+                    if (!int.TryParse(AutoRetainerPriceAdjustRegex().Replace(priceText, ""),
+                                      out CurrentMarketLowestPrice)) return false;
+                }
+            }
+            else
+            {
+                var priceText =
+                    addon->UldManager.NodeList[5]->GetAsAtkComponentNode()->Component->UldManager.NodeList[1]
+                            ->GetAsAtkComponentNode()->Component->UldManager.NodeList[10]->GetAsAtkTextNode()->NodeText
+                        .ExtractText();
+                if (!int.TryParse(AutoRetainerPriceAdjustRegex().Replace(priceText, ""),
+                                  out CurrentMarketLowestPrice)) return false;
+            }
 
             addon->Close(true);
             return true;
@@ -231,15 +299,41 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
 
     private static unsafe bool? FillLowestPrice()
     {
-        if (TryGetAddonByName<AddonRetainerSell>("RetainerSell", out var addon) && HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
+        if (TryGetAddonByName<AddonRetainerSell>("RetainerSell", out var addon) &&
+            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
             var ui = &addon->AtkUnitBase;
             var priceComponent = addon->AskingPrice;
             var handler = new ClickRetainerSellDR((nint)addon);
-            if (CurrentMarketLowestPrice < ConfigLowestPrice || CurrentMarketLowestPrice == 0 ||
-                CurrentMarketLowestPrice - ConfigPriceReduction <= 1)
+
+            // 低于最低价
+            if (CurrentMarketLowestPrice - ConfigPriceReduction < ConfigLowestPrice)
             {
-                var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-WarnMessageReachLowestPrice", SeString.CreateItemLink(CurrentItemSearchItemID), CurrentMarketLowestPrice, ConfigLowestPrice);
+                var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-WarnMessageReachLowestPrice",
+                                                       SeString.CreateItemLink(
+                                                           CurrentItemSearchItemID,
+                                                           IsCurrentItemHQ
+                                                               ? ItemPayload.ItemKind.Hq
+                                                               : ItemPayload.ItemKind.Normal), CurrentMarketLowestPrice,
+                                                       CurrentItemPrice, ConfigLowestPrice);
+                Service.Chat.Print(message);
+
+                handler.Decline();
+                ui->Close(true);
+
+                return true;
+            }
+
+            // 超过可接受的降价值
+            if (ConfigMaxPriceReduction != 0 && CurrentItemPrice - CurrentMarketLowestPrice > ConfigLowestPrice)
+            {
+                var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-MaxPriceReductionMessage",
+                                                       SeString.CreateItemLink(
+                                                           CurrentItemSearchItemID,
+                                                           IsCurrentItemHQ
+                                                               ? ItemPayload.ItemKind.Hq
+                                                               : ItemPayload.ItemKind.Normal), CurrentMarketLowestPrice,
+                                                       CurrentItemPrice, ConfigMaxPriceReduction);
                 Service.Chat.Print(message);
 
                 handler.Decline();
