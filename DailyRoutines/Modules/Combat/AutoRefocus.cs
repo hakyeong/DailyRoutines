@@ -36,10 +36,10 @@ public unsafe class AutoRefocus : IDailyModule
 
     public void OverlayUI() { }
 
-    private void OnZoneChange(object? sender, ushort e)
+    private void OnZoneChange(object? sender, ushort territory)
     {
         FocusTarget = null;
-        if (ContentTerritories.Contains(Service.ClientState.TerritoryType))
+        if (ContentTerritories.Contains(territory))
             Service.Framework.Update += OnUpdate;
         else
             Service.Framework.Update -= OnUpdate;
