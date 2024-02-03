@@ -53,7 +53,7 @@ public class AutoLogin : IDailyModule
         {
             if (TryGetWorldByName(ConfigSelectedServer, out _))
             {
-                Service.Config.AddConfig(this, "SelectedServer", ConfigSelectedServer);
+                Service.Config.UpdateConfig(this, "SelectedServer", ConfigSelectedServer);
                 HasLoginOnce = false;
             }
             else
@@ -78,7 +78,7 @@ public class AutoLogin : IDailyModule
             if (ConfigSelectedCharaIndex is < 0 or > 8) ConfigSelectedCharaIndex = 0;
             else
             {
-                Service.Config.AddConfig(this, "SelectedCharaIndex", ConfigSelectedCharaIndex);
+                Service.Config.UpdateConfig(this, "SelectedCharaIndex", ConfigSelectedCharaIndex);
                 HasLoginOnce = false;
             }
         }
