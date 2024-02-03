@@ -39,6 +39,7 @@ public class AutoQuestAccept : IDailyModule
         if (addon == null) return;
 
         var questID = addon->AtkValues[226].UInt;
+        if (questID == 0) return;
 
         Callback.Fire(addon, true, 3, questID);
     }
