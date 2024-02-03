@@ -89,7 +89,6 @@ public class AutoLeveQuests : IDailyModule
         {
             IsOnProcessing = true;
             Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectYesno", AlwaysYes);
-            Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "JournalResult", OnAddonJournalResult);
 
             TaskManager.Enqueue(InteractWithMete);
         }
@@ -126,7 +125,6 @@ public class AutoLeveQuests : IDailyModule
     {
         TaskManager?.Abort();
         Service.AddonLifecycle.UnregisterListener(AlwaysYes);
-        Service.AddonLifecycle.UnregisterListener(OnAddonJournalResult);
         IsOnProcessing = false;
     }
 
@@ -138,18 +136,6 @@ public class AutoLeveQuests : IDailyModule
     private static void AlwaysYes(AddonEvent type, AddonArgs args)
     {
         Click.SendClick("select_yes");
-    }
-
-    private static unsafe void OnAddonJournalResult(AddonEvent type, AddonArgs args)
-    {
-        if (TryGetAddonByName<AddonJournalResult>("JournalResult", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
-        {
-            var ui = &addon->AtkUnitBase;
-            var handler = new ClickJournalResult();
-            handler.Complete();
-            ui->Close(true);
-        }
     }
 
     private static void GetRecentLeveQuests()

@@ -185,7 +185,7 @@
   </data>
   <data name="AutoLeveQuestsDescription" xml:space="preserve">
     <value>配置完成并点击开始后, 自动重复完成指定的生产理符任务, 直至理符额度耗尽
-(前置模块: 自动选择并递交物品, 自动跳过对话)</value>
+(前置模块: 自动选择并递交物品, 自动跳过对话, 自动确认任务结果)</value>
   </data>
   <data name="AutoLeveQuestsTitle" xml:space="preserve">
     <value>自动批量完成生产理符</value>
@@ -298,7 +298,7 @@
     <value>刷新间隔(秒)</value>
   </data>
   <data name="AutoRefreshPartyFinderDescription" xml:space="preserve">
-    <value>打开队员招募, 每经过固定间隔时间后, 自动刷新一次招募板</value>
+    <value>打开队员招募后, 每经过固定间隔时间时, 自动刷新一次招募板</value>
   </data>
   <data name="AutoRefreshPartyFinderTitle" xml:space="preserve">
     <value>自动刷新招募板</value>
