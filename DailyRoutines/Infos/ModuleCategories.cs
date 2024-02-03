@@ -7,4 +7,5 @@ public enum ModuleCategories
     Combat = 2,
     GoldSaucer = 3,
     Retainer = 4,
+    Interface = 5,
 }
