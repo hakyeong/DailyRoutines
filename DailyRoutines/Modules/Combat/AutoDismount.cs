@@ -21,7 +21,6 @@ public unsafe class AutoDismount : IDailyModule
         ActionManager* actionManager, uint actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
         uint a5 = 0, uint a6 = 0, void* a7 = null);
 
-    [Signature("E8 ?? ?? ?? ?? EB 64 B1 01 ?? ?? ?? ?? ?? ?? ??", DetourName = nameof(UseActionSelf))]
     private Hook<UseActionSelfDelegate>? useActionSelfHook;
 
     [Signature("E8 ?? ?? ?? ?? 44 0F B6 C3 48 8B D0")]
