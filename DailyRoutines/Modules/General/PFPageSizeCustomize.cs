@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Hooking;
+using Dalamud.Interface;
 using Dalamud.Utility.Signatures;
 using ImGuiNET;
 
@@ -35,6 +36,7 @@ public class PFPageSizeCustomize : IDailyModule
 
     public void ConfigUI()
     {
+        ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
         if (ImGui.InputInt("单页显示数量", ref ConfigDisplayAmount, 10, 10, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigDisplayAmount = Math.Clamp(ConfigDisplayAmount, 1, 100);
