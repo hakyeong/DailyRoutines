@@ -273,6 +273,12 @@
   <data name="AutoQTETitle" xml:space="preserve">
     <value>自动动态演练</value>
   </data>
+  <data name="AutoQuestAcceptDescription" xml:space="preserve">
+    <value>任务接取界面出现后, 自动点击确认按钮</value>
+  </data>
+  <data name="AutoQuestAcceptTitle" xml:space="preserve">
+    <value>自动确认任务接取</value>
+  </data>
   <data name="AutoRefocusDescription" xml:space="preserve">
     <value>在副本内, 若丢失的焦点目标再次出现, 则自动重新焦点</value>
   </data>
