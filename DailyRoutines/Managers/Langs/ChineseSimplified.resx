@@ -279,6 +279,12 @@
   <data name="AutoQuestAcceptTitle" xml:space="preserve">
     <value>自动确认任务接取</value>
   </data>
+  <data name="AutoQuestCompleteDescription" xml:space="preserve">
+    <value>任务结果界面出现后, 自动点击完成按钮</value>
+  </data>
+  <data name="AutoQuestCompleteTitle" xml:space="preserve">
+    <value>自动确认任务结果</value>
+  </data>
   <data name="AutoRefocusDescription" xml:space="preserve">
     <value>在副本内, 若丢失的焦点目标再次出现, 则自动重新焦点</value>
   </data>
