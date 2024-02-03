@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
@@ -35,7 +34,7 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
     public void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
-
+        
         Service.Config.AddConfig(this, "PriceReduction", 1);
         Service.Config.AddConfig(this, "LowestAcceptablePrice", 100);
 
@@ -44,6 +43,7 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSellList", OnRetainerSellList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSell", OnRetainerSell);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "RetainerSell", OnRetainerSell);
 
         Service.Framework.Update += OnUpdate;
 
@@ -89,20 +89,26 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
 
     private static void OnRetainerSell(AddonEvent eventType, AddonArgs addonInfo)
     {
-        if (TaskManager.IsBusy) return;
-
-        TaskManager.Abort();
-
-        // 点击比价
-        TaskManager.Enqueue(ClickComparePrice);
-        TaskManager.AbortOnTimeout = false;
-        TaskManager.DelayNext(500);
-        // 获取当前最低价，并退出
-        TaskManager.Enqueue(GetLowestPrice);
-        TaskManager.AbortOnTimeout = true;
-        TaskManager.DelayNext(100);
-        // 填写最低价
-        TaskManager.Enqueue(FillLowestPrice);
+        switch (eventType)
+        {
+            case AddonEvent.PostSetup:
+                if (TaskManager.IsBusy) return;
+                // 点击比价
+                TaskManager.Enqueue(ClickComparePrice);
+                TaskManager.AbortOnTimeout = false;
+                TaskManager.DelayNext(500);
+                // 获取当前最低价，并退出
+                TaskManager.Enqueue(GetLowestPrice);
+                TaskManager.AbortOnTimeout = true;
+                TaskManager.DelayNext(100);
+                // 填写最低价
+                TaskManager.Enqueue(FillLowestPrice);
+                break;
+            case AddonEvent.PreFinalize:
+                if (TaskManager.NumQueuedTasks <= 1)
+                    TaskManager.Abort();
+                break;
+        }
     }
 
     private static unsafe void OnRetainerSellList(AddonEvent type, AddonArgs args)
@@ -215,6 +221,7 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
 
             var text = addon->UldManager.NodeList[5]->GetAsAtkComponentNode()->Component->UldManager.NodeList[1]->GetAsAtkComponentNode()->Component->UldManager.NodeList[10]->GetAsAtkTextNode()->NodeText.ToString();
             if (!int.TryParse(AutoRetainerPriceAdjustRegex().Replace(text, ""), out CurrentMarketLowestPrice)) return false;
+
             addon->Close(true);
             return true;
         }
