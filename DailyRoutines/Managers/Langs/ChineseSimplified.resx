@@ -409,6 +409,12 @@
   <data name="Language" xml:space="preserve">
     <value>语言</value>
   </data>
+  <data name="PartyFinderExpandDescription" xml:space="preserve">
+    <value>允许自定义队员招募中单页可显示的招募数量, 上限为单页 100 个招募</value>
+  </data>
+  <data name="PartyFinderExpandTitle" xml:space="preserve">
+    <value>自定义招募板单页显示数量</value>
+  </data>
   <data name="PleaseSearch" xml:space="preserve">
     <value>请搜索</value>
   </data>
