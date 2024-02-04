@@ -53,7 +53,7 @@ public class AutoCutSceneSkip : IDailyModule
                     P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"), "Daily Routines", NotificationType.Success);
                     return;
                 }
-                Task.Delay(200)
+                Task.Delay(100)
                     .ContinueWith(_ => Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "NowLoading", OnAddonLoading));
                 Service.Toast.ErrorToast += OnErrorToast;
             }
