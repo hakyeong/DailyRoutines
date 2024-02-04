@@ -87,6 +87,7 @@ public class AutoNotifyCutSceneCompletion : IDailyModule
 
     private void OnZoneChanged(object? sender, ushort e)
     {
+        TaskManager.Abort();
         IsDutyEnd = false;
     }
 
