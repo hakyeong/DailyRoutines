@@ -94,4 +94,10 @@
       <ProjectReference Include="..\OmenTools\OmenTools.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="Assets\FFXIVICON.ico">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>
