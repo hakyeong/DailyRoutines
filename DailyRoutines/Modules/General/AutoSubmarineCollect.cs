@@ -197,15 +197,15 @@ public partial class AutoSubmarineCollect : IDailyModule
             var handler = new ClickCompanyCraftSupplyDR();
 
             // 全修
-            for (var i = 0; i < 3; i++)
+            for (var i = 0; i < 4; i++)
             {
                 var i1 = i;
                 TaskManager.Enqueue(() => RepairSingleSubmarine(i1));
                 TaskManager.DelayNext(1000);
             }
 
-            TaskManager.DelayNext(1000);
             TaskManager.Enqueue(CloseRepairUI);
+            TaskManager.DelayNext(500);
             TaskManager.Enqueue(() => Click.TrySendClick("select_string2"));
             TaskManager.Enqueue(ConfirmVoyageResult);
 
