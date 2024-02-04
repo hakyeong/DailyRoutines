@@ -50,6 +50,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Remove="DailyRoutines.csproj.DotSettings" />
+    </ItemGroup>
+
+    <ItemGroup>
       <None Include="Managers\Langs\ChineseSimplified.resx">
         <Generator></Generator>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -57,7 +61,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="DalamudPackager" Version="2.1.11" />
+      <PackageReference Include="DalamudPackager" Version="2.1.11" />
+    </ItemGroup>
+
+    <ItemGroup>
         <Reference Include="FFXIVClientStructs">
             <HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
             <Private>false</Private>
