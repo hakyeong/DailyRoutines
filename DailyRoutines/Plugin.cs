@@ -91,5 +91,6 @@ public sealed class Plugin : IDalamudPlugin
         Service.Config.Uninitialize();
         ECommonsMain.Dispose();
         ModuleManager.Uninit();
+        NotificationManager.Dispose();
     }
 }
