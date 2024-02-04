@@ -5,17 +5,21 @@ using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Windows.Forms;
 using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Manager;
 using DailyRoutines.Managers;
+using DailyRoutines.Modules;
 using Dalamud.Game.ClientState.Keys;
+using Dalamud.Game.ClientState.Party;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Windowing;
 using Dalamud.Memory;
 using Dalamud.Utility;
 using ECommons.Reflection;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
@@ -81,20 +85,19 @@ public class Main : Window, IDisposable
                             Service.Log.Debug(clickName);
                     }
 
-                    if (ImGui.Button("显示通知"))
-                    {
-                        if (DalamudReflector.TryGetDalamudPlugin("NotificationMaster", out var instance, true, true))
-                        {
-                            Safe(delegate
-                            {
-                                instance.GetType().Assembly.GetType("NotificationMaster.TrayIconManager", true).GetMethod("ShowToast").Invoke(null,
-                                    ["测试通知", P.Name]);
-                            }, true);
-                        }
-                    }
-
                     unsafe
                     {
+                        if (ImGui.Button("获取小队成员状态"))
+                        {
+                            foreach (var member in Service.PartyList)
+                            {
+                                Service.Log.Debug($"{member.Name}");
+                                var chara = (Character*)member.GameObject.Address;
+                                if (chara == null) continue;
+                                Service.Log.Debug($"{chara->CharacterData.OnlineStatus}");
+                            }
+                        }
+
                         if (ImGui.Button("传送到FLAG地图"))
                         {
                             var territoryId = AgentMap.Instance()->FlagMapMarker.TerritoryId;
