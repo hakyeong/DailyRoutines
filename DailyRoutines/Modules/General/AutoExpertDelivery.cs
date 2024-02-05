@@ -90,7 +90,7 @@ public class AutoExpertDelivery : IDailyModule
         }
     }
 
-    public static void StartHandOver()
+    public static unsafe void StartHandOver()
     {
         if (IsSealsReachTheCap())
         {
@@ -99,7 +99,8 @@ public class AutoExpertDelivery : IDailyModule
         }
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "GrandCompanySupplyReward", OnAddonSupplyReward);
-
+        var handler = new ClickGrandCompanySupplyListDR();
+        handler.ExpertDelivery();
         TaskManager.Enqueue(ClickFirstItem);
 
         IsOnProcess = true;
