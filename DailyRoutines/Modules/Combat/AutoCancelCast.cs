@@ -17,21 +17,6 @@ public unsafe class AutoCancelCast : IDailyModule
     public bool Initialized { get; set; }
     public bool WithConfigUI => false;
 
-    [StructLayout(LayoutKind.Explicit)]
-    internal struct ActionManagerEX
-    {
-        [FieldOffset(0x28)]
-        public uint CastActionType;
-
-        [FieldOffset(0x2C)]
-        public uint CastActionID;
-
-        [FieldOffset(0x38)]
-        public uint CastTargetObjectID;
-    }
-
-    internal static ActionManagerEX ActionManagerData => *(ActionManagerEX*)ActionManager.StaticAddressPointers.pInstance;
-
     [Signature("48 83 EC 38 33 D2 C7 44 24 20 00 00 00 00 45 33 C9")]
     private readonly delegate* unmanaged<void> CancelCast;
 
@@ -68,9 +53,9 @@ public unsafe class AutoCancelCast : IDailyModule
 
     private void OnUpdate(Framework framework)
     {
-        if (ActionManagerData.CastActionType != 1 || TargetAreaActions.Contains(ActionManagerData.CastActionID)) return;
-        var obj = GetGameObjectFromObjectID(ActionManagerData.CastTargetObjectID);
-        if (obj == null || ActionManager.CanUseActionOnTarget(ActionManagerData.CastActionID, obj)) return;
+        if (Service.ClientState.LocalPlayer.CastActionType != 1 || TargetAreaActions.Contains(Service.ClientState.LocalPlayer.CastActionId)) return;
+        var obj = GetGameObjectFromObjectID(Service.ClientState.LocalPlayer.CastTargetObjectId);
+        if (obj == null || ActionManager.CanUseActionOnTarget(Service.ClientState.LocalPlayer.CastActionId, obj)) return;
 
         CancelCast();
     }
