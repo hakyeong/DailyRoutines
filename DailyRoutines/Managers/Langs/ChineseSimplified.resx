@@ -208,6 +208,32 @@
   <data name="AutoLoginTitle" xml:space="preserve">
     <value>自动登录</value>
   </data>
+  <data name="AutoMarkAetherCurrents-DisplayLeftCurrents" xml:space="preserve">
+    <value>显示剩余标点</value>
+  </data>
+  <data name="AutoMarkAetherCurrents-DisplayLeftCurrentsHelp" xml:space="preserve">
+    <value>仅在待显示的野外风脉泉超过 8 个时, 才需要点击此按钮</value>
+  </data>
+  <data name="AutoMarkAetherCurrents-FieldMarkerHelp" xml:space="preserve">
+    <value>根据风脉泉界面 从右到左 依次显示为:
+A / B / C / D / 1 / 2 / 3 / 4</value>
+  </data>
+  <data name="AutoMarkAetherCurrents-ManuallySelectCurrent" xml:space="preserve">
+    <value>手动指定待显示风脉泉</value>
+  </data>
+  <data name="AutoMarkAetherCurrents-ManuallySelectCurrentHelp" xml:space="preserve">
+    <value>下方勾选框与游戏原生风脉泉界面的野外风脉为逐个对应关系
+若已在目标地图, 则在选择后需要手动刷新一次标点显示</value>
+  </data>
+  <data name="AutoMarkAetherCurrents-RefreshDisplay" xml:space="preserve">
+    <value>刷新标点显示</value>
+  </data>
+  <data name="AutoMarkAetherCurrentsDescription" xml:space="preserve">
+    <value>在地图上自动标记所有风脉泉的位置, 并允许自定义待显示的风脉泉</value>
+  </data>
+  <data name="AutoMarkAetherCurrentsTitle" xml:space="preserve">
+    <value>自动标记风脉泉</value>
+  </data>
   <data name="AutoMiniCactpotDescription" xml:space="preserve">
     <value>进入仙人微彩界面后, 自动完成仙人微彩
 (安装并启用了 ezMiniCactpot 则根据其推荐来点选, 未安装则随机选择)</value>
