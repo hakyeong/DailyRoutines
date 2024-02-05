@@ -2,13 +2,13 @@
 
 <img src="https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/icon.png" width="128" height="128" alt="Icon by DALL·E">
 
-FF14 自动化小工具插件, 主要为我自己个人使用, 用于完成一些日常重复性工作, 工作室/有深度需求的请寻求其他插件。
+轻量化、低性能消耗、简单的自动化功能/易用性改动合集, 帮你从游戏内一些无意义的重复性工作中解放出来。
 
-PR 或提出 ISSUE 请随意。
+提出 ISSUE 或 PR 请随意。
 
 
 
-## 仓库项目链接 (仅支持 API8)
+## 仓库项目链接 (仅支持 API8 / Support CN Only)
 
 **访问下面的链接, 然后在页面最下方获取在线库链**
 
