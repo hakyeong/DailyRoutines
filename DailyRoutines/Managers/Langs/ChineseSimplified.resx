@@ -469,6 +469,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Language" xml:space="preserve">
     <value>语言</value>
   </data>
+  <data name="PFPageSizeCustomize-DisplayAmount" xml:space="preserve">
+    <value>单页显示数量</value>
+  </data>
   <data name="PFPageSizeCustomizeDescription" xml:space="preserve">
     <value>允许自定义队员招募中单页可显示的招募数量, 上限为单页 100 个招募</value>
   </data>
