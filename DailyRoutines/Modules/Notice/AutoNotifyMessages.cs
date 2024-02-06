@@ -89,7 +89,7 @@ public class AutoNotifyMessages : IDailyModule
         {
             ImGui.BeginTooltip();
             if (infoImageState)
-                ImGui.Image(imageHandler.ImGuiHandle, new Vector2(378, 113));
+                ImGui.Image(imageHandler.ImGuiHandle, new Vector2(450, 193));
             else
                 ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
             ImGui.EndTooltip();
