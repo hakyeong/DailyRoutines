@@ -25,10 +25,9 @@ namespace DailyRoutines.Windows;
 
 public class Main : Window, IDisposable
 {
-    private static readonly ConcurrentDictionary<Type, (string Name, string Title, string Description)> ModuleCache =
-        new();
+    private static readonly ConcurrentDictionary<Type, (string Name, string Title, string Description)> ModuleCache = [];
 
-    private static readonly Dictionary<ModuleCategories, List<Type>> ModuleCategories = new();
+    private static readonly Dictionary<ModuleCategories, List<Type>> ModuleCategories = [];
     internal static string SearchString = string.Empty;
     private static string ConflictKeySearchString = string.Empty;
 
@@ -36,25 +35,20 @@ public class Main : Window, IDisposable
     {
         Flags = ImGuiWindowFlags.NoScrollbar;
 
-        var assembly = Assembly.GetExecutingAssembly();
-        var moduleTypes = assembly.GetTypes()
-                                  .Where(t => typeof(IDailyModule).IsAssignableFrom(t) && t.IsClass);
-
-        foreach (ModuleCategories category in Enum.GetValues(typeof(ModuleCategories)))
-            ModuleCategories[category] = new List<Type>();
-
-        foreach (var type in moduleTypes)
-            CheckAndCache(type);
-
-        return;
-
-        static void CheckAndCache(Type type)
-        {
-            var attr = type.GetCustomAttribute<ModuleDescriptionAttribute>();
-            if (attr == null) return;
-
-            ModuleCategories[attr.Category].Add(type);
-        }
+        Assembly.GetExecutingAssembly().GetTypes()
+                .Where(t => typeof(IDailyModule).IsAssignableFrom(t) && t.IsClass)
+                .OrderBy(t => Service.Lang.GetText(t.GetCustomAttribute<ModuleDescriptionAttribute>()?.TitleKey))
+                .ToList()
+                .ForEach(type =>
+                {
+                    var category = type.GetCustomAttribute<ModuleDescriptionAttribute>()?.Category;
+                    if (category.HasValue)
+                    {
+                        if (!ModuleCategories.ContainsKey(category.Value))
+                            ModuleCategories[category.Value] = [];
+                        ModuleCategories[category.Value].Add(type);
+                    }
+                });
     }
 
     public override void Draw()
