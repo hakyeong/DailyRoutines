@@ -8,4 +8,5 @@ public enum ModuleCategories
     GoldSaucer = 3,
     Retainer = 4,
     Interface = 5,
+    Notice = 6,
 }

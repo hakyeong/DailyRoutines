@@ -73,6 +73,7 @@ public unsafe class FieldMarkerManager
             5 => FieldMarkerData + 0xA0,
             6 => FieldMarkerData + 0xC0,
             7 => FieldMarkerData + 0xE0,
+            _ => FieldMarkerData,
         };
 
         MemoryHelper.Write(markAddress, pos.X);

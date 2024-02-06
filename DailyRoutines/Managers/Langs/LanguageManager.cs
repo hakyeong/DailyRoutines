@@ -44,7 +44,7 @@ public partial class LanguageManager
         Language = languageName;
     }
 
-    private Dictionary<string, string> LoadResourceFile(string filePath)
+    private static Dictionary<string, string> LoadResourceFile(string filePath)
     {
         var data = new Dictionary<string, string>();
 

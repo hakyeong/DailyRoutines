@@ -56,7 +56,7 @@
     <ItemGroup>
       <None Include="Managers\Langs\ChineseSimplified.resx">
         <Generator></Generator>
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>
 

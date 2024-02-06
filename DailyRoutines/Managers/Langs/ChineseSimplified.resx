@@ -284,11 +284,29 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoNotifyCutSceneEnd-NotificationMessageHelp" xml:space="preserve">
     <value>提示信息外观 (Windows 10+)</value>
   </data>
+  <data name="AutoNotifyCutSceneEnd-OnlyWhenBackground" xml:space="preserve">
+    <value>仅当游戏位于后台时提醒</value>
+  </data>
   <data name="AutoNotifyCutSceneEndDescription" xml:space="preserve">
     <value>在副本内, 如若队友观看过场剧情超过五秒, 则在全部队友的过场剧情都已结束时, 自动发送一条 Windows 系统通知</value>
   </data>
   <data name="AutoNotifyCutSceneEndTitle" xml:space="preserve">
     <value>自动提示过场剧情结束</value>
+  </data>
+  <data name="AutoNotifyMessages-NotificationMessageHelp" xml:space="preserve">
+    <value>提示信息外观 (Windows 10+)</value>
+  </data>
+  <data name="AutoNotifyMessages-OnlyWhenBackground" xml:space="preserve">
+    <value>仅当游戏位于后台时提醒</value>
+  </data>
+  <data name="AutoNotifyMessages-SelectedTypesAmount" xml:space="preserve">
+    <value>已选择 {0} 种消息类型</value>
+  </data>
+  <data name="AutoNotifyMessagesDescription" xml:space="preserve">
+    <value>启用并配置完毕后, 当你选择的消息类型有新消息传入时, 自动发送一条 Windows 系统通知</value>
+  </data>
+  <data name="AutoNotifyMessagesTitle" xml:space="preserve">
+    <value>自动通知新消息</value>
   </data>
   <data name="AutoNoviceNetwork-AttemptedTimes" xml:space="preserve">
     <value>已尝试次数</value>
@@ -477,6 +495,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="Language" xml:space="preserve">
     <value>语言</value>
+  </data>
+  <data name="Notice" xml:space="preserve">
+    <value>通知</value>
   </data>
   <data name="PFPageSizeCustomize-DisplayAmount" xml:space="preserve">
     <value>单页显示数量</value>

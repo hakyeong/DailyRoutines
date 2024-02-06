@@ -25,7 +25,7 @@ public class Service
 
         InitLanguage();
         ExcelData = new();
-        Notice = new();
+        Notification = new();
         Waymarks = new();
     }
 
@@ -50,7 +50,7 @@ public class Service
     {
         Waymarks.Uninit();
         Config.Uninitialize();
-        Notice.Dispose();
+        Notification.Dispose();
     }
 
     [PluginService] public static IClientState ClientState { get; private set; } = null!;
@@ -74,7 +74,7 @@ public class Service
     public static SigScanner SigScanner { get; private set; } = new();
     public static ExcelGameData ExcelData { get; set; } = null!;
     public static FieldMarkerManager Waymarks { get; set; } = null!;
-    public static NotificationManager Notice { get; private set; } = null!;
+    public static NotificationManager Notification { get; private set; } = null!;
     public static LanguageManager Lang { get; set; } = null!;
     public static Configuration Config { get; set; } = null!;
 }

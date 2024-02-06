@@ -15,22 +15,25 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoNotifyCutSceneEndTitle", "AutoNotifyCutSceneEndDescription",
-                   ModuleCategories.Combat)]
+                   ModuleCategories.Notice)]
 public class AutoNotifyCutSceneEnd : IDailyModule
 {
     public bool Initialized { get; set; }
     public bool WithConfigUI => true;
 
-    private static TaskManager? TaskManager;
-
+    private static bool ConfigOnlyNotifyWhenBackground;
     private static bool IsDutyEnd;
 
+    private static TaskManager? TaskManager;
     private static Stopwatch? Stopwatch;
 
     public void Init()
     {
         TaskManager ??= new TaskManager { ShowDebug = false, TimeLimitMS = int.MaxValue, AbortOnTimeout = false };
         Stopwatch ??= new Stopwatch();
+
+        Service.Config.AddConfig(this, "OnlyNotifyWhenBackground", true);
+        ConfigOnlyNotifyWhenBackground = Service.Config.GetConfig<bool>(this, "OnlyNotifyWhenBackground");
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "_PartyList", OnPartyList);
         Service.DutyState.DutyCompleted += OnDutyComplete;
@@ -54,10 +57,15 @@ public class AutoNotifyCutSceneEnd : IDailyModule
         {
             ImGui.BeginTooltip();
             if (infoImageState)
-                ImGui.Image(imageHandler.ImGuiHandle, new Vector2(540, 161));
+                ImGui.Image(imageHandler.ImGuiHandle, new Vector2(378, 113));
             else
                 ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
             ImGui.EndTooltip();
+        }
+
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoNotifyCutSceneEnd-OnlyWhenBackground"), ref ConfigOnlyNotifyWhenBackground))
+        {
+            Service.Config.UpdateConfig(this, "OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
         }
     }
 
@@ -86,9 +94,7 @@ public class AutoNotifyCutSceneEnd : IDailyModule
             Service.Log.Debug("检测到有成员正在过场动画中");
             Stopwatch.Restart();
             TaskManager.Enqueue(IsNoOneWatchingCutscene);
-            TaskManager.Enqueue(
-                () => Service.Notice.ShowWindowsToast(
-                    "", Service.Lang.GetText("AutoNotifyCutSceneEnd-NotificationMessage")));
+            TaskManager.Enqueue(ShowNoticeMessage);
         }
     }
 
@@ -114,6 +120,18 @@ public class AutoNotifyCutSceneEnd : IDailyModule
             TaskManager.Abort();
         }
 
+        return true;
+    }
+
+    private static bool? ShowNoticeMessage()
+    {
+        if (ConfigOnlyNotifyWhenBackground)
+        {
+            if (!HelpersOm.IsGameForeground()) Service.Notification.ShowWindowsToast("", Service.Lang.GetText("AutoNotifyCutSceneEnd-NotificationMessage"));
+            return true;
+        }
+
+        Service.Notification.ShowWindowsToast("", Service.Lang.GetText("AutoNotifyCutSceneEnd-NotificationMessage"));
         return true;
     }
 

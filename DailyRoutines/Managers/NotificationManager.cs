@@ -21,10 +21,10 @@ public class NotificationManager
     {
         if (Icon is not { Visible: true }) CreateIcon();
 
-        Task.Delay(3000).ContinueWith(_ => DestroyIcon());
+        Task.Delay(2000).ContinueWith(_ => DestroyIcon());
 
         PlaySound("SystemAsterisk", IntPtr.Zero, SND_ASYNC | SND_ALIAS);
-        Icon.ShowBalloonTip(int.MaxValue, string.IsNullOrEmpty(title) ? P.Name : title, content, icon);
+        Icon.ShowBalloonTip(500, string.IsNullOrEmpty(title) ? P.Name : title, content, icon);
     }
 
     private void CreateIcon()
