@@ -219,7 +219,7 @@
 A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoMarkAetherCurrents-ManuallySelectCurrent" xml:space="preserve">
-    <value>手动指定待显示风脉泉</value>
+    <value>手动指定待显示的风脉泉</value>
   </data>
   <data name="AutoMarkAetherCurrents-ManuallySelectCurrentHelp" xml:space="preserve">
     <value>下方勾选框与游戏原生风脉泉界面的野外风脉为逐个对应关系

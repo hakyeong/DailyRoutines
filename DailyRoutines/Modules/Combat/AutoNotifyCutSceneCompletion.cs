@@ -1,4 +1,5 @@
-using System.Threading.Tasks;
+using System;
+using System.Diagnostics;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
@@ -19,9 +20,12 @@ public class AutoNotifyCutSceneCompletion : IDailyModule
 
     private static bool IsDutyEnd;
 
+    private static Stopwatch? Stopwatch;
+
     public void Init()
     {
         TaskManager ??= new TaskManager { ShowDebug = false, TimeLimitMS = int.MaxValue, AbortOnTimeout = false };
+        Stopwatch ??= new Stopwatch();
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "_PartyList", OnPartyList);
         Service.DutyState.DutyCompleted += OnDutyComplete;
@@ -32,14 +36,7 @@ public class AutoNotifyCutSceneCompletion : IDailyModule
 
     public void OverlayUI() { }
 
-    private static void OnPartyList(AddonEvent type, AddonArgs args)
-    {
-        if (TaskManager.IsBusy || !IsBoundByDuty() || IsDutyEnd) return;
-
-        Task.Delay(5000).ContinueWith(_ => DelayMemberStatsCheck());
-    }
-
-    private static unsafe void DelayMemberStatsCheck()
+    private static unsafe void OnPartyList(AddonEvent type, AddonArgs args)
     {
         if (TaskManager.IsBusy || !IsBoundByDuty() || IsDutyEnd) return;
 
@@ -60,9 +57,10 @@ public class AutoNotifyCutSceneCompletion : IDailyModule
         if (isSBInCutScene)
         {
             Service.Log.Debug("检测到有成员正在过场动画中");
+            Stopwatch.Restart();
             TaskManager.Enqueue(IsNoOneWatchingCutscene);
             TaskManager.Enqueue(
-                () => NotificationManager.ShowWindowsToast(
+                () => Service.Notice.ShowWindowsToast(
                     "", Service.Lang.GetText("AutoNotifyCutSceneCompletion-NotificationMessage")));
         }
     }
@@ -71,6 +69,7 @@ public class AutoNotifyCutSceneCompletion : IDailyModule
     {
         if (IsDutyEnd)
         {
+            Stopwatch.Reset();
             TaskManager.Abort();
             return true;
         }
@@ -82,17 +81,25 @@ public class AutoNotifyCutSceneCompletion : IDailyModule
             if (chara->CharacterData.OnlineStatus == 15) return false;
         }
 
+        if (Stopwatch.Elapsed < TimeSpan.FromSeconds(5))
+        {
+            Stopwatch.Reset();
+            TaskManager.Abort();
+        }
+
         return true;
     }
 
     private void OnZoneChanged(object? sender, ushort e)
     {
+        Stopwatch.Reset();
         TaskManager.Abort();
         IsDutyEnd = false;
     }
 
     private void OnDutyComplete(object? sender, ushort e)
     {
+        Stopwatch.Reset();
         TaskManager.Abort();
         IsDutyEnd = true;
     }
@@ -106,6 +113,7 @@ public class AutoNotifyCutSceneCompletion : IDailyModule
     public void Uninit()
     {
         TaskManager?.Abort();
+        Stopwatch.Reset();
 
         Service.DutyState.DutyCompleted -= OnDutyComplete;
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
