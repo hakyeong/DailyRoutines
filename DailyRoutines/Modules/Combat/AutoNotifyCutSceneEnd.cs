@@ -9,9 +9,9 @@ using FFXIVClientStructs.FFXIV.Client.Game.Character;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoNotifyCutSceneCompletionTitle", "AutoNotifyCutSceneCompletionDescription",
+[ModuleDescription("AutoNotifyCutSceneEndTitle", "AutoNotifyCutSceneEndDescription",
                    ModuleCategories.Combat)]
-public class AutoNotifyCutSceneCompletion : IDailyModule
+public class AutoNotifyCutSceneEnd : IDailyModule
 {
     public bool Initialized { get; set; }
     public bool WithConfigUI => false;
@@ -61,7 +61,7 @@ public class AutoNotifyCutSceneCompletion : IDailyModule
             TaskManager.Enqueue(IsNoOneWatchingCutscene);
             TaskManager.Enqueue(
                 () => Service.Notice.ShowWindowsToast(
-                    "", Service.Lang.GetText("AutoNotifyCutSceneCompletion-NotificationMessage")));
+                    "", Service.Lang.GetText("AutoNotifyCutSceneEnd-NotificationMessage")));
         }
     }
 

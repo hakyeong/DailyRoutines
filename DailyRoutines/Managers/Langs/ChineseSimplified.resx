@@ -278,13 +278,13 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoMTTitle" xml:space="preserve">
     <value>自动怪物投篮</value>
   </data>
-  <data name="AutoNotifyCutSceneCompletion-NotificationMessage" xml:space="preserve">
-    <value>过场剧情均已结束</value>
+  <data name="AutoNotifyCutSceneEnd-NotificationMessage" xml:space="preserve">
+    <value>队友过场动画均已结束</value>
   </data>
-  <data name="AutoNotifyCutSceneCompletionDescription" xml:space="preserve">
+  <data name="AutoNotifyCutSceneEndDescription" xml:space="preserve">
     <value>在副本内, 如若队友观看过场剧情超过五秒, 则在全部队友的过场剧情都已结束时, 自动发送一条 Windows 系统通知</value>
   </data>
-  <data name="AutoNotifyCutSceneCompletionTitle" xml:space="preserve">
+  <data name="AutoNotifyCutSceneEndTitle" xml:space="preserve">
     <value>自动提示过场剧情结束</value>
   </data>
   <data name="AutoNoviceNetwork-AttemptedTimes" xml:space="preserve">
