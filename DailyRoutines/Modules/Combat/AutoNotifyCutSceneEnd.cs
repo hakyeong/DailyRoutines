@@ -1,11 +1,16 @@
 using System;
 using System.Diagnostics;
+using System.Numerics;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Interface;
+using Dalamud.Interface.Colors;
 using ECommons.Automation;
+using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
@@ -14,7 +19,7 @@ namespace DailyRoutines.Modules;
 public class AutoNotifyCutSceneEnd : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
+    public bool WithConfigUI => true;
 
     private static TaskManager? TaskManager;
 
@@ -32,7 +37,29 @@ public class AutoNotifyCutSceneEnd : IDailyModule
         Service.ClientState.TerritoryChanged += OnZoneChanged;
     }
 
-    public void ConfigUI() { }
+    public void ConfigUI()
+    {
+        var infoImageState = ThreadLoadImageHandler.TryGetTextureWrap(
+            "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoNotifyCutSceneEnd-1.png",
+            out var imageHandler);
+
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoNotifyCutSceneEnd-NotificationMessageHelp")}:");
+
+        ImGui.SameLine();
+        ImGui.PushFont(UiBuilder.IconFont);
+        ImGui.TextDisabled(FontAwesomeIcon.InfoCircle.ToIconString());
+        ImGui.PopFont();
+
+        if (ImGui.IsItemHovered())
+        {
+            ImGui.BeginTooltip();
+            if (infoImageState)
+                ImGui.Image(imageHandler.ImGuiHandle, new Vector2(540, 161));
+            else
+                ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
+            ImGui.EndTooltip();
+        }
+    }
 
     public void OverlayUI() { }
 

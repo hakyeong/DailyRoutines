@@ -279,7 +279,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>自动怪物投篮</value>
   </data>
   <data name="AutoNotifyCutSceneEnd-NotificationMessage" xml:space="preserve">
-    <value>队友过场动画均已结束</value>
+    <value>所有队友的过场动画均已结束</value>
+  </data>
+  <data name="AutoNotifyCutSceneEnd-NotificationMessageHelp" xml:space="preserve">
+    <value>提示信息外观 (Windows 10+)</value>
   </data>
   <data name="AutoNotifyCutSceneEndDescription" xml:space="preserve">
     <value>在副本内, 如若队友观看过场剧情超过五秒, 则在全部队友的过场剧情都已结束时, 自动发送一条 Windows 系统通知</value>

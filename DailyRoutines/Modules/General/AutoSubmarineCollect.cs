@@ -38,7 +38,7 @@ public partial class AutoSubmarineCollect : IDailyModule
             "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoSubmarineCollect-1.png",
             out var imageHandler);
 
-        ImGui.TextColored(ImGuiColors.ParsedOrange, Service.Lang.GetText("AutoSubmarineCollect-WhatIsTheList"));
+        ImGui.TextColored(ImGuiColors.DalamudOrange, Service.Lang.GetText("AutoSubmarineCollect-WhatIsTheList"));
 
         ImGui.SameLine();
         ImGui.PushFont(UiBuilder.IconFont);
