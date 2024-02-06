@@ -17,7 +17,7 @@ namespace DailyRoutines.Managers;
 
 public class Service
 {
-    public static void Initialize(DalamudPluginInterface pluginInterface)
+    internal static void Initialize(DalamudPluginInterface pluginInterface)
     {
         Config = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         Config.Initialize(pluginInterface);
@@ -25,6 +25,8 @@ public class Service
 
         InitLanguage();
         ExcelData = new();
+        Notice = new();
+        Waymarks = new();
     }
 
     private static void InitLanguage()
@@ -42,6 +44,13 @@ public class Service
         }
 
         Lang = new LanguageManager(playerLang);
+    }
+
+    internal static void Uninit()
+    {
+        Waymarks.Uninit();
+        Config.Uninitialize();
+        Notice.Dispose();
     }
 
     [PluginService] public static IClientState ClientState { get; private set; } = null!;
@@ -64,6 +73,8 @@ public class Service
     [PluginService] public static IDutyState DutyState { get; private set; } = null!;
     public static SigScanner SigScanner { get; private set; } = new();
     public static ExcelGameData ExcelData { get; set; } = null!;
+    public static FieldMarkerManager Waymarks { get; set; } = null!;
+    public static NotificationManager Notice { get; private set; } = null!;
     public static LanguageManager Lang { get; set; } = null!;
     public static Configuration Config { get; set; } = null!;
 }

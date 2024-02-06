@@ -17,7 +17,7 @@ public class NotificationManager
     private const uint SND_ASYNC = 0x0001;
     public const uint SND_ALIAS = 0x00010000;
 
-    public static void ShowWindowsToast(string title, string content, ToolTipIcon icon = ToolTipIcon.Info)
+    public void ShowWindowsToast(string title, string content, ToolTipIcon icon = ToolTipIcon.Info)
     {
         if (Icon is not { Visible: true }) CreateIcon();
 
@@ -27,7 +27,7 @@ public class NotificationManager
         Icon.ShowBalloonTip(int.MaxValue, string.IsNullOrEmpty(title) ? P.Name : title, content, icon);
     }
 
-    private static void CreateIcon()
+    private void CreateIcon()
     {
         DestroyIcon();
         Icon = new NotifyIcon
@@ -38,7 +38,7 @@ public class NotificationManager
         };
     }
 
-    private static void DestroyIcon()
+    private void DestroyIcon()
     {
         if (Icon != null)
         {
@@ -48,7 +48,7 @@ public class NotificationManager
         }
     }
 
-    internal static void Dispose()
+    internal void Dispose()
     {
         if (Icon != null) Icon.Visible = false;
         Icon?.Dispose();

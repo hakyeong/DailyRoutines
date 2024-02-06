@@ -1,21 +1,18 @@
-using DailyRoutines.Infos;
-using Dalamud.Hooking;
-using Dalamud.Memory;
-using Dalamud.Utility.Signatures;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Interface.Colors;
+using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
-using System.Drawing;
 
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoMarkAetherCurrentsTitle", "AutoMarkAetherCurrentsDescription", ModuleCategories.Interface)]
-public unsafe class AutoMarkAetherCurrents : IDailyModule
+public class AutoMarkAetherCurrents : IDailyModule
 {
     public bool Initialized { get; set; }
     public bool WithConfigUI => true;
@@ -26,25 +23,14 @@ public unsafe class AutoMarkAetherCurrents : IDailyModule
         public Vector3 Position { get; } = pos;
     }
 
-    #region HookRelated
-    [Signature("E8 ?? ?? ?? ?? EB D8 83 FB 09")]
-    private readonly delegate* unmanaged<long, uint, char> RemoveFieldMarkerOriginal;
-
-    private delegate uint FieldMarkerControllerDelegate(nint fieldMarkerControllerPtr, long a2, long a3);
-
-    [Signature("E8 ?? ?? ?? ?? 85 C0 74 04 8B D8", DetourName = nameof(FieldMarkerControllerCatcher))]
-    private Hook<FieldMarkerControllerDelegate>? FieldMarkerControllerHook;
-
-    private nint FieldMarkerData;
-    private nint FieldMarkerController;
-    #endregion
-
     #region PresetData
+
     private readonly HashSet<uint> ValidTerritories =
     [
-        397, 398, 399, 400, 401, 612, 613, 614, 620, 621, 622, 813, 814, 815, 816, 817, 818, 956, 957, 958, 959, 960, 961
+        397, 398, 399, 400, 401, 612, 613, 614, 620, 621, 622, 813, 814, 815, 816, 817, 818, 956, 957, 958, 959, 960,
+        961
     ];
-
+    
     // 坐标可以全部用 Lumina 获取，但是 SE 调了部分风脉在 UI 上的对应顺序，所以就干脆所有都硬编码了
     private readonly List<(uint TerritoryID, AetherCurrent AetherCurrent)> PresetAetherCurrentsData =
     [
@@ -200,6 +186,7 @@ public unsafe class AutoMarkAetherCurrents : IDailyModule
         (960, new AetherCurrent(8, new Vector3(637.20f, 439.24f, 289.67f))),
         (960, new AetherCurrent(9, new Vector3(567.50f, 440.93f, 402.14f)))
     ];
+
     #endregion
 
     private static Dictionary<uint, HashSet<AetherCurrent>> SelectedAetherCurrents = new()
@@ -233,33 +220,27 @@ public unsafe class AutoMarkAetherCurrents : IDailyModule
     public void Init()
     {
         SignatureHelper.Initialise(this);
-        FieldMarkerControllerHook?.Enable();
         Service.ClientState.TerritoryChanged += OnZoneChanged;
     }
 
     public void ConfigUI()
     {
         if (ImGui.Button(Service.Lang.GetText("AutoMarkAetherCurrents-RefreshDisplay")))
-        {
             MarkAetherCurrents(Service.ClientState.TerritoryType, false);
-        }
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("AutoMarkAetherCurrents-DisplayLeftCurrents")))
-        {
             MarkAetherCurrents(Service.ClientState.TerritoryType, true);
-        }
 
         if (ImGui.IsItemHovered())
-        {
             ImGui.SetTooltip(Service.Lang.GetText("AutoMarkAetherCurrents-DisplayLeftCurrentsHelp"));
-        }
 
         ImGui.SameLine();
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoMarkAetherCurrents-FieldMarkerHelp"));
 
-        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoMarkAetherCurrents-ManuallySelectCurrent")}:");
-        ImGuiOm.HelpMarker(Service.Lang.GetText("AutoMarkAetherCurrents-ManuallySelectCurrentHelp"));
+        ImGui.TextColored(ImGuiColors.DalamudOrange,
+                          $"{Service.Lang.GetText("AutoMarkAetherCurrents-ManuallySelectCurrent")}:");
+        ImGuiOm.HelpMarker(Service.Lang.GetText("AutoMarkAetherCurrents-ManuallySelectCurrentHelp"), 25f);
 
         if (ImGui.BeginTabBar("AutoMarkAetherCurrent-ManuallySelect"))
         {
@@ -442,13 +423,15 @@ public unsafe class AutoMarkAetherCurrents : IDailyModule
 
     public void OverlayUI() { }
 
-    private void DrawManuallySelectGroupOld(string territoryName, uint territoryID, ref Dictionary<uint, HashSet<AetherCurrent>> selectedCurrents)
+    private void DrawManuallySelectGroupOld(
+        string territoryName, uint territoryID, ref Dictionary<uint, HashSet<AetherCurrent>> selectedCurrents)
     {
         ImGui.PushID(territoryName);
-        for (var i = 3; i >= 0 ; i--)
+        for (var i = 3; i >= 0; i--)
         {
             var aetherCurrent =
-                PresetAetherCurrentsData.FirstOrDefault(d => d.TerritoryID == territoryID && d.AetherCurrent.Index == i).AetherCurrent;
+                PresetAetherCurrentsData.FirstOrDefault(d => d.TerritoryID == territoryID && d.AetherCurrent.Index == i)
+                                        .AetherCurrent;
             if (aetherCurrent == null) break;
             var decoBool = selectedCurrents[territoryID].Contains(aetherCurrent);
             if (ImGui.Checkbox($"###{territoryName}{i}", ref decoBool))
@@ -456,18 +439,22 @@ public unsafe class AutoMarkAetherCurrents : IDailyModule
                 if (!selectedCurrents[territoryID].Remove(aetherCurrent))
                     selectedCurrents[territoryID].Add(aetherCurrent);
             }
+
             if (i != 0) ImGui.SameLine();
         }
+
         ImGui.PopID();
     }
 
-    private void DrawManuallySelectGroupNew(string territoryName, uint territoryID, ref Dictionary<uint, HashSet<AetherCurrent>> selectedCurrents)
+    private void DrawManuallySelectGroupNew(
+        string territoryName, uint territoryID, ref Dictionary<uint, HashSet<AetherCurrent>> selectedCurrents)
     {
         ImGui.PushID(territoryName);
         for (var i = 9; i >= 0; i--)
         {
             var aetherCurrent =
-                PresetAetherCurrentsData.FirstOrDefault(d => d.TerritoryID == territoryID && d.AetherCurrent.Index == i).AetherCurrent;
+                PresetAetherCurrentsData.FirstOrDefault(d => d.TerritoryID == territoryID && d.AetherCurrent.Index == i)
+                                        .AetherCurrent;
             if (aetherCurrent == null) break;
             var decoBool = selectedCurrents[territoryID].Contains(aetherCurrent);
             if (ImGui.Checkbox($"###{territoryName}{i}", ref decoBool))
@@ -475,8 +462,10 @@ public unsafe class AutoMarkAetherCurrents : IDailyModule
                 if (!selectedCurrents[territoryID].Remove(aetherCurrent))
                     selectedCurrents[territoryID].Add(aetherCurrent);
             }
+
             if (i != 0) ImGui.SameLine();
         }
+
         ImGui.PopID();
     }
 
@@ -491,13 +480,18 @@ public unsafe class AutoMarkAetherCurrents : IDailyModule
 
         var waymarkIndexesLength = Enum.GetValues(typeof(WaymarkIndex)).Length;
 
-        List<(uint TerritoryID, AetherCurrent AetherCurrent)> result = SelectedAetherCurrents.TryGetValue(Service.ClientState.TerritoryType, out var selectedResult) && selectedResult.Any()
-                                                                           ? selectedResult.Select(selected => ((uint)Service.ClientState.TerritoryType, selected)).ToList()
-                                                                           : PresetAetherCurrentsData
-                                                                             .Where(i => i.TerritoryID == Service.ClientState.TerritoryType && (isFirstPage ? i.AetherCurrent.Index >= waymarkIndexesLength : i.AetherCurrent.Index < waymarkIndexesLength))
-                                                                             .Select(i => (i.TerritoryID, i.AetherCurrent))
-                                                                             .OrderBy(i => i.AetherCurrent.Index)
-                                                                             .ToList();
+        List<(uint TerritoryID, AetherCurrent AetherCurrent)> result =
+            SelectedAetherCurrents.TryGetValue(Service.ClientState.TerritoryType, out var selectedResult) &&
+            selectedResult.Any()
+                ? selectedResult.Select(selected => ((uint)Service.ClientState.TerritoryType, selected)).ToList()
+                : PresetAetherCurrentsData
+                  .Where(i => i.TerritoryID == Service.ClientState.TerritoryType &&
+                              (isFirstPage
+                                   ? i.AetherCurrent.Index >= waymarkIndexesLength
+                                   : i.AetherCurrent.Index < waymarkIndexesLength))
+                  .Select(i => (i.TerritoryID, i.AetherCurrent))
+                  .OrderBy(i => i.AetherCurrent.Index)
+                  .ToList();
 
 
         var currentIndex = 0;
@@ -508,74 +502,20 @@ public unsafe class AutoMarkAetherCurrents : IDailyModule
 
             var currentMarker = (WaymarkIndex)currentIndex;
 
-            PlaceFieldMarker(currentMarker, point.AetherCurrent.Position, true);
+            Service.Waymarks.Place(currentMarker, point.AetherCurrent.Position, true);
             Service.Log.Debug($"放置了 {currentMarker} 于 {point.AetherCurrent.Position}");
             currentIndex++;
         }
+
         if (currentIndex != 8)
         {
             for (; currentIndex < waymarkIndexesLength; currentIndex++)
-            {
-                PlaceFieldMarker((WaymarkIndex)currentIndex, Vector3.Zero, false);
-            }
+                Service.Waymarks.Place((WaymarkIndex)currentIndex, Vector3.Zero, false);
         }
-    }
-
-    // 不知道为什么我 SigScanner 扫不出静态地址, 只能用 Hook 间接实现了
-    private uint FieldMarkerControllerCatcher(nint fieldMarkerControllerPtr, long a2, long a3)
-    {
-        FieldMarkerController = fieldMarkerControllerPtr;
-        FieldMarkerData = FieldMarkerController + 0x1E0;
-        return FieldMarkerControllerHook.Original(fieldMarkerControllerPtr, a2, a3);
-    }
-
-    private void RemoveFieldMarker(WaymarkIndex index)
-    {
-        var markerIndex = index switch
-        {
-            WaymarkIndex.A => 0U,
-            WaymarkIndex.B => 1U,
-            WaymarkIndex.C => 2U,
-            WaymarkIndex.D => 3U,
-            WaymarkIndex.One => 4U,
-            WaymarkIndex.Two => 5U,
-            WaymarkIndex.Three => 6U,
-            WaymarkIndex.Four => 7U,
-            _ => 0U
-        };
-
-        RemoveFieldMarkerOriginal(FieldMarkerController, markerIndex);
-    }
-
-    private void PlaceFieldMarker(WaymarkIndex index, Vector3 pos, bool isActive)
-    {
-        var markAddress = index switch
-        {
-            WaymarkIndex.A => FieldMarkerData + 0x00,
-            WaymarkIndex.B => FieldMarkerData + 0x20,
-            WaymarkIndex.C => FieldMarkerData + 0x40,
-            WaymarkIndex.D => FieldMarkerData + 0x60,
-            WaymarkIndex.One => FieldMarkerData + 0x80,
-            WaymarkIndex.Two => FieldMarkerData + 0xA0,
-            WaymarkIndex.Three => FieldMarkerData + 0xC0,
-            WaymarkIndex.Four => FieldMarkerData + 0xE0,
-            _ => IntPtr.Zero
-        };
-
-        MemoryHelper.Write(markAddress, pos.X);
-        MemoryHelper.Write(markAddress + 0x4, pos.Y);
-        MemoryHelper.Write(markAddress + 0x8, pos.Z);
-
-        MemoryHelper.Write(markAddress + 0x10, (int)(pos.X * 1000));
-        MemoryHelper.Write(markAddress + 0x14, (int)(pos.Y * 1000));
-        MemoryHelper.Write(markAddress + 0x18, (int)(pos.Z * 1000));
-
-        MemoryHelper.Write(markAddress + 0x1C, (byte)(isActive ? 1 : 0));
     }
 
     public void Uninit()
     {
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
-        FieldMarkerControllerHook?.Dispose();
     }
 }

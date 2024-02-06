@@ -80,7 +80,7 @@ public sealed class Plugin : IDalamudPlugin
 
     public void DrawConfigUI()
     {
-        Main.IsOpen = true;
+        Main.IsOpen = !Main.IsOpen;
     }
 
     public void Dispose()
@@ -88,9 +88,8 @@ public sealed class Plugin : IDalamudPlugin
         WindowSystem.RemoveAllWindows();
         Main.Dispose();
 
-        Service.Config.Uninitialize();
         ECommonsMain.Dispose();
         ModuleManager.Uninit();
-        NotificationManager.Dispose();
+        Service.Uninit();
     }
 }
