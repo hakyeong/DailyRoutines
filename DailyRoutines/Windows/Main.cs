@@ -70,88 +70,8 @@ public class Main : Window, IDisposable
 
             DrawTabSettings();
 
-            if (P.PluginInterface.IsDev)
-            {
-                if (ImGui.BeginTabItem("Dev"))
-                {
-                    if (ImGui.Button("获取点击名"))
-                    {
-                        foreach (var clickName in Click.GetClickNames())
-                            Service.Log.Debug(clickName);
-                    }
-
-                    unsafe
-                    {
-                        if (ImGui.Button("获取小队成员状态"))
-                        {
-                            foreach (var member in Service.PartyList)
-                            {
-                                Service.Log.Debug($"{member.Name}");
-                                var chara = (Character*)member.GameObject.Address;
-                                if (chara == null) continue;
-                                Service.Log.Debug($"{chara->CharacterData.OnlineStatus}");
-                            }
-                        }
-
-                        if (ImGui.Button("传送到FLAG地图"))
-                        {
-                            var territoryId = AgentMap.Instance()->FlagMapMarker.TerritoryId;
-                            if (Service.ClientState.TerritoryType != territoryId)
-                            {
-                                var aetheryte = territoryId == 399
-                                                    ? Service.Data.GetExcelSheet<Map>().GetRow(territoryId)
-                                                             ?.TerritoryType?.Value?.Aetheryte.Value
-                                                    : Service.Data.GetExcelSheet<Aetheryte>()
-                                                             .FirstOrDefault(
-                                                                 x => x.IsAetheryte && x.Territory.Row == territoryId);
-
-                                if (aetheryte != null) Telepo.Instance()->Teleport(aetheryte.RowId, 0);
-                            }
-                        }
-
-                        if (ImGui.Button("传送到FLAG"))
-                        {
-                            var targetPos = new Vector3(AgentMap.Instance()->FlagMapMarker.XFloat, 0,
-                                                        AgentMap.Instance()->FlagMapMarker.YFloat);
-                            Teleport(targetPos);
-                        }
-
-                        if (ImGui.Button("Y + 5"))
-                        {
-                            var currentPos = Service.ClientState.LocalPlayer.Position;
-                            Teleport(currentPos with { Y = currentPos.Y + 5 });
-                        }
-
-                        if (ImGui.Button("Y - 5"))
-                        {
-                            var currentPos = Service.ClientState.LocalPlayer.Position;
-                            Teleport(currentPos with { Y = currentPos.Y - 5 });
-                        }
-                    }
-
-                    ImGui.EndTabItem();
-                }
-            }
-
             ImGui.EndTabBar();
         }
-    }
-
-    private static bool? Teleport(Vector3 pos)
-    {
-        if (IsOccupied()) return false;
-
-        if (Service.ClientState.LocalPlayer != null)
-        {
-            var address = Service.ClientState.LocalPlayer.Address;
-            MemoryHelper.Write(address + 176, pos.X);
-            MemoryHelper.Write(address + 180, pos.Y);
-            MemoryHelper.Write(address + 184, pos.Z);
-
-            return true;
-        }
-
-        return false;
     }
 
     private static void DrawTabItemModules(IReadOnlyList<Type> modules, ModuleCategories category)

@@ -451,6 +451,12 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="ContactHelp" xml:space="preserve">
     <value>本插件开源免费, 如有任何疑问, 请点击左侧按钮, 在页面内提交 Issue</value>
   </data>
+  <data name="DevModuleDescription" xml:space="preserve">
+    <value>本地测试用模块专用临时标题与描述文本</value>
+  </data>
+  <data name="DevModuleTitle" xml:space="preserve">
+    <value>本地测试用模块</value>
+  </data>
   <data name="Enable" xml:space="preserve">
     <value>启用</value>
   </data>

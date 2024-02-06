@@ -167,6 +167,20 @@ public partial class AutoSubmarineCollect : IDailyModule
             return true;
         }
 
+        if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var addon1) &&
+            HelpersOm.IsAddonAndNodesReady(addon1))
+        {
+            var handler = new ClickAirShipExplorationDetailDR();
+            handler.Commence();
+
+            addon1->Close(true);
+
+            TaskManager.DelayNext(3000);
+            TaskManager.Enqueue(GetSubmarineInfos);
+
+            return true;
+        }
+
         return false;
     }
 
@@ -201,7 +215,7 @@ public partial class AutoSubmarineCollect : IDailyModule
             {
                 var i1 = i;
                 TaskManager.Enqueue(() => RepairSingleSubmarine(i1));
-                TaskManager.DelayNext(1000);
+                TaskManager.DelayNext(500);
             }
 
             TaskManager.Enqueue(CloseRepairUI);
@@ -223,8 +237,6 @@ public partial class AutoSubmarineCollect : IDailyModule
         {
             var handler = new ClickCompanyCraftSupplyDR();
             handler.Component(index);
-
-            Service.Log.Debug($"已修理第 {index} 个");
 
             return true;
         }

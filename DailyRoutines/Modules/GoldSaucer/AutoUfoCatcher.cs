@@ -51,7 +51,8 @@ public class AutoUfoCatcher : IDailyModule
         if (Service.KeyState[Service.Config.ConflictKey])
         {
             TaskManager.Abort();
-            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"), "Daily Routines", NotificationType.Success);
+            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"),
+                                                        "Daily Routines", NotificationType.Success);
         }
     }
 

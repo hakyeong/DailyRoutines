@@ -38,7 +38,7 @@ public class AutoNotifyCutSceneCompletion : IDailyModule
 
     private static unsafe void OnPartyList(AddonEvent type, AddonArgs args)
     {
-        if (TaskManager.IsBusy || !IsBoundByDuty() || IsDutyEnd) return;
+        if (TaskManager.IsBusy || Service.ClientState.IsPvP || !IsBoundByDuty() || IsDutyEnd) return;
 
         var isSBInCutScene = false;
         foreach (var member in Service.PartyList)
