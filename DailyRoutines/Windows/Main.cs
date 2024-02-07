@@ -58,7 +58,7 @@ public class Main : Window, IDisposable
                                 ref SearchString, 100);
         ImGui.Separator();
 
-        if (ImGui.BeginTabBar("BasicTab"))
+        if (ImGui.BeginTabBar("BasicTab", ImGuiTabBarFlags.Reorderable | ImGuiTabBarFlags.FittingPolicyScroll))
         {
             foreach (var module in ModuleCategories) DrawTabItemModules(module.Value, module.Key);
 
@@ -117,7 +117,7 @@ public class Main : Window, IDisposable
         var moduleText = $"[{module.Name}]";
         ImGui.SameLine();
         var origCursorPos = ImGui.GetCursorPosX();
-        ImGui.SetCursorPosX(ImGui.GetWindowWidth() - ImGui.CalcTextSize(moduleText).X * 0.8f -
+        ImGui.SetCursorPosX(ImGui.GetWindowWidth() - (ImGui.CalcTextSize(moduleText).X * 0.8f) -
                             (2 * ImGui.GetStyle().FramePadding.X));
         ImGui.SetWindowFontScale(0.8f);
         ImGui.TextDisabled(moduleText);
@@ -232,10 +232,11 @@ public class Main : Window, IDisposable
 
             ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("Contact")}:");
 
-            if (ImGui.Button("GitHub")) Util.OpenLink("https://github.com/AtmoOmen/DailyRoutines");
-
-            ImGui.SameLine();
             ImGui.TextColored(ImGuiColors.DalamudOrange, Service.Lang.GetText("ContactHelp"));
+
+            if (ImGui.Button("GitHub")) Util.OpenLink("https://github.com/AtmoOmen/DailyRoutines");
+            ImGui.SameLine();
+            if (ImGui.Button("bilibili")) Util.OpenLink("https://space.bilibili.com/22008977");
 
             ImGui.Separator();
 
