@@ -117,9 +117,11 @@ public class Main : Window, IDisposable
         var moduleText = $"[{module.Name}]";
         ImGui.SameLine();
         var origCursorPos = ImGui.GetCursorPosX();
-        ImGui.SetCursorPosX(ImGui.GetWindowWidth() - ImGui.CalcTextSize(moduleText).X -
+        ImGui.SetCursorPosX(ImGui.GetWindowWidth() - ImGui.CalcTextSize(moduleText).X * 0.8f -
                             (2 * ImGui.GetStyle().FramePadding.X));
+        ImGui.SetWindowFontScale(0.8f);
         ImGui.TextDisabled(moduleText);
+        ImGui.SetWindowFontScale(1f);
 
         ImGui.SameLine();
         ImGui.SetCursorPosX(origCursorPos);
