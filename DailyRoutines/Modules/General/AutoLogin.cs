@@ -7,7 +7,6 @@ using Dalamud.Game;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Interface.Internal.Notifications;
 using ECommons.Automation;
-using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -103,6 +102,7 @@ public class AutoLogin : IDailyModule
     {
         if (string.IsNullOrEmpty(ConfigSelectedServer) || ConfigSelectedCharaIndex == -1) return;
         if (HasLoginOnce) return;
+        if (Service.KeyState[Service.Config.ConflictKey]) return;
         if (TryGetAddonByName<AtkUnitBase>("_TitleMenu", out var addon) && IsAddonReady(addon))
         {
             HasLoginOnce = true;
