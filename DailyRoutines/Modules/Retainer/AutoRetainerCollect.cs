@@ -74,7 +74,7 @@ public class AutoRetainerCollect : IDailyModule
         // 确认派遣
         TaskManager.Enqueue(ClickVentureConfirm);
         // 回到雇员列表
-        TaskManager.Enqueue(ExitToRetainerList);
+        TaskManager.Enqueue(() => Click.TrySendClick("select_string13"));
     }
 
     private static unsafe bool? ClickSpecificRetainer(int index)
@@ -99,7 +99,7 @@ public class AutoRetainerCollect : IDailyModule
             if (string.IsNullOrEmpty(text) || text.Contains('～'))
             {
                 TaskManager?.Abort();
-                TaskManager.Enqueue(ExitToRetainerList);
+                TaskManager.Enqueue(() => Click.TrySendClick("select_string13"));
                 return true;
             }
 
@@ -127,17 +127,6 @@ public class AutoRetainerCollect : IDailyModule
             IsAddonReady(&addon->AtkUnitBase))
         {
             if (Click.TrySendClick("retainer_venture_ask_assign"))
-                return true;
-        }
-
-        return false;
-    }
-
-    private static unsafe bool? ExitToRetainerList()
-    {
-        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
-        {
-            if (Click.TrySendClick("select_string13"))
                 return true;
         }
 
