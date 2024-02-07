@@ -410,6 +410,31 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoSellCardsConfirmTitle" xml:space="preserve">
     <value>自动确认幻卡回收</value>
   </data>
+  <data name="AutoShareRetainersGilsEvenly-Help" xml:space="preserve">
+    <value>请避免在启用了 自动收取雇员 模块且有 雇员即将完成探险的情况下使用本模块
+
+调整方式说明:
+方式1: 按照固定顺序调整 (雇员间金币极端不平均的情况下至少需要 背包里有所有雇员金币总数一半的金币)
+方式2: 先取出所有金币, 再依次调整 (请自行避免因金币达到上限而蒙受损失的情况)</value>
+  </data>
+  <data name="AutoShareRetainersGilsEvenly-Method1" xml:space="preserve">
+    <value>方式1</value>
+  </data>
+  <data name="AutoShareRetainersGilsEvenly-Method2" xml:space="preserve">
+    <value>方式2</value>
+  </data>
+  <data name="AutoShareRetainersGilsEvenly-Start" xml:space="preserve">
+    <value>开始</value>
+  </data>
+  <data name="AutoShareRetainersGilsEvenly-Stop" xml:space="preserve">
+    <value>结束</value>
+  </data>
+  <data name="AutoShareRetainersGilsEvenlyDescription" xml:space="preserve">
+    <value>配置完毕并点击开始后, 自动平均各个雇员所保管的金币数量</value>
+  </data>
+  <data name="AutoShareRetainersGilsEvenlyTitle" xml:space="preserve">
+    <value>自动平均雇员金币</value>
+  </data>
   <data name="AutoSkipPraetoriumDescription" xml:space="preserve">
     <value>自动跳过神兵要塞帝国南方堡、最终决战天幕魔导城和究极神兵破坏作战的过场动画</value>
   </data>
