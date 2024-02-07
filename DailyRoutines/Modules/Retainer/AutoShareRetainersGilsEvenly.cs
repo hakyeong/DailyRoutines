@@ -60,7 +60,7 @@ public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
 
     public void OverlayUI() { }
 
-    private void GetRetainersGilInfo()
+    private static void GetRetainersGilInfo()
     {
         if (Service.Gui.GetAddonByName("RetainerList") == nint.Zero) return;
 
@@ -122,7 +122,7 @@ public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
         TaskManager.Enqueue(() => ClickSpecificRetainer(index));
         // 点击金币管理
         TaskManager.Enqueue(() => Click.TrySendClick("select_string2"));
-        // 重新分配金币
+        // 取出所有金币
         TaskManager.DelayNext(100);
         TaskManager.Enqueue(WithdrawAllGils);
         // 回到雇员列表
@@ -195,7 +195,6 @@ public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
         }
         return false;
     }
-
 
     public void Uninit()
     {
