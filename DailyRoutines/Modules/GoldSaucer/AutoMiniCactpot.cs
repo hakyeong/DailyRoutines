@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using DailyRoutines.Clicks;
@@ -32,9 +31,6 @@ public class AutoMiniCactpot : IDailyModule
         { 37, 7 },
         { 38, 8 }
     };
-
-    // 从左下到右上 From Bottom Left to Top Right
-    private static readonly uint[] LineNodeIds = [28, 27, 26, 21, 22, 23, 24, 25];
 
     private static readonly Dictionary<uint, List<uint>> LineToBlocks = new()
     {
@@ -77,50 +73,22 @@ public class AutoMiniCactpot : IDailyModule
         else // 没装 -> 随机取
         {
             TaskManager.Enqueue(WaitLotteryDailyAddon);
-            TaskManager.Enqueue(ClickRandomBlocks);
-            TaskManager.Enqueue(WaitLotteryDailyAddon);
-            TaskManager.Enqueue(ClickRandomLine);
+            TaskManager.Enqueue(RandomClick);
             TaskManager.Enqueue(WaitLotteryDailyAddon);
             TaskManager.Enqueue(ClickExit);
         }
     }
 
-    private static unsafe bool? ClickRandomBlocks()
+    private static unsafe bool? RandomClick()
     {
         if (TryGetAddonByName<AddonLotteryDaily>("LotteryDaily", out var addon) && IsAddonReady(&addon->AtkUnitBase))
         {
             var ui = &addon->AtkUnitBase;
-            var rnd = new Random();
-            var selectedBlocks = BlockNodeIds.Keys.OrderBy(x => rnd.Next()).Take(4).ToArray();
+            ui->GetButtonNodeById(67)->AtkComponentBase.SetEnabledState(true);
+
+            if (!ui->GetButtonNodeById(67)->IsEnabled) return false;
+
             var clickHandler = new ClickLotteryDailyDR((nint)ui);
-            foreach (var id in selectedBlocks)
-            {
-                var blockButton = ui->GetComponentNodeById(id);
-                if (blockButton == null) continue;
-
-                clickHandler.Block(BlockNodeIds[id]);
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private static unsafe bool? ClickRandomLine()
-    {
-        if (TryGetAddonByName<AddonLotteryDaily>("LotteryDaily", out var addon) && IsAddonReady(&addon->AtkUnitBase))
-        {
-            var ui = &addon->AtkUnitBase;
-            var rnd = new Random();
-            var selectedLine = LineNodeIds.OrderBy(x => rnd.Next()).LastOrDefault();
-            var clickHandler = new ClickLotteryDailyDR((nint)ui);
-
-            var blocks = LineToBlocks[selectedLine];
-
-            clickHandler.LineByBlocks((AtkComponentCheckBox*)ui->GetComponentNodeById(blocks[0]),
-                                      (AtkComponentCheckBox*)ui->GetComponentNodeById(blocks[1]),
-                                      (AtkComponentCheckBox*)ui->GetComponentNodeById(blocks[2]));
             clickHandler.Confirm();
 
             return true;
@@ -149,17 +117,17 @@ public class AutoMiniCactpot : IDailyModule
         {
             var ui = &addon->AtkUnitBase;
             var clickHandler = new ClickLotteryDailyDR((nint)ui);
-            foreach (var block in BlockNodeIds)
+
+            for (var i = 0; i < 9; i++)
             {
-                var node = ui->GetComponentNodeById(block.Key)->AtkResNode;
-                if (node is { MultiplyBlue: 0, MultiplyRed: 0, MultiplyGreen: 100 })
+                var node = addon->GameBoard[i];
+                var resNode = node->AtkComponentButton.AtkComponentBase.OwnerNode->AtkResNode;
+                if (resNode is { MultiplyBlue: 0, MultiplyRed: 0, MultiplyGreen: 100 })
                 {
-                    clickHandler.Block(block.Value);
-                    break;
+                    clickHandler.Block(resNode.NodeID);
+                    return true;
                 }
             }
-
-            return true;
         }
 
         return false;
@@ -171,13 +139,13 @@ public class AutoMiniCactpot : IDailyModule
         {
             var ui = &addon->AtkUnitBase;
             var clickHandler = new ClickLotteryDailyDR((nint)ui);
-            foreach (var block in LineNodeIds)
+            for (var i = 0; i < 8; i++)
             {
-                var node = ui->GetComponentNodeById(block)->AtkResNode;
-                var button = (AtkComponentRadioButton*)ui->GetComponentNodeById(block);
-                if (node is { MultiplyBlue: 0, MultiplyRed: 0, MultiplyGreen: 100 })
+                var resNode = addon->LaneSelector[i]->AtkComponentBase.OwnerNode->AtkResNode;
+
+                if (resNode is { MultiplyBlue: 0, MultiplyRed: 0, MultiplyGreen: 100 })
                 {
-                    var blocks = LineToBlocks[node.NodeID];
+                    var blocks = LineToBlocks[resNode.NodeID];
                     clickHandler.LineByBlocks((AtkComponentCheckBox*)ui->GetComponentNodeById(blocks[0]),
                                               (AtkComponentCheckBox*)ui->GetComponentNodeById(blocks[1]),
                                               (AtkComponentCheckBox*)ui->GetComponentNodeById(blocks[2]));
