@@ -4,6 +4,7 @@ using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using System;
 using System.Numerics;
+using DailyRoutines.Managers;
 
 namespace DailyRoutines.Manager;
 
@@ -12,25 +13,15 @@ public unsafe class FieldMarkerManager
     [Signature("E8 ?? ?? ?? ?? EB D8 83 FB 09")]
     public readonly delegate* unmanaged<long, uint, char> RemoveFieldMarkerOriginal;
 
-    public delegate uint FieldMarkerControllerDelegate(nint fieldMarkerControllerPtr, long a2, long a3);
-
-    [Signature("E8 ?? ?? ?? ?? 85 C0 74 04 8B D8", DetourName = nameof(FieldMarkerControllerCatcher))]
-    public Hook<FieldMarkerControllerDelegate>? FieldMarkerControllerHook;
-
     public nint FieldMarkerData;
     public nint FieldMarkerController;
 
     public FieldMarkerManager()
     {
-        SignatureHelper.Initialise(this);
-        FieldMarkerControllerHook?.Enable();
-    }
-
-    private uint FieldMarkerControllerCatcher(nint fieldMarkerControllerPtr, long a2, long a3)
-    {
-        FieldMarkerController = fieldMarkerControllerPtr;
+        FieldMarkerController = Service.SigScanner.GetStaticAddressFromSig("48 8D 0D ?? ?? ?? ?? 41 B0 ?? E8 ?? ?? ?? ?? 85 C0");
         FieldMarkerData = FieldMarkerController + 0x1E0;
-        return FieldMarkerControllerHook.Original(fieldMarkerControllerPtr, a2, a3);
+
+        SignatureHelper.Initialise(this);
     }
 
     public void Place(WaymarkIndex index, Vector3 pos, bool isActive)
@@ -113,6 +104,5 @@ public unsafe class FieldMarkerManager
 
     public void Uninit()
     {
-        FieldMarkerControllerHook?.Dispose();
     }
 }
