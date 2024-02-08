@@ -80,7 +80,7 @@ public class AutoNotifyCutSceneEnd : IDailyModule
         {
             var chara = (Character*)member.GameObject.Address;
             if (chara == null) continue;
-            if (!member.GameObject.IsTargetable)
+            if (!Service.DutyState.IsDutyStarted && !member.GameObject.IsTargetable)
             {
                 isSBInCutScene = false;
                 break;
