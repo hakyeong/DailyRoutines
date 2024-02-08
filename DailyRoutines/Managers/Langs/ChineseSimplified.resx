@@ -236,7 +236,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoMiniCactpotDescription" xml:space="preserve">
     <value>进入仙人微彩界面后, 自动完成仙人微彩
-(安装并启用了 ezMiniCactpot 则根据其推荐来点选, 未安装则随机选择)</value>
+(不保证金碟币收益最大化)</value>
   </data>
   <data name="AutoMiniCactpotTitle" xml:space="preserve">
     <value>自动仙人微彩</value>
@@ -525,6 +525,24 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="Enable" xml:space="preserve">
     <value>启用</value>
+  </data>
+  <data name="FastObjectInteract-FontScale" xml:space="preserve">
+    <value>字体缩放倍数</value>
+  </data>
+  <data name="FastObjectInteract-OverlayResizeMode" xml:space="preserve">
+    <value>悬浮窗大小调整模式</value>
+  </data>
+  <data name="FastObjectInteract-SelectedObjectKinds" xml:space="preserve">
+    <value>待显示目标类型</value>
+  </data>
+  <data name="FastObjectInteract-SelectedObjectKindsAmount" xml:space="preserve">
+    <value>已选择 {0} 种目标类型</value>
+  </data>
+  <data name="FastObjectInteractDescription" xml:space="preserve">
+    <value>添加一个可自定义的悬浮窗, 列出周围可交互物体, 可直接点击其中的按钮 以实现更快速的交互</value>
+  </data>
+  <data name="FastObjectInteractTitle" xml:space="preserve">
+    <value>快速目标交互</value>
   </data>
   <data name="General" xml:space="preserve">
     <value>一般</value>
