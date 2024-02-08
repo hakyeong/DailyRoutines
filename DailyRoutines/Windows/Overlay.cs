@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using DailyRoutines.Infos;
 using Dalamud.Interface.Windowing;
@@ -8,10 +9,12 @@ namespace DailyRoutines.Windows;
 public class Overlay : Window
 {
     private IDailyModule Module { get; init; }
+    public ImGuiWindowFlags WindowFlags { get; set; } =
+        ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar;
 
-    public Overlay(IDailyModule module) : base($"###{module}")
+    public Overlay(IDailyModule module, string? title = null) : base($"{(string.IsNullOrEmpty(title) ? string.Empty : title)}###{module}")
     {
-        Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar;
+        Flags = WindowFlags;
         RespectCloseHotkey = false;
         Module = module;
 
