@@ -293,6 +293,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoNotifyCutSceneEndTitle" xml:space="preserve">
     <value>自动通知过场剧情结束</value>
   </data>
+  <data name="AutoNotifyMessages-BlockOwnMessages" xml:space="preserve">
+    <value>屏蔽自己发送的消息</value>
+  </data>
   <data name="AutoNotifyMessages-NotificationMessageHelp" xml:space="preserve">
     <value>提示信息外观 (Windows 10+)</value>
   </data>
@@ -468,6 +471,23 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoTalkSkipTitle" xml:space="preserve">
     <value>自动跳过对话</value>
   </data>
+  <data name="AutoTankStance-OnlyAutoStanceWhenOneTank" xml:space="preserve">
+    <value>仅当队伍最多容纳一名防护职业时</value>
+  </data>
+  <data name="AutoTankStance-OnlyAutoStanceWhenOneTankHelp" xml:space="preserve">
+    <value>勾选本项意为:
+当副本默认状态下最多只能有一名防护职业时, 自动开启盾姿
+
+例: (默认状态下)
+当进入迷宫挑战/团队任务时, 队伍最多只能有一名防护职业, 自动开启盾姿
+当进入讨伐歼灭战/大型任务时, 队伍最多能有两名防护职业, 不自动开启盾姿</value>
+  </data>
+  <data name="AutoTankStanceDescription" xml:space="preserve">
+    <value>进入副本后, 若当前为防护职业且未开启盾姿, 则自动开启盾姿</value>
+  </data>
+  <data name="AutoTankStanceTitle" xml:space="preserve">
+    <value>自动开启盾姿</value>
+  </data>
   <data name="AutoTMPDescription" xml:space="preserve">
     <value>交互游戏机后, 自动开始重复游玩莫古抓球机</value>
   </data>
@@ -526,6 +546,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Enable" xml:space="preserve">
     <value>启用</value>
   </data>
+  <data name="FastObjectInteract-AllowRightClickToTarget" xml:space="preserve">
+    <value>允许右键按钮以选中目标</value>
+  </data>
   <data name="FastObjectInteract-FontScale" xml:space="preserve">
     <value>字体缩放倍数</value>
   </data>
@@ -538,8 +561,11 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="FastObjectInteract-SelectedObjectKindsAmount" xml:space="preserve">
     <value>已选择 {0} 种目标类型</value>
   </data>
+  <data name="FastObjectInteract-WindowInvisibleWhenInteract" xml:space="preserve">
+    <value>交互时隐藏窗口</value>
+  </data>
   <data name="FastObjectInteractDescription" xml:space="preserve">
-    <value>添加一个可自定义的悬浮窗, 列出周围可交互物体, 可直接点击其中的按钮 以实现更快速的交互</value>
+    <value>添加一个自定义悬浮窗, 列出周围可交互物体, 可直接点击其中的按钮以实现更快速的交互</value>
   </data>
   <data name="FastObjectInteractTitle" xml:space="preserve">
     <value>快速目标交互</value>

@@ -9,6 +9,7 @@ using Dalamud.Game.ClientState.Party;
 using Dalamud.Game.Gui;
 using Dalamud.Game.Gui.PartyFinder;
 using Dalamud.Game.Gui.Toast;
+using Dalamud.Game.Text.Sanitizer;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
@@ -71,6 +72,7 @@ public class Service
     [PluginService] public static ToastGui Toast { get; private set; } = null!;
     [PluginService] public static PartyList PartyList { get; private set; } = null!;
     [PluginService] public static IDutyState DutyState { get; private set; } = null!;
+    [PluginService] public static ISanitizer Sanitizer { get; private set; } = null!;
     public static SigScanner SigScanner { get; private set; } = new();
     public static ExcelGameData ExcelData { get; set; } = null!;
     public static FieldMarkerManager Waymarks { get; set; } = null!;

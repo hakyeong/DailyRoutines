@@ -9,6 +9,7 @@ public class ExcelGameData
 {
     public Dictionary<uint, Action>? Actions { get; private set; }
     public Dictionary<uint, ContentFinderCondition>? Contents { get; private set; }
+    public Dictionary<uint, ENpcResident>? ENpcBase { get; private set; }
 
     public ExcelGameData()
     {
@@ -20,5 +21,9 @@ public class ExcelGameData
                           .Where(x => !x.Name.ToString().IsNullOrEmpty())
                           .DistinctBy(x => x.TerritoryType.Row)
                           .ToDictionary(x => x.TerritoryType.Row, x => x);
+
+        ENpcBase = Service.Data.GetExcelSheet<ENpcResident>()
+                          .Where(x => x.Unknown10)
+                          .ToDictionary(x => x.RowId, x => x);
     }
 }
