@@ -30,13 +30,13 @@ public unsafe class FastObjectInteract : IDailyModule
         public float Distance { get; set; } = distance;
     }
 
+    private static bool ConfigWindowInvisibleWhenInteract = true;
     private static float ConfigFontScale = 1f;
     private static HashSet<ObjectKind> ConfigSelectedKinds = new();
 
     private static bool IsResizeEnabled;
 
     private static readonly Dictionary<nint, ObjectWaitSelected> ObjectsWaitSelected = [];
-
     private static readonly Dictionary<ObjectKind, string> ObjectKindLoc = new()
     {
         { ObjectKind.BattleNpc, "战斗类 NPC (不建议)" },
@@ -53,6 +53,7 @@ public unsafe class FastObjectInteract : IDailyModule
         { ObjectKind.CardStand, "固定类物体 (如无人岛采集点等)" },
         { ObjectKind.Ornament, "时尚配饰 (不建议)" }
     };
+    private static HashSet<uint> ValidENpcs = new();
 
     public void Init()
     {
@@ -60,6 +61,7 @@ public unsafe class FastObjectInteract : IDailyModule
         Overlay.Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize |
                         ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoCollapse;
 
+        Service.Config.AddConfig(this, "WindowInvisibleWhenInteract", true);
         Service.Config.AddConfig(this, "FontScale", 1f);
         Service.Config.AddConfig(this, "SelectedKinds",
                                  new HashSet<ObjectKind>
@@ -67,8 +69,11 @@ public unsafe class FastObjectInteract : IDailyModule
                                      ObjectKind.EventNpc, ObjectKind.EventObj, ObjectKind.Treasure,
                                      ObjectKind.Aetheryte, ObjectKind.GatheringPoint
                                  });
+        ConfigWindowInvisibleWhenInteract = Service.Config.GetConfig<bool>(this, "WindowInvisibleWhenInteract");
         ConfigFontScale = Service.Config.GetConfig<float>(this, "FontScale");
         ConfigSelectedKinds = Service.Config.GetConfig<HashSet<ObjectKind>>(this, "SelectedKinds");
+
+        ValidENpcs = [.. Service.ExcelData.ENpcBase.Keys];
 
         Service.Framework.Update += OnUpdate;
     }
@@ -108,6 +113,11 @@ public unsafe class FastObjectInteract : IDailyModule
             }
 
             ImGui.EndCombo();
+        }
+
+        if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-WindowInvisibleWhenInteract"), ref ConfigWindowInvisibleWhenInteract))
+        {
+            Service.Config.UpdateConfig(this, "WindowInvisibleWhenInteract", ConfigWindowInvisibleWhenInteract);
         }
 
         if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-OverlayResizeMode"), ref IsResizeEnabled))
@@ -163,6 +173,7 @@ public unsafe class FastObjectInteract : IDailyModule
                 var objDistance =
                     HelpersOm.GetGameDistanceFromObject((GameObject*)Service.ClientState.LocalPlayer.Address, gameObj);
                 if (objDistance > 8 || !obj.IsTargetable || !obj.IsValid()) continue;
+                if (objKind == ObjectKind.EventNpc && !ValidENpcs.Contains(obj.DataId)) continue;
 
                 while (tempObjects.ContainsKey(objDistance)) objDistance += 0.001f;
 
@@ -173,8 +184,13 @@ public unsafe class FastObjectInteract : IDailyModule
             ObjectsWaitSelected.Clear();
             foreach (var tempObj in tempObjects.Values) ObjectsWaitSelected.Add((nint)tempObj.GameObject, tempObj);
 
-            Overlay.IsOpen = ObjectsWaitSelected.Any() && !IsOccupied();
+            Overlay.IsOpen = IsWindowShouldBeOpen();
         }
+    }
+
+    private static bool IsWindowShouldBeOpen()
+    {
+        return ObjectsWaitSelected.Any() && (!ConfigWindowInvisibleWhenInteract || !IsOccupied());
     }
 
     private static bool CanInteract(ObjectKind kind, float distance)
