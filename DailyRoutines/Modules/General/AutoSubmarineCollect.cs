@@ -218,8 +218,7 @@ public partial class AutoSubmarineCollect : IDailyModule
                 TaskManager.DelayNext(500);
             }
 
-            TaskManager.Enqueue(CloseRepairUI);
-            TaskManager.DelayNext(500);
+            TaskManager.Enqueue(handler.Close);
             TaskManager.Enqueue(() => Click.TrySendClick("select_string2"));
             TaskManager.Enqueue(ConfirmVoyageResult);
 
