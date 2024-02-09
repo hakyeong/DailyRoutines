@@ -1,10 +1,14 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Windows.Forms;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.Text;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Memory;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
@@ -23,6 +27,21 @@ public class AutoMJIGather : IDailyModule
     public bool WithConfigUI => true;
 
     private static TaskManager? TaskManager;
+
+    #region StaticStatisitics
+    private class AutoMJIGatherGroup
+    {
+        public bool Enabled { get; set; }
+        public HashSet<Vector3>? Nodes { get; set; }
+
+        public AutoMJIGatherGroup() { }
+
+        public AutoMJIGatherGroup(bool enabled, HashSet<Vector3> nodes)
+        {
+            Enabled = enabled;
+            Nodes = nodes;
+        }
+    }
 
     private static readonly HashSet<Vector3> FarmCorpsPos =
     [
@@ -52,8 +71,10 @@ public class AutoMJIGather : IDailyModule
         new Vector3(-179, 66.4f, 121.5f),
         new Vector3(-179, 66.4f, 127)
     ];
+    #endregion
 
     private static Dictionary<string, AutoMJIGatherGroup> GatherNodes = [];
+    private static bool ConfigStopWhenReachCaps;
     private static int CurrentGatherIndex;
     private static bool IsOnDataCollecting;
     private static bool IsOnGathering;
@@ -64,9 +85,13 @@ public class AutoMJIGather : IDailyModule
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
         Service.Config.AddConfig(this, "GatherNodes", GatherNodes);
+        Service.Config.AddConfig(this, "StopWhenReachCaps", true);
 
         GatherNodes =
             Service.Config.GetConfig<Dictionary<string, AutoMJIGatherGroup>>(this, "GatherNodes");
+        ConfigStopWhenReachCaps = Service.Config.GetConfig<bool>(this, "StopWhenReachCaps");
+
+        Service.Chat.ChatMessage += OnChatMessage;
     }
 
     public void ConfigUI()
@@ -185,6 +210,11 @@ public class AutoMJIGather : IDailyModule
         ImGui.Text(Service.Lang.GetText("AutoMJIGather-GatherProcessInfo",
                                         QueuedGatheringList.Count == 0 ? 0 : CurrentGatherIndex + 1,
                                         QueuedGatheringList.Count));
+
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoMJIGather-StopWhenReachCaps"), ref ConfigStopWhenReachCaps))
+        {
+            Service.Config.UpdateConfig(this, "StopWhenReachCaps", ConfigStopWhenReachCaps);
+        }
     }
 
     public void OverlayUI() { }
@@ -207,6 +237,19 @@ public class AutoMJIGather : IDailyModule
             if (!GatherNodes.ContainsKey(objName)) GatherNodes.Add(objName, new AutoMJIGatherGroup(false, []));
             if (GatherNodes[objName].Nodes.Add(obj.Position))
                 Service.Config.UpdateConfig(this, "GatherNodes", GatherNodes);
+        }
+    }
+
+    private void OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
+    {
+        if (!ConfigStopWhenReachCaps) return;
+        if (!TaskManager.IsBusy || (ushort)type != 2108) return;
+
+        if (message.ExtractText().Contains("持有数量已达到上限"))
+        {
+            TaskManager.Abort();
+            IsOnGathering = false;
+            Service.Notification.ShowWindowsToast("", "无人岛素材达到上限, 已停止自动采集", ToolTipIcon.Warning);
         }
     }
 
@@ -313,23 +356,10 @@ public class AutoMJIGather : IDailyModule
         Service.Config.UpdateConfig(this, "GatherNodes", GatherNodes);
 
         Service.Framework.Update -= OnUpdate;
+        Service.Chat.ChatMessage -= OnChatMessage;
         QueuedGatheringList.Clear();
         IsOnGathering = IsOnDataCollecting = false;
         CurrentGatherIndex = 0;
         TaskManager?.Abort();
-    }
-}
-
-public class AutoMJIGatherGroup
-{
-    public bool Enabled { get; set; }
-    public HashSet<Vector3>? Nodes { get; set; }
-
-    public AutoMJIGatherGroup() { }
-
-    public AutoMJIGatherGroup(bool enabled, HashSet<Vector3> nodes)
-    {
-        Enabled = enabled;
-        Nodes = nodes;
     }
 }

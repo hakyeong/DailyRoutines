@@ -263,6 +263,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoMJIGather-Stop" xml:space="preserve">
     <value>停止</value>
   </data>
+  <data name="AutoMJIGather-StopWhenReachCaps" xml:space="preserve">
+    <value>素材达到上限时停止采集并发送通知</value>
+  </data>
   <data name="AutoMJIGatherDescription" xml:space="preserve">
     <value>配置完成并点击开始后, 自动循环采集无人岛素材</value>
   </data>
