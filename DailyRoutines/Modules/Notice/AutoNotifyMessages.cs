@@ -9,6 +9,7 @@ using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Windows.Forms;
 
 namespace DailyRoutines.Modules;
 
@@ -19,6 +20,7 @@ public class AutoNotifyMessages : IDailyModule
     public bool WithConfigUI => true;
 
     private static bool ConfigOnlyNotifyWhenBackground;
+    private static bool ConfigBlockOwnMessages;
     private static HashSet<XivChatType> ConfigValidChatTypes = [];
 
     private static string SearchChatTypesContent = string.Empty;
@@ -29,7 +31,7 @@ public class AutoNotifyMessages : IDailyModule
         { XivChatType.SystemError, "系统错误" },
         { XivChatType.SystemMessage, "系统消息" },
         { XivChatType.ErrorMessage, "错误消息" },
-        { XivChatType.RetainerSale, "雇员出售" },
+        { XivChatType.RetainerSale, "雇员出售信息" },
         { XivChatType.Say, "说话" },
         { XivChatType.Yell, "呼喊" },
         { XivChatType.Shout, "喊话" },
@@ -69,6 +71,9 @@ public class AutoNotifyMessages : IDailyModule
         Service.Config.AddConfig(this, "ValidChatTypes", new HashSet<XivChatType> { XivChatType.TellIncoming });
         ConfigValidChatTypes = Service.Config.GetConfig<HashSet<XivChatType>>(this, "ValidChatTypes");
 
+        Service.Config.AddConfig(this, "BlockOwnMessages", true);
+        ConfigBlockOwnMessages = Service.Config.GetConfig<bool>(this, "BlockOwnMessages");
+
         Service.Chat.ChatMessage += OnChatMessage;
     }
 
@@ -100,6 +105,11 @@ public class AutoNotifyMessages : IDailyModule
             Service.Config.UpdateConfig(this, "OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
         }
 
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoNotifyMessages-BlockOwnMessages"), ref ConfigBlockOwnMessages))
+        {
+            Service.Config.UpdateConfig(this, "BlockOwnMessages", ConfigBlockOwnMessages);
+        }
+
         ImGui.SetNextItemWidth(400f);
         if (ImGui.BeginCombo("###SelectChatTypesCombo", Service.Lang.GetText("AutoNotifyMessages-SelectedTypesAmount", ConfigValidChatTypes.Count), ImGuiComboFlags.HeightLarge))
         {
@@ -108,18 +118,15 @@ public class AutoNotifyMessages : IDailyModule
 
             ImGui.Separator();
 
-            foreach (XivChatType chatType in Enum.GetValues(typeof(XivChatType)))
+            foreach (var chatType in ChatTypesLoc)
             {
-                if (!ChatTypesLoc.ContainsKey(chatType)) continue;
-                var loc = ChatTypesLoc[chatType];
+                if (!string.IsNullOrEmpty(SearchChatTypesContent) && !chatType.Value.Contains(SearchChatTypesContent, StringComparison.OrdinalIgnoreCase)) continue;
 
-                if (!string.IsNullOrEmpty(SearchChatTypesContent) && !loc.Contains(SearchChatTypesContent, StringComparison.OrdinalIgnoreCase)) continue;
-
-                var existed = ConfigValidChatTypes.Contains(chatType);
-                if (ImGui.Checkbox(loc, ref existed))
+                var existed = ConfigValidChatTypes.Contains(chatType.Key);
+                if (ImGui.Checkbox(chatType.Value, ref existed))
                 {
-                    if (!ConfigValidChatTypes.Remove(chatType))
-                        ConfigValidChatTypes.Add(chatType);
+                    if (!ConfigValidChatTypes.Remove(chatType.Key))
+                        ConfigValidChatTypes.Add(chatType.Key);
 
                     Service.Config.UpdateConfig(this, "ValidChatTypes", ConfigValidChatTypes);
                 }
@@ -135,12 +142,8 @@ public class AutoNotifyMessages : IDailyModule
         if (!ConfigValidChatTypes.Contains(type)) return;
 
         var locState = ChatTypesLoc.TryGetValue(type, out var prefix);
-        if (ConfigOnlyNotifyWhenBackground)
-        {
-            if (!HelpersOm.IsGameForeground())
-                Service.Notification.ShowWindowsToast($"[{(locState ? prefix : type)}]  {sender.ExtractText()}", message.ExtractText());
-        }
-        else
+        var isSendByOwn = sender.ExtractText().Contains(Service.ClientState.LocalPlayer?.Name.ExtractText());
+        if ((!ConfigOnlyNotifyWhenBackground || !HelpersOm.IsGameForeground()) && !(ConfigBlockOwnMessages && isSendByOwn))
         {
             Service.Notification.ShowWindowsToast($"[{(locState ? prefix : type)}]  {sender.ExtractText()}", message.ExtractText());
         }
