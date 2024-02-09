@@ -468,6 +468,12 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoSubmarineCollectTitle" xml:space="preserve">
     <value>自动收取潜水艇 (测试/不稳定)</value>
   </data>
+  <data name="AutoSummonPetDescription" xml:space="preserve">
+    <value>进入副本后, 若当前职业需要但未召唤召唤兽, 则自动读条召唤召唤兽</value>
+  </data>
+  <data name="AutoSummonPetTitle" xml:space="preserve">
+    <value>自动召唤召唤兽</value>
+  </data>
   <data name="AutoTalkSkipDescription" xml:space="preserve">
     <value>出现对话框时, 自动快进跳过</value>
   </data>
