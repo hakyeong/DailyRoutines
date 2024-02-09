@@ -30,14 +30,16 @@ public sealed class Plugin : IDalamudPlugin
         P = this;
         PluginInterface = pluginInterface;
 
-        Service.Initialize(pluginInterface);
         ECommonsMain.Init(pluginInterface, this, Module.DalamudReflector);
+        Service.Initialize(pluginInterface);
 
         CommandHandler();
         WindowHandler();
 
         ModuleManager ??= new ModuleManager();
         ModuleManager.Init();
+
+        Service.Notification.Init();
     }
 
     internal void CommandHandler()
