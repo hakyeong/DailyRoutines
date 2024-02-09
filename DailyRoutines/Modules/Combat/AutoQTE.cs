@@ -19,6 +19,8 @@ public class AutoQTE : IDailyModule
 
     private static readonly string[] QTETypes = ["_QTEKeep", "_QTEMash", "_QTEKeepTime", "_QTEButton"];
 
+    private static nint WindowHandle = nint.Zero;
+
     private const uint WmKeydown = 0x0100;
     private const uint WmKeyup = 0x0101;
     private const int VkSpace = 0x20;
@@ -26,6 +28,7 @@ public class AutoQTE : IDailyModule
 
     public void Init()
     {
+        WindowHandle = Process.GetCurrentProcess().MainWindowHandle;
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, QTETypes, OnQTEAddon);
     }
 
@@ -33,12 +36,12 @@ public class AutoQTE : IDailyModule
 
     private static void OnQTEAddon(AddonEvent type, AddonArgs args)
     {
-        var windowHandle = Process.GetCurrentProcess().MainWindowHandle;
-        PostMessage(windowHandle, WmKeydown, VkSpace, 0);
-        Task.Delay(50).ContinueWith(_ => PostMessage(windowHandle, WmKeyup, VkSpace, 0));
+        if (WindowHandle == nint.Zero) return;
+        PostMessage(WindowHandle, WmKeydown, VkSpace, 0);
+        Task.Delay(50).ContinueWith(_ => PostMessage(WindowHandle, WmKeyup, VkSpace, 0));
 
-        PostMessage(windowHandle, WmKeydown, VkW, 0);
-        Task.Delay(50).ContinueWith(_ => PostMessage(windowHandle, WmKeyup, VkW, 0));
+        PostMessage(WindowHandle, WmKeydown, VkW, 0);
+        Task.Delay(50).ContinueWith(_ => PostMessage(WindowHandle, WmKeyup, VkW, 0));
     }
 
     public void OverlayUI() { }
