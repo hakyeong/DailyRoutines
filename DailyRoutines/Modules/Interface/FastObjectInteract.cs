@@ -30,7 +30,8 @@ public unsafe class FastObjectInteract : IDailyModule
         public float Distance { get; set; } = distance;
     }
 
-    private static bool ConfigWindowInvisibleWhenInteract = true;
+    private static bool ConfigAllowRightClickToTarget;
+    private static bool ConfigWindowInvisibleWhenInteract;
     private static float ConfigFontScale = 1f;
     private static HashSet<ObjectKind> ConfigSelectedKinds = new();
 
@@ -61,6 +62,7 @@ public unsafe class FastObjectInteract : IDailyModule
         Overlay.Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize |
                         ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoCollapse;
 
+        Service.Config.AddConfig(this, "AllowRightClickToTarget", false);
         Service.Config.AddConfig(this, "WindowInvisibleWhenInteract", true);
         Service.Config.AddConfig(this, "FontScale", 1f);
         Service.Config.AddConfig(this, "SelectedKinds",
@@ -69,6 +71,7 @@ public unsafe class FastObjectInteract : IDailyModule
                                      ObjectKind.EventNpc, ObjectKind.EventObj, ObjectKind.Treasure,
                                      ObjectKind.Aetheryte, ObjectKind.GatheringPoint
                                  });
+        ConfigAllowRightClickToTarget = Service.Config.GetConfig<bool>(this, "AllowRightClickToTarget");
         ConfigWindowInvisibleWhenInteract = Service.Config.GetConfig<bool>(this, "WindowInvisibleWhenInteract");
         ConfigFontScale = Service.Config.GetConfig<float>(this, "FontScale");
         ConfigSelectedKinds = Service.Config.GetConfig<HashSet<ObjectKind>>(this, "SelectedKinds");
@@ -120,6 +123,13 @@ public unsafe class FastObjectInteract : IDailyModule
             Service.Config.UpdateConfig(this, "WindowInvisibleWhenInteract", ConfigWindowInvisibleWhenInteract);
         }
 
+        if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-AllowRightClickToTarget"), ref ConfigAllowRightClickToTarget))
+        {
+            Service.Config.UpdateConfig(this, "AllowRightClickToTarget", ConfigAllowRightClickToTarget);
+        }
+
+        ImGui.Spacing();
+
         if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-OverlayResizeMode"), ref IsResizeEnabled))
         {
             if (IsResizeEnabled)
@@ -131,24 +141,60 @@ public unsafe class FastObjectInteract : IDailyModule
 
     public void OverlayUI()
     {
+        var colors = ImGui.GetStyle().Colors;
         foreach (var kvp in ObjectsWaitSelected)
         {
             if (kvp.Value.GameObject == null) continue;
 
-            ImGui.BeginDisabled(!CanInteract(kvp.Value.Kind, kvp.Value.Distance));
-            if (ButtonSelectable($"{kvp.Value.Name}###{kvp.Key}"))
+            var interactState = CanInteract(kvp.Value.Kind, kvp.Value.Distance);
+
+            if (ConfigAllowRightClickToTarget)
             {
-                var objSelected = kvp.Value.GameObject;
-                if (objSelected != null)
+                if (!interactState)
                 {
-                    TargetSystem.Instance()->Target = objSelected;
-                    TargetSystem.Instance()->InteractWithObject(objSelected);
-                    if (kvp.Value.Kind != ObjectKind.EventNpc)
-                        TargetSystem.Instance()->OpenObjectInteraction(objSelected);
+                    ImGui.PushStyleVar(ImGuiStyleVar.Alpha, 0.5f);
+                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, colors[(int)ImGuiCol.HeaderActive]);
+                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.HeaderHovered]);
+                }
+                ButtonSelectable($"{kvp.Value.Name}###{kvp.Key}");
+                if (!interactState)
+                {
+                    ImGui.PopStyleColor(2);
+                    ImGui.PopStyleVar();
+                }
+
+                if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
+                {
+                    if (!interactState) return;
+                    var objSelected = kvp.Value.GameObject;
+                    if (objSelected != null)
+                    {
+                        InteractWithObject(objSelected, kvp.Value.Kind);
+                    }
+                }
+
+                if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                {
+                    var objSelected = kvp.Value.GameObject;
+                    if (objSelected != null)
+                    {
+                        TargetSystem.Instance()->Target = objSelected;
+                    }
                 }
             }
-
-            ImGui.EndDisabled();
+            else
+            {
+                ImGui.BeginDisabled(!interactState);
+                if (ButtonSelectable($"{kvp.Value.Name}###{kvp.Key}"))
+                {
+                    var objSelected = kvp.Value.GameObject;
+                    if (objSelected != null)
+                    {
+                        InteractWithObject(objSelected, kvp.Value.Kind);
+                    }
+                }
+                ImGui.EndDisabled();
+            }
         }
     }
 
@@ -186,6 +232,14 @@ public unsafe class FastObjectInteract : IDailyModule
 
             Overlay.IsOpen = IsWindowShouldBeOpen();
         }
+    }
+
+    private static void InteractWithObject(GameObject* obj, ObjectKind kind)
+    {
+        TargetSystem.Instance()->Target = obj;
+        TargetSystem.Instance()->InteractWithObject(obj);
+        if (kind != ObjectKind.EventNpc)
+            TargetSystem.Instance()->OpenObjectInteraction(obj);
     }
 
     private static bool IsWindowShouldBeOpen()
