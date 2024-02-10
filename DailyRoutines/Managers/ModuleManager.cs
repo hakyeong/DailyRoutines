@@ -1,10 +1,10 @@
+using ClickLib;
+using DailyRoutines.Infos;
+using DailyRoutines.Managers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using ClickLib;
-using DailyRoutines.Infos;
-using DailyRoutines.Managers;
 
 namespace DailyRoutines.Manager;
 
@@ -23,7 +23,8 @@ public class ModuleManager
         foreach (var type in types)
         {
             var instance = Activator.CreateInstance(type);
-            if (instance is IDailyModule component) Modules.Add(type, component);
+            if (instance is IDailyModule component)
+                Modules.Add(type, component);
         }
     }
 
@@ -33,7 +34,8 @@ public class ModuleManager
         {
             if (Service.Config.ModuleEnabled.TryGetValue(component.GetType().Name, out var enabled))
             {
-                if (!enabled) continue;
+                if (!enabled)
+                    continue;
             }
             else
             {
@@ -54,10 +56,6 @@ public class ModuleManager
             }
             catch (Exception ex)
             {
-                component.Uninit();
-                component.Initialized = false;
-                Service.Config.ModuleEnabled[component.GetType().Name] = false;
-
                 Service.Log.Error($"Failed to load module {component.GetType().Name} due to error: {ex.Message}");
                 Service.Log.Error(ex.StackTrace ?? "Unknown");
             }
@@ -81,10 +79,6 @@ public class ModuleManager
             }
             catch (Exception ex)
             {
-                component.Uninit();
-                Service.Config.ModuleEnabled[component.GetType().Name] = false;
-                component.Initialized = false;
-
                 Service.Log.Error($"Failed to load component {component.GetType().Name} due to error: {ex.Message}");
                 Service.Log.Error(ex.StackTrace ?? "Unknown");
             }
@@ -97,10 +91,16 @@ public class ModuleManager
     {
         if (Modules.ContainsValue(component))
         {
-            component.Uninit();
-            component.Initialized = false;
-
-            Service.Log.Debug($"Unloaded {component.GetType().Name} module");
+            try
+            {
+                component.Uninit();
+                component.Initialized = false;
+                Service.Log.Debug($"Unloaded {component.GetType().Name} module");
+            }
+            catch (Exception ex)
+            {
+                Service.Log.Error(ex, $"Fail to unload {component.GetType().Name} module");
+            }
         }
     }
 
@@ -108,10 +108,19 @@ public class ModuleManager
     {
         foreach (var component in Modules.Values)
         {
-            component.Uninit();
-            component.Initialized = false;
-
-            Service.Log.Debug($"Unloaded {component.GetType().Name} module");
+            try
+            {
+                if (component.Initialized)
+                {
+                    component.Uninit();
+                    component.Initialized = false;
+                    Service.Log.Debug($"Unloaded {component.GetType().Name} module");
+                }
+            }
+            catch (Exception ex)
+            {
+                Service.Log.Error(ex, $"Fail to unload {component.GetType().Name} module");
+            }
         }
     }
 }
