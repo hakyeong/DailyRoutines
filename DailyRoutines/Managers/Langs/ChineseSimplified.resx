@@ -612,6 +612,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Retainer" xml:space="preserve">
     <value>雇员</value>
   </data>
+  <data name="SearchResult" xml:space="preserve">
+    <value>搜索结果</value>
+  </data>
   <data name="Settings" xml:space="preserve">
     <value>设置</value>
   </data>

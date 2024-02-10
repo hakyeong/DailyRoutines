@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
-using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Manager;
 using DailyRoutines.Managers;
@@ -12,22 +11,19 @@ using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Windowing;
-using Dalamud.Memory;
 using Dalamud.Utility;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
-using Map = Lumina.Excel.GeneratedSheets.Map;
 
 namespace DailyRoutines.Windows;
 
 public class Main : Window, IDisposable
 {
-    private static readonly ConcurrentDictionary<Type, (string Name, string Title, string Description)> ModuleCache = [];
+    private static readonly ConcurrentDictionary<Type, (string Name, string Title, string Description)>
+        ModuleCache = [];
 
     private static readonly Dictionary<ModuleCategories, List<Type>> ModuleCategories = [];
+    private static Type[]? AllModules;
+
     internal static string SearchString = string.Empty;
     private static string ConflictKeySearchString = string.Empty;
 
@@ -49,6 +45,7 @@ public class Main : Window, IDisposable
                         ModuleCategories[category.Value].Add(type);
                     }
                 });
+        AllModules = ModuleCategories.Values.SelectMany(list => list).ToArray();
     }
 
     public override void Draw()
@@ -60,9 +57,13 @@ public class Main : Window, IDisposable
 
         if (ImGui.BeginTabBar("BasicTab", ImGuiTabBarFlags.Reorderable | ImGuiTabBarFlags.FittingPolicyScroll))
         {
-            foreach (var module in ModuleCategories) DrawTabItemModules(module.Value, module.Key);
-
-            DrawTabSettings();
+            if (string.IsNullOrEmpty(SearchString))
+            {
+                foreach (var module in ModuleCategories) DrawTabItemModules(module.Value, module.Key);
+                DrawTabSettings();
+            }
+            else
+                DrawTabItemModulesSearchResult(AllModules);
 
             ImGui.EndTabBar();
         }
@@ -74,7 +75,22 @@ public class Main : Window, IDisposable
         {
             for (var i = 0; i < modules.Count; i++)
             {
-                ImGui.PushID($"{modules[i]}_{category}");
+                ImGui.PushID($"{modules[i]}");
+                DrawModuleCheckbox(modules[i], modules.Count, i);
+                ImGui.PopID();
+            }
+
+            ImGui.EndTabItem();
+        }
+    }
+
+    private static void DrawTabItemModulesSearchResult(IReadOnlyList<Type> modules)
+    {
+        if (ImGui.BeginTabItem(Service.Lang.GetText("SearchResult")))
+        {
+            for (var i = 0; i < modules.Count; i++)
+            {
+                ImGui.PushID($"{modules[i]}");
                 DrawModuleCheckbox(modules[i], modules.Count, i);
                 ImGui.PopID();
             }
@@ -102,13 +118,12 @@ public class Main : Window, IDisposable
             return;
 
         var isWithUI = ModuleManager.Modules[module].WithConfigUI;
-        var moduleChanged = ImGuiOm.CheckboxColored($"##{module.Name}", ref tempModuleBool);
 
-        if (moduleChanged)
+        if (ImGuiOm.CheckboxColored($"##{module.Name}", ref tempModuleBool))
         {
-            var enabled = Service.Config.ModuleEnabled[boolName] = !Service.Config.ModuleEnabled[boolName];
+            Service.Config.ModuleEnabled[boolName] = tempModuleBool;
             var component = ModuleManager.Modules[module];
-            if (enabled) ModuleManager.Load(component);
+            if (tempModuleBool) ModuleManager.Load(component);
             else ModuleManager.Unload(component);
 
             Service.Config.Save();
@@ -232,9 +247,11 @@ public class Main : Window, IDisposable
 
             ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("Contact")}:");
 
+            if (ImGui.Button("GitHub")) Util.OpenLink("https://github.com/AtmoOmen/DailyRoutines");
+
+            ImGui.SameLine();
             ImGui.TextColored(ImGuiColors.DalamudOrange, Service.Lang.GetText("ContactHelp"));
 
-            if (ImGui.Button("GitHub")) Util.OpenLink("https://github.com/AtmoOmen/DailyRoutines");
             ImGui.Separator();
 
             ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("Settings-TipMessage0")}:");
