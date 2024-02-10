@@ -555,14 +555,26 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Enable" xml:space="preserve">
     <value>启用</value>
   </data>
+  <data name="FastObjectInteract-Add" xml:space="preserve">
+    <value>添加</value>
+  </data>
   <data name="FastObjectInteract-AllowRightClickToTarget" xml:space="preserve">
     <value>允许右键按钮以选中目标</value>
+  </data>
+  <data name="FastObjectInteract-BlacklistKeysList" xml:space="preserve">
+    <value>黑名单文本列表</value>
+  </data>
+  <data name="FastObjectInteract-BlacklistKeysListAmount" xml:space="preserve">
+    <value>已存在 {0} 个关键词</value>
   </data>
   <data name="FastObjectInteract-FontScale" xml:space="preserve">
     <value>字体缩放倍数</value>
   </data>
   <data name="FastObjectInteract-OverlayResizeMode" xml:space="preserve">
     <value>悬浮窗大小调整模式</value>
+  </data>
+  <data name="FastObjectInteract-Remove" xml:space="preserve">
+    <value>删除</value>
   </data>
   <data name="FastObjectInteract-SelectedObjectKinds" xml:space="preserve">
     <value>待显示目标类型</value>

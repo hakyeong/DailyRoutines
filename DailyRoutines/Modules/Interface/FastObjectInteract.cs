@@ -7,6 +7,7 @@ using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Interface;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
@@ -33,9 +34,11 @@ public unsafe class FastObjectInteract : IDailyModule
     private static bool ConfigAllowRightClickToTarget;
     private static bool ConfigWindowInvisibleWhenInteract;
     private static float ConfigFontScale = 1f;
+    private static HashSet<string> ConfigBlacklistKeys = new();
     private static HashSet<ObjectKind> ConfigSelectedKinds = new();
 
     private static bool IsResizeEnabled;
+    private static string BlacklistKeyInput = string.Empty;
 
     private static readonly Dictionary<nint, ObjectWaitSelected> ObjectsWaitSelected = [];
     private static readonly Dictionary<ObjectKind, string> ObjectKindLoc = new()
@@ -71,10 +74,13 @@ public unsafe class FastObjectInteract : IDailyModule
                                      ObjectKind.EventNpc, ObjectKind.EventObj, ObjectKind.Treasure,
                                      ObjectKind.Aetheryte, ObjectKind.GatheringPoint
                                  });
+        Service.Config.AddConfig(this, "BlacklistKeys", new HashSet<string>());
+
         ConfigAllowRightClickToTarget = Service.Config.GetConfig<bool>(this, "AllowRightClickToTarget");
         ConfigWindowInvisibleWhenInteract = Service.Config.GetConfig<bool>(this, "WindowInvisibleWhenInteract");
         ConfigFontScale = Service.Config.GetConfig<float>(this, "FontScale");
         ConfigSelectedKinds = Service.Config.GetConfig<HashSet<ObjectKind>>(this, "SelectedKinds");
+        ConfigBlacklistKeys = Service.Config.GetConfig<HashSet<string>>(this, "BlacklistKeys");
 
         ValidENpcs = [.. Service.ExcelData.ENpcBase.Keys];
 
@@ -86,7 +92,7 @@ public unsafe class FastObjectInteract : IDailyModule
         ImGui.AlignTextToFramePadding();
         ImGui.Text($"{Service.Lang.GetText("FastObjectInteract-FontScale")}:");
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(100f);
+        ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
         if (ImGui.InputFloat("###FontScaleInput", ref ConfigFontScale, 0f, 0f, ConfigFontScale.ToString(),
                              ImGuiInputTextFlags.EnterReturnsTrue))
         {
@@ -98,7 +104,7 @@ public unsafe class FastObjectInteract : IDailyModule
         ImGui.Text($"{Service.Lang.GetText("FastObjectInteract-SelectedObjectKinds")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(370f);
+        ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
         if (ImGui.BeginCombo("###ObjectKindsSelection",
                              Service.Lang.GetText("FastObjectInteract-SelectedObjectKindsAmount",
                                                   ConfigSelectedKinds.Count), ImGuiComboFlags.HeightLarge))
@@ -115,6 +121,40 @@ public unsafe class FastObjectInteract : IDailyModule
                 }
             }
 
+            ImGui.EndCombo();
+        }
+
+        ImGui.AlignTextToFramePadding();
+        ImGui.Text($"{Service.Lang.GetText("FastObjectInteract-BlacklistKeysList")}:");
+
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
+        if (ImGui.BeginCombo("###BlacklistObjectsSelection", Service.Lang.GetText("FastObjectInteract-BlacklistKeysListAmount", ConfigBlacklistKeys.Count), ImGuiComboFlags.HeightLarge))
+        {
+            ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+            ImGui.InputText("###BlacklistKeyInput", ref BlacklistKeyInput, 100);
+            ImGui.SameLine();
+            if (ImGuiOm.ButtonIcon("###BlacklistKeyInputAdd", FontAwesomeIcon.Plus, Service.Lang.GetText("FastObjectInteract-Add")))
+            {
+                if (ConfigBlacklistKeys.Contains(BlacklistKeyInput, StringComparer.OrdinalIgnoreCase)) return;
+
+                ConfigBlacklistKeys.Add(BlacklistKeyInput);
+                Service.Config.UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
+            }
+
+            ImGui.Separator();
+
+            foreach (var key in ConfigBlacklistKeys)
+            {
+                if (ImGuiOm.ButtonIcon(key, FontAwesomeIcon.TrashAlt, Service.Lang.GetText("FastObjectInteract-Remove")))
+                {
+                    ConfigBlacklistKeys.Remove(key);
+                    Service.Config.UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
+                }
+
+                ImGui.SameLine();
+                ImGui.Text(key);
+            }
             ImGui.EndCombo();
         }
 
@@ -200,7 +240,7 @@ public unsafe class FastObjectInteract : IDailyModule
 
     private void OnUpdate(Framework framework)
     {
-        if (EzThrottler.Throttle("FastSelectObjects", 250))
+        if (EzThrottler.Throttle("FastSelectObjects"))
         {
             if (Service.Condition[ConditionFlag.BetweenAreas])
             {
@@ -215,6 +255,8 @@ public unsafe class FastObjectInteract : IDailyModule
             {
                 var objKind = obj.ObjectKind;
                 if (!ConfigSelectedKinds.Contains(objKind)) continue;
+                var objName = obj.Name.ExtractText();
+                if (ConfigBlacklistKeys.Contains(objName)) continue;
                 var gameObj = (GameObject*)obj.Address;
                 var objDistance =
                     HelpersOm.GetGameDistanceFromObject((GameObject*)Service.ClientState.LocalPlayer.Address, gameObj);
@@ -225,7 +267,7 @@ public unsafe class FastObjectInteract : IDailyModule
                 while (tempObjects.ContainsKey(objDistance)) objDistance += 0.001f;
 
                 tempObjects.Add(objDistance,
-                                new ObjectWaitSelected(gameObj, obj.Name.ExtractText(), objKind, objDistance));
+                                new ObjectWaitSelected(gameObj, objName, objKind, objDistance));
             }
 
             ObjectsWaitSelected.Clear();
