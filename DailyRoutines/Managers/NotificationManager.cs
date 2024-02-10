@@ -35,7 +35,7 @@ public class NotificationManager
     private void ShowBalloonTip(string title, string content, ToolTipIcon icon = ToolTipIcon.Info)
     {
         PlaySound("SystemAsterisk", IntPtr.Zero, SND_ASYNC | SND_ALIAS);
-        Icon.ShowBalloonTip(500, string.IsNullOrEmpty(title) ? P.Name : title, content, icon);
+        Icon.ShowBalloonTip(500, string.IsNullOrEmpty(title) ? P.Name : SanitizeManager.Sanitize(title), SanitizeManager.Sanitize(content), icon);
     }
 
     private void CreateIcon()
