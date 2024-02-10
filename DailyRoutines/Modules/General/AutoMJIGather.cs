@@ -9,6 +9,7 @@ using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Interface;
 using Dalamud.Memory;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
@@ -97,7 +98,7 @@ public class AutoMJIGather : IDailyModule
     public void ConfigUI()
     {
         ImGui.BeginDisabled(Service.ClientState.TerritoryType != 1055 || IsOnGathering);
-        ImGui.SetNextItemWidth(420f);
+        ImGui.SetNextItemWidth(350f * ImGuiHelpers.GlobalScale);
         if (ImGui.BeginCombo("##AutoMJIGather-GatherNodes",
                              Service.Lang.GetText("AutoMJIGather-NodesInfo", GatherNodes.Count,
                                                   GatherNodes.Count(x => x.Value.Enabled),

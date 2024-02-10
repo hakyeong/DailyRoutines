@@ -192,7 +192,7 @@ public class Main : Window, IDisposable
             ImGuiOm.TextIcon(FontAwesomeIcon.Globe, $"{Service.Lang.GetText("Language")}:");
 
             ImGui.SameLine();
-            ImGui.SetNextItemWidth(240f);
+            ImGui.SetNextItemWidth(180f * ImGuiHelpers.GlobalScale);
             if (ImGui.BeginCombo("##LanguagesList", Service.Config.SelectedLanguage))
             {
                 for (var i = 0; i < LanguageManager.LanguageNames.Length; i++)
@@ -221,7 +221,7 @@ public class Main : Window, IDisposable
             ImGuiOm.TextIcon(FontAwesomeIcon.Keyboard, $"{Service.Lang.GetText("ConflictKey")}:");
 
             ImGui.SameLine();
-            ImGui.SetNextItemWidth(150f);
+            ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
             if (ImGui.BeginCombo("##GlobalConflictHotkey", Service.Config.ConflictKey.ToString()))
             {
                 ImGui.SetNextItemWidth(-1f);

@@ -8,6 +8,7 @@ using DailyRoutines.Infos;
 using DailyRoutines.Manager;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
+using Dalamud.Interface;
 using ECommons.Automation;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -53,7 +54,7 @@ public class AutoLeveQuests : IDailyModule
         ImGui.Text($"{Service.Lang.GetText("AutoLeveQuests-SelectedLeve")}");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(400f);
+        ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
         if (ImGui.BeginCombo("##SelectedLeve",
                              SelectedLeve == null ? "" : $"{SelectedLeve.Value.Item1} | {SelectedLeve.Value.Item2}"))
         {

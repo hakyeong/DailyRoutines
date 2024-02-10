@@ -110,7 +110,7 @@ public class AutoNotifyMessages : IDailyModule
             Service.Config.UpdateConfig(this, "BlockOwnMessages", ConfigBlockOwnMessages);
         }
 
-        ImGui.SetNextItemWidth(400f);
+        ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
         if (ImGui.BeginCombo("###SelectChatTypesCombo", Service.Lang.GetText("AutoNotifyMessages-SelectedTypesAmount", ConfigValidChatTypes.Count), ImGuiComboFlags.HeightLarge))
         {
             ImGui.SetNextItemWidth(-1f);

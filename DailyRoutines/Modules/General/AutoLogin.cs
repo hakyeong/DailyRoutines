@@ -5,6 +5,7 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game;
 using Dalamud.Game.AddonLifecycle;
+using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -47,7 +48,7 @@ public class AutoLogin : IDailyModule
         ImGui.Text($"{Service.Lang.GetText("AutoLogin-ServerName")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(150f);
+        ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
         if (ImGui.InputText("##AutoLogin-EnterServerName", ref ConfigSelectedServer, 16, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             if (TryGetWorldByName(ConfigSelectedServer, out _))
@@ -70,7 +71,7 @@ public class AutoLogin : IDailyModule
         ImGui.Text($"{Service.Lang.GetText("AutoLogin-CharacterIndex")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(150f);
+        ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
         if (ImGui.InputInt("##AutoLogin-EnterCharaIndex", ref ConfigSelectedCharaIndex, 1, 1,
                            ImGuiInputTextFlags.EnterReturnsTrue))
         {

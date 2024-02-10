@@ -8,6 +8,7 @@ using Dalamud.Game;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -64,7 +65,7 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
 
-        ImGui.SetNextItemWidth(210f);
+        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
         if (ImGui.InputInt(
                 $"{Service.Lang.GetText("AutoRetainerPriceAdjust-SinglePriceReductionValue")}##AutoRetainerPriceAdjust-SinglePriceReductionValue",
                 ref ConfigPriceReduction, 100))
@@ -74,7 +75,7 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
         }
 
 
-        ImGui.SetNextItemWidth(210f);
+        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
         if (ImGui.InputInt(
                 $"{Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice")}##AutoRetainerPriceAdjust-LowestAcceptablePrice",
                 ref ConfigLowestPrice, 100))
@@ -83,7 +84,7 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
             Service.Config.UpdateConfig(this, "LowestAcceptablePrice", ConfigLowestPrice);
         }
 
-        ImGui.SetNextItemWidth(210f);
+        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
         if (ImGui.InputInt(
                 $"{Service.Lang.GetText("AutoRetainerPriceAdjust-MaxPriceReduction")}##AutoRetainerPriceAdjust-MaxPriceReduction",
                 ref ConfigMaxPriceReduction, 100))
