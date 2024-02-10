@@ -218,7 +218,8 @@ public unsafe class FastObjectInteract : IDailyModule
                 var gameObj = (GameObject*)obj.Address;
                 var objDistance =
                     HelpersOm.GetGameDistanceFromObject((GameObject*)Service.ClientState.LocalPlayer.Address, gameObj);
-                if (objDistance > 8 || !obj.IsTargetable || !obj.IsValid()) continue;
+                var verticalDistance = Service.ClientState.LocalPlayer.Position.Y - gameObj->Position.Y;
+                if (objDistance > 8 || !obj.IsTargetable || !obj.IsValid() || verticalDistance > 5) continue;
                 if (objKind == ObjectKind.EventNpc && !ValidENpcs.Contains(obj.DataId)) continue;
 
                 while (tempObjects.ContainsKey(objDistance)) objDistance += 0.001f;

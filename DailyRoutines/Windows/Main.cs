@@ -235,9 +235,6 @@ public class Main : Window, IDisposable
             ImGui.TextColored(ImGuiColors.DalamudOrange, Service.Lang.GetText("ContactHelp"));
 
             if (ImGui.Button("GitHub")) Util.OpenLink("https://github.com/AtmoOmen/DailyRoutines");
-            ImGui.SameLine();
-            if (ImGui.Button("bilibili")) Util.OpenLink("https://space.bilibili.com/22008977");
-
             ImGui.Separator();
 
             ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("Settings-TipMessage0")}:");

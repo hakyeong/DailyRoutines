@@ -544,7 +544,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>联系/反馈</value>
   </data>
   <data name="ContactHelp" xml:space="preserve">
-    <value>本插件开源免费, 如需建议/联系/反馈, 请到 GitHub 提交 Issue /  B站私信我</value>
+    <value>本插件开源免费, 如需建议/联系/反馈, 请到 GitHub 提交 Issue</value>
   </data>
   <data name="DevModuleDescription" xml:space="preserve">
     <value>本地测试用模块专用临时标题与描述文本</value>
