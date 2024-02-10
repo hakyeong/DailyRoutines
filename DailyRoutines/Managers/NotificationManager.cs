@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Runtime.InteropServices;
+using System.Timers;
 using System.Windows.Forms;
 using Timer = System.Timers.Timer;
 
@@ -10,23 +11,17 @@ namespace DailyRoutines.Managers;
 
 public class NotificationManager
 {
-    private class BalloonTipMessage(string? title, string content, ToolTipIcon icon = ToolTipIcon.Info)
+    private class BalloonTipMessage(DateTime time, Action messageAction)
     {
-        public string? Title { get; set; } = title;
-        public string Content { get; set; } = content;
-        public ToolTipIcon Icon { get; set; } = icon;
+        public DateTime? Time { get; set; } = time;
+        public Action MessageAction { get; set; } = messageAction;
     }
-
-    [DllImport("winmm.dll", SetLastError = true)]
-    private static extern bool PlaySound(string pszSound, IntPtr hMod, uint fdwSound);
 
     private static NotifyIcon? Icon;
 
-    private const uint SND_ASYNC = 0x0001;
-    public const uint SND_ALIAS = 0x00010000;
-
-    private readonly Queue<Action> messagesQueue = new();
+    private readonly Queue<BalloonTipMessage> messagesQueue = new();
     private readonly Timer timer = new(500);
+    private readonly Stopwatch stopwatch = new();
 
     internal void Init()
     {
@@ -34,17 +29,25 @@ public class NotificationManager
         timer.Elapsed += OnTimerElapsed;
     }
 
-    private void OnTimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)
+    private void OnTimerElapsed(object? sender, ElapsedEventArgs e)
     {
+        if (stopwatch.IsRunning && stopwatch.Elapsed < TimeSpan.FromMilliseconds(5)) return;
+
+        if (Icon is not { Visible: true }) CreateIcon();
         switch (messagesQueue.Count)
         {
             case > 1:
-                ShowBalloonTip("", Service.Lang.GetText("NotificationManager-ReceiveMultipleMessages", messagesQueue.Count));
+                ShowBalloonTip(
+                    "", Service.Lang.GetText("NotificationManager-ReceiveMultipleMessages", messagesQueue.Count));
                 messagesQueue.Clear();
+
+                stopwatch.Restart();
                 timer.Restart();
                 break;
             case 1:
-                messagesQueue.Dequeue().Invoke();
+                messagesQueue.Dequeue().MessageAction.Invoke();
+
+                stopwatch.Reset();
                 timer.Restart();
                 break;
             default:
@@ -55,16 +58,19 @@ public class NotificationManager
 
     public void Show(string title, string content, ToolTipIcon icon = ToolTipIcon.Info)
     {
-        if (Icon is not { Visible: true }) CreateIcon();
+        messagesQueue.Enqueue(new BalloonTipMessage(DateTime.Now, () => ShowBalloonTip(title, content, icon)));
 
-        messagesQueue.Enqueue(() => ShowBalloonTip(title, content, icon));
-        timer.Restart();
+        if (!stopwatch.IsRunning)
+        {
+            stopwatch.Start();
+            timer.Start();
+        }
     }
 
     private void ShowBalloonTip(string title, string content, ToolTipIcon icon = ToolTipIcon.Info)
     {
-        PlaySound("SystemAsterisk", IntPtr.Zero, SND_ASYNC | SND_ALIAS);
-        Icon.ShowBalloonTip(500, string.IsNullOrEmpty(title) ? P.Name : SanitizeManager.Sanitize(title), SanitizeManager.Sanitize(content), icon);
+        Icon.ShowBalloonTip(500, string.IsNullOrEmpty(title) ? P.Name : SanitizeManager.Sanitize(title),
+                            SanitizeManager.Sanitize(content), icon);
     }
 
     private void CreateIcon()
@@ -90,6 +96,8 @@ public class NotificationManager
 
     internal void Dispose()
     {
+        stopwatch.Stop();
+
         timer.Elapsed -= OnTimerElapsed;
         timer.Stop();
         timer.Dispose();
