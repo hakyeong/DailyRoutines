@@ -19,7 +19,6 @@ public unsafe class AutoRefocus : IDailyModule
     [Signature("E8 ?? ?? ?? ?? BA 0C 00 00 00 48 8D 0D", DetourName = nameof(SetFocusTargetByObjectID))]
     private Hook<SetFocusTargetByObjectIDDelegate>? setFocusTargetByObjectIDHook;
 
-    private static HashSet<uint>? ContentTerritories;
     private static ulong? FocusTarget;
 
     public void Init()
@@ -27,7 +26,6 @@ public unsafe class AutoRefocus : IDailyModule
         SignatureHelper.Initialise(this);
         setFocusTargetByObjectIDHook?.Enable();
 
-        ContentTerritories ??= [.. Service.ExcelData.Contents.Keys];
         if (IsBoundByDuty()) OnZoneChange(null, 0);
         Service.ClientState.TerritoryChanged += OnZoneChange;
     }
@@ -39,7 +37,7 @@ public unsafe class AutoRefocus : IDailyModule
     private void OnZoneChange(object? sender, ushort territory)
     {
         FocusTarget = null;
-        if (ContentTerritories.Contains(territory))
+        if (Service.ExcelData.ContentTerritories.Contains(territory))
             Service.Framework.Update += OnUpdate;
         else
             Service.Framework.Update -= OnUpdate;

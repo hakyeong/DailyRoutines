@@ -16,7 +16,6 @@ public class AutoSummonPet : IDailyModule
     public bool WithConfigUI => false;
 
     private static TaskManager? TaskManager;
-    private static HashSet<uint>? ContentTerritories;
 
     private static readonly Dictionary<uint, uint> SummonActions = new()
     {
@@ -30,7 +29,6 @@ public class AutoSummonPet : IDailyModule
     public void Init()
     {
         TaskManager = new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = true };
-        ContentTerritories ??= [.. Service.ExcelData.Contents.Keys];
 
         Service.ClientState.TerritoryChanged += OnZoneChanged;
     }
@@ -41,7 +39,7 @@ public class AutoSummonPet : IDailyModule
 
     private void OnZoneChanged(object? sender, ushort e)
     {
-        if (!ContentTerritories.Contains(e)) return;
+        if (!Service.ExcelData.ContentTerritories.Contains(e)) return;
         TaskManager.Abort();
         TaskManager.Enqueue(CheckCurrentJob);
     }

@@ -19,7 +19,6 @@ public class AutoTankStance : IDailyModule
     private static bool ConfigOnlyAutoStanceWhenOneTank = true;
 
     private static HashSet<uint>? ContentsWithOneTank;
-    private static HashSet<uint>? ContentTerritories;
     private static readonly HashSet<uint> TankStanceStatuses = [79, 91, 743, 1833];
 
     private static readonly Dictionary<uint, uint> TankStanceActions = new()
@@ -47,7 +46,6 @@ public class AutoTankStance : IDailyModule
                                        .Where(x => (uint)x.Value.ContentMemberType.Value.TanksPerParty == 1)
                                        .Select(x => x.Key)
                                        .ToHashSet();
-        ContentTerritories ??= [.. Service.ExcelData.Contents.Keys];
 
         Service.ClientState.TerritoryChanged += OnZoneChanged;
     }
@@ -67,7 +65,7 @@ public class AutoTankStance : IDailyModule
     {
         TaskManager.Abort();
         if ((ConfigOnlyAutoStanceWhenOneTank && ContentsWithOneTank.Contains(e)) ||
-            (!ConfigOnlyAutoStanceWhenOneTank && ContentTerritories.Contains(e)))
+            (!ConfigOnlyAutoStanceWhenOneTank && Service.ExcelData.ContentTerritories.Contains(e)))
             TaskManager.Enqueue(CheckCurrentJob);
     }
 

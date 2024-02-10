@@ -11,6 +11,8 @@ public class ExcelGameData
     public Dictionary<uint, ContentFinderCondition>? Contents { get; private set; }
     public Dictionary<uint, ENpcResident>? ENpcBase { get; private set; }
 
+    public HashSet<uint> ContentTerritories { get; private set; }
+
     public ExcelGameData()
     {
         Actions = Service.Data.GetExcelSheet<Action>()
@@ -21,6 +23,8 @@ public class ExcelGameData
                           .Where(x => !x.Name.ToString().IsNullOrEmpty())
                           .DistinctBy(x => x.TerritoryType.Row)
                           .ToDictionary(x => x.TerritoryType.Row, x => x);
+
+        ContentTerritories = [..Contents.Keys];
 
         ENpcBase = Service.Data.GetExcelSheet<ENpcResident>()
                           .Where(x => x.Unknown10)

@@ -92,16 +92,14 @@ public unsafe class AutoDismount : IDailyModule
             // 对非自身的目标使用技能
             if (actionTarget != 3758096384L)
             {
+                var localPlayer = (GameObject*)Service.ClientState.LocalPlayer.Address;
                 // 562 - 看不到目标; 566 - 目标在射程外
-                if (ActionManager.GetActionInRangeOrLoS(actionId, (GameObject*)Service.ClientState.LocalPlayer.Address,
-                                                        actionObject) is 562 or 566) return false;
+                if (ActionManager.GetActionInRangeOrLoS(actionId, localPlayer, actionObject) is 562 or 566) return false;
                 // 目标在范围外
-                if (!HelpersOm.CanUseActionOnObject((GameObject*)Service.ClientState.LocalPlayer.Address, actionObject,
-                                                    actionRange)) return false;
+                if (!HelpersOm.CanUseActionOnObject(localPlayer, actionObject, actionRange)) return false;
 
                 // 无法对目标使用技能
-                if (!ActionManager.CanUseActionOnTarget(actionId, actionObject))
-                    return false;
+                if (!ActionManager.CanUseActionOnTarget(actionId, actionObject)) return false;
             }
             else if (Service.Target.Target == null) return false;
         }
