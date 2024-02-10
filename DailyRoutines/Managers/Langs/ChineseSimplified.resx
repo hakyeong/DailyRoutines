@@ -609,6 +609,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Notice" xml:space="preserve">
     <value>通知</value>
   </data>
+  <data name="NotificationManager-ReceiveMultipleMessages" xml:space="preserve">
+    <value>收到了 {0} 条新消息</value>
+  </data>
   <data name="PFPageSizeCustomize-DisplayAmount" xml:space="preserve">
     <value>单页显示数量</value>
   </data>
