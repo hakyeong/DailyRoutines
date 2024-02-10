@@ -57,7 +57,7 @@ public unsafe class FastObjectInteract : IDailyModule
         { ObjectKind.CardStand, "固定类物体 (如无人岛采集点等)" },
         { ObjectKind.Ornament, "时尚配饰 (不建议)" }
     };
-    private static HashSet<uint> ValidENpcs = new();
+    private static HashSet<uint> ValidENPC = new();
 
     public void Init()
     {
@@ -82,7 +82,7 @@ public unsafe class FastObjectInteract : IDailyModule
         ConfigSelectedKinds = Service.Config.GetConfig<HashSet<ObjectKind>>(this, "SelectedKinds");
         ConfigBlacklistKeys = Service.Config.GetConfig<HashSet<string>>(this, "BlacklistKeys");
 
-        ValidENpcs = [.. Service.ExcelData.ENpcBase.Keys];
+        ValidENPC = [.. Service.ExcelData.ENpcResidents.Keys];
 
         Service.Framework.Update += OnUpdate;
     }
@@ -240,7 +240,7 @@ public unsafe class FastObjectInteract : IDailyModule
 
     private void OnUpdate(Framework framework)
     {
-        if (EzThrottler.Throttle("FastSelectObjects"))
+        if (EzThrottler.Throttle("FastSelectObjects", 250))
         {
             if (Service.Condition[ConditionFlag.BetweenAreas])
             {
@@ -249,29 +249,46 @@ public unsafe class FastObjectInteract : IDailyModule
                 return;
             }
 
-            var tempObjects = new SortedDictionary<float, ObjectWaitSelected>();
+            var tempObjects = new List<ObjectWaitSelected>();
+            var distanceSet = new HashSet<float>();
+            var localPlayer = (GameObject*)Service.ClientState.LocalPlayer.Address;
+            var localPlayerY = localPlayer->Position.Y;
 
             foreach (var obj in Service.ObjectTable)
             {
+                if (!obj.IsTargetable || obj.IsDead) continue;
+
                 var objKind = obj.ObjectKind;
                 if (!ConfigSelectedKinds.Contains(objKind)) continue;
+                if (objKind == ObjectKind.EventNpc && !ValidENPC.Contains(obj.DataId)) continue;
+
                 var objName = obj.Name.ExtractText();
                 if (ConfigBlacklistKeys.Contains(objName)) continue;
+
                 var gameObj = (GameObject*)obj.Address;
-                var objDistance =
-                    HelpersOm.GetGameDistanceFromObject((GameObject*)Service.ClientState.LocalPlayer.Address, gameObj);
-                var verticalDistance = Service.ClientState.LocalPlayer.Position.Y - gameObj->Position.Y;
-                if (objDistance > 8 || !obj.IsTargetable || !obj.IsValid() || verticalDistance > 5) continue;
-                if (objKind == ObjectKind.EventNpc && !ValidENpcs.Contains(obj.DataId)) continue;
+                var objDistance = HelpersOm.GetGameDistanceFromObject(localPlayer, gameObj);
+                var verticalDistance = localPlayerY - gameObj->Position.Y;
+                if (objDistance > 10 || verticalDistance > 5) continue;
 
-                while (tempObjects.ContainsKey(objDistance)) objDistance += 0.001f;
+                var adjustedDistance = objDistance;
+                while (distanceSet.Contains(adjustedDistance))
+                {
+                    adjustedDistance += 0.001f;
+                }
+                distanceSet.Add(adjustedDistance);
 
-                tempObjects.Add(objDistance,
-                                new ObjectWaitSelected(gameObj, objName, objKind, objDistance));
+                if (objKind == ObjectKind.EventNpc &&
+                    Service.ExcelData.ENpcTitles.TryGetValue(obj.DataId, out var ENPCTitle) &&
+                    !string.IsNullOrEmpty(ENPCTitle))
+                    objName = $"[{ENPCTitle}] {obj.Name}";
+
+                tempObjects.Add(new ObjectWaitSelected(gameObj, objName, objKind, adjustedDistance));
             }
 
+            tempObjects.Sort((a, b) => a.Distance.CompareTo(b.Distance));
+
             ObjectsWaitSelected.Clear();
-            foreach (var tempObj in tempObjects.Values) ObjectsWaitSelected.Add((nint)tempObj.GameObject, tempObj);
+            foreach (var tempObj in tempObjects) ObjectsWaitSelected.Add((nint)tempObj.GameObject, tempObj);
 
             Overlay.IsOpen = IsWindowShouldBeOpen();
         }

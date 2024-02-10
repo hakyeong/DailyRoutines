@@ -9,7 +9,8 @@ public class ExcelGameData
 {
     public Dictionary<uint, Action>? Actions { get; private set; }
     public Dictionary<uint, ContentFinderCondition>? Contents { get; private set; }
-    public Dictionary<uint, ENpcResident>? ENpcBase { get; private set; }
+    public Dictionary<uint, ENpcResident>? ENpcResidents { get; private set; }
+    public Dictionary<uint, string>? ENpcTitles { get; private set; }
 
     public HashSet<uint> ContentTerritories { get; private set; }
 
@@ -26,8 +27,12 @@ public class ExcelGameData
 
         ContentTerritories = [..Contents.Keys];
 
-        ENpcBase = Service.Data.GetExcelSheet<ENpcResident>()
+        ENpcResidents = Service.Data.GetExcelSheet<ENpcResident>()
                           .Where(x => x.Unknown10)
                           .ToDictionary(x => x.RowId, x => x);
+
+        ENpcTitles = Service.Data.GetExcelSheet<ENpcResident>()
+                            .Where(x => x.Unknown10)
+                            .ToDictionary(x => x.RowId, x => x.Title.ExtractText());
     }
 }

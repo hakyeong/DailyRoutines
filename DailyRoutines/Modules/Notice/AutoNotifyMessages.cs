@@ -145,7 +145,7 @@ public class AutoNotifyMessages : IDailyModule
         var isSendByOwn = sender.ExtractText().Contains(Service.ClientState.LocalPlayer?.Name.ExtractText());
         if ((!ConfigOnlyNotifyWhenBackground || !HelpersOm.IsGameForeground()) && !(ConfigBlockOwnMessages && isSendByOwn))
         {
-            Service.Notification.ShowWindowsToast($"[{(locState ? prefix : type)}]  {sender.ExtractText()}", message.ExtractText());
+            Service.Notification.Show($"[{(locState ? prefix : type)}]  {sender.ExtractText()}", message.ExtractText());
         }
     }
 

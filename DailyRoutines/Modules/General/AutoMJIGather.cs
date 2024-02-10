@@ -250,7 +250,7 @@ public class AutoMJIGather : IDailyModule
         {
             TaskManager.Abort();
             IsOnGathering = false;
-            Service.Notification.ShowWindowsToast("", "无人岛素材达到上限, 已停止自动采集", ToolTipIcon.Warning);
+            Service.Notification.Show("", "无人岛素材达到上限, 已停止自动采集", ToolTipIcon.Warning);
         }
     }
 
