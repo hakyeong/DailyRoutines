@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Timers;
@@ -11,72 +9,78 @@ namespace DailyRoutines.Managers;
 
 public class NotificationManager
 {
-    private class BalloonTipMessage(DateTime time, Action messageAction)
+    private class ToastMessage(string? title, string message, ToolTipIcon icon = ToolTipIcon.Info)
     {
-        public DateTime? Time { get; set; } = time;
-        public Action MessageAction { get; set; } = messageAction;
+        public string? Title { get; set; } = title;
+        public string Message { get; set; } = message;
+        public ToolTipIcon Icon { get; set; } = icon;
     }
 
-    private static NotifyIcon? Icon;
+    private static NotifyIcon? icon;
+    private readonly Queue<ToastMessage> messagesQueue = new();
+    private readonly Timer timer = new(5000);
+    private bool isTimerScheduled;
 
-    private readonly Queue<BalloonTipMessage> messagesQueue = new();
-    private readonly Timer timer = new(500);
-    private readonly Stopwatch stopwatch = new();
-
-    internal void Init()
+    public void Init()
     {
         timer.AutoReset = false;
-        timer.Elapsed += OnTimerElapsed;
+        timer.Elapsed += TimerElapsed;
     }
 
-    private void OnTimerElapsed(object? sender, ElapsedEventArgs e)
+    private void TimerElapsed(object? sender, ElapsedEventArgs e)
     {
-        if (stopwatch.IsRunning && stopwatch.Elapsed < TimeSpan.FromMilliseconds(5)) return;
-
-        if (Icon is not { Visible: true }) CreateIcon();
         switch (messagesQueue.Count)
         {
             case > 1:
-                ShowBalloonTip(
-                    "", Service.Lang.GetText("NotificationManager-ReceiveMultipleMessages", messagesQueue.Count));
-                messagesQueue.Clear();
-
-                stopwatch.Restart();
-                timer.Restart();
+                ShowBalloonTip(new ToastMessage(
+                                   "",
+                                   Service.Lang.GetText("NotificationManager-ReceiveMultipleMessages",
+                                                        messagesQueue.Count)));
                 break;
             case 1:
-                messagesQueue.Dequeue().MessageAction.Invoke();
-
-                stopwatch.Reset();
-                timer.Restart();
-                break;
-            default:
-                DestroyIcon();
+                ShowBalloonTip(messagesQueue.Dequeue());
                 break;
         }
+
+        isTimerScheduled = false;
+        messagesQueue.Clear();
+
+        if (messagesQueue.Count == 0)
+            DestroyIcon();
+        else
+            ScheduleTimer();
     }
 
-    public void Show(string title, string content, ToolTipIcon icon = ToolTipIcon.Info)
+    public void Show(string title, string content, ToolTipIcon toolTipIcon = ToolTipIcon.Info)
     {
-        messagesQueue.Enqueue(new BalloonTipMessage(DateTime.Now, () => ShowBalloonTip(title, content, icon)));
+        if (icon is not { Visible: true }) CreateIcon();
+        messagesQueue.Enqueue(new ToastMessage(title, content, toolTipIcon));
 
-        if (!stopwatch.IsRunning)
+        if (!isTimerScheduled)
         {
-            stopwatch.Start();
-            timer.Start();
+            ShowBalloonTip(messagesQueue.Dequeue());
+            ScheduleTimer();
         }
     }
 
-    private void ShowBalloonTip(string title, string content, ToolTipIcon icon = ToolTipIcon.Info)
+    private void ScheduleTimer()
     {
-        Icon.ShowBalloonTip(500, string.IsNullOrEmpty(title) ? P.Name : SanitizeManager.Sanitize(title),
-                            SanitizeManager.Sanitize(content), icon);
+        timer.Stop();
+        timer.Start();
+        isTimerScheduled = true;
+    }
+
+    private void ShowBalloonTip(ToastMessage message)
+    {
+        icon.ShowBalloonTip(
+            5000, string.IsNullOrEmpty(message.Title) ? P.Name : SanitizeManager.Sanitize(message.Title),
+            SanitizeManager.Sanitize(message.Message), message.Icon);
     }
 
     private void CreateIcon()
     {
         DestroyIcon();
-        Icon = new NotifyIcon
+        icon = new NotifyIcon
         {
             Icon = new Icon(Path.Join(P.PluginInterface.AssemblyLocation.DirectoryName, "Assets", "FFXIVICON.ico")),
             Text = P.Name,
@@ -86,24 +90,18 @@ public class NotificationManager
 
     private void DestroyIcon()
     {
-        if (Icon != null)
+        if (icon != null)
         {
-            Icon.Visible = false;
-            Icon.Dispose();
-            Icon = null;
+            icon.Visible = false;
+            icon.Dispose();
+            icon = null;
         }
     }
 
-    internal void Dispose()
+    public void Dispose()
     {
-        stopwatch.Stop();
-
-        timer.Elapsed -= OnTimerElapsed;
-        timer.Stop();
+        timer.Elapsed -= TimerElapsed;
         timer.Dispose();
-
-        if (Icon != null) Icon.Visible = false;
-        Icon?.Dispose();
-        Icon = null;
+        DestroyIcon();
     }
 }
