@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -35,10 +36,10 @@ public unsafe class FastObjectInteract : IDailyModule
     private static bool ConfigAllowRightClickToTarget;
     private static bool ConfigWindowInvisibleWhenInteract;
     private static float ConfigFontScale = 1f;
+    private static float ConfigMinButtonWidth = 300f;
     private static HashSet<string> ConfigBlacklistKeys = new();
     private static HashSet<ObjectKind> ConfigSelectedKinds = new();
 
-    private static bool IsResizeEnabled;
     private static string BlacklistKeyInput = string.Empty;
     private readonly List<ObjectWaitSelected> tempObjects = new(596);
     private readonly HashSet<float> distanceSet = new(596);
@@ -81,12 +82,14 @@ public unsafe class FastObjectInteract : IDailyModule
                                      ObjectKind.Aetheryte, ObjectKind.GatheringPoint
                                  });
         Service.Config.AddConfig(this, "BlacklistKeys", new HashSet<string>());
+        Service.Config.AddConfig(this, "MinButtonWidth", 300f);
 
         ConfigAllowRightClickToTarget = Service.Config.GetConfig<bool>(this, "AllowRightClickToTarget");
         ConfigWindowInvisibleWhenInteract = Service.Config.GetConfig<bool>(this, "WindowInvisibleWhenInteract");
         ConfigFontScale = Service.Config.GetConfig<float>(this, "FontScale");
         ConfigSelectedKinds = Service.Config.GetConfig<HashSet<ObjectKind>>(this, "SelectedKinds");
         ConfigBlacklistKeys = Service.Config.GetConfig<HashSet<string>>(this, "BlacklistKeys");
+        ConfigMinButtonWidth = Service.Config.GetConfig<float>(this, "MinButtonWidth");
 
         ValidENPC = [.. Service.ExcelData.ENpcResidents.Keys];
 
@@ -97,6 +100,7 @@ public unsafe class FastObjectInteract : IDailyModule
     {
         ImGui.AlignTextToFramePadding();
         ImGui.Text($"{Service.Lang.GetText("FastObjectInteract-FontScale")}:");
+
         ImGui.SameLine();
         ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
         if (ImGui.InputFloat("###FontScaleInput", ref ConfigFontScale, 0f, 0f, ConfigFontScale.ToString(),
@@ -104,6 +108,16 @@ public unsafe class FastObjectInteract : IDailyModule
         {
             ConfigFontScale = Math.Max(0.1f, ConfigFontScale);
             Service.Config.UpdateConfig(this, "FontScale", ConfigFontScale);
+        }
+
+        ImGui.AlignTextToFramePadding();
+        ImGui.Text($"{Service.Lang.GetText("FastObjectInteract-MinButtonWidth")}:");
+
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
+        if (ImGui.InputFloat("###MinButtonWidthInput", ref ConfigMinButtonWidth, 0, 0, ConfigMinButtonWidth.ToString(CultureInfo.InvariantCulture), ImGuiInputTextFlags.EnterReturnsTrue))
+        {
+            Service.Config.UpdateConfig(this, "MinButtonWidth", ConfigMinButtonWidth);
         }
 
         ImGui.AlignTextToFramePadding();
@@ -176,16 +190,6 @@ public unsafe class FastObjectInteract : IDailyModule
         if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-AllowRightClickToTarget"),
                            ref ConfigAllowRightClickToTarget))
             Service.Config.UpdateConfig(this, "AllowRightClickToTarget", ConfigAllowRightClickToTarget);
-
-        ImGui.Spacing();
-
-        if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-OverlayResizeMode"), ref IsResizeEnabled))
-        {
-            if (IsResizeEnabled)
-                Overlay.Flags &= ~ImGuiWindowFlags.AlwaysAutoResize;
-            else
-                Overlay.Flags |= ImGuiWindowFlags.AlwaysAutoResize;
-        }
     }
 
     public void OverlayUI()
@@ -230,7 +234,7 @@ public unsafe class FastObjectInteract : IDailyModule
         }
 
         ImGui.EndGroup();
-        WindowWidth = ImGui.GetItemRectSize().X;
+        WindowWidth = Math.Max(ConfigMinButtonWidth, ImGui.GetItemRectSize().X);
     }
 
     private void OnUpdate(Framework framework)

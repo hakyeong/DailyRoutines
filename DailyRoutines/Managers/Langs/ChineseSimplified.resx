@@ -570,8 +570,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="FastObjectInteract-FontScale" xml:space="preserve">
     <value>字体缩放倍数</value>
   </data>
-  <data name="FastObjectInteract-OverlayResizeMode" xml:space="preserve">
-    <value>悬浮窗大小调整模式</value>
+  <data name="FastObjectInteract-MinButtonWidth" xml:space="preserve">
+    <value>最短按钮长度</value>
   </data>
   <data name="FastObjectInteract-Remove" xml:space="preserve">
     <value>删除</value>
