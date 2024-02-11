@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using DailyRoutines.Infos;
 using Dalamud.Interface.Windowing;
