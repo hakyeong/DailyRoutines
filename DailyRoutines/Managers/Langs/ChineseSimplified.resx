@@ -120,6 +120,16 @@
   <data name="Auto" xml:space="preserve">
     <value>自动</value>
   </data>
+  <data name="AutoAntiCensorship-Preview" xml:space="preserve">
+    <value>反屏蔽预览 (发送消息):</value>
+  </data>
+  <data name="AutoAntiCensorshipDescription" xml:space="preserve">
+    <value>发送或显示消息时, 自动在屏蔽词内部加点, 或是将其转成拼音以防止屏蔽
+(模块与 StarlightBreaker, Chat 2 不相兼容) (请勿用于破坏游戏环境)</value>
+  </data>
+  <data name="AutoAntiCensorshipTitle" xml:space="preserve">
+    <value>自动反屏蔽词</value>
+  </data>
   <data name="AutoCACDescription" xml:space="preserve">
     <value>交互游戏机后, 自动开始重复游玩重击伽美什</value>
   </data>
