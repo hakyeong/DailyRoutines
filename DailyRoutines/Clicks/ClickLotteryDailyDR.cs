@@ -16,7 +16,7 @@ public class ClickLotteryDailyDR(nint addon = default) : ClickBase<ClickLotteryD
         ClickAddonCheckBox(button2, 2);
     }
 
-    public void Confirm() => FireCallback(2, 0);
+    public void Confirm(int index) => FireCallback(2, index);
 
     public void Exit() => FireCallback(-1);
 }

@@ -241,6 +241,7 @@ public unsafe class FastObjectInteract : IDailyModule
     {
         if (EzThrottler.Throttle("FastSelectObjects", 250))
         {
+            if (Service.ClientState.LocalPlayer == null) return;
             if (Service.Condition[ConditionFlag.BetweenAreas])
             {
                 ObjectsWaitSelected.Clear();

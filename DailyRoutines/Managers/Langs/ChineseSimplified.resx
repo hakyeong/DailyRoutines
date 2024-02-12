@@ -235,8 +235,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>自动标记风脉泉</value>
   </data>
   <data name="AutoMiniCactpotDescription" xml:space="preserve">
-    <value>进入仙人微彩界面后, 自动完成仙人微彩
-(不保证金碟币收益最大化)</value>
+    <value>进入仙人微彩界面后, 自动完成当日所有的仙人微彩
+(安装并启用了 ezMiniCactpot 则按照其推荐来点选, 未安装则随机点选)</value>
   </data>
   <data name="AutoMiniCactpotTitle" xml:space="preserve">
     <value>自动仙人微彩</value>
