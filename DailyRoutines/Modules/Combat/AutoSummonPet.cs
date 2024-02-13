@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using BattleChara = FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara;
 
 namespace DailyRoutines.Modules;
 
@@ -53,9 +55,9 @@ public class AutoSummonPet : IDailyModule
         if (!SummonActions.TryGetValue(job, out var actionID)) return true;
 
         if (IsOccupied()) return false;
-        var state = Service.ObjectTable
-                           .Where(x => x.OwnerId == Service.ClientState.LocalPlayer.ObjectId)
-                           .Any(obj => obj is BattleNpc { SubKind: (byte)BattleNpcSubKind.Pet });
+        var state = CharacterManager.Instance()->LookupPetByOwnerObject(
+            (BattleChara*)Service.ClientState.LocalPlayer.Address) != null;
+
         if (state) return true;
 
         return ActionManager.Instance()->UseAction(ActionType.Spell, actionID);
