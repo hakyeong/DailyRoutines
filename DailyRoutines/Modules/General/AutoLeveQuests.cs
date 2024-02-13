@@ -2,19 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ClickLib;
-using ClickLib.Clicks;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
-using DailyRoutines.Manager;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Interface;
 using ECommons.Automation;
-using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
-using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -27,13 +23,11 @@ public class AutoLeveQuests : IDailyModule
     public bool Initialized { get; set; }
     public bool WithConfigUI => true;
 
-    private static Dictionary<uint, (string, uint)> LeveQuests = [];
-    private static readonly HashSet<uint> QualifiedLeveCategories = [9, 10, 11, 12, 13, 14, 15, 16];
-
-    private static (uint, string, uint)? SelectedLeve; // Leve ID - Leve Name - Leve Job Category
-
     private static TaskManager? TaskManager;
+    private const string LeveAllowanceSig = "88 05 ?? ?? ?? ?? 0F B7 41 06";
 
+    private static Dictionary<uint, (string, uint)> LeveQuests = [];
+    private static (uint, string, uint)? SelectedLeve; // Leve ID - Leve Name - Leve Job Category
     private static uint LeveMeteDataId;
     private static uint LeveReceiverDataId;
     private static int Allowances;
@@ -58,7 +52,7 @@ public class AutoLeveQuests : IDailyModule
         if (ImGui.BeginCombo("##SelectedLeve",
                              SelectedLeve == null ? "" : $"{SelectedLeve.Value.Item1} | {SelectedLeve.Value.Item2}"))
         {
-            if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-GetAreaLeveData"))) GetRecentLeveQuests();
+            if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-GetAreaLeveData"))) GetMapLeveQuests();
 
             ImGui.SetNextItemWidth(-1f);
             ImGui.SameLine();
@@ -85,7 +79,8 @@ public class AutoLeveQuests : IDailyModule
         }
 
         ImGui.SameLine();
-        ImGui.BeginDisabled(SelectedLeve == null || LeveMeteDataId == LeveReceiverDataId || LeveMeteDataId == 0 || LeveReceiverDataId == 0);
+        ImGui.BeginDisabled(SelectedLeve == null || LeveMeteDataId == LeveReceiverDataId || LeveMeteDataId == 0 ||
+                            LeveReceiverDataId == 0);
         if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-Start")))
         {
             IsOnProcessing = true;
@@ -139,7 +134,7 @@ public class AutoLeveQuests : IDailyModule
         Click.SendClick("select_yes");
     }
 
-    private static void GetRecentLeveQuests()
+    private static void GetMapLeveQuests()
     {
         var currentTerritoryPlaceNameId = Service.Data.GetExcelSheet<TerritoryType>()
                                                  .FirstOrDefault(y => y.RowId == Service.ClientState.TerritoryType)?
@@ -149,11 +144,11 @@ public class AutoLeveQuests : IDailyModule
         {
             LeveQuests = Service.Data.GetExcelSheet<Leve>()
                                 .Where(x => !string.IsNullOrEmpty(x.Name.RawString) &&
-                                            QualifiedLeveCategories.Contains(x.ClassJobCategory.RawRow.RowId) &&
-                                            x.PlaceNameIssued.RawRow.RowId == currentTerritoryPlaceNameId.Value)
+                                            x.ClassJobCategory.RawRow.RowId is >= 9 and <= 16
+                                            && x.PlaceNameIssued.RawRow.RowId == currentTerritoryPlaceNameId.Value)
                                 .ToDictionary(x => x.RowId, x => (x.Name.RawString, x.ClassJobCategory.RawRow.RowId));
 
-            Service.Log.Debug($"Obtained {LeveQuests.Count} leve quests");
+            Service.Log.Debug($"成功获取了 {LeveQuests.Count} 个理符任务");
         }
     }
 
@@ -166,19 +161,10 @@ public class AutoLeveQuests : IDailyModule
     private static unsafe bool? InteractWithMete()
     {
         // 防止 "要继续交货吗"
-        if (TryGetAddonByName<AddonSelectString>("SelectString", out var addon) && IsAddonReady(&addon->AtkUnitBase))
+        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var i = 1;
-            for (; i < 8; i++)
-            {
-                var text =
-                    addon->PopupMenu.PopupMenu.List->AtkComponentBase.UldManager.NodeList[i]->GetAsAtkComponentNode()->
-                        Component->UldManager.NodeList[3]->GetAsAtkTextNode()->NodeText.ExtractText();
-                if (text.Contains("结束")) break;
-            }
-
-            var handler = new ClickSelectString();
-            handler.SelectItem((ushort)(i - 1));
+            if (HelpersOm.TryScanSelectStringText(addon, "结束", out var index))
+                Click.SendClick($"select_string{index + 1}");
         }
 
         if (IsOccupied()) return false;
@@ -195,26 +181,27 @@ public class AutoLeveQuests : IDailyModule
 
     private static unsafe bool FindObjectToInteractWith(uint dataId, out GameObject* foundObject)
     {
-        foreach (var obj in Service.ObjectTable.Where(o => o.DataId == dataId))
-            if (obj.IsTargetable)
-            {
-                foundObject = (GameObject*)obj.Address;
-                return true;
-            }
-
         foundObject = null;
+
+        var objAddress = Service.ObjectTable
+                                .FirstOrDefault(x => x.DataId == dataId && x.IsTargetable).Address;
+        if (objAddress != nint.Zero)
+        {
+            foundObject = (GameObject*)objAddress;
+            return true;
+        }
+
         return false;
     }
 
     private static unsafe bool? ClickCraftingLeve()
     {
-        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var handler = new ClickSelectString();
-            handler.SelectItem2();
+            if (HelpersOm.TryScanSelectStringText(addon, "制作", out var index))
+                Click.SendClick($"select_string{index + 1}");
 
             TaskManager.Enqueue(ClickLeveQuest);
-
             return true;
         }
 
@@ -224,27 +211,16 @@ public class AutoLeveQuests : IDailyModule
     private static unsafe bool? ClickLeveQuest()
     {
         if (SelectedLeve == null) return false;
-        if (TryGetAddonByName<AddonGuildLeve>("GuildLeve", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
+        Allowances = *(byte*)Service.SigScanner.GetStaticAddressFromSig(LeveAllowanceSig);
+        if (Allowances <= 0) EndProcessHandler();
+
+        if (TryGetAddonByName<AtkUnitBase>("JournalDetail", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            Allowances =
-                int.TryParse(
-                    addon->AtkComponentBase290->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText.ExtractText(),
-                    out var result)
-                    ? result
-                    : 0;
-            if (Allowances <= 0) EndProcessHandler();
+            var handler = new ClickJournalDetailDR();
+            handler.Accept((int)SelectedLeve.Value.Item1);
 
-            if (TryGetAddonByName<AddonJournalDetail>("JournalDetail", out var addon1) &&
-                HelpersOm.IsAddonAndNodesReady(&addon1->AtkUnitBase))
-            {
-                var handler2 = new ClickJournalDetailDR();
-                handler2.Accept((int)SelectedLeve.Value.Item1);
-
-                TaskManager.Enqueue(ClickExit);
-
-                return true;
-            }
+            TaskManager.Enqueue(ClickExit);
+            return true;
         }
 
         return false;
@@ -252,17 +228,14 @@ public class AutoLeveQuests : IDailyModule
 
     internal static unsafe bool? ClickExit()
     {
-        if (TryGetAddonByName<AddonGuildLeve>("GuildLeve", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
+        if (TryGetAddonByName<AtkUnitBase>("GuildLeve", out var addon) &&
+            HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var ui = &addon->AtkUnitBase;
             var handler = new ClickGuildLeveDR();
             handler.Exit();
+            addon->Close(true);
 
             TaskManager.Enqueue(ClickSelectStringExit);
-
-            ui->Close(true);
-
             return true;
         }
 
@@ -272,25 +245,13 @@ public class AutoLeveQuests : IDailyModule
     private static unsafe bool? ClickSelectStringExit()
     {
         if (SelectedLeve == null) return false;
-        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var i = 1;
-            for (; i < 8; i++)
-            {
-                var text =
-                    ((AddonSelectString*)addon)->PopupMenu.PopupMenu.List->AtkComponentBase.UldManager.NodeList[i]->
-                    GetAsAtkComponentNode()->
-                    Component->UldManager.NodeList[3]->GetAsAtkTextNode()->NodeText.ExtractText();
-                if (text.Contains("取消")) break;
-            }
-
-            var handler = new ClickSelectString();
-            handler.SelectItem((ushort)(i - 1));
-
-            TaskManager.Enqueue(InteractWithReceiver);
+            if (HelpersOm.TryScanSelectStringText(addon, "取消", out var index))
+                Click.SendClick($"select_string{index + 1}");
 
             addon->Close(true);
+            TaskManager.Enqueue(InteractWithReceiver);
 
             return true;
         }
@@ -305,16 +266,14 @@ public class AutoLeveQuests : IDailyModule
         {
             TargetSystem.Instance()->InteractWithObject(foundObject);
 
-            // 判断当前是否有多个待提交理符
             var levesSpan = QuestManager.Instance()->LeveQuestsSpan;
             var qualifiedCount = 0;
 
             for (var i = 0; i < levesSpan.Length; i++)
-                if (LeveQuests.ContainsKey(levesSpan[i].LeveId))
+                if (LeveQuests.ContainsKey(levesSpan[i].LeveId)) // 判断是否为当前地图的理符
                     qualifiedCount++;
 
             TaskManager.Enqueue(qualifiedCount > 1 ? ClickSelectQuest : InteractWithMete);
-
             return true;
         }
 
@@ -324,20 +283,10 @@ public class AutoLeveQuests : IDailyModule
     private static unsafe bool? ClickSelectQuest()
     {
         if (SelectedLeve == null) return false;
-        if (TryGetAddonByName<AddonSelectIconString>("SelectIconString", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
+        if (TryGetAddonByName<AtkUnitBase>("SelectIconString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var i = 1;
-            for (; i < 8; i++)
-            {
-                var text =
-                    addon->PopupMenu.PopupMenu.List->AtkComponentBase.UldManager.NodeList[i]->GetAsAtkComponentNode()->
-                        Component->UldManager.NodeList[4]->GetAsAtkTextNode()->NodeText.ExtractText();
-                if (text == SelectedLeve.Value.Item2) break;
-            }
-
-            var handler = new ClickSelectIconString();
-            handler.SelectItem((ushort)(i - 1));
+            if (HelpersOm.TryScanSelectIconStringText(addon, SelectedLeve.Value.Item2, out var index))
+                Click.SendClick($"select_icon_string{index + 1}");
 
             TaskManager.Enqueue(InteractWithMete);
             return true;
