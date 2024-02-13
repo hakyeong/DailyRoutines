@@ -2,11 +2,11 @@ using ClickLib;
 using ClickLib.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using Dalamud.Game;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Interface.Internal.Notifications;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -14,7 +14,7 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoRetainerCollectTitle", "AutoRetainerCollectDescription", ModuleCategories.Retainer)]
-public class AutoRetainerCollect : IDailyModule
+public unsafe class AutoRetainerCollect : IDailyModule
 {
     public bool Initialized { get; set; }
     public bool WithConfigUI => true;
@@ -29,6 +29,7 @@ public class AutoRetainerCollect : IDailyModule
 
         Initialized = true;
     }
+
     public void ConfigUI()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
@@ -36,21 +37,22 @@ public class AutoRetainerCollect : IDailyModule
 
     public void OverlayUI() { }
 
-    private static void OnUpdate(Dalamud.Game.Framework framework)
+    private static void OnUpdate(Framework framework)
     {
         if (!TaskManager.IsBusy) return;
 
         if (Service.KeyState[Service.Config.ConflictKey])
         {
             TaskManager.Abort();
-            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"), "Daily Routines", NotificationType.Success);
+            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"),
+                                                        "Daily Routines", NotificationType.Success);
         }
     }
 
-    private static unsafe void OnRetainerList(AddonEvent type, AddonArgs args)
+    private static void OnRetainerList(AddonEvent type, AddonArgs args)
     {
         var retainerManager = RetainerManager.Instance();
-        var serverTime = Framework.GetServerTime();
+        var serverTime = FFXIVClientStructs.FFXIV.Client.System.Framework.Framework.GetServerTime();
         for (var i = 0; i < 10; i++)
         {
             var retainerState = retainerManager->GetRetainerBySortedIndex((uint)i)->VentureComplete;
@@ -65,19 +67,14 @@ public class AutoRetainerCollect : IDailyModule
 
     private static void EnqueueSingleRetainer(int index)
     {
-        // 点击指定雇员
         TaskManager.Enqueue(() => ClickSpecificRetainer(index));
-        // 点击查看探险情况
         TaskManager.Enqueue(CheckVentureState);
-        // 重新派遣
-        TaskManager.Enqueue(ClickVentureReassign);
-        // 确认派遣
-        TaskManager.Enqueue(ClickVentureConfirm);
-        // 回到雇员列表
-        TaskManager.Enqueue(() => Click.TrySendClick("select_string13"));
+        TaskManager.Enqueue(() => Click.TrySendClick("retainer_venture_result_reassign"));
+        TaskManager.Enqueue(() => Click.TrySendClick("retainer_venture_ask_assign"));
+        TaskManager.Enqueue(ReturnToRetainerList);
     }
 
-    private static unsafe bool? ClickSpecificRetainer(int index)
+    private static bool? ClickSpecificRetainer(int index)
     {
         if (TryGetAddonByName<AddonRetainerList>("RetainerList", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
@@ -90,44 +87,36 @@ public class AutoRetainerCollect : IDailyModule
         return false;
     }
 
-    internal static unsafe bool? CheckVentureState()
+    private static bool? CheckVentureState()
     {
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
         {
-            var text = addon->UldManager.NodeList[2]->GetAsAtkComponentNode()->Component->UldManager.NodeList[6]->
-                               GetAsAtkComponentNode()->Component->UldManager.NodeList[3]->GetAsAtkTextNode()->NodeText.ExtractText().Trim();
-            if (string.IsNullOrEmpty(text) || text.Contains('～'))
+            if (!HelpersOm.TryScanSelectStringText(addon, "返回", out var returnIndex) ||
+                !HelpersOm.TryScanSelectStringText(addon, "结束", out var index))
             {
-                TaskManager?.Abort();
-                TaskManager.Enqueue(() => Click.TrySendClick("select_string13"));
+                TaskManager.Abort();
+                if (returnIndex != -1) TaskManager.Enqueue(() => Click.TrySendClick($"select_string{returnIndex + 1}"));
+
                 return true;
             }
 
-            if (Click.TrySendClick("select_string6")) return true;
+            if (Click.TrySendClick($"select_string{index + 1}")) return true;
         }
 
         return false;
     }
 
-    private static unsafe bool? ClickVentureReassign()
+    private static bool? ReturnToRetainerList()
     {
-        if (TryGetAddonByName<AddonRetainerTaskResult>("RetainerTaskResult", out var addon) &&
-            IsAddonReady(&addon->AtkUnitBase))
+        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
         {
-            if (Click.TrySendClick("retainer_venture_result_reassign"))
+            if (!HelpersOm.TryScanSelectStringText(addon, "返回", out var index))
+            {
+                TaskManager.Abort();
                 return true;
-        }
+            }
 
-        return false;
-    }
-
-    private static unsafe bool? ClickVentureConfirm()
-    {
-        if (TryGetAddonByName<AddonRetainerTaskAsk>("RetainerTaskAsk", out var addon) &&
-            IsAddonReady(&addon->AtkUnitBase))
-        {
-            if (Click.TrySendClick("retainer_venture_ask_assign"))
-                return true;
+            if (Click.TrySendClick($"select_string{index + 1}")) return true;
         }
 
         return false;
