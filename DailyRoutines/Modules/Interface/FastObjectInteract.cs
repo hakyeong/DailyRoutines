@@ -323,8 +323,9 @@ public unsafe class FastObjectInteract : IDailyModule
     {
         return kind switch
         {
+            ObjectKind.EventObj => distance <= 4,
             ObjectKind.EventNpc => distance <= 6.5,
-            ObjectKind.Aetheryte => distance <= 13,
+            ObjectKind.Aetheryte => distance <= 9.5,
             _ => distance <= 2.6
         };
     }
