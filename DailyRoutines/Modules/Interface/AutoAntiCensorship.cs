@@ -25,13 +25,21 @@ public unsafe class AutoAntiCensorship : IDailyModule
 
     private nint VulgarInstance = nint.Zero;
 
-    public delegate void FilterSeStringDelegate(nint vulgarInstance, ref Utf8String utf8String);
-    [Signature("E8 ?? ?? ?? ?? 48 8B C3 48 83 C4 ?? 5B C3 CC CC CC CC CC CC CC 48 83 EC", DetourName = nameof(FilterSeString))]
-    public Hook<FilterSeStringDelegate>? FilterSeStringCheckHook;
+    [Signature("E8 ?? ?? ?? ?? 48 8B C3 48 83 C4 ?? 5B C3 CC CC CC CC CC CC CC 48 83 EC")]
+    public readonly delegate* unmanaged <nint, Utf8String*, void> FilterSeStringCheck; // nint - Utf8String*
 
     public delegate bool CensorshipCheckDelegate(nint vulgarInstance, Utf8String utf8String);
     [Signature("E8 ?? ?? ?? ?? 84 C0 74 16 48 8D 15 ?? ?? ?? ??", DetourName = nameof(CensorshipCheck))]
     public Hook<CensorshipCheckDelegate>? CensorshipCheckHook;
+
+    public delegate long LocalMessageDelegate(long a1, long a2);
+    [Signature("40 53 48 83 EC ?? 48 8D 99 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 48 8B 0D", DetourName = nameof(LocalMessageDetour))]
+    public Hook<LocalMessageDelegate>? LocalMessageDisplayHook;
+
+    [Signature("E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? 48 8B 89 ?? ?? ?? ?? 48 85 C9 74 ?? 48 8B D3 E8 ?? ?? ?? ?? 48 8B C3")]
+    public readonly delegate* unmanaged <long, long, long> LocalMessageHandler;
+
+    private const string CancelCheckSig = "48 8B 89 ?? ?? ?? ?? 48 85 C9 74 ?? 48 8B D3 E8 ?? ?? ?? ?? 48 8B C3";
 
     private const string AutoTranslateLeft = "\u0002\u0012\u00027\u0003";
     private const string AutoTranslateRight = "\u0002\u0012\u00028\u0003";
@@ -39,8 +47,9 @@ public unsafe class AutoAntiCensorship : IDailyModule
     public void Init()
     {
         SignatureHelper.Initialise(this);
-        FilterSeStringCheckHook?.Enable();
+
         CensorshipCheckHook?.Enable();
+        LocalMessageDisplayHook?.Enable();
         VulgarInstance = Marshal.ReadIntPtr((nint)Framework.Instance() + 0x2B40);
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "ChatLog", OnAddonUpdate);
@@ -71,6 +80,11 @@ public unsafe class AutoAntiCensorship : IDailyModule
     }
 
     public void OverlayUI() { }
+
+    private long LocalMessageDetour(long a1, long a2)
+    {
+        return LocalMessageHandler(a1 + 1096, a2);
+    }
 
     private void OnAddonUpdate(AddonEvent type, AddonArgs args)
     {
@@ -172,22 +186,9 @@ public unsafe class AutoAntiCensorship : IDailyModule
     private string GetFilteredString(string str)
     {
         var utf8String = Utf8String.FromString(str);
-        FilterSeStringCheckHook.Original(VulgarInstance, ref *utf8String);
+        FilterSeStringCheck(VulgarInstance, utf8String);
+
         return (*utf8String).ToString();
-    }
-
-    private void FilterSeString(nint vulgarInstance, ref Utf8String utf8String)
-    {
-        var origString = utf8String.ToString();
-        var filteredString = GetFilteredString(origString);
-
-        if (filteredString != origString)
-        {
-            var handledString = BypassCensorship(origString);
-            utf8String.SetString(handledString);
-        }
-
-        FilterSeStringCheckHook.Original(vulgarInstance, ref utf8String);
     }
 
     private bool CensorshipCheck(nint vulgarInstance, Utf8String utf8String)
@@ -197,7 +198,7 @@ public unsafe class AutoAntiCensorship : IDailyModule
 
     public void Uninit()
     {
-        FilterSeStringCheckHook?.Dispose();
+        LocalMessageDisplayHook?.Dispose();
         CensorshipCheckHook?.Dispose();
         Service.AddonLifecycle.UnregisterListener(OnAddonUpdate);
     }
