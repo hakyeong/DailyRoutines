@@ -33,6 +33,9 @@ public unsafe class AutoAntiCensorship : IDailyModule
     [Signature("E8 ?? ?? ?? ?? 84 C0 74 16 48 8D 15 ?? ?? ?? ??", DetourName = nameof(CensorshipCheck))]
     public Hook<CensorshipCheckDelegate>? CensorshipCheckHook;
 
+    private const string AutoTranslateLeft = "\u0002\u0012\u00027\u0003";
+    private const string AutoTranslateRight = "\u0002\u0012\u00028\u0003";
+
     public void Init()
     {
         SignatureHelper.Initialise(this);
@@ -71,14 +74,30 @@ public unsafe class AutoAntiCensorship : IDailyModule
 
     private void OnAddonUpdate(AddonEvent type, AddonArgs args)
     {
+        var units = AtkStage.GetSingleton()->RaptureAtkUnitManager->AtkUnitManager.FocusedUnitsList;
+        var count = units.Count;
+        if (count == 0) return;
+
+        var isChatLogFocused = false;
+        for (var i = 0; i < count; i++)
+        {
+            if (Marshal.PtrToStringUTF8((nint)units.AtkUnitEntries[i].Name) != "ChatLog") continue;
+            isChatLogFocused = true;
+        }
+        if (!isChatLogFocused) return;
+
         var addon = (AtkUnitBase*)args.Addon;
         var textInput = (AtkComponentTextInput*)addon->GetComponentNodeById(5);
-        var text = Marshal.PtrToStringUTF8((nint)textInput->AtkComponentInputBase.UnkText1.StringPtr);
-        if (string.IsNullOrWhiteSpace(text)) return;
-        if (text.StartsWith('/')) return;
 
-        var handledText = BypassCensorship(text);
+        var text1 = Marshal.PtrToStringUTF8((nint)textInput->AtkComponentInputBase.UnkText1.StringPtr);
+        if (string.IsNullOrWhiteSpace(text1) || text1.StartsWith('/')) return;
+
+        var text2 = Marshal.PtrToStringUTF8((nint)textInput->AtkComponentInputBase.UnkText2.StringPtr);
+        if (text2.Contains(AutoTranslateLeft)) return;
+
+        var handledText = BypassCensorship(text1);
         textInput->AtkComponentInputBase.UnkText1 = *Utf8String.FromString(handledText);
+        textInput->AtkComponentInputBase.UnkText2 = *Utf8String.FromString(handledText);
     }
 
     private string BypassCensorship(string text)
