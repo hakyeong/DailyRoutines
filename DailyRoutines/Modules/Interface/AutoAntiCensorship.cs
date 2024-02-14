@@ -93,6 +93,7 @@ public unsafe class AutoAntiCensorship : IDailyModule
 
             var i = 0;
             while (i < processedText.Length)
+            {
                 if (processedText[i] == '*')
                 {
                     isCensored = true;
@@ -101,21 +102,27 @@ public unsafe class AutoAntiCensorship : IDailyModule
                     while (i < processedText.Length && processedText[i] == '*') i++;
 
                     var length = i - start;
-                    // 单个汉字
                     if (length == 1 && IsChineseCharacter(text[start]))
                     {
                         var pinyin = PinyinHelper.GetPinyin(text[start].ToString()).ToLower();
-                        var screenedPinyin = GetFilteredString(pinyin);
-                        tempResult.Append(pinyin != screenedPinyin ? InsertDots(pinyin) : pinyin);
+                        var filteredPinyin = GetFilteredString(pinyin);
+                        tempResult.Append(pinyin != filteredPinyin ? InsertDots(pinyin) : pinyin);
                     }
-                    else // 汉字词或英文
-                        tempResult.Append(InsertDots(text.Substring(start, length)));
+                    else
+                    {
+                        for (var j = 0; j < length; j++)
+                        {
+                            tempResult.Append(text[start + j]);
+                            if (j < length - 1) tempResult.Append('.');
+                        }
+                    }
                 }
                 else
                 {
                     tempResult.Append(text[i]);
                     i++;
                 }
+            }
 
             text = tempResult.ToString();
         }
@@ -153,8 +160,14 @@ public unsafe class AutoAntiCensorship : IDailyModule
     private void FilterSeString(nint vulgarInstance, ref Utf8String utf8String)
     {
         var origString = utf8String.ToString();
-        var handledString = BypassCensorship(origString);
-        utf8String.SetString(handledString);
+        var filteredString = GetFilteredString(origString);
+
+        if (filteredString != origString)
+        {
+            var handledString = BypassCensorship(origString);
+            utf8String.SetString(handledString);
+        }
+
         FilterSeStringCheckHook.Original(vulgarInstance, ref utf8String);
     }
 
