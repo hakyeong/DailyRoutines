@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Text.RegularExpressions;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
@@ -19,7 +20,7 @@ using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("FastObjectInteractTitle", "FastObjectInteractDescription", ModuleCategories.Interface)]
-public unsafe class FastObjectInteract : IDailyModule
+public unsafe partial class FastObjectInteract : IDailyModule
 {
     public bool Initialized { get; set; }
     public bool WithConfigUI => true;
@@ -33,10 +34,11 @@ public unsafe class FastObjectInteract : IDailyModule
         public float Distance { get; set; } = distance;
     }
 
-    private static bool ConfigAllowRightClickToTarget;
+    private static bool ConfigAllowClickToTarget;
     private static bool ConfigWindowInvisibleWhenInteract;
     private static float ConfigFontScale = 1f;
     private static float ConfigMinButtonWidth = 300f;
+    private static int ConfigMaxDisplayAmount = 5;
     private static HashSet<string> ConfigBlacklistKeys = new();
     private static HashSet<ObjectKind> ConfigSelectedKinds = new();
 
@@ -72,7 +74,8 @@ public unsafe class FastObjectInteract : IDailyModule
         Overlay.Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize |
                         ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoCollapse;
 
-        Service.Config.AddConfig(this, "AllowRightClickToTarget", false);
+        Service.Config.AddConfig(this, "MaxDisplayAmount", 5);
+        Service.Config.AddConfig(this, "AllowClickToTarget", false);
         Service.Config.AddConfig(this, "WindowInvisibleWhenInteract", true);
         Service.Config.AddConfig(this, "FontScale", 1f);
         Service.Config.AddConfig(this, "SelectedKinds",
@@ -84,7 +87,8 @@ public unsafe class FastObjectInteract : IDailyModule
         Service.Config.AddConfig(this, "BlacklistKeys", new HashSet<string>());
         Service.Config.AddConfig(this, "MinButtonWidth", 300f);
 
-        ConfigAllowRightClickToTarget = Service.Config.GetConfig<bool>(this, "AllowRightClickToTarget");
+        ConfigMaxDisplayAmount = Service.Config.GetConfig<int>(this, "MaxDisplayAmount");
+        ConfigAllowClickToTarget = Service.Config.GetConfig<bool>(this, "AllowClickToTarget");
         ConfigWindowInvisibleWhenInteract = Service.Config.GetConfig<bool>(this, "WindowInvisibleWhenInteract");
         ConfigFontScale = Service.Config.GetConfig<float>(this, "FontScale");
         ConfigSelectedKinds = Service.Config.GetConfig<HashSet<ObjectKind>>(this, "SelectedKinds");
@@ -117,7 +121,19 @@ public unsafe class FastObjectInteract : IDailyModule
         ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
         if (ImGui.InputFloat("###MinButtonWidthInput", ref ConfigMinButtonWidth, 0, 0, ConfigMinButtonWidth.ToString(CultureInfo.InvariantCulture), ImGuiInputTextFlags.EnterReturnsTrue))
         {
+            ConfigMinButtonWidth = Math.Max(1, ConfigMinButtonWidth);
             Service.Config.UpdateConfig(this, "MinButtonWidth", ConfigMinButtonWidth);
+        }
+
+        ImGui.AlignTextToFramePadding();
+        ImGui.Text($"{Service.Lang.GetText("FastObjectInteract-MaxDisplayAmount")}:");
+
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
+        if (ImGui.InputInt("###MaxDisplayAmountInput", ref ConfigMaxDisplayAmount, 0, 0, ImGuiInputTextFlags.EnterReturnsTrue))
+        {
+            ConfigMaxDisplayAmount = Math.Max(1, ConfigMaxDisplayAmount);
+            Service.Config.UpdateConfig(this, "MaxDisplayAmount", ConfigMaxDisplayAmount);
         }
 
         ImGui.AlignTextToFramePadding();
@@ -153,15 +169,14 @@ public unsafe class FastObjectInteract : IDailyModule
                              Service.Lang.GetText("FastObjectInteract-BlacklistKeysListAmount",
                                                   ConfigBlacklistKeys.Count), ImGuiComboFlags.HeightLarge))
         {
-            ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
-            ImGui.InputText("###BlacklistKeyInput", ref BlacklistKeyInput, 100);
+            ImGui.SetNextItemWidth(250f * ImGuiHelpers.GlobalScale);
+            ImGui.InputTextWithHint("###BlacklistKeyInput", $"{Service.Lang.GetText("FastObjectInteract-BlacklistKeysListInputHelp")}", ref BlacklistKeyInput, 100);
             ImGui.SameLine();
             if (ImGuiOm.ButtonIcon("###BlacklistKeyInputAdd", FontAwesomeIcon.Plus,
                                    Service.Lang.GetText("FastObjectInteract-Add")))
             {
-                if (ConfigBlacklistKeys.Contains(BlacklistKeyInput, StringComparer.OrdinalIgnoreCase)) return;
+                if (!ConfigBlacklistKeys.Add(BlacklistKeyInput)) return;
 
-                ConfigBlacklistKeys.Add(BlacklistKeyInput);
                 Service.Config.UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
             }
 
@@ -187,9 +202,9 @@ public unsafe class FastObjectInteract : IDailyModule
                            ref ConfigWindowInvisibleWhenInteract))
             Service.Config.UpdateConfig(this, "WindowInvisibleWhenInteract", ConfigWindowInvisibleWhenInteract);
 
-        if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-AllowRightClickToTarget"),
-                           ref ConfigAllowRightClickToTarget))
-            Service.Config.UpdateConfig(this, "AllowRightClickToTarget", ConfigAllowRightClickToTarget);
+        if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-AllowClickToTarget"),
+                           ref ConfigAllowClickToTarget))
+            Service.Config.UpdateConfig(this, "AllowClickToTarget", ConfigAllowClickToTarget);
     }
 
     public void OverlayUI()
@@ -200,9 +215,8 @@ public unsafe class FastObjectInteract : IDailyModule
         {
             if (kvp.Value.GameObject == null) continue;
             var interactState = CanInteract(kvp.Value.Kind, kvp.Value.Distance);
-            var buttonLabel = $"{kvp.Value.Name}###{kvp.Key}";
 
-            if (ConfigAllowRightClickToTarget)
+            if (ConfigAllowClickToTarget)
             {
                 if (!interactState)
                 {
@@ -219,9 +233,21 @@ public unsafe class FastObjectInteract : IDailyModule
                     ImGui.PopStyleVar();
                 }
 
+                if (ImGui.BeginPopupContextItem($"{kvp.Value.Name}"))
+                {
+                    if (ImGui.MenuItem(Service.Lang.GetText("FastObjectInteract-AddToBlacklist")))
+                    {
+                        if (!ConfigBlacklistKeys.Add(AddToBlacklistNameRegex().Replace(kvp.Value.Name, "").Trim())) return;
+                        Service.Config.UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
+                    }
+                    ImGui.EndPopup();
+                }
+
                 if (ImGui.IsItemClicked(ImGuiMouseButton.Left) && interactState)
-                    InteractWithObject(kvp.Value.GameObject, kvp.Value.Kind);
-                else if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                {
+                    if (interactState) InteractWithObject(kvp.Value.GameObject, kvp.Value.Kind);
+                }
+                else if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
                     TargetSystem.Instance()->Target = kvp.Value.GameObject;
             }
             else
@@ -229,6 +255,17 @@ public unsafe class FastObjectInteract : IDailyModule
                 ImGui.BeginDisabled(!interactState);
                 if (ButtonText(kvp.Key.ToString(), kvp.Value.Name))
                     InteractWithObject(kvp.Value.GameObject, kvp.Value.Kind);
+
+                if (ImGui.BeginPopupContextItem($"{kvp.Value.Name}"))
+                {
+                    if (ImGui.MenuItem(Service.Lang.GetText("FastObjectInteract-AddToBlacklist")))
+                    {
+                        if (!ConfigBlacklistKeys.Add(Regex.Replace(kvp.Value.Name, @"\[.*?\]", "").Trim())) return;
+                        Service.Config.UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
+                    }
+                    ImGui.EndPopup();
+                }
+
                 ImGui.EndDisabled();
             }
         }
@@ -265,7 +302,7 @@ public unsafe class FastObjectInteract : IDailyModule
                 if (objKind == ObjectKind.EventNpc && !ValidENPC.Contains(obj.DataId)) continue;
 
                 var objName = obj.Name.ExtractText();
-                if (ConfigBlacklistKeys.Any(x => objName.Contains(x, StringComparison.OrdinalIgnoreCase))) continue;
+                if (ConfigBlacklistKeys.Contains(objName)) continue;
 
                 var gameObj = (GameObject*)obj.Address;
                 var objDistance = HelpersOm.GetGameDistanceFromObject(localPlayer, gameObj);
@@ -283,11 +320,13 @@ public unsafe class FastObjectInteract : IDailyModule
                     var stringBuilder = new StringBuilder();
                     stringBuilder.Append('[');
                     stringBuilder.Append(ENPCTitle);
-                    stringBuilder.Append("] ");
+                    stringBuilder.Append(']');
+                    stringBuilder.Append(' ');
                     stringBuilder.Append(obj.Name);
                     objName = stringBuilder.ToString();
                 }
 
+                if (tempObjects.Count > ConfigMaxDisplayAmount) break;
                 tempObjects.Add(new ObjectWaitSelected(gameObj, objName, objKind, adjustedDistance));
             }
 
@@ -339,11 +378,11 @@ public unsafe class FastObjectInteract : IDailyModule
 
         var cursorPos = ImGui.GetCursorScreenPos();
         var padding = ImGui.GetStyle().FramePadding;
-        var buttonWidth = Math.Max(WindowWidth, textSize.X + (padding.X * 2));
-        var result = ImGui.Button(string.Empty, new Vector2(buttonWidth, textSize.Y + (padding.Y * 2)));
+        var buttonWidth = Math.Max(WindowWidth, textSize.X + padding.X * 2);
+        var result = ImGui.Button(string.Empty, new Vector2(buttonWidth, textSize.Y + padding.Y * 2));
 
         ImGui.GetWindowDrawList()
-             .AddText(new Vector2(cursorPos.X + ((buttonWidth - textSize.X) / 2), cursorPos.Y + padding.Y),
+             .AddText(new Vector2(cursorPos.X + (buttonWidth - textSize.X) / 2, cursorPos.Y + padding.Y),
                       ImGui.GetColorU32(ImGuiCol.Text), text);
         ImGui.SetWindowFontScale(1);
         ImGui.PopID();
@@ -359,4 +398,7 @@ public unsafe class FastObjectInteract : IDailyModule
         Service.Framework.Update -= OnUpdate;
         ObjectsWaitSelected.Clear();
     }
+
+    [GeneratedRegex("\\[.*?\\]")]
+    private static partial Regex AddToBlacklistNameRegex();
 }

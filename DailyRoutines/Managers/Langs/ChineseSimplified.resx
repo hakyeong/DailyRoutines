@@ -568,8 +568,11 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="FastObjectInteract-Add" xml:space="preserve">
     <value>添加</value>
   </data>
-  <data name="FastObjectInteract-AllowRightClickToTarget" xml:space="preserve">
-    <value>允许右键按钮以选中目标</value>
+  <data name="FastObjectInteract-AddToBlacklist" xml:space="preserve">
+    <value>添加至黑名单</value>
+  </data>
+  <data name="FastObjectInteract-AllowClickToTarget" xml:space="preserve">
+    <value>允许单击按钮以选中目标</value>
   </data>
   <data name="FastObjectInteract-BlacklistKeysList" xml:space="preserve">
     <value>黑名单文本列表</value>
@@ -577,8 +580,14 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="FastObjectInteract-BlacklistKeysListAmount" xml:space="preserve">
     <value>已存在 {0} 个关键词</value>
   </data>
+  <data name="FastObjectInteract-BlacklistKeysListInputHelp" xml:space="preserve">
+    <value>请输入关键词, 要求完全匹配</value>
+  </data>
   <data name="FastObjectInteract-FontScale" xml:space="preserve">
     <value>字体缩放倍数</value>
+  </data>
+  <data name="FastObjectInteract-MaxDisplayAmount" xml:space="preserve">
+    <value>最多同时显示个数</value>
   </data>
   <data name="FastObjectInteract-MinButtonWidth" xml:space="preserve">
     <value>最短按钮长度</value>
