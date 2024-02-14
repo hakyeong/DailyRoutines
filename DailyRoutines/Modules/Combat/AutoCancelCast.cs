@@ -30,7 +30,7 @@ public unsafe class AutoCancelCast : IDailyModule
     {
         SignatureHelper.Initialise(this);
         Service.Condition.ConditionChange += OnConditionChanged;
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = true };
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
         TargetAreaActions ??= Service.ExcelData.Actions.Where(x => x.Value.TargetArea).Select(x => x.Key).ToHashSet();
     }

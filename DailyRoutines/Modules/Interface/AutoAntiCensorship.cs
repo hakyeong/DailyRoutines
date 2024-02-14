@@ -75,7 +75,7 @@ public unsafe class AutoAntiCensorship : IDailyModule
         var textInput = (AtkComponentTextInput*)addon->GetComponentNodeById(5);
         var text = Marshal.PtrToStringUTF8((nint)textInput->AtkComponentInputBase.UnkText1.StringPtr);
         if (string.IsNullOrWhiteSpace(text)) return;
-        if (text.Contains('/')) return;
+        if (text.StartsWith('/')) return;
 
         var handledText = BypassCensorship(text);
         textInput->AtkComponentInputBase.UnkText1 = *Utf8String.FromString(handledText);
