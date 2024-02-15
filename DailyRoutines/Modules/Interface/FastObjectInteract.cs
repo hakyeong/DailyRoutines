@@ -119,7 +119,9 @@ public unsafe partial class FastObjectInteract : IDailyModule
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputFloat("###MinButtonWidthInput", ref ConfigMinButtonWidth, 0, 0, ConfigMinButtonWidth.ToString(CultureInfo.InvariantCulture), ImGuiInputTextFlags.EnterReturnsTrue))
+        if (ImGui.InputFloat("###MinButtonWidthInput", ref ConfigMinButtonWidth, 0, 0,
+                             ConfigMinButtonWidth.ToString(CultureInfo.InvariantCulture),
+                             ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigMinButtonWidth = Math.Max(1, ConfigMinButtonWidth);
             Service.Config.UpdateConfig(this, "MinButtonWidth", ConfigMinButtonWidth);
@@ -130,7 +132,8 @@ public unsafe partial class FastObjectInteract : IDailyModule
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputInt("###MaxDisplayAmountInput", ref ConfigMaxDisplayAmount, 0, 0, ImGuiInputTextFlags.EnterReturnsTrue))
+        if (ImGui.InputInt("###MaxDisplayAmountInput", ref ConfigMaxDisplayAmount, 0, 0,
+                           ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigMaxDisplayAmount = Math.Max(1, ConfigMaxDisplayAmount);
             Service.Config.UpdateConfig(this, "MaxDisplayAmount", ConfigMaxDisplayAmount);
@@ -170,7 +173,9 @@ public unsafe partial class FastObjectInteract : IDailyModule
                                                   ConfigBlacklistKeys.Count), ImGuiComboFlags.HeightLarge))
         {
             ImGui.SetNextItemWidth(250f * ImGuiHelpers.GlobalScale);
-            ImGui.InputTextWithHint("###BlacklistKeyInput", $"{Service.Lang.GetText("FastObjectInteract-BlacklistKeysListInputHelp")}", ref BlacklistKeyInput, 100);
+            ImGui.InputTextWithHint("###BlacklistKeyInput",
+                                    $"{Service.Lang.GetText("FastObjectInteract-BlacklistKeysListInputHelp")}",
+                                    ref BlacklistKeyInput, 100);
             ImGui.SameLine();
             if (ImGuiOm.ButtonIcon("###BlacklistKeyInputAdd", FontAwesomeIcon.Plus,
                                    Service.Lang.GetText("FastObjectInteract-Add")))
@@ -237,9 +242,11 @@ public unsafe partial class FastObjectInteract : IDailyModule
                 {
                     if (ImGui.MenuItem(Service.Lang.GetText("FastObjectInteract-AddToBlacklist")))
                     {
-                        if (!ConfigBlacklistKeys.Add(AddToBlacklistNameRegex().Replace(kvp.Value.Name, "").Trim())) return;
+                        if (!ConfigBlacklistKeys.Add(AddToBlacklistNameRegex().Replace(kvp.Value.Name, "").Trim()))
+                            return;
                         Service.Config.UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
                     }
+
                     ImGui.EndPopup();
                 }
 
@@ -263,6 +270,7 @@ public unsafe partial class FastObjectInteract : IDailyModule
                         if (!ConfigBlacklistKeys.Add(Regex.Replace(kvp.Value.Name, @"\[.*?\]", "").Trim())) return;
                         Service.Config.UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
                     }
+
                     ImGui.EndPopup();
                 }
 
@@ -378,11 +386,11 @@ public unsafe partial class FastObjectInteract : IDailyModule
 
         var cursorPos = ImGui.GetCursorScreenPos();
         var padding = ImGui.GetStyle().FramePadding;
-        var buttonWidth = Math.Max(WindowWidth, textSize.X + padding.X * 2);
-        var result = ImGui.Button(string.Empty, new Vector2(buttonWidth, textSize.Y + padding.Y * 2));
+        var buttonWidth = Math.Max(WindowWidth, textSize.X + (padding.X * 2));
+        var result = ImGui.Button(string.Empty, new Vector2(buttonWidth, textSize.Y + (padding.Y * 2)));
 
         ImGui.GetWindowDrawList()
-             .AddText(new Vector2(cursorPos.X + (buttonWidth - textSize.X) / 2, cursorPos.Y + padding.Y),
+             .AddText(new Vector2(cursorPos.X + ((buttonWidth - textSize.X) / 2), cursorPos.Y + padding.Y),
                       ImGui.GetColorU32(ImGuiCol.Text), text);
         ImGui.SetWindowFontScale(1);
         ImGui.PopID();
