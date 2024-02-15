@@ -60,29 +60,16 @@ public unsafe class AutoAntiCensorship : IDailyModule
         }
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "ChatLog", OnAddonSetup);
     }
-
+    
     public void ConfigUI()
     {
-        var infoImageState = ThreadLoadImageHandler.TryGetTextureWrap(
-            "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoAntiCensorship-1.png",
-            out var imageHandler);
+        PreviewImageWithHelpText(Service.Lang.GetText("AutoAntiCensorship-Preview"),
+                                 "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoAntiCensorship-1.png",
+                                 new Vector2(386, 105));
 
-        ImGui.TextColored(ImGuiColors.DalamudOrange, Service.Lang.GetText("AutoAntiCensorship-Preview"));
-
-        ImGui.SameLine();
-        ImGui.PushFont(UiBuilder.IconFont);
-        ImGui.TextDisabled(FontAwesomeIcon.InfoCircle.ToIconString());
-        ImGui.PopFont();
-
-        if (ImGui.IsItemHovered())
-        {
-            ImGui.BeginTooltip();
-            if (infoImageState)
-                ImGui.Image(imageHandler.ImGuiHandle, new Vector2(443, 82));
-            else
-                ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
-            ImGui.EndTooltip();
-        }
+        PreviewImageWithHelpText(Service.Lang.GetText("AutoAntiCensorship-Preview1"),
+                                 "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoAntiCensorship-2.png",
+                                 new Vector2(383, 36));
     }
 
     public void OverlayUI() { }

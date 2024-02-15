@@ -123,8 +123,12 @@
   <data name="AutoAntiCensorship-Preview" xml:space="preserve">
     <value>反屏蔽预览 (发送消息):</value>
   </data>
+  <data name="AutoAntiCensorship-Preview1" xml:space="preserve">
+    <value>反屏蔽预览 (接收消息):</value>
+  </data>
   <data name="AutoAntiCensorshipDescription" xml:space="preserve">
-    <value>发送或显示消息时, 自动在屏蔽词内部加点, 或是将其转成拼音以防止屏蔽
+    <value>发送消息时, 自动在屏蔽词内部加点, 或是将其转成拼音以防止屏蔽
+接收消息时, 自动阻止屏蔽词系统工作, 显示消息原文
 (模块与 StarlightBreaker, Chat 2 不相兼容) (请勿用于破坏游戏环境)</value>
   </data>
   <data name="AutoAntiCensorshipTitle" xml:space="preserve">
@@ -134,7 +138,7 @@
     <value>交互游戏机后, 自动开始重复游玩重击伽美什</value>
   </data>
   <data name="AutoCACTitle" xml:space="preserve">
-    <value>自动重击伽美什</value>
+    <value>自动游玩重击伽美什</value>
   </data>
   <data name="AutoCancelCastDescription" xml:space="preserve">
     <value>当目标死亡或不可选中时, 自动中断咏唱</value>
@@ -146,7 +150,7 @@
     <value>交互游戏机后, 自动开始重复游玩强袭水晶塔</value>
   </data>
   <data name="AutoCTSTitle" xml:space="preserve">
-    <value>自动强袭水晶塔</value>
+    <value>自动游玩强袭水晶塔</value>
   </data>
   <data name="AutoCutSceneSkip-InterruptNotice" xml:space="preserve">
     <value>注: 仅支持在过场剧情开始加载前阻止, 阻止成功后将不再尝试跳过该段剧情</value>
@@ -249,7 +253,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
 (安装并启用了 ezMiniCactpot 则按照其推荐来点选, 未安装则随机点选)</value>
   </data>
   <data name="AutoMiniCactpotTitle" xml:space="preserve">
-    <value>自动仙人微彩</value>
+    <value>自动完成仙人微彩</value>
   </data>
   <data name="AutoMJIGather-CollectGatherPointsHelp" xml:space="preserve">
     <value>因物体渲染距离限制, 初次使用请先开启数据采集模式, 然后飞遍全岛一次记录各采集点数据, 后续使用无需再次采集数据
@@ -289,7 +293,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>交互游戏机后, 自动开始重复游玩怪物投篮</value>
   </data>
   <data name="AutoMTTitle" xml:space="preserve">
-    <value>自动怪物投篮</value>
+    <value>自动游玩怪物投篮</value>
   </data>
   <data name="AutoNotifyCutSceneEnd-NotificationMessage" xml:space="preserve">
     <value>所有队友的过场动画均已结束</value>
@@ -340,10 +344,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>自动加入新人频道</value>
   </data>
   <data name="AutoQTEDescription" xml:space="preserve">
-    <value>在副本中, 自动完成动态演练 (QTE)</value>
+    <value>在副本中, 自动完成全种类的动态演练 (QTE)</value>
   </data>
   <data name="AutoQTETitle" xml:space="preserve">
-    <value>自动动态演练</value>
+    <value>自动完成动态演练</value>
   </data>
   <data name="AutoQuestAcceptDescription" xml:space="preserve">
     <value>任务接取界面出现后, 自动点击确认按钮</value>
@@ -511,7 +515,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>交互游戏机后, 自动开始重复游玩莫古抓球机</value>
   </data>
   <data name="AutoTMPTitle" xml:space="preserve">
-    <value>自动莫古抓球机</value>
+    <value>自动游玩莫古抓球机</value>
   </data>
   <data name="AutoWithdrawRetainersGils-Help" xml:space="preserve">
     <value>1. 请在雇员列表打开的状态下使用本模块
