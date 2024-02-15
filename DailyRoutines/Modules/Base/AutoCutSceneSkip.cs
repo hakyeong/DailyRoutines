@@ -43,7 +43,6 @@ public class AutoCutSceneSkip : IDailyModule
 
     private static void OnConditionChanged(ConditionFlag flag, bool value)
     {
-
         if (flag is ConditionFlag.OccupiedInCutSceneEvent or ConditionFlag.WatchingCutscene78)
         {
             if (value)
@@ -53,7 +52,7 @@ public class AutoCutSceneSkip : IDailyModule
                     P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"), "Daily Routines", NotificationType.Success);
                     return;
                 }
-                Task.Delay(100)
+                Task.Delay(10)
                     .ContinueWith(_ => Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "NowLoading", OnAddonLoading));
                 Service.Toast.ErrorToast += OnErrorToast;
             }
@@ -92,6 +91,7 @@ public class AutoCutSceneSkip : IDailyModule
         if (TryGetAddonByName<AtkUnitBase>("SystemMenu", out var menu) && IsAddonReady(menu))
         {
             Callback.Fire(menu, true, -1);
+            menu->IsVisible = false;
             AbortActions();
             return;
         }
