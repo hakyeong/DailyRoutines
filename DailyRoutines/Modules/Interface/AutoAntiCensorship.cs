@@ -26,20 +26,21 @@ public unsafe class AutoAntiCensorship : IDailyModule
     private nint VulgarInstance = nint.Zero;
 
     [Signature("E8 ?? ?? ?? ?? 48 8B C3 48 83 C4 ?? 5B C3 CC CC CC CC CC CC CC 48 83 EC")]
-    public readonly delegate* unmanaged <nint, Utf8String*, void> FilterSeStringCheck; // nint - Utf8String*
+    public readonly delegate* unmanaged <nint, Utf8String*, void> GetFilteredUtf8String;
+
+    [Signature("E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? 48 8B 89 ?? ?? ?? ?? 48 85 C9 74 ?? 48 8B D3 E8 ?? ?? ?? ?? 48 8B C3")]
+    public readonly delegate* unmanaged <long, long, long> LocalMessageDisplayHandler;
 
     public delegate bool CensorshipCheckDelegate(nint vulgarInstance, Utf8String utf8String);
-    [Signature("E8 ?? ?? ?? ?? 84 C0 74 16 48 8D 15 ?? ?? ?? ??", DetourName = nameof(CensorshipCheck))]
-    public Hook<CensorshipCheckDelegate>? CensorshipCheckHook;
+    [Signature("E8 ?? ?? ?? ?? 84 C0 74 16 48 8D 15 ?? ?? ?? ??", DetourName = nameof(PartyFinderCensorshipCheck))]
+    public Hook<CensorshipCheckDelegate>? PartyFinderCensorshipCheckHook;
 
     public delegate long LocalMessageDelegate(long a1, long a2);
     [Signature("40 53 48 83 EC ?? 48 8D 99 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 48 8B 0D", DetourName = nameof(LocalMessageDetour))]
     public Hook<LocalMessageDelegate>? LocalMessageDisplayHook;
 
-    [Signature("E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? 48 8B 89 ?? ?? ?? ?? 48 85 C9 74 ?? 48 8B D3 E8 ?? ?? ?? ?? 48 8B C3")]
-    public readonly delegate* unmanaged <long, long, long> LocalMessageHandler;
-
-    private const string CancelCheckSig = "48 8B 89 ?? ?? ?? ?? 48 85 C9 74 ?? 48 8B D3 E8 ?? ?? ?? ?? 48 8B C3";
+    private delegate nint AddonReceiveEventDelegate(AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData);
+    private Hook<AddonReceiveEventDelegate>? ChatLogTextInputHook;
 
     private const string AutoTranslateLeft = "\u0002\u0012\u00027\u0003";
     private const string AutoTranslateRight = "\u0002\u0012\u00028\u0003";
@@ -48,11 +49,16 @@ public unsafe class AutoAntiCensorship : IDailyModule
     {
         SignatureHelper.Initialise(this);
 
-        CensorshipCheckHook?.Enable();
+        PartyFinderCensorshipCheckHook?.Enable();
         LocalMessageDisplayHook?.Enable();
         VulgarInstance = Marshal.ReadIntPtr((nint)Framework.Instance() + 0x2B40);
 
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "ChatLog", OnAddonUpdate);
+        if (Service.Gui.GetAddonByName("ChatLog") != nint.Zero)
+        {
+            OnAddonSetup(AddonEvent.PostSetup, null);
+            return;
+        }
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "ChatLog", OnAddonSetup);
     }
 
     public void ConfigUI()
@@ -81,37 +87,56 @@ public unsafe class AutoAntiCensorship : IDailyModule
 
     public void OverlayUI() { }
 
-    private long LocalMessageDetour(long a1, long a2)
+    private void OnAddonSetup(AddonEvent type, AddonArgs? args)
     {
-        return LocalMessageHandler(a1 + 1096, a2);
+        var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("ChatLog");
+        var address = (nint)addon->GetNodeById(5)->GetComponent()->AtkEventListener.vfunc[2];
+        ChatLogTextInputHook = Hook<AddonReceiveEventDelegate>.FromAddress(address, ChatLogTextInputDetour);
+        ChatLogTextInputHook.Enable();
     }
 
-    private void OnAddonUpdate(AddonEvent type, AddonArgs args)
+    // 聊天框 Event 处理, 应该找聊天框 SendChat 相关方法的, 但以后再找吧
+    private nint ChatLogTextInputDetour(AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData)
     {
-        var units = AtkStage.GetSingleton()->RaptureAtkUnitManager->AtkUnitManager.FocusedUnitsList;
-        var count = units.Count;
-        if (count == 0) return;
-
-        var isChatLogFocused = false;
-        for (var i = 0; i < count; i++)
+        if (eventType == AtkEventType.InputReceived)
         {
-            if (Marshal.PtrToStringUTF8((nint)units.AtkUnitEntries[i].Name) != "ChatLog") continue;
-            isChatLogFocused = true;
+            var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("ChatLog");
+            var textInput = (AtkComponentTextInput*)addon->GetComponentNodeById(5);
+
+            var text1 = Marshal.PtrToStringUTF8((nint)textInput->AtkComponentInputBase.UnkText1.StringPtr);
+            if (string.IsNullOrWhiteSpace(text1) || text1.StartsWith('/')) return ChatLogTextInputHook.Original(self, eventType, eventParam, eventData, inputData);
+
+            // UnkText1 暂时没看出来是怎么判断处理定型文的, 搁置了
+            var text2 = Marshal.PtrToStringUTF8((nint)textInput->AtkComponentInputBase.UnkText2.StringPtr);
+            if (text2.Contains(AutoTranslateLeft)) return ChatLogTextInputHook.Original(self, eventType, eventParam, eventData, inputData);
+
+            var handledText = BypassCensorship(text1);
+            textInput->AtkComponentInputBase.UnkText1 = *Utf8String.FromString(handledText);
+            textInput->AtkComponentInputBase.UnkText2 = *Utf8String.FromString(handledText);
         }
-        if (!isChatLogFocused) return;
 
-        var addon = (AtkUnitBase*)args.Addon;
-        var textInput = (AtkComponentTextInput*)addon->GetComponentNodeById(5);
+        return ChatLogTextInputHook.Original(self, eventType, eventParam, eventData, inputData);
+    }
 
-        var text1 = Marshal.PtrToStringUTF8((nint)textInput->AtkComponentInputBase.UnkText1.StringPtr);
-        if (string.IsNullOrWhiteSpace(text1) || text1.StartsWith('/')) return;
+    // 原本是本地聊天消息显示处理函数, 现跳过屏蔽词处理方法, 直接调用了游戏内文本处理函数然后返回其结果
+    private long LocalMessageDetour(long a1, long a2)
+    {
+        return LocalMessageDisplayHandler(a1 + 1096, a2);
+    }
 
-        var text2 = Marshal.PtrToStringUTF8((nint)textInput->AtkComponentInputBase.UnkText2.StringPtr);
-        if (text2.Contains(AutoTranslateLeft)) return;
+    // 一律返回 false => 当前文本不存在屏蔽词
+    private bool PartyFinderCensorshipCheck(nint vulgarInstance, Utf8String utf8String)
+    {
+        return false;
+    }
 
-        var handledText = BypassCensorship(text1);
-        textInput->AtkComponentInputBase.UnkText1 = *Utf8String.FromString(handledText);
-        textInput->AtkComponentInputBase.UnkText2 = *Utf8String.FromString(handledText);
+    // 获取屏蔽词处理后的文本
+    private string GetFilteredString(string str)
+    {
+        var utf8String = Utf8String.FromString(str);
+        GetFilteredUtf8String(VulgarInstance, utf8String);
+
+        return (*utf8String).ToString();
     }
 
     private string BypassCensorship(string text)
@@ -183,23 +208,11 @@ public unsafe class AutoAntiCensorship : IDailyModule
         return c >= 0x4E00 && c <= 0x9FA5;
     }
 
-    private string GetFilteredString(string str)
-    {
-        var utf8String = Utf8String.FromString(str);
-        FilterSeStringCheck(VulgarInstance, utf8String);
-
-        return (*utf8String).ToString();
-    }
-
-    private bool CensorshipCheck(nint vulgarInstance, Utf8String utf8String)
-    {
-        return false;
-    }
-
     public void Uninit()
     {
+        ChatLogTextInputHook?.Dispose();
         LocalMessageDisplayHook?.Dispose();
-        CensorshipCheckHook?.Dispose();
-        Service.AddonLifecycle.UnregisterListener(OnAddonUpdate);
+        PartyFinderCensorshipCheckHook?.Dispose();
+        Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
     }
 }
