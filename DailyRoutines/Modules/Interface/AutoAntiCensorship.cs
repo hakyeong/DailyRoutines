@@ -5,14 +5,10 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Hooking;
-using Dalamud.Interface.Colors;
-using Dalamud.Interface;
 using Dalamud.Utility.Signatures;
-using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using ImGuiNET;
 using TinyPinyin;
 
 namespace DailyRoutines.Modules;
@@ -28,19 +24,30 @@ public unsafe class AutoAntiCensorship : IDailyModule
     [Signature("E8 ?? ?? ?? ?? 48 8B C3 48 83 C4 ?? 5B C3 CC CC CC CC CC CC CC 48 83 EC")]
     public readonly delegate* unmanaged <nint, Utf8String*, void> GetFilteredUtf8String;
 
-    [Signature("E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? 48 8B 89 ?? ?? ?? ?? 48 85 C9 74 ?? 48 8B D3 E8 ?? ?? ?? ?? 48 8B C3")]
+    [Signature(
+        "E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? 48 8B 89 ?? ?? ?? ?? 48 85 C9 74 ?? 48 8B D3 E8 ?? ?? ?? ?? 48 8B C3")]
     public readonly delegate* unmanaged <long, long, long> LocalMessageDisplayHandler;
 
-    public delegate bool CensorshipCheckDelegate(nint vulgarInstance, Utf8String utf8String);
-    [Signature("E8 ?? ?? ?? ?? 84 C0 74 16 48 8D 15 ?? ?? ?? ??", DetourName = nameof(PartyFinderCensorshipCheck))]
-    public Hook<CensorshipCheckDelegate>? PartyFinderCensorshipCheckHook;
+    [Signature("E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? 48 8B 81 ?? ?? ?? ?? 48 85 C0 74 ?? 48 8B D3")]
+    public readonly delegate* unmanaged <long, long, long> PartyFinderMessageDisplayHandler;
+
+    public delegate long PartyFinderMessageDisplayDelegate(long a1, long a2);
+
+    [Signature("48 89 5C 24 ?? 57 48 83 EC ?? 48 8D 99 ?? ?? ?? ?? 48 8B F9 48 8B CB E8",
+               DetourName = nameof(PartyFinderMessageDisplayDetour))]
+    public Hook<PartyFinderMessageDisplayDelegate>? PartyFinderMessageDisplayHook;
 
     public delegate long LocalMessageDelegate(long a1, long a2);
-    [Signature("40 53 48 83 EC ?? 48 8D 99 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 48 8B 0D", DetourName = nameof(LocalMessageDetour))]
+
+    [Signature("40 53 48 83 EC ?? 48 8D 99 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 48 8B 0D",
+               DetourName = nameof(LocalMessageDetour))]
     public Hook<LocalMessageDelegate>? LocalMessageDisplayHook;
 
-    private delegate nint AddonReceiveEventDelegate(AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData);
+    private delegate nint AddonReceiveEventDelegate(
+        AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData);
+
     private Hook<AddonReceiveEventDelegate>? ChatLogTextInputHook;
+    private Hook<AddonReceiveEventDelegate>? PartyFinderDescriptionInputHook;
 
     private const string AutoTranslateLeft = "\u0002\u0012\u00027\u0003";
     private const string AutoTranslateRight = "\u0002\u0012\u00028\u0003";
@@ -49,18 +56,22 @@ public unsafe class AutoAntiCensorship : IDailyModule
     {
         SignatureHelper.Initialise(this);
 
-        PartyFinderCensorshipCheckHook?.Enable();
+        PartyFinderMessageDisplayHook?.Enable();
         LocalMessageDisplayHook?.Enable();
         VulgarInstance = Marshal.ReadIntPtr((nint)Framework.Instance() + 0x2B40);
 
         if (Service.Gui.GetAddonByName("ChatLog") != nint.Zero)
-        {
-            OnAddonSetup(AddonEvent.PostSetup, null);
-            return;
-        }
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "ChatLog", OnAddonSetup);
+            OnChatLogAddonSetup(AddonEvent.PostSetup, null);
+        else
+            Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "ChatLog", OnChatLogAddonSetup);
+
+        if (Service.Gui.GetAddonByName("LookingForGroupCondition") != nint.Zero)
+            OnPartyFinderConditionAddonSetup(AddonEvent.PostSetup, null);
+        else
+            Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "LookingForGroupCondition",
+                                                    OnChatLogAddonSetup);
     }
-    
+
     public void ConfigUI()
     {
         PreviewImageWithHelpText(Service.Lang.GetText("AutoAntiCensorship-Preview"),
@@ -74,16 +85,26 @@ public unsafe class AutoAntiCensorship : IDailyModule
 
     public void OverlayUI() { }
 
-    private void OnAddonSetup(AddonEvent type, AddonArgs? args)
+    private void OnChatLogAddonSetup(AddonEvent type, AddonArgs? args)
     {
         var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("ChatLog");
         var address = (nint)addon->GetNodeById(5)->GetComponent()->AtkEventListener.vfunc[2];
-        ChatLogTextInputHook = Hook<AddonReceiveEventDelegate>.FromAddress(address, ChatLogTextInputDetour);
-        ChatLogTextInputHook.Enable();
+        ChatLogTextInputHook ??= Hook<AddonReceiveEventDelegate>.FromAddress(address, ChatLogTextInputDetour);
+        ChatLogTextInputHook?.Enable();
+    }
+
+    private void OnPartyFinderConditionAddonSetup(AddonEvent type, AddonArgs? args)
+    {
+        var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("LookingForGroupCondition");
+        var address = (nint)addon->GetNodeById(22)->GetComponent()->AtkEventListener.vfunc[2];
+        PartyFinderDescriptionInputHook ??=
+            Hook<AddonReceiveEventDelegate>.FromAddress(address, PartyFinderDescriptionInputDetour);
+        if (!PartyFinderDescriptionInputHook.IsEnabled) PartyFinderDescriptionInputHook?.Enable();
     }
 
     // 聊天框 Event 处理, 应该找聊天框 SendChat 相关方法的, 但以后再找吧
-    private nint ChatLogTextInputDetour(AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData)
+    private nint ChatLogTextInputDetour(
+        AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData)
     {
         if (eventType == AtkEventType.InputReceived)
         {
@@ -91,11 +112,13 @@ public unsafe class AutoAntiCensorship : IDailyModule
             var textInput = (AtkComponentTextInput*)addon->GetComponentNodeById(5);
 
             var text1 = Marshal.PtrToStringUTF8((nint)textInput->AtkComponentInputBase.UnkText1.StringPtr);
-            if (string.IsNullOrWhiteSpace(text1) || text1.StartsWith('/')) return ChatLogTextInputHook.Original(self, eventType, eventParam, eventData, inputData);
+            if (string.IsNullOrWhiteSpace(text1) || text1.StartsWith('/'))
+                return ChatLogTextInputHook.Original(self, eventType, eventParam, eventData, inputData);
 
             // UnkText1 暂时没看出来是怎么判断处理定型文的, 搁置了
             var text2 = Marshal.PtrToStringUTF8((nint)textInput->AtkComponentInputBase.UnkText2.StringPtr);
-            if (text2.Contains(AutoTranslateLeft)) return ChatLogTextInputHook.Original(self, eventType, eventParam, eventData, inputData);
+            if (text2.Contains(AutoTranslateLeft))
+                return ChatLogTextInputHook.Original(self, eventType, eventParam, eventData, inputData);
 
             var handledText = BypassCensorship(text1);
             textInput->AtkComponentInputBase.UnkText1 = *Utf8String.FromString(handledText);
@@ -105,16 +128,41 @@ public unsafe class AutoAntiCensorship : IDailyModule
         return ChatLogTextInputHook.Original(self, eventType, eventParam, eventData, inputData);
     }
 
-    // 原本是本地聊天消息显示处理函数, 现跳过屏蔽词处理方法, 直接调用了游戏内文本处理函数然后返回其结果
+    // 招募板描述 Event 处理
+    private nint PartyFinderDescriptionInputDetour(
+        AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData)
+    {
+        if (eventType is AtkEventType.InputReceived or AtkEventType.FocusStop)
+        {
+            var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("LookingForGroupCondition");
+            var textInput = (AtkComponentTextInput*)addon->GetComponentNodeById(22);
+
+            var text1 = Marshal.PtrToStringUTF8((nint)textInput->AtkComponentInputBase.UnkText1.StringPtr);
+            if (string.IsNullOrWhiteSpace(text1) || text1.StartsWith('/'))
+                return PartyFinderDescriptionInputHook.Original(self, eventType, eventParam, eventData, inputData);
+
+            var text2 = Marshal.PtrToStringUTF8((nint)textInput->AtkComponentInputBase.UnkText2.StringPtr);
+            if (text2.Contains(AutoTranslateLeft))
+                return PartyFinderDescriptionInputHook.Original(self, eventType, eventParam, eventData, inputData);
+
+            var handledText = BypassCensorship(text1);
+            textInput->AtkComponentInputBase.UnkText1 = *Utf8String.FromString(handledText);
+            textInput->AtkComponentInputBase.UnkText2 = *Utf8String.FromString(handledText);
+        }
+
+        return PartyFinderDescriptionInputHook.Original(self, eventType, eventParam, eventData, inputData);
+    }
+
+    // 本地聊天消息显示处理函数
     private long LocalMessageDetour(long a1, long a2)
     {
         return LocalMessageDisplayHandler(a1 + 1096, a2);
     }
 
-    // 一律返回 false => 当前文本不存在屏蔽词
-    private bool PartyFinderCensorshipCheck(nint vulgarInstance, Utf8String utf8String)
+    // 招募板信息显示处理函数
+    private long PartyFinderMessageDisplayDetour(long a1, long a2)
     {
-        return false;
+        return PartyFinderMessageDisplayHandler(a1 + 10488, a2);
     }
 
     // 获取屏蔽词处理后的文本
@@ -138,7 +186,6 @@ public unsafe class AutoAntiCensorship : IDailyModule
 
             var i = 0;
             while (i < processedText.Length)
-            {
                 if (processedText[i] == '*')
                 {
                     isCensored = true;
@@ -167,7 +214,6 @@ public unsafe class AutoAntiCensorship : IDailyModule
                     tempResult.Append(text[i]);
                     i++;
                 }
-            }
 
             text = tempResult.ToString();
         }
@@ -197,9 +243,10 @@ public unsafe class AutoAntiCensorship : IDailyModule
 
     public void Uninit()
     {
+        PartyFinderMessageDisplayHook?.Dispose();
         ChatLogTextInputHook?.Dispose();
+        PartyFinderDescriptionInputHook?.Dispose();
         LocalMessageDisplayHook?.Dispose();
-        PartyFinderCensorshipCheckHook?.Dispose();
-        Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
+        Service.AddonLifecycle.UnregisterListener(OnChatLogAddonSetup);
     }
 }

@@ -127,7 +127,7 @@
     <value>反屏蔽预览 (接收消息):</value>
   </data>
   <data name="AutoAntiCensorshipDescription" xml:space="preserve">
-    <value>发送消息时, 自动在屏蔽词内部加点, 或是将其转成拼音以防止屏蔽
+    <value>发送消息/编辑招募描述时, 自动在屏蔽词内部加点, 或是将其转成拼音以防止屏蔽
 接收消息时, 自动阻止屏蔽词系统工作, 显示消息原文
 (模块与 StarlightBreaker, Chat 2 不相兼容) (请勿用于破坏游戏环境)</value>
   </data>
