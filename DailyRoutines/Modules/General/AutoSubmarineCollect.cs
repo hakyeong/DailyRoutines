@@ -84,7 +84,6 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
             }
 
             Click.SendClick($"select_string{index + 1}");
-            addon->Close(true);
 
             // 会有 Toast
             TaskManager.DelayNext(2000);
@@ -99,18 +98,9 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
         if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(addon))
         {
-            Callback.Fire(addon, true, 2);
-            Callback.Fire(addon, false, 1);
-            Callback.Fire(addon, false, -2);
-
-            Callback.Fire(addon, true, 0);
+            var handler = new ClickAirShipExplorationDetailDR();
+            handler.Commence();
             addon->Close(true);
-
-            if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationResult", out var resultAddon) &&
-                HelpersOm.IsAddonAndNodesReady(resultAddon))
-            {
-                resultAddon->Close(true);
-            }
 
             // 一轮结束, 清理任务; 会有动画
             TaskManager.Abort();
