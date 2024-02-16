@@ -1,10 +1,9 @@
-using Dalamud.Hooking;
-using Dalamud.Memory;
-using Dalamud.Utility.Signatures;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using System;
 using System.Numerics;
 using DailyRoutines.Managers;
+using Dalamud.Memory;
+using Dalamud.Utility.Signatures;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
 namespace DailyRoutines.Manager;
 
@@ -18,7 +17,8 @@ public unsafe class FieldMarkerManager
 
     public FieldMarkerManager()
     {
-        FieldMarkerController = Service.SigScanner.GetStaticAddressFromSig("48 8D 0D ?? ?? ?? ?? 41 B0 ?? E8 ?? ?? ?? ?? 85 C0");
+        FieldMarkerController =
+            Service.SigScanner.GetStaticAddressFromSig("48 8D 0D ?? ?? ?? ?? 41 B0 ?? E8 ?? ?? ?? ?? 85 C0");
         FieldMarkerData = FieldMarkerController + 0x1E0;
 
         SignatureHelper.Initialise(this);
@@ -64,7 +64,7 @@ public unsafe class FieldMarkerManager
             5 => FieldMarkerData + 0xA0,
             6 => FieldMarkerData + 0xC0,
             7 => FieldMarkerData + 0xE0,
-            _ => FieldMarkerData,
+            _ => FieldMarkerData
         };
 
         MemoryHelper.Write(markAddress, pos.X);
@@ -102,7 +102,5 @@ public unsafe class FieldMarkerManager
         RemoveFieldMarkerOriginal(FieldMarkerController, index);
     }
 
-    public void Uninit()
-    {
-    }
+    public void Uninit() { }
 }

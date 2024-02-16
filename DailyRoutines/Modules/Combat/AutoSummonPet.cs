@@ -3,6 +3,7 @@ using DailyRoutines.Managers;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using System.Collections.Generic;
+using ECommons.GameFunctions;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using BattleChara = FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara;
 
@@ -52,8 +53,7 @@ public class AutoSummonPet : IDailyModule
         if (!SummonActions.TryGetValue(job, out var actionID)) return true;
 
         if (IsOccupied()) return false;
-        var state = CharacterManager.Instance()->LookupPetByOwnerObject(
-            (BattleChara*)Service.ClientState.LocalPlayer.Address) != null;
+        var state = CharacterManager.Instance()->LookupPetByOwnerObject(player.BattleChara()) != null;
 
         if (state) return true;
 
