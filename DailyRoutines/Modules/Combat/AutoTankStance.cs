@@ -3,6 +3,7 @@ using System.Linq;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using ECommons.Automation;
+using ECommons.GameFunctions;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
 
@@ -19,7 +20,7 @@ public class AutoTankStance : IDailyModule
     private static bool ConfigOnlyAutoStanceWhenOneTank = true;
 
     private static HashSet<uint>? ContentsWithOneTank;
-    private static readonly HashSet<uint> TankStanceStatuses = [79, 91, 743, 1833];
+    private static readonly uint[] TankStanceStatuses = [79, 91, 743, 1833];
 
     private static readonly Dictionary<uint, uint> TankStanceActions = new()
     {
@@ -40,7 +41,7 @@ public class AutoTankStance : IDailyModule
         Service.Config.AddConfig(this, "OnlyAutoStanceWhenOneTank", true);
         ConfigOnlyAutoStanceWhenOneTank = Service.Config.GetConfig<bool>(this, "OnlyAutoStanceWhenOneTank");
 
-        TaskManager = new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = true };
+        TaskManager = new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
 
         ContentsWithOneTank ??= Service.ExcelData.Contents
                                        .Where(x => (uint)x.Value.ContentMemberType.Value.TanksPerParty == 1)
@@ -74,13 +75,12 @@ public class AutoTankStance : IDailyModule
         var player = Service.ClientState.LocalPlayer;
         if (player == null || player.ClassJob.Id == 0) return false;
 
-        var job = Service.ClientState.LocalPlayer.ClassJob.Id;
+        var job = player.ClassJob.Id;
         if (!TankStanceActions.TryGetValue(job, out var actionID)) return true;
 
         if (IsOccupied()) return false;
-        var statuses = Service.ClientState.LocalPlayer.StatusList;
-        foreach (var status in statuses)
-            if (TankStanceStatuses.Contains(status.StatusId))
+        foreach (var status in TankStanceStatuses)
+            if (player.BattleChara()->GetStatusManager->HasStatus(status))
                 return true;
         return ActionManager.Instance()->UseAction(ActionType.Spell, actionID);
     }

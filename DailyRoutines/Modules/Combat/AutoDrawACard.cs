@@ -2,28 +2,16 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using System.Collections.Generic;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
-using BattleChara = FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoSummonPetTitle", "AutoSummonPetDescription", ModuleCategories.Combat)]
-public class AutoSummonPet : IDailyModule
+[ModuleDescription("AutoDrawACardTitle", "AutoDrawACardDescription", ModuleCategories.Combat)]
+public class AutoDrawACard : IDailyModule
 {
     public bool Initialized { get; set; }
     public bool WithConfigUI => false;
 
     private static TaskManager? TaskManager;
-
-    private static readonly Dictionary<uint, uint> SummonActions = new()
-    {
-        // 学者
-        { 28, 17215 },
-        // 秘术师 / 召唤师
-        { 26, 25798 },
-        { 27, 25798 },
-    };
 
     public void Init()
     {
@@ -48,16 +36,10 @@ public class AutoSummonPet : IDailyModule
         var player = Service.ClientState.LocalPlayer;
         if (player == null || player.ClassJob.Id == 0) return false;
 
-        var job = player.ClassJob.Id;
-        if (!SummonActions.TryGetValue(job, out var actionID)) return true;
-
+        if (player.ClassJob.Id != 33 || player.Level < 30) return true;
         if (IsOccupied()) return false;
-        var state = CharacterManager.Instance()->LookupPetByOwnerObject(
-            (BattleChara*)Service.ClientState.LocalPlayer.Address) != null;
 
-        if (state) return true;
-
-        return ActionManager.Instance()->UseAction(ActionType.Spell, actionID);
+        return ActionManager.Instance()->UseAction(ActionType.Spell, 3590);
     }
 
     public void Uninit()

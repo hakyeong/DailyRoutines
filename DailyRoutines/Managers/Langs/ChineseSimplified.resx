@@ -167,6 +167,12 @@
   <data name="AutoDismountTitle" xml:space="preserve">
     <value>自动下坐骑</value>
   </data>
+  <data name="AutoDrawACardDescription" xml:space="preserve">
+    <value>进入副本后, 若当前职业为占星术士, 且等级大于 30, 则自动抽卡一次</value>
+  </data>
+  <data name="AutoDrawACardTitle" xml:space="preserve">
+    <value>自动抽卡</value>
+  </data>
   <data name="AutoExpertDelivery-Start" xml:space="preserve">
     <value>开始</value>
   </data>
