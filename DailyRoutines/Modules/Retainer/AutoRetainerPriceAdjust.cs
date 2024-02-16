@@ -13,14 +13,13 @@ using Dalamud.Interface.Internal.Notifications;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoRetainerPriceAdjustTitle", "AutoRetainerPriceAdjustDescription", ModuleCategories.Retainer)]
-public partial class AutoRetainerPriceAdjust : IDailyModule
+public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
 {
     public bool Initialized { get; set; }
     public bool WithConfigUI => true;
@@ -36,7 +35,7 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
     private static int CurrentMarketLowestPrice;
     private static uint CurrentItemSearchItemID;
     private static bool IsCurrentItemHQ;
-    private static unsafe RetainerManager.RetainerList.Retainer* CurrentRetainer;
+    private static RetainerManager.RetainerList.Retainer* CurrentRetainer;
 
     public void Init()
     {
@@ -142,7 +141,7 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
         }
     }
 
-    private static unsafe void OnRetainerSellList(AddonEvent type, AddonArgs args)
+    private static void OnRetainerSellList(AddonEvent type, AddonArgs args)
     {
         var activeRetainer = RetainerManager.Instance()->GetActiveRetainer();
         if (CurrentRetainer == null || CurrentRetainer != activeRetainer)
@@ -181,22 +180,19 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
         TaskManager.DelayNext(800);
     }
 
-    private static unsafe void GetSellListItems(out uint availableItems)
+    private static void GetSellListItems(out uint availableItems)
     {
         availableItems = 0;
         if (TryGetAddonByName<AtkUnitBase>("RetainerSellList", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             for (var i = 0; i < 20; i++)
-            {
-                var slot =
-                    InventoryManager.Instance()->GetInventoryContainer(InventoryType.RetainerMarket)->GetInventorySlot(
-                        i);
-                if (slot->ItemID != 0) availableItems++;
-            }
+                if (InventoryManager.Instance()->GetInventoryContainer(InventoryType.RetainerMarket)->GetInventorySlot(
+                        i)->ItemID != 0)
+                    availableItems++;
         }
     }
 
-    private static unsafe bool? ClickSellingItem(int index)
+    private static bool? ClickSellingItem(int index)
     {
         if (TryGetAddonByName<AtkUnitBase>("RetainerSellList", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
@@ -208,7 +204,7 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
         return false;
     }
 
-    private static unsafe bool? ClickAdjustPrice()
+    private static bool? ClickAdjustPrice()
     {
         if (TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
@@ -221,12 +217,12 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
         return false;
     }
 
-    private static unsafe bool? ClickComparePrice()
+    private static bool? ClickComparePrice()
     {
         if (TryGetAddonByName<AtkUnitBase>("RetainerSell", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             CurrentItemPrice = addon->AtkValues[5].Int;
-            IsCurrentItemHQ = Marshal.PtrToStringUTF8((nint)addon->AtkValues[1].String).Contains(''); // 是游戏里的 HQ 符号
+            IsCurrentItemHQ = Marshal.PtrToStringUTF8((nint)addon->AtkValues[1].String).Contains(''); // HQ 符号
 
             var handler = new ClickRetainerSellDR((nint)addon);
             handler.ComparePrice();
@@ -237,68 +233,56 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
         return false;
     }
 
-    private static unsafe bool? GetLowestPrice()
+    private static bool? GetLowestPrice()
     {
-        if (TryGetAddonByName<AtkUnitBase>("ItemSearchResult", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AddonItemSearchResult>("ItemSearchResult", out var addon) &&
+            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
-            CurrentItemSearchItemID = AgentItemSearch.Instance()->ResultItemID;
-            var searchResult = addon->GetTextNodeById(29)->NodeText.ExtractText();
-            if (string.IsNullOrEmpty(searchResult)) return false; // 请稍后
+            var ui = &addon->AtkUnitBase;
+            CurrentItemSearchItemID = (uint)ui->AtkValues[0].Int;
 
-            // 搜索结果 0
-            if (int.Parse(AutoRetainerPriceAdjustRegex().Replace(searchResult, "")) == 0)
+            var errorMessage = addon->ErrorMessage->NodeText.ExtractText();
+            if (errorMessage.Contains("没有搜索到任何结果"))
             {
                 CurrentMarketLowestPrice = 0;
-                addon->Close(true);
+                ui->Close(true);
                 return true;
             }
+
+            if (addon->Results->ItemRendererList == null) return false;
 
             // 区分 HQ 和 NQ
             if (ConfigSeparateNQAndHQ && IsCurrentItemHQ)
             {
                 var foundHQItem = false;
-                for (var i = 1; i <= 12 && !foundHQItem; i++)
+                for (var i = 0; i < 12 && !foundHQItem; i++)
                 {
-                    var listing =
-                        addon->UldManager.NodeList[5]->GetAsAtkComponentNode()->Component->UldManager.NodeList[i]
-                            ->GetAsAtkComponentNode()->Component->UldManager.NodeList;
-                    if (listing[13]->GetAsAtkImageNode()->AtkResNode.IsVisible)
-                    {
-                        var priceText = listing[10]->GetAsAtkTextNode()->NodeText.ExtractText();
-                        if (int.TryParse(AutoRetainerPriceAdjustRegex().Replace(priceText, ""),
-                                         out CurrentMarketLowestPrice))
-                            foundHQItem = true;
-                    }
+                    if (!TryScanItemSearchResult(addon, i, out var result)) break;
+                    foundHQItem = result.isHQ;
+                    if (!foundHQItem) continue;
+                    CurrentMarketLowestPrice = result.Price;
                 }
 
                 if (!foundHQItem)
                 {
-                    var priceText = addon->UldManager.NodeList[5]->GetAsAtkComponentNode()->Component->UldManager
-                                .NodeList[1]
-                            ->GetAsAtkComponentNode()->Component->UldManager.NodeList[10]->GetAsAtkTextNode()->NodeText
-                        .ExtractText();
-                    if (!int.TryParse(AutoRetainerPriceAdjustRegex().Replace(priceText, ""),
-                                      out CurrentMarketLowestPrice)) return false;
+                    if (!TryScanItemSearchResult(addon, 0, out var result)) return false;
+                    CurrentMarketLowestPrice = result.Price;
                 }
             }
             else
             {
-                var priceText =
-                    addon->UldManager.NodeList[5]->GetAsAtkComponentNode()->Component->UldManager.NodeList[1]
-                            ->GetAsAtkComponentNode()->Component->UldManager.NodeList[10]->GetAsAtkTextNode()->NodeText
-                        .ExtractText();
-                if (!int.TryParse(AutoRetainerPriceAdjustRegex().Replace(priceText, ""),
-                                  out CurrentMarketLowestPrice)) return false;
+                if (!TryScanItemSearchResult(addon, 0, out var result)) return false;
+                CurrentMarketLowestPrice = result.Price;
             }
 
-            addon->Close(true);
+            ui->Close(true);
             return true;
         }
 
         return false;
     }
 
-    private static unsafe bool? FillLowestPrice()
+    private static bool? FillLowestPrice()
     {
         if (TryGetAddonByName<AddonRetainerSell>("RetainerSell", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
@@ -351,6 +335,29 @@ public partial class AutoRetainerPriceAdjust : IDailyModule
         }
 
         return false;
+    }
+
+    public static bool TryScanItemSearchResult(
+        AddonItemSearchResult* addon, int index, out (int Price, bool isHQ) result)
+    {
+        result = (0, false);
+        if (index < 0 || addon == null) return false;
+
+        var list = addon->Results->ItemRendererList;
+        if (list == null) return false;
+        var itemEntry = addon->Results->ItemRendererList[index].AtkComponentListItemRenderer;
+        if (itemEntry == null) return false;
+
+        var listing = itemEntry->AtkComponentButton.AtkComponentBase;
+
+        var priceText =
+            SanitizeManager.Sanitize(listing.GetTextNodeById(5)->GetAsAtkTextNode()->NodeText.ExtractText());
+        if (string.IsNullOrEmpty(priceText)) return false;
+        if (!int.TryParse(priceText.Replace(",", ""), out result.Price)) return false;
+
+        result.isHQ = listing.GetImageNodeById(3)->GetAsAtkImageNode()->AtkResNode.IsVisible;
+
+        return true;
     }
 
     public void Uninit()
