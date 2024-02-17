@@ -316,6 +316,15 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoNotifyCutSceneEndTitle" xml:space="preserve">
     <value>自动通知过场剧情结束</value>
   </data>
+  <data name="AutoNotifyDutyName-NoticeMessage" xml:space="preserve">
+    <value>副本: {0}</value>
+  </data>
+  <data name="AutoNotifyDutyNameDescription" xml:space="preserve">
+    <value>在进入副本时, 自动在聊天栏通知当前副本名称</value>
+  </data>
+  <data name="AutoNotifyDutyNameTitle" xml:space="preserve">
+    <value>自动通知副本名称</value>
+  </data>
   <data name="AutoNotifyMessages-BlockOwnMessages" xml:space="preserve">
     <value>屏蔽自己发送的消息</value>
   </data>

@@ -68,7 +68,7 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
         if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationResult", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var handler = new ClickAirShipExplorationResultDR(addon);
+            var handler = new ClickAirShipExplorationResultDR((nint)addon);
             handler.Redeploy();
 
             addon->IsVisible = false;
