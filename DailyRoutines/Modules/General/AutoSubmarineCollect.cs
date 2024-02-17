@@ -26,7 +26,7 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = true };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectYesno", AlwaysYes);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "AirShipExplorationResult", OnExplorationResult);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "AirShipExplorationResult", OnExplorationResult);
 
 
         Service.Chat.ChatMessage += OnErrorText;
@@ -68,7 +68,7 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
         if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationResult", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var handler = new ClickAirShipExplorationResultDR();
+            var handler = new ClickAirShipExplorationResultDR(addon);
             handler.Redeploy();
 
             addon->IsVisible = false;
