@@ -316,6 +316,15 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoNotifyCutSceneEndTitle" xml:space="preserve">
     <value>自动通知过场剧情结束</value>
   </data>
+  <data name="AutoNotifyDutyConfirm-NoticeMessage" xml:space="preserve">
+    <value>任务: {0}</value>
+  </data>
+  <data name="AutoNotifyDutyConfirmDescription" xml:space="preserve">
+    <value>当排到副本时, 自动发送一条 Windows 系统通知</value>
+  </data>
+  <data name="AutoNotifyDutyConfirmTitle" xml:space="preserve">
+    <value>自动通知任务准备确认</value>
+  </data>
   <data name="AutoNotifyDutyName-NoticeMessage" xml:space="preserve">
     <value>副本: {0}</value>
   </data>
