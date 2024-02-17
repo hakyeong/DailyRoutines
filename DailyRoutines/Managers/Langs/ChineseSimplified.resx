@@ -430,11 +430,21 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRetainerPriceAdjustTitle" xml:space="preserve">
     <value>自动雇员改价</value>
   </data>
+  <data name="AutoSellCardsConfirm-CurrentCardNotInDeckMessage" xml:space="preserve">
+    <value>当前幻卡未被收录, 已停止自动幻卡回收</value>
+  </data>
+  <data name="AutoSellCardsConfirm-Start" xml:space="preserve">
+    <value>开始</value>
+  </data>
+  <data name="AutoSellCardsConfirm-Stop" xml:space="preserve">
+    <value>结束</value>
+  </data>
   <data name="AutoSellCardsConfirmDescription" xml:space="preserve">
-    <value>幻卡回收界面出现后, 自动点击确认按钮</value>
+    <value>幻卡回收界面出现后, 自动点击确认按钮
+同时, 为幻卡回收界面新增悬浮窗, 允许自动回收当前所有已收录幻卡</value>
   </data>
   <data name="AutoSellCardsConfirmTitle" xml:space="preserve">
-    <value>自动确认幻卡回收</value>
+    <value>自动幻卡回收</value>
   </data>
   <data name="AutoShareRetainersGilsEvenly-Help" xml:space="preserve">
     <value>1. 请在雇员列表打开的状态下使用本模块
