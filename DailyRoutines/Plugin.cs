@@ -3,7 +3,6 @@ global using static ECommons.GenericHelpers;
 global using static DailyRoutines.Infos.Widgets;
 global using OmenTools.ImGuiOm;
 global using OmenTools.Helpers;
-global using OmenTools.Widgets;
 using DailyRoutines.Manager;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;

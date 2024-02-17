@@ -289,7 +289,16 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
         {
             var ui = &addon->AtkUnitBase;
             var priceComponent = addon->AskingPrice;
+            var isOriginalPriceValid = int.TryParse(priceComponent->AtkComponentInputBase.AtkTextNode->NodeText.ExtractText(), out var originalPrice);
             var handler = new ClickRetainerSellDR((nint)addon);
+
+            if (isOriginalPriceValid && CurrentMarketLowestPrice - ConfigPriceReduction == originalPrice)
+            {
+                handler.Decline();
+                ui->Close(true);
+
+                return true;
+            }
 
             // 低于最低价
             if (CurrentMarketLowestPrice - ConfigPriceReduction < ConfigLowestPrice)
