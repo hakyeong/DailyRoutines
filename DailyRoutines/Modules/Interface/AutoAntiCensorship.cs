@@ -10,6 +10,7 @@ using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using TinyPinyin;
+using System;
 
 namespace DailyRoutines.Modules;
 
@@ -186,6 +187,18 @@ public unsafe class AutoAntiCensorship : IDailyModule
 
             var i = 0;
             while (i < processedText.Length)
+            {
+                if (processedText[i] == '<')
+                {
+                    var end = processedText.IndexOf('>', i + 1);
+                    if (end != -1)
+                    {
+                        tempResult.Append(text.AsSpan(i, end - i + 1));
+                        i = end + 1;
+                        continue;
+                    }
+                }
+
                 if (processedText[i] == '*')
                 {
                     isCensored = true;
@@ -214,6 +227,7 @@ public unsafe class AutoAntiCensorship : IDailyModule
                     tempResult.Append(text[i]);
                     i++;
                 }
+            }
 
             text = tempResult.ToString();
         }
@@ -221,7 +235,6 @@ public unsafe class AutoAntiCensorship : IDailyModule
 
         return text;
     }
-
     private static string InsertDots(string input)
     {
         if (input.Length <= 1) return input;
