@@ -17,7 +17,7 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoExpertDeliveryTitle", "AutoExpertDeliveryDescription", ModuleCategories.General)]
-public class AutoExpertDelivery : IDailyModule
+public unsafe class AutoExpertDelivery : IDailyModule
 {
     public bool Initialized { get; set; }
     public bool WithConfigUI => true;
@@ -44,7 +44,7 @@ public class AutoExpertDelivery : IDailyModule
         if (ImGui.Button(Service.Lang.GetText("AutoExpertDelivery-Stop"))) EndHandOver();
     }
 
-    public unsafe void OverlayUI()
+    public void OverlayUI()
     {
         var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("GrandCompanySupplyList");
         if (addon == null) return;
@@ -80,7 +80,7 @@ public class AutoExpertDelivery : IDailyModule
         }
     }
 
-    private static unsafe void OnAddonSupplyReward(AddonEvent type, AddonArgs args)
+    private static void OnAddonSupplyReward(AddonEvent type, AddonArgs args)
     {
         if (TryGetAddonByName<AtkUnitBase>("GrandCompanySupplyReward", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(addon))
@@ -90,7 +90,7 @@ public class AutoExpertDelivery : IDailyModule
         }
     }
 
-    public static unsafe void StartHandOver()
+    private static void StartHandOver()
     {
         if (IsSealsReachTheCap())
         {
@@ -106,7 +106,7 @@ public class AutoExpertDelivery : IDailyModule
         IsOnProcess = true;
     }
 
-    public static void EndHandOver()
+    private static void EndHandOver()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonSupplyReward);
         TaskManager?.Abort();
@@ -114,7 +114,7 @@ public class AutoExpertDelivery : IDailyModule
     }
 
     // (即将)达到限额 - true
-    private static unsafe bool IsSealsReachTheCap()
+    private static bool IsSealsReachTheCap()
     {
         if (TryGetAddonByName<AddonGrandCompanySupplyList>("GrandCompanySupplyList", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
@@ -136,6 +136,7 @@ public class AutoExpertDelivery : IDailyModule
                 TaskManager.Abort();
                 return false;
             }
+
             var firstItemAmount = int.Parse(firstItem);
 
             return firstItemAmount + currentAmount > capAmount;
@@ -144,7 +145,7 @@ public class AutoExpertDelivery : IDailyModule
         return true;
     }
 
-    private static unsafe bool? ClickFirstItem()
+    private static bool? ClickFirstItem()
     {
         if (TryGetAddonByName<AddonGrandCompanySupplyList>("GrandCompanySupplyList", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
@@ -161,7 +162,7 @@ public class AutoExpertDelivery : IDailyModule
         return false;
     }
 
-    private static unsafe bool? CheckSealsState()
+    private static bool? CheckSealsState()
     {
         if (TryGetAddonByName<AddonGrandCompanySupplyList>("GrandCompanySupplyList", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))

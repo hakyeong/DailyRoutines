@@ -41,7 +41,7 @@ public class AutoTankStance : IDailyModule
         Service.Config.AddConfig(this, "OnlyAutoStanceWhenOneTank", true);
         ConfigOnlyAutoStanceWhenOneTank = Service.Config.GetConfig<bool>(this, "OnlyAutoStanceWhenOneTank");
 
-        TaskManager = new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
 
         ContentsWithOneTank ??= Service.ExcelData.Contents
                                        .Where(x => (uint)x.Value.ContentMemberType.Value.TanksPerParty == 1)

@@ -52,6 +52,7 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
         Click.SendClick("select_yes");
     }
 
+    // 无法出港报错 -> 修理潜水艇
     private static void OnErrorText(
         XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
@@ -61,6 +62,7 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
         TaskManager.Enqueue(ReadyToRepairSubmarines);
     }
 
+    // 航程结果 -> 再次出发
     private void OnExplorationResult(AddonEvent type, AddonArgs args)
     {
         if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationResult", out var addon) &&
@@ -88,6 +90,8 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
             // 会有 Toast
             TaskManager.DelayNext(2000);
             TaskManager.Enqueue(CommenceSubmarineVoyage);
+
+            return true;
         }
 
         return false;
@@ -119,7 +123,7 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
         {
             var handler = new ClickAirShipExplorationDetailDR();
             handler.Cancel();
-            addon->Close(true);
+            addon->IsVisible = false;
 
             var selectStringAddon = (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
             if (selectStringAddon == null) return false;

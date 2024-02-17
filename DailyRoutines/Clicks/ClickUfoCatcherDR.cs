@@ -1,5 +1,4 @@
 using ClickLib.Bases;
-using FFXIVClientStructs.FFXIV.Client.UI;
 
 namespace DailyRoutines.Clicks;
 

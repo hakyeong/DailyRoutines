@@ -28,7 +28,7 @@ public class AutoSummonPet : IDailyModule
 
     public void Init()
     {
-        TaskManager = new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
 
         Service.ClientState.TerritoryChanged += OnZoneChanged;
     }

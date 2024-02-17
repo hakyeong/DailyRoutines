@@ -24,7 +24,7 @@ public class AutoUfoCatcher : IDailyModule
 
     public void Init()
     {
-        TaskManager = new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
         Service.Framework.Update += OnUpdate;
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "UfoCatcher", OnAddonSetup);
 
