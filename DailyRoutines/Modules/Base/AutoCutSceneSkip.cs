@@ -1,9 +1,7 @@
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.AddonLifecycle;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Internal.Notifications;
@@ -19,8 +17,11 @@ public class AutoCutSceneSkip : IDailyModule
     public bool Initialized { get; set; }
     public bool WithConfigUI => true;
 
+    private static TaskManager? TaskManager;
+
     public void Init()
     {
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = int.MaxValue, ShowDebug = true };
         Service.Condition.ConditionChange += OnConditionChanged;
     }
 
@@ -45,10 +46,7 @@ public class AutoCutSceneSkip : IDailyModule
                     return;
                 }
 
-                Task.Delay(10)
-                    .ContinueWith(
-                        _ => Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "NowLoading",
-                                                                     OnAddonLoading));
+                TaskManager.Enqueue(IsWatchingCutscene);
                 Service.Toast.ErrorToast += OnErrorToast;
             }
             else
@@ -66,7 +64,7 @@ public class AutoCutSceneSkip : IDailyModule
         }
     }
 
-    private static unsafe void OnAddonLoading(AddonEvent type, AddonArgs args)
+    private static unsafe bool? IsWatchingCutscene()
     {
         WindowsKeypress.SendKeypress(Keys.Escape);
         if (TryGetAddonByName<AtkUnitBase>("SystemMenu", out var menu) && IsAddonReady(menu))
@@ -74,20 +72,27 @@ public class AutoCutSceneSkip : IDailyModule
             Callback.Fire(menu, true, -1);
             menu->Hide(true);
             AbortActions();
-            return;
+            return true;
         }
 
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
         {
             if (addon->GetTextNodeById(2)->NodeText.ExtractText().Contains("要跳过这段过场动画吗"))
+            {
                 if (Click.TrySendClick("select_string1"))
+                {
                     AbortActions();
+                    return true;
+                }
+            }
         }
+
+        return false;
     }
 
     private static void AbortActions()
     {
-        Service.AddonLifecycle.UnregisterListener(OnAddonLoading);
+        TaskManager?.Abort();
         Service.Toast.ErrorToast -= OnErrorToast;
     }
 
