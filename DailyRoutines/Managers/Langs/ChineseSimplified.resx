@@ -459,7 +459,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoSellCardsConfirmDescription" xml:space="preserve">
     <value>幻卡回收界面出现后, 自动点击确认按钮
-同时, 为幻卡回收界面新增悬浮窗, 允许自动回收当前所有已收录幻卡</value>
+为幻卡回收列表新增悬浮窗, 允许自动回收当前所有已收录幻卡</value>
   </data>
   <data name="AutoSellCardsConfirmTitle" xml:space="preserve">
     <value>自动幻卡回收</value>
