@@ -7,6 +7,7 @@ using Dalamud.Utility.Signatures;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
@@ -32,7 +33,9 @@ public unsafe class AutoCancelCast : IDailyModule
         Service.Condition.ConditionChange += OnConditionChanged;
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
-        TargetAreaActions ??= Service.ExcelData.Actions.Where(x => x.Value.TargetArea).Select(x => x.Key).ToHashSet();
+        TargetAreaActions ??= Service.Data.GetExcelSheet<Action>()
+                                     .Where(x => x.TargetArea)
+                                     .Select(x => x.RowId).ToHashSet();
     }
 
     public void ConfigUI() { }
@@ -52,9 +55,10 @@ public unsafe class AutoCancelCast : IDailyModule
 
     private bool? IsNeedToCancel()
     {
-        if (Service.ClientState.LocalPlayer.CastActionType != 1 || TargetAreaActions.Contains(Service.ClientState.LocalPlayer.CastActionId)) return false;
-        var obj = GetGameObjectFromObjectID(Service.ClientState.LocalPlayer.CastTargetObjectId);
-        if (obj == null || ActionManager.CanUseActionOnTarget(Service.ClientState.LocalPlayer.CastActionId, obj)) return false;
+        var player = Service.ClientState.LocalPlayer;
+        if (player.CastActionType != 1 || TargetAreaActions.Contains(player.CastActionId)) return true;
+        var obj = GetGameObjectFromObjectID(player.CastTargetObjectId);
+        if (obj == null || ActionManager.CanUseActionOnTarget(player.CastActionId, obj)) return false;
 
         CancelCast();
         return true;

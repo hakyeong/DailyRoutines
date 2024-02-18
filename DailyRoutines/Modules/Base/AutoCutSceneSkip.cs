@@ -67,7 +67,8 @@ public class AutoCutSceneSkip : IDailyModule
     private static unsafe bool? IsWatchingCutscene()
     {
         WindowsKeypress.SendKeypress(Keys.Escape);
-        if (TryGetAddonByName<AtkUnitBase>("SystemMenu", out var menu) && IsAddonReady(menu))
+
+        if (TryGetAddonByName<AtkUnitBase>("SystemMenu", out var menu) && HelpersOm.IsAddonAndNodesReady(menu))
         {
             Callback.Fire(menu, true, -1);
             menu->Hide(true);
@@ -75,7 +76,7 @@ public class AutoCutSceneSkip : IDailyModule
             return true;
         }
 
-        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             if (addon->GetTextNodeById(2)->NodeText.ExtractText().Contains("要跳过这段过场动画吗"))
             {

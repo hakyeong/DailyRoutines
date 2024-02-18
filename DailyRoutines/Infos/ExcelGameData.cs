@@ -7,7 +7,7 @@ namespace DailyRoutines.Infos;
 
 public class ExcelGameData
 {
-    public Dictionary<uint, Action>? Actions { get; private set; }
+    public Dictionary<uint, Action>? PlayerActions { get; private set; }
     public Dictionary<uint, ContentFinderCondition>? Contents { get; private set; }
     public Dictionary<uint, ENpcResident>? ENpcResidents { get; private set; }
     public Dictionary<uint, string>? ENpcTitles { get; private set; }
@@ -15,7 +15,7 @@ public class ExcelGameData
 
     public ExcelGameData()
     {
-        Actions ??= Service.Data.GetExcelSheet<Action>()
+        PlayerActions ??= Service.Data.GetExcelSheet<Action>()
                          ?.Where(x => x.ClassJobCategory.Row > 0 && x.ActionCategory.Row <= 4 && x.RowId > 8)
                          .ToDictionary(x => x.RowId, x => x);
 
