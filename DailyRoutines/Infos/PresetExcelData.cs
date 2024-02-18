@@ -9,9 +9,6 @@ public class PresetExcelData
 {
     public Dictionary<uint, Action>? PlayerActions { get; private set; }
     public Dictionary<uint, ContentFinderCondition>? Contents { get; private set; }
-    public Dictionary<uint, ENpcResident>? ENpcResidents { get; private set; }
-    public Dictionary<uint, string>? ENpcTitles { get; private set; }
-    public HashSet<uint>? ContentTerritories { get; private set; }
 
     public PresetExcelData()
     {
@@ -23,15 +20,5 @@ public class PresetExcelData
                           .Where(x => !x.Name.ToString().IsNullOrEmpty())
                           .DistinctBy(x => x.TerritoryType.Row)
                           .ToDictionary(x => x.TerritoryType.Row, x => x);
-
-        ContentTerritories ??= [..Contents.Keys];
-
-        ENpcResidents ??= Service.Data.GetExcelSheet<ENpcResident>()
-                          .Where(x => x.Unknown10)
-                          .ToDictionary(x => x.RowId, x => x);
-
-        ENpcTitles ??= Service.Data.GetExcelSheet<ENpcResident>()
-                            .Where(x => x.Unknown10)
-                            .ToDictionary(x => x.RowId, x => x.Title.ExtractText());
     }
 }

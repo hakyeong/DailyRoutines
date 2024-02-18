@@ -37,7 +37,7 @@ public unsafe class AutoRefocus : IDailyModule
     private void OnZoneChange(object? sender, ushort territory)
     {
         FocusTarget = null;
-        if (Service.PresetData.ContentTerritories.Contains(territory))
+        if (Service.PresetData.Contents.ContainsKey(territory))
             Service.Framework.Update += OnUpdate;
         else
             Service.Framework.Update -= OnUpdate;

@@ -15,6 +15,7 @@ using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 
 namespace DailyRoutines.Modules;
@@ -48,7 +49,6 @@ public unsafe partial class FastObjectInteract : IDailyModule
     private static float WindowWidth;
 
     private static readonly Dictionary<nint, ObjectWaitSelected> ObjectsWaitSelected = [];
-
     private static readonly Dictionary<ObjectKind, string> ObjectKindLoc = new()
     {
         { ObjectKind.BattleNpc, "战斗类 NPC (不建议)" },
@@ -66,7 +66,7 @@ public unsafe partial class FastObjectInteract : IDailyModule
         { ObjectKind.Ornament, "时尚配饰 (不建议)" }
     };
 
-    private static HashSet<uint> ValidENPC = new();
+    private static Dictionary<uint, string>? ENpcTitles;
 
     public void Init()
     {
@@ -95,7 +95,9 @@ public unsafe partial class FastObjectInteract : IDailyModule
         ConfigBlacklistKeys = Service.Config.GetConfig<HashSet<string>>(this, "BlacklistKeys");
         ConfigMinButtonWidth = Service.Config.GetConfig<float>(this, "MinButtonWidth");
 
-        ValidENPC = [.. Service.PresetData.ENpcResidents.Keys];
+        ENpcTitles ??= Service.Data.GetExcelSheet<ENpcResident>()
+                              .Where(x => x.Unknown10)
+                              .ToDictionary(x => x.RowId, x => x.Title.RawString);
 
         Service.Framework.Update += OnUpdate;
     }
@@ -267,7 +269,7 @@ public unsafe partial class FastObjectInteract : IDailyModule
                 {
                     if (ImGui.MenuItem(Service.Lang.GetText("FastObjectInteract-AddToBlacklist")))
                     {
-                        if (!ConfigBlacklistKeys.Add(Regex.Replace(kvp.Value.Name, @"\[.*?\]", "").Trim())) return;
+                        if (!ConfigBlacklistKeys.Add(FastObjectInteractTitleRegex().Replace(kvp.Value.Name, "").Trim())) return;
                         Service.Config.UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
                     }
 
@@ -307,7 +309,7 @@ public unsafe partial class FastObjectInteract : IDailyModule
 
                 var objKind = obj.ObjectKind;
                 if (!ConfigSelectedKinds.Contains(objKind)) continue;
-                if (objKind == ObjectKind.EventNpc && !ValidENPC.Contains(obj.DataId)) continue;
+                if (objKind == ObjectKind.EventNpc && !ENpcTitles.ContainsKey(obj.DataId)) continue;
 
                 var objName = obj.Name.ExtractText();
                 if (ConfigBlacklistKeys.Contains(objName)) continue;
@@ -322,7 +324,7 @@ public unsafe partial class FastObjectInteract : IDailyModule
                 distanceSet.Add(adjustedDistance);
 
                 if (objKind == ObjectKind.EventNpc &&
-                    Service.PresetData.ENpcTitles.TryGetValue(obj.DataId, out var ENPCTitle) &&
+                    ENpcTitles.TryGetValue(obj.DataId, out var ENPCTitle) &&
                     !string.IsNullOrEmpty(ENPCTitle))
                 {
                     var stringBuilder = new StringBuilder();
@@ -409,4 +411,7 @@ public unsafe partial class FastObjectInteract : IDailyModule
 
     [GeneratedRegex("\\[.*?\\]")]
     private static partial Regex AddToBlacklistNameRegex();
+
+    [GeneratedRegex("\\[.*?\\]")]
+    private static partial Regex FastObjectInteractTitleRegex();
 }

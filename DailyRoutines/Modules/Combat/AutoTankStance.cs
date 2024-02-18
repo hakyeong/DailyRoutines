@@ -62,11 +62,11 @@ public class AutoTankStance : IDailyModule
 
     public void OverlayUI() { }
 
-    private void OnZoneChanged(object? sender, ushort e)
+    private static void OnZoneChanged(object? sender, ushort e)
     {
         TaskManager.Abort();
         if ((ConfigOnlyAutoStanceWhenOneTank && ContentsWithOneTank.Contains(e)) ||
-            (!ConfigOnlyAutoStanceWhenOneTank && Service.PresetData.ContentTerritories.Contains(e)))
+            (!ConfigOnlyAutoStanceWhenOneTank && Service.PresetData.Contents.ContainsKey(e)))
             TaskManager.Enqueue(CheckCurrentJob);
     }
 

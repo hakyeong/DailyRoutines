@@ -39,7 +39,7 @@ public class AutoSummonPet : IDailyModule
 
     private void OnZoneChanged(object? sender, ushort e)
     {
-        if (!Service.PresetData.ContentTerritories.Contains(e)) return;
+        if (!Service.PresetData.Contents.ContainsKey(e)) return;
         TaskManager.Abort();
         TaskManager.Enqueue(CheckCurrentJob);
     }
