@@ -21,7 +21,7 @@ public class AutoCutSceneSkip : IDailyModule
 
     public void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = int.MaxValue, ShowDebug = true };
+        TaskManager ??= new TaskManager { TimeLimitMS = int.MaxValue, ShowDebug = false };
         Service.Condition.ConditionChange += OnConditionChanged;
     }
 
