@@ -95,7 +95,7 @@ public unsafe partial class FastObjectInteract : IDailyModule
         ConfigBlacklistKeys = Service.Config.GetConfig<HashSet<string>>(this, "BlacklistKeys");
         ConfigMinButtonWidth = Service.Config.GetConfig<float>(this, "MinButtonWidth");
 
-        ValidENPC = [.. Service.ExcelData.ENpcResidents.Keys];
+        ValidENPC = [.. Service.PresetData.ENpcResidents.Keys];
 
         Service.Framework.Update += OnUpdate;
     }
@@ -322,7 +322,7 @@ public unsafe partial class FastObjectInteract : IDailyModule
                 distanceSet.Add(adjustedDistance);
 
                 if (objKind == ObjectKind.EventNpc &&
-                    Service.ExcelData.ENpcTitles.TryGetValue(obj.DataId, out var ENPCTitle) &&
+                    Service.PresetData.ENpcTitles.TryGetValue(obj.DataId, out var ENPCTitle) &&
                     !string.IsNullOrEmpty(ENPCTitle))
                 {
                     var stringBuilder = new StringBuilder();

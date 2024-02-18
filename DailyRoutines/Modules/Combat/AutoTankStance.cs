@@ -43,7 +43,7 @@ public class AutoTankStance : IDailyModule
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
 
-        ContentsWithOneTank ??= Service.ExcelData.Contents
+        ContentsWithOneTank ??= Service.PresetData.Contents
                                        .Where(x => (uint)x.Value.ContentMemberType.Value.TanksPerParty == 1)
                                        .Select(x => x.Key)
                                        .ToHashSet();
@@ -66,7 +66,7 @@ public class AutoTankStance : IDailyModule
     {
         TaskManager.Abort();
         if ((ConfigOnlyAutoStanceWhenOneTank && ContentsWithOneTank.Contains(e)) ||
-            (!ConfigOnlyAutoStanceWhenOneTank && Service.ExcelData.ContentTerritories.Contains(e)))
+            (!ConfigOnlyAutoStanceWhenOneTank && Service.PresetData.ContentTerritories.Contains(e)))
             TaskManager.Enqueue(CheckCurrentJob);
     }
 

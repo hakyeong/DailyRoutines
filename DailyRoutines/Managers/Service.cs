@@ -9,7 +9,6 @@ using Dalamud.Game.ClientState.Party;
 using Dalamud.Game.Gui;
 using Dalamud.Game.Gui.PartyFinder;
 using Dalamud.Game.Gui.Toast;
-using Dalamud.Game.Text.Sanitizer;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
@@ -25,8 +24,8 @@ public class Service
         pluginInterface.Create<Service>();
 
         InitLanguage();
-        ExcelData = new();
-        Notification = new();
+        PresetData = new();
+        Notice = new();
         Waymarks = new();
     }
 
@@ -51,7 +50,7 @@ public class Service
     {
         Waymarks.Uninit();
         Config.Uninitialize();
-        Notification.Dispose();
+        Notice.Dispose();
     }
 
     [PluginService] public static IClientState ClientState { get; private set; } = null!;
@@ -73,9 +72,9 @@ public class Service
     [PluginService] public static PartyList PartyList { get; private set; } = null!;
     [PluginService] public static IDutyState DutyState { get; private set; } = null!;
     public static SigScanner SigScanner { get; private set; } = new();
-    public static ExcelGameData ExcelData { get; set; } = null!;
+    public static PresetExcelData PresetData { get; set; } = null!;
     public static FieldMarkerManager Waymarks { get; set; } = null!;
-    public static NotificationManager Notification { get; private set; } = null!;
+    public static NotificationManager Notice { get; private set; } = null!;
     public static LanguageManager Lang { get; set; } = null!;
     public static Configuration Config { get; set; } = null!;
 }

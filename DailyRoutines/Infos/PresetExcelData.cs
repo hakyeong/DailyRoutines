@@ -5,7 +5,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Infos;
 
-public class ExcelGameData
+public class PresetExcelData
 {
     public Dictionary<uint, Action>? PlayerActions { get; private set; }
     public Dictionary<uint, ContentFinderCondition>? Contents { get; private set; }
@@ -13,7 +13,7 @@ public class ExcelGameData
     public Dictionary<uint, string>? ENpcTitles { get; private set; }
     public HashSet<uint>? ContentTerritories { get; private set; }
 
-    public ExcelGameData()
+    public PresetExcelData()
     {
         PlayerActions ??= Service.Data.GetExcelSheet<Action>()
                          ?.Where(x => x.ClassJobCategory.Row > 0 && x.ActionCategory.Row <= 4 && x.RowId > 8)

@@ -31,10 +31,10 @@ public class AutoNotifyDutyName : IDailyModule
 
     private void OnZoneChange(object? sender, ushort territory)
     {
-        if (!Service.ExcelData.Contents.TryGetValue(territory, out var content)) return;
+        if (!Service.PresetData.Contents.TryGetValue(territory, out var content)) return;
         var contentName = content.Name.RawString;
         Service.Chat.Print(Service.Lang.GetSeString("AutoNotifyDutyName-NoticeMessage", contentName));
-        if (ConfigSendWindowsToast) Service.Notification.Show(contentName, contentName);
+        if (ConfigSendWindowsToast) Service.Notice.Show(contentName, contentName);
     }
 
     public void Uninit()

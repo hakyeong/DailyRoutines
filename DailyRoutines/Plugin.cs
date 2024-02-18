@@ -39,7 +39,7 @@ public sealed class Plugin : IDalamudPlugin
         ModuleManager ??= new ModuleManager();
         ModuleManager.Init();
 
-        Service.Notification.Init();
+        Service.Notice.Init();
     }
 
     internal void CommandHandler()

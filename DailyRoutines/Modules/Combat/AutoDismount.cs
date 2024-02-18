@@ -39,8 +39,8 @@ public unsafe class AutoDismount : IDailyModule
         useActionSelfHook?.Enable();
 
         CanTargetSelfActions ??=
-            Service.ExcelData.PlayerActions.Where(x => x.Value.CanTargetSelf).Select(x => x.Key).ToHashSet();
-        TargetAreaActions ??= Service.ExcelData.PlayerActions.Where(x => x.Value.TargetArea).Select(x => x.Key).ToHashSet();
+            Service.PresetData.PlayerActions.Where(x => x.Value.CanTargetSelf).Select(x => x.Key).ToHashSet();
+        TargetAreaActions ??= Service.PresetData.PlayerActions.Where(x => x.Value.TargetArea).Select(x => x.Key).ToHashSet();
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
