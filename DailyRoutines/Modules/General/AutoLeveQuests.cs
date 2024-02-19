@@ -33,17 +33,32 @@ public class AutoLeveQuests : IDailyModule
     private static int Allowances;
     private static string SearchString = string.Empty;
 
+    private static int ConfigOperationDelay = 0;
+
     private static bool IsOnProcessing;
 
     public void Init()
     {
         Service.ClientState.TerritoryChanged += OnZoneChanged;
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
+
+        Service.Config.AddConfig(this, "OperationDelay", 0);
+        ConfigOperationDelay = Service.Config.GetConfig<int>(this, "OperationDelay");
     }
 
     public void ConfigUI()
     {
         ImGui.BeginDisabled(IsOnProcessing);
+        ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
+        if (ImGui.InputInt(Service.Lang.GetText("AutoLeveQuests-OperationDelay"), ref ConfigOperationDelay, 0, 0, ImGuiInputTextFlags.EnterReturnsTrue))
+        {
+            ConfigOperationDelay = Math.Max(0, ConfigOperationDelay);
+            Service.Config.UpdateConfig(this, "OperationDelay", ConfigOperationDelay);
+        }
+
+        ImGui.SameLine();
+        ImGuiOm.HelpMarker(Service.Lang.GetText("AutoLeveQuests-OperationDelayHelp"));
+
         ImGui.AlignTextToFramePadding();
         ImGui.Text($"{Service.Lang.GetText("AutoLeveQuests-SelectedLeve")}");
 
@@ -171,7 +186,7 @@ public class AutoLeveQuests : IDailyModule
         if (FindObjectToInteractWith(LeveMeteDataId, out var foundObject))
         {
             TargetSystem.Instance()->InteractWithObject(foundObject);
-
+            if (ConfigOperationDelay > 0) TaskManager.DelayNext(ConfigOperationDelay);
             TaskManager.Enqueue(ClickCraftingLeve);
             return true;
         }
@@ -273,6 +288,7 @@ public class AutoLeveQuests : IDailyModule
                 if (LeveQuests.ContainsKey(levesSpan[i].LeveId)) // 判断是否为当前地图的理符
                     qualifiedCount++;
 
+            if (ConfigOperationDelay > 0) TaskManager.DelayNext(ConfigOperationDelay);
             TaskManager.Enqueue(qualifiedCount > 1 ? ClickSelectQuest : InteractWithMete);
             return true;
         }

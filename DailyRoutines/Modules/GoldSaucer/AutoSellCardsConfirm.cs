@@ -86,7 +86,7 @@ public class AutoSellCardsConfirm : IDailyModule
             HelpersOm.IsAddonAndNodesReady(addon))
         {
             var cardsAmount = addon->AtkValues[1].Int;
-            if (cardsAmount == 0)
+            if (cardsAmount is 0)
             {
                 EndHandOver();
                 return true;
@@ -101,6 +101,7 @@ public class AutoSellCardsConfirm : IDailyModule
             }
 
             TaskManager.Enqueue(() => Callback.Fire(addon, true, 0, 0, 0));
+            addon->OnRefresh(addon->AtkValuesCount, addon->AtkValues);
             IsOnProcess = true;
             TaskManager.DelayNext(100);
             TaskManager.Enqueue(StartHandOver);

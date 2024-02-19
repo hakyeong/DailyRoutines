@@ -194,6 +194,12 @@
   <data name="AutoLeveQuests-ObtainLevemeteID" xml:space="preserve">
     <value>获取理符发行人 ID</value>
   </data>
+  <data name="AutoLeveQuests-OperationDelay" xml:space="preserve">
+    <value>操作延迟 (毫秒)</value>
+  </data>
+  <data name="AutoLeveQuests-OperationDelayHelp" xml:space="preserve">
+    <value>本模块默认状态下操作速度较快, 若你身边其他玩家数量较多, 请调高操作延迟</value>
+  </data>
   <data name="AutoLeveQuests-SelectedLeve" xml:space="preserve">
     <value>选择理符:</value>
   </data>
