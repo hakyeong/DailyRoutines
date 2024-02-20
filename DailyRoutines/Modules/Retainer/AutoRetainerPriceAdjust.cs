@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using DailyRoutines.Clicks;
@@ -239,11 +241,44 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
             var ui = &addon->AtkUnitBase;
-            CurrentItemSearchItemID = (uint)ui->AtkValues[0].Int;
+            if (!TryGetAddonByName<AtkUnitBase>("ItemHistory", out var historyAddon))
+            {
+                var handler = new ClickItemSearchResultDR();
+                handler.History();
+            }
 
+            if (!HelpersOm.IsAddonAndNodesReady(historyAddon)) return false;
+
+            CurrentItemSearchItemID = (uint)ui->AtkValues[0].Int;
             var errorMessage = addon->ErrorMessage->NodeText.ExtractText();
             if (errorMessage.Contains("没有搜索到任何结果"))
             {
+                if (historyAddon->GetTextNodeById(11)->AtkResNode.IsVisible)
+                {
+                    CurrentMarketLowestPrice = 0;
+                    ui->Close(true);
+                    return true;
+                }
+
+                if (historyAddon->GetComponentListById(10)->ItemRendererList == null) return false;
+
+                var result = ScanItemHistory(historyAddon);
+                if (result.Any())
+                {
+                    if (ConfigSeparateNQAndHQ && IsCurrentItemHQ)
+                    {
+                        CurrentMarketLowestPrice = result.Where(x => x.HQ).OrderByDescending(x => x.Price).FirstOrDefault().Price;
+                        if (CurrentMarketLowestPrice == 0)
+                            CurrentMarketLowestPrice = result.OrderByDescending(x => x.Price).FirstOrDefault().Price;
+                    }
+                    else
+                    {
+                        CurrentMarketLowestPrice = result.OrderByDescending(x => x.Price).FirstOrDefault().Price;
+                    }
+                    ui->Close(true);
+                    return true;
+                }
+
                 CurrentMarketLowestPrice = 0;
                 ui->Close(true);
                 return true;
@@ -367,6 +402,23 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
         result.isHQ = listing.GetImageNodeById(3)->GetAsAtkImageNode()->AtkResNode.IsVisible;
 
         return true;
+    }
+
+    public static List<(bool HQ, int Price, int Amount)> ScanItemHistory(AtkUnitBase* addon)
+    {
+        var result = new List<(bool HQ, int Price, int Amount)>();
+        var list = addon->GetComponentListById(10);
+
+        for (var i = 0; i < list->ListLength; i++)
+        {
+            var listing = list->ItemRendererList[i].AtkComponentListItemRenderer->AtkComponentButton.AtkComponentBase.UldManager.NodeList;
+            var isHQ = listing[8]->IsVisible;
+            if (!int.TryParse(SanitizeManager.Sanitize(listing[6]->GetAsAtkTextNode()->NodeText.ExtractText()).Replace(",", ""), out var price)) continue;
+            if (!int.TryParse(listing[5]->GetAsAtkTextNode()->NodeText.ExtractText(), out var amount)) continue;
+            result.Add((isHQ, price, amount));
+        }
+
+        return result;
     }
 
     public void Uninit()
