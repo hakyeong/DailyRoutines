@@ -35,7 +35,7 @@ public class AutoCutSceneSkip : IDailyModule
 
     private static void OnConditionChanged(ConditionFlag flag, bool value)
     {
-        if (flag is ConditionFlag.OccupiedInCutSceneEvent or ConditionFlag.WatchingCutscene78)
+        if (flag is ConditionFlag.OccupiedInCutSceneEvent or ConditionFlag.WatchingCutscene78 or ConditionFlag.WatchingCutscene)
         {
             if (value)
             {

@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
 using ECommons.Automation;
@@ -68,8 +67,11 @@ public unsafe class AutoDismount : IDailyModule
 
     private bool IsNeedToDismount(uint actionType, uint actionId, ulong actionTarget)
     {
+        var localPlayer = (GameObject*)Service.ClientState.LocalPlayer.Address;
+        if (localPlayer == null) return false;
+
         // 根本不在坐骑上
-        if (!IsOnMount()) return false;
+        if (localPlayer->IsNotMounted()) return false;
 
         // 使用的技能是坐骑
         if ((ActionType)actionType == ActionType.Mount) return false;
@@ -92,7 +94,6 @@ public unsafe class AutoDismount : IDailyModule
             // 对非自身的目标使用技能
             if (actionTarget != 3758096384L)
             {
-                var localPlayer = (GameObject*)Service.ClientState.LocalPlayer.Address;
                 // 562 - 看不到目标; 566 - 目标在射程外
                 if (ActionManager.GetActionInRangeOrLoS(actionId, localPlayer, actionObject) is 562 or 566) return false;
                 // 目标在范围外
@@ -106,8 +107,6 @@ public unsafe class AutoDismount : IDailyModule
 
         return true;
     }
-
-    private static bool IsOnMount() => Service.Condition[ConditionFlag.Mounted] || Service.Condition[ConditionFlag.Mounted2];
 
     public void Uninit()
     {

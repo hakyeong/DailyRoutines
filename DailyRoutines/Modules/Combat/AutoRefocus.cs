@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game;
