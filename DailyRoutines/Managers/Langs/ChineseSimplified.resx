@@ -380,7 +380,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>副本完成时, 自动给予对位队友最优队员推荐</value>
   </data>
   <data name="AutoPlayerCommendTitle" xml:space="preserve">
-    <value>自动最优队友推荐</value>
+    <value>自动最优队员推荐</value>
   </data>
   <data name="AutoQTEDescription" xml:space="preserve">
     <value>在副本中, 自动完成全种类的动态演练 (QTE)</value>
