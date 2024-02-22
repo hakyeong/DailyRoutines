@@ -55,8 +55,7 @@ public class AutoPlayerCommend : IDailyModule
         if (Service.Gui.GetAddonByName("VoteMvp") != nint.Zero) return true;
 
         var notification = (AtkUnitBase*)Service.Gui.GetAddonByName("_Notification");
-        var notification2 = (AtkUnitBase*)Service.Gui.GetAddonByName("_NotificationIcMvp");
-        if (notification == null && notification2 == null) return false;
+        if (notification == null) return false;
 
         Callback.Fire(notification, true, 0, 11);
         Callback.Fire(notification, true, 0, 11, "");
