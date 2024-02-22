@@ -55,9 +55,11 @@ public class AutoPlayerCommend : IDailyModule
         if (Service.Gui.GetAddonByName("VoteMvp") != nint.Zero) return true;
 
         var notification = (AtkUnitBase*)Service.Gui.GetAddonByName("_Notification");
-        if (notification == null) return false;
+        var notification2 = (AtkUnitBase*)Service.Gui.GetAddonByName("_NotificationIcMvp");
+        if (notification == null && notification2 == null) return false;
 
         Callback.Fire(notification, true, 0, 11);
+        Callback.Fire(notification, true, 0, 11, "");
         return true;
     }
 
@@ -74,33 +76,108 @@ public class AutoPlayerCommend : IDailyModule
                                                                  ally.ClassJob.GameData.Name.ExtractText()));
 
         if (allies.Count <= 0) return true;
+        var playersToCommend = allies.Values
+                                    .OrderByDescending(x => x.Role == localPlayerRole)
+                                    .ThenByDescending(x =>
+                                    {
+                                        switch (localPlayerRole)
+                                        {
+                                            case PlayerRole.Tank or PlayerRole.Healer:
+                                                return x.Role is PlayerRole.Tank or PlayerRole.Healer ? 1 : 0;
+                                            case PlayerRole.DPS or PlayerRole.DPS:
+                                                switch (x.Role)
+                                                {
+                                                    case PlayerRole.DPS or PlayerRole.DPS:
+                                                        return 3;
+                                                    case PlayerRole.Healer:
+                                                        return 2;
+                                                    case PlayerRole.Tank:
+                                                        return 1;
+                                                }
 
-        var playerToCommend = allies.Values.FirstOrDefault(x => x.Role == localPlayerRole);
+                                                break;
+                                        }
+                                        return 0;
+                                    });
+
         if (TryGetAddonByName<AtkUnitBase>("VoteMvp", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var commendIndex = 0;
+            var commendSuccess = false;
+            var commendIndex = -1;
             var commendPlayerName = string.Empty;
-            for (var i = 0; i < allies.Count; ++i)
+
+            foreach (var playerToCommend in playersToCommend)
             {
-                if (!Convert.ToBoolean(addon->AtkValues[i + 16].Byte)) continue;
-                if (playerToCommend == null)
+                for (var i = 0; i < allies.Count; ++i)
                 {
-                    commendIndex = i;
-                    break;
+                    if (!Convert.ToBoolean(addon->AtkValues[i + 16].Byte)) continue;
+
+                    try
+                    {
+                        var playerNameInAddon = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i + 9].String);
+                        if (playerNameInAddon == playerToCommend.PlayerName)
+                        {
+                            commendIndex = i;
+                            commendPlayerName = playerToCommend.PlayerName;
+                            break;
+                        }
+                    }
+                    catch
+                    {
+                        return false;
+                    }
                 }
 
-                var player = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i + 9].String);
-                if (playerToCommend.PlayerName == player)
+                if (commendIndex != -1)
                 {
-                    commendPlayerName = player;
-                    commendIndex = i;
+                    Callback.Fire(addon, true, 0, commendIndex);
+                    Service.Chat.Print(Service.Lang.GetSeString("AutoPlayerCommend-NoticeMessage", commendPlayerName));
+                    commendSuccess = true;
                     break;
                 }
             }
 
-            Callback.Fire(addon, true, 0, commendIndex);
-            Service.Chat.Print(Service.Lang.GetSeString("AutoPlayerCommend-NoticeMessage", commendPlayerName));
-            return true;
+            return commendSuccess;
+        }
+
+        if (TryGetAddonByName<AtkUnitBase>("BannerMIP", out var addonBanner) && HelpersOm.IsAddonAndNodesReady(addonBanner))
+        {
+            var commendSuccess = false;
+            var commendIndex = -1;
+            var commendPlayerName = string.Empty;
+
+            foreach (var playerToCommend in playersToCommend)
+            {
+                for (var i = 0; i < allies.Count; ++i)
+                {
+                    if (!Convert.ToBoolean(addonBanner->AtkValues[i + 29].Byte)) continue;
+
+                    try
+                    {
+                        var playerNameInAddon = MemoryHelper.ReadStringNullTerminated((nint)addonBanner->AtkValues[i + 22].String);
+                        if (playerNameInAddon == playerToCommend.PlayerName)
+                        {
+                            commendIndex = i;
+                            commendPlayerName = playerToCommend.PlayerName;
+                            break;
+                        }
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                }
+
+                if (commendIndex != -1)
+                {
+                    Callback.Fire(addonBanner, true, 12, commendIndex);
+                    Service.Chat.Print(Service.Lang.GetSeString("AutoPlayerCommend-NoticeMessage", commendPlayerName));
+                    commendSuccess = true;
+                    break;
+                }
+            }
+
+            return commendSuccess;
         }
 
         return false;
