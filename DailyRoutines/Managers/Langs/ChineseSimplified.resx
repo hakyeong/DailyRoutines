@@ -526,10 +526,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoSubmarineCollectDescription" xml:space="preserve">
     <value>打开潜水艇列表, 并点击开始后, 自动确认潜水艇探索结果并重新委派
-(前置模块: 自动跳过过场动画) (可能在任一版本更新后不可用一段时间)</value>
+(前置模块: 自动跳过过场动画)</value>
   </data>
   <data name="AutoSubmarineCollectTitle" xml:space="preserve">
-    <value>自动收取潜水艇 (测试/不稳定)</value>
+    <value>自动收取潜水艇</value>
   </data>
   <data name="AutoSummonPetDescription" xml:space="preserve">
     <value>进入副本后, 若当前职业需要但未召唤召唤兽, 则自动读条召唤召唤兽</value>

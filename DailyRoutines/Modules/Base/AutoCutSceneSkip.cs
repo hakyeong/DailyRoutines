@@ -6,6 +6,8 @@ using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Internal.Notifications;
 using ECommons.Automation;
+using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -35,10 +37,11 @@ public class AutoCutSceneSkip : IDailyModule
 
     private static void OnConditionChanged(ConditionFlag flag, bool value)
     {
-        if (flag is ConditionFlag.OccupiedInCutSceneEvent or ConditionFlag.WatchingCutscene78 or ConditionFlag.WatchingCutscene)
+        if (flag is ConditionFlag.OccupiedInCutSceneEvent or ConditionFlag.WatchingCutscene78)
         {
             if (value)
             {
+                if (GameMain.IsInGPose()) return;
                 if (Service.KeyState[Service.Config.ConflictKey])
                 {
                     P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"),
