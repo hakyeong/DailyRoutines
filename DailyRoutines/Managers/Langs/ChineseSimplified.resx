@@ -120,6 +120,15 @@
   <data name="Auto" xml:space="preserve">
     <value>自动</value>
   </data>
+  <data name="AutoAntiCensorship-BypassText" xml:space="preserve">
+    <value>处理文本</value>
+  </data>
+  <data name="AutoAntiCensorship-FilteredText" xml:space="preserve">
+    <value>屏蔽文本</value>
+  </data>
+  <data name="AutoAntiCensorship-OrigText" xml:space="preserve">
+    <value>原始文本</value>
+  </data>
   <data name="AutoAntiCensorship-Preview" xml:space="preserve">
     <value>反屏蔽预览 (发送消息):</value>
   </data>
@@ -259,6 +268,18 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoMarkAetherCurrentsTitle" xml:space="preserve">
     <value>自动标记风脉泉</value>
+  </data>
+  <data name="AutoMaterialize-Start" xml:space="preserve">
+    <value>开始</value>
+  </data>
+  <data name="AutoMaterialize-Stop" xml:space="preserve">
+    <value>停止</value>
+  </data>
+  <data name="AutoMaterializeDescription" xml:space="preserve">
+    <value>打开精制魔晶石界面, 并点击开始后, 自动精制当前类别下所有装备的魔晶石</value>
+  </data>
+  <data name="AutoMaterializeTitle" xml:space="preserve">
+    <value>自动精制魔晶石</value>
   </data>
   <data name="AutoMiniCactpotDescription" xml:space="preserve">
     <value>进入仙人微彩界面后, 自动完成当日所有的仙人微彩
@@ -474,7 +495,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoSellCardsConfirmDescription" xml:space="preserve">
     <value>幻卡回收界面出现后, 自动点击确认按钮
-为幻卡回收列表新增悬浮窗, 允许自动回收当前所有已收录幻卡</value>
+点击开始后, 自动回收当前所有已收录幻卡</value>
   </data>
   <data name="AutoSellCardsConfirmTitle" xml:space="preserve">
     <value>自动幻卡回收</value>

@@ -20,7 +20,7 @@ namespace DailyRoutines.Modules;
 public unsafe class AutoExpertDelivery : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
+    public bool WithConfigUI => false;
     internal static Overlay? Overlay { get; private set; }
 
     private static TaskManager? TaskManager;
@@ -34,15 +34,7 @@ public unsafe class AutoExpertDelivery : IDailyModule
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "GrandCompanySupplyList", OnAddonSupplyList);
     }
 
-    public void ConfigUI()
-    {
-        ImGui.BeginDisabled(IsOnProcess);
-        if (ImGui.Button(Service.Lang.GetText("AutoExpertDelivery-Start"))) StartHandOver();
-        ImGui.EndDisabled();
-
-        ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoExpertDelivery-Stop"))) EndHandOver();
-    }
+    public void ConfigUI() { }
 
     public void OverlayUI()
     {
