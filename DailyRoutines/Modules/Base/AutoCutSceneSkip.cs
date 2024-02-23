@@ -2,12 +2,10 @@ using System.Windows.Forms;
 using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using Dalamud.Game.AddonLifecycle;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Interface.Internal.Notifications;
 using ECommons.Automation;
-using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -21,9 +19,12 @@ public class AutoCutSceneSkip : IDailyModule
 
     private static TaskManager? TaskManager;
 
+    private static bool IsInCutScene;
+
     public void Init()
     {
         TaskManager ??= new TaskManager { TimeLimitMS = int.MaxValue, ShowDebug = false };
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostUpdate, "NowLoading", OnAddonDrawn);
         Service.Condition.ConditionChange += OnConditionChanged;
     }
 
@@ -41,15 +42,7 @@ public class AutoCutSceneSkip : IDailyModule
         {
             if (value)
             {
-                if (GameMain.IsInGPose()) return;
-                if (Service.KeyState[Service.Config.ConflictKey])
-                {
-                    P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"),
-                                                                "Daily Routines", NotificationType.Success);
-                    return;
-                }
-
-                TaskManager.Enqueue(IsWatchingCutscene);
+                IsInCutScene = true;
                 Service.Toast.ErrorToast += OnErrorToast;
             }
             else
@@ -65,6 +58,15 @@ public class AutoCutSceneSkip : IDailyModule
             message = SeString.Empty;
             isHandled = true;
         }
+    }
+
+    private static void OnAddonDrawn(AddonEvent type, AddonArgs args)
+    {
+        if (Service.KeyState[Service.Config.ConflictKey]) return;
+
+        if ((Service.Condition[ConditionFlag.OccupiedInCutSceneEvent] ||
+             Service.Condition[ConditionFlag.WatchingCutscene78]) && IsInCutScene)
+            TaskManager.Enqueue(IsWatchingCutscene);
     }
 
     private static unsafe bool? IsWatchingCutscene()
@@ -96,12 +98,14 @@ public class AutoCutSceneSkip : IDailyModule
 
     private static void AbortActions()
     {
+        IsInCutScene = false;
         TaskManager?.Abort();
         Service.Toast.ErrorToast -= OnErrorToast;
     }
 
     public void Uninit()
     {
+        Service.AddonLifecycle.UnregisterListener(OnAddonDrawn);
         Service.Condition.ConditionChange -= OnConditionChanged;
         AbortActions();
     }
