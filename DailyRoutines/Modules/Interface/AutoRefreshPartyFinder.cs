@@ -127,7 +127,7 @@ public class AutoRefreshPartyFinder : IDailyModule
     {
         if (TryGetAddonByName<AtkUnitBase>("LookingForGroup", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            Callback.Fire(addon, true, 17);
+            AddonManager.Callback(addon, true, 17);
             return;
         }
 

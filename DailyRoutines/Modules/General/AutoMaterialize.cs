@@ -77,7 +77,7 @@ public class AutoMaterialize : IDailyModule
         var addon = (AtkUnitBase*)args.Addon;
         if (addon == null) return;
 
-        Callback.Fire(addon, true, 0);
+        AddonManager.Callback(addon, true, 0);
     }
 
     private static unsafe bool? StartARound()
@@ -103,7 +103,7 @@ public class AutoMaterialize : IDailyModule
             {
                 if (part == "100%")
                 {
-                    Callback.Fire(addon, true, 2, 0);
+                    AddonManager.Callback(addon, true, 2, 0);
                     TaskManager.DelayNext(1500);
                     TaskManager.Enqueue(StartARound);
                     return true;

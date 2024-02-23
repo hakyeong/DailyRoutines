@@ -2,7 +2,6 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Interface.Internal.Notifications;
-using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -41,7 +40,7 @@ public class AutoQuestAccept : IDailyModule
         var questID = addon->AtkValues[226].UInt;
         if (questID == 0) return;
 
-        Callback.Fire(addon, true, 3, questID);
+        AddonManager.Callback(addon, true, 3, questID);
     }
 
     public void Uninit()

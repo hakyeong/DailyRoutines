@@ -100,7 +100,7 @@ public class AutoSellCardsConfirm : IDailyModule
                 return true;
             }
 
-            TaskManager.Enqueue(() => Callback.Fire(addon, true, 0, 0, 0));
+            TaskManager.Enqueue(() => AddonManager.Callback(addon, true, 0, 0, 0));
             addon->OnRefresh(addon->AtkValuesCount, addon->AtkValues);
             IsOnProcess = true;
             TaskManager.DelayNext(100);

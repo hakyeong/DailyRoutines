@@ -24,6 +24,7 @@ public class Service
         pluginInterface.Create<Service>();
 
         InitLanguage();
+        AddonManager.Init();
         PresetData = new();
         Notice = new();
         Waymarks = new();
@@ -48,6 +49,7 @@ public class Service
 
     internal static void Uninit()
     {
+        AddonManager.Uninit();
         Waymarks.Uninit();
         Config.Uninitialize();
         Notice.Dispose();

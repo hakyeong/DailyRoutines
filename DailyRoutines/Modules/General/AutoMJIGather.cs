@@ -281,10 +281,10 @@ public class AutoMJIGather : IDailyModule
 
         if (TryGetAddonByName<AtkUnitBase>("MJIHud", out var hud) && HelpersOm.IsAddonAndNodesReady(hud))
         {
-            Callback.Fire(hud, true, 11, 0);
+            AddonManager.Callback(hud, true, 11, 0);
             if (TryGetAddonByName<AtkUnitBase>("ContextIconMenu", out var menu) && HelpersOm.IsAddonAndNodesReady(menu))
             {
-                Callback.Fire(menu, true, 0, 1, 82043, 0, 0);
+                AddonManager.Callback(menu, true, 0, 1, 82043, 0, 0);
                 TaskManager.Enqueue(CloseContextIconMenu);
                 return true;
             }
@@ -297,7 +297,7 @@ public class AutoMJIGather : IDailyModule
     {
         if (TryGetAddonByName<AtkUnitBase>("ContextIconMenu", out var menu) && HelpersOm.IsAddonAndNodesReady(menu))
         {
-            Callback.Fire(menu, true, -1);
+            AddonManager.Callback(menu, true, -1);
             menu->Close(true);
             return true;
         }

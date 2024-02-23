@@ -119,12 +119,12 @@ public class AutoRequestItemSubmit : IDailyModule
         {
             var slot = i - 1;
 
-            Callback.Fire(&addon->AtkUnitBase, false, 2, slot, 0, 0);
+            AddonManager.Callback(&addon->AtkUnitBase, false, 2, slot, 0, 0);
 
             return false;
         }
 
-        Callback.Fire(contextMenu, false, 0, 0, 1021003, 0, 0);
+        AddonManager.Callback(contextMenu, false, 0, 0, 1021003, 0, 0);
         SlotsFilled.Add(i);
         return true;
     }

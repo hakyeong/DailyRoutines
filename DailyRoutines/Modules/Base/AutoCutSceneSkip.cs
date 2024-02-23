@@ -75,7 +75,7 @@ public class AutoCutSceneSkip : IDailyModule
 
         if (TryGetAddonByName<AtkUnitBase>("SystemMenu", out var menu) && HelpersOm.IsAddonAndNodesReady(menu))
         {
-            Callback.Fire(menu, true, -1);
+            AddonManager.Callback(menu, true, -1);
             menu->Hide(true);
             AbortActions();
             return true;

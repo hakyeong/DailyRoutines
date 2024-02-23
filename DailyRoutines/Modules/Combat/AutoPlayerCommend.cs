@@ -57,8 +57,8 @@ public class AutoPlayerCommend : IDailyModule
         var notification = (AtkUnitBase*)Service.Gui.GetAddonByName("_Notification");
         if (notification == null) return false;
 
-        Callback.Fire(notification, true, 0, 11);
-        Callback.Fire(notification, true, 0, 11, "");
+        AddonManager.Callback(notification, true, 0, 11);
+        AddonManager.Callback(notification, true, 0, 11, "");
         return true;
     }
 
@@ -129,7 +129,7 @@ public class AutoPlayerCommend : IDailyModule
 
                 if (commendIndex != -1)
                 {
-                    Callback.Fire(addon, true, 0, commendIndex);
+                    AddonManager.Callback(addon, true, 0, commendIndex);
                     Service.Chat.Print(Service.Lang.GetSeString("AutoPlayerCommend-NoticeMessage", commendPlayerName));
                     commendSuccess = true;
                     break;
@@ -169,7 +169,7 @@ public class AutoPlayerCommend : IDailyModule
 
                 if (commendIndex != -1)
                 {
-                    Callback.Fire(addonBanner, true, 12, commendIndex);
+                    AddonManager.Callback(addonBanner, true, 12, commendIndex);
                     Service.Chat.Print(Service.Lang.GetSeString("AutoPlayerCommend-NoticeMessage", commendPlayerName));
                     commendSuccess = true;
                     break;
