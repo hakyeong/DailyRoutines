@@ -2,6 +2,7 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace DailyRoutines.Modules;
 
@@ -33,6 +34,9 @@ public class AutoDrawACard : IDailyModule
 
     private static unsafe bool? CheckCurrentJob()
     {
+        if (TryGetAddonByName<AtkUnitBase>("NowLoading", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+            return false;
+
         var player = Service.ClientState.LocalPlayer;
         if (player == null || player.ClassJob.Id == 0) return false;
 
