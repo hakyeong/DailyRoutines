@@ -11,6 +11,7 @@ using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using TinyPinyin;
 using System;
+using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
@@ -53,6 +54,10 @@ public unsafe class AutoAntiCensorship : IDailyModule
     private const string AutoTranslateLeft = "\u0002\u0012\u00027\u0003";
     private const string AutoTranslateRight = "\u0002\u0012\u00028\u0003";
 
+    private string PreviewInput = string.Empty;
+    private string PreviewCensorship = string.Empty;
+    private string PreviewBypass = string.Empty;
+
     public void Init()
     {
         SignatureHelper.Initialise(this);
@@ -79,9 +84,48 @@ public unsafe class AutoAntiCensorship : IDailyModule
                                  "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoAntiCensorship-1.png",
                                  new Vector2(386, 105));
 
+        ImGui.SameLine();
         PreviewImageWithHelpText(Service.Lang.GetText("AutoAntiCensorship-Preview1"),
                                  "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoAntiCensorship-2.png",
                                  new Vector2(383, 36));
+
+        ImGui.Separator();
+
+        ImGui.Spacing();
+
+        ImGui.AlignTextToFramePadding();
+        ImGui.Text($"{Service.Lang.GetText("AutoAntiCensorship-OrigText")}:");
+
+        ImGui.SameLine();
+        if (ImGui.InputText("###PreviewInput", ref PreviewInput, 1000, ImGuiInputTextFlags.EnterReturnsTrue | ImGuiInputTextFlags.AutoSelectAll))
+        {
+            PreviewCensorship = GetFilteredString(PreviewInput);
+            PreviewBypass = BypassCensorship(PreviewInput);
+        }
+
+        if (!string.IsNullOrWhiteSpace(PreviewInput))
+        {
+            if (ImGui.IsItemHovered())
+            {
+                ImGui.BeginTooltip();
+                ImGui.PushTextWrapPos(ImGui.GetFontSize() * 20f);
+                ImGui.TextUnformatted(PreviewInput);
+                ImGui.PopTextWrapPos();
+                ImGui.EndTooltip();
+            }
+        }
+
+        ImGui.AlignTextToFramePadding();
+        ImGui.Text($"{Service.Lang.GetText("AutoAntiCensorship-FilteredText")}:");
+
+        ImGui.SameLine();
+        ImGui.InputText("###PreviewCensorship", ref PreviewCensorship, 500, ImGuiInputTextFlags.ReadOnly);
+
+        ImGui.AlignTextToFramePadding();
+        ImGui.Text($"{Service.Lang.GetText("AutoAntiCensorship-BypassText")}:");
+
+        ImGui.SameLine();
+        ImGui.InputText("###PreviewBypass", ref PreviewBypass, 1000, ImGuiInputTextFlags.ReadOnly);
     }
 
     public void OverlayUI() { }
