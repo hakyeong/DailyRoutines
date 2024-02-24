@@ -31,7 +31,6 @@ public class AutoCutSceneSkip : IDailyModule
     public void ConfigUI()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
-        ImGuiOm.HelpMarker(Service.Lang.GetText("AutoCutSceneSkip-InterruptNotice"));
     }
 
     public void OverlayUI() { }
