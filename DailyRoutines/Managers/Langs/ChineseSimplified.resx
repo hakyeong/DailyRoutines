@@ -649,10 +649,19 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>本插件开源免费, 如需建议/联系/反馈, 请到 GitHub 提交 Issue</value>
   </data>
   <data name="CustomizeASTCardNamesDescription" xml:space="preserve">
-    <value>启用并配置完毕后, 允许自定义占星术士六张卡牌各自的名称</value>
+    <value>启用并配置完毕后, 可自定义占星术士六张卡牌各自的名称</value>
   </data>
   <data name="CustomizeASTCardNamesTitle" xml:space="preserve">
     <value>自定义卡牌名称</value>
+  </data>
+  <data name="CustomizeSightDistance-MaxDistanceInput" xml:space="preserve">
+    <value>最大视距</value>
+  </data>
+  <data name="CustomizeSightDistanceDescription" xml:space="preserve">
+    <value>启用并配置完毕后, 可自定义当前游戏摄像头的最大视距</value>
+  </data>
+  <data name="CustomizeSightDistanceTitle" xml:space="preserve">
+    <value>自定义视距</value>
   </data>
   <data name="DevModuleDescription" xml:space="preserve">
     <value>本地测试用模块专用临时标题与描述文本</value>
