@@ -1,11 +1,11 @@
 using System.Threading.Tasks;
 using ClickLib;
-using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.AddonLifecycle;
 using Dalamud.Interface.Colors;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -52,35 +52,27 @@ public class AutoNoviceNetwork : IDailyModule
 
     private static unsafe void ClickYesButton(AddonEvent type, AddonArgs args)
     {
-        if (TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) && HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
+        if (TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) &&
+            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
-            if (addon->PromptText->NodeText.ExtractText().Contains("新人频道"))
-            {
-                Click.SendClick("select_yes");
-            }
+            if (addon->PromptText->NodeText.ExtractText().Contains("新人频道")) Click.SendClick("select_yes");
         }
     }
 
     private static unsafe void ClickNoviceNetworkButton()
     {
         if (!IsOnProcessing) return;
-        if (TryGetAddonByName<AtkUnitBase>("ChatLog", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(addon))
+        var agent = AgentModule.Instance()->GetAgentByInternalId(AgentId.ChatLog);
+        if (agent == null)
         {
-            var buttonNode = addon->GetComponentNodeById(12);
-            if (buttonNode != null)
-            {
-                var handler = new ClickChatLogDR();
-                handler.NoviceNetwork();
-                TryTimes++;
-
-                Task.Delay(500).ContinueWith(_ => CheckJoinState());
-            }
-            else
-                EndProcess();
-        }
-        else
             EndProcess();
+            return;
+        }
+
+        AgentManager.SendEvent(agent, 0, 3);
+        TryTimes++;
+
+        Task.Delay(500).ContinueWith(_ => CheckJoinState());
     }
 
     private static unsafe void CheckJoinState()
@@ -99,8 +91,7 @@ public class AutoNoviceNetwork : IDailyModule
 
     public void Uninit()
     {
-        Service.AddonLifecycle.UnregisterListener(ClickYesButton);
-        IsOnProcessing = false;
+        EndProcess();
         TryTimes = 0;
     }
 }
