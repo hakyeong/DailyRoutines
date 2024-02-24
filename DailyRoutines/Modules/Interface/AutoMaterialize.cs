@@ -12,7 +12,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoMaterializeTitle", "AutoMaterializeDescription", ModuleCategories.General)]
+[ModuleDescription("AutoMaterializeTitle", "AutoMaterializeDescription", ModuleCategories.Interface)]
 public class AutoMaterialize : IDailyModule
 {
     public bool Initialized { get; set; }

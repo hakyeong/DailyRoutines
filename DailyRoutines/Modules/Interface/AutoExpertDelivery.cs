@@ -16,7 +16,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoExpertDeliveryTitle", "AutoExpertDeliveryDescription", ModuleCategories.General)]
+[ModuleDescription("AutoExpertDeliveryTitle", "AutoExpertDeliveryDescription", ModuleCategories.Interface)]
 public unsafe class AutoExpertDelivery : IDailyModule
 {
     public bool Initialized { get; set; }
