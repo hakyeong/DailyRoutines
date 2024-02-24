@@ -18,7 +18,7 @@ namespace DailyRoutines.Modules;
 public class AutoRefreshPartyFinder : IDailyModule
 {
     public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
+    public bool WithConfigUI => false;
     internal static Overlay? Overlay { get; private set; }
 
     private static int ConfigRefreshInterval = 10; // 秒
@@ -49,27 +49,7 @@ public class AutoRefreshPartyFinder : IDailyModule
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "LookingForGroup", OnAddonPF);
     }
 
-    public void ConfigUI()
-    {
-        ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputInt(Service.Lang.GetText("AutoRefreshPartyFinder-RefreshInterval"), ref ConfigRefreshInterval, 1, 1, ImGuiInputTextFlags.EnterReturnsTrue))
-        {
-            ConfigRefreshInterval = Math.Max(1, ConfigRefreshInterval);
-            Service.Config.UpdateConfig(this, "RefreshInterval", ConfigRefreshInterval);
-
-            PFRefreshTimer.Stop();
-            PFRefreshTimer.Interval = ConfigRefreshInterval * 1000;
-            if (Service.Gui.GetAddonByName("LookingForGroup") != nint.Zero)
-                PFRefreshTimer.Start();
-        }
-
-        ImGui.SameLine();
-        ImGui.Spacing();
-
-        ImGui.SameLine();
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoRefreshPartyFinder-OnlyInactive"), ref ConfigOnlyInactive))
-            Service.Config.UpdateConfig(this, "OnlyInactive", ConfigOnlyInactive);
-    }
+    public void ConfigUI() { }
 
     public unsafe void OverlayUI()
     {
@@ -104,7 +84,7 @@ public class AutoRefreshPartyFinder : IDailyModule
                                 refreshButton->ScreenY - framePadding.Y);
     }
 
-    private void OnAddonPF(AddonEvent type, AddonArgs? args)
+    private static void OnAddonPF(AddonEvent type, AddonArgs? args)
     {
         switch (type)
         {
