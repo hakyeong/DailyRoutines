@@ -161,14 +161,23 @@
   <data name="AutoCTSTitle" xml:space="preserve">
     <value>自动游玩强袭水晶塔</value>
   </data>
-  <data name="AutoCutSceneSkip-InterruptNotice" xml:space="preserve">
-    <value>注: 仅支持在过场剧情开始加载前阻止, 阻止成功后将不再尝试跳过该段剧情</value>
-  </data>
   <data name="AutoCutSceneSkipDescription" xml:space="preserve">
     <value>(本模块无法跳过原本就无法跳过的动画)</value>
   </data>
   <data name="AutoCutSceneSkipTitle" xml:space="preserve">
     <value>自动跳过过场动画</value>
+  </data>
+  <data name="AutoDeleteLetters-Start" xml:space="preserve">
+    <value>开始</value>
+  </data>
+  <data name="AutoDeleteLetters-Stop" xml:space="preserve">
+    <value>结束</value>
+  </data>
+  <data name="AutoDeleteLettersDescription" xml:space="preserve">
+    <value>打开莫古邮件界面, 切换到指定类别并点击开始后, 即会批量删除该类别下所有的邮件</value>
+  </data>
+  <data name="AutoDeleteLettersTitle" xml:space="preserve">
+    <value>自动批量删除邮件</value>
   </data>
   <data name="AutoDismountDescription" xml:space="preserve">
     <value>当骑乘坐骑时, 若尝试使用可用技能, 则自动下坐骑并使用技能</value>
