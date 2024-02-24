@@ -71,7 +71,7 @@ public class Service
     [PluginService] public static IAddonEventManager AddonEvent { get; private set; } = null!;
     [PluginService] public static ITextureProvider Texture { get; private set; } = null!;
     [PluginService] public static ToastGui Toast { get; private set; } = null!;
-    [PluginService] public static PartyList PartyList { get; private set; } = null!;
+    [PluginService] public static IPartyList PartyList { get; private set; } = null!;
     [PluginService] public static IDutyState DutyState { get; private set; } = null!;
     public static SigScanner SigScanner { get; private set; } = new();
     public static PresetExcelData PresetData { get; set; } = null!;

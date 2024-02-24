@@ -394,6 +394,24 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoNoviceNetworkTitle" xml:space="preserve">
     <value>自动加入新人频道</value>
   </data>
+  <data name="AutoPlayCards-Melee" xml:space="preserve">
+    <value>近战</value>
+  </data>
+  <data name="AutoPlayCards-Message" xml:space="preserve">
+    <value>将 {0}卡 发给了 {1} {2}</value>
+  </data>
+  <data name="AutoPlayCards-Range" xml:space="preserve">
+    <value>远程</value>
+  </data>
+  <data name="AutoPlayCards-SendMessage" xml:space="preserve">
+    <value>发送卡牌去向消息</value>
+  </data>
+  <data name="AutoPlayCardsDescription" xml:space="preserve">
+    <value>使用占星术士技能出卡时, 自动将当前抽到的卡发给一位适合的队友</value>
+  </data>
+  <data name="AutoPlayCardsTitle" xml:space="preserve">
+    <value>自动出卡</value>
+  </data>
   <data name="AutoPlayerCommend-NoticeMessage" xml:space="preserve">
     <value>已给予 {0} 最优队员推荐</value>
   </data>
@@ -634,7 +652,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>启用并配置完毕后, 允许自定义占星术士六张卡牌各自的名称</value>
   </data>
   <data name="CustomizeASTCardNamesTitle" xml:space="preserve">
-    <value>自定义占星术士卡牌名</value>
+    <value>自定义卡牌名称</value>
   </data>
   <data name="DevModuleDescription" xml:space="preserve">
     <value>本地测试用模块专用临时标题与描述文本</value>
