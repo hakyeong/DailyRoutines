@@ -83,10 +83,10 @@ public class AutoPlayerCommend : IDailyModule
                                         {
                                             case PlayerRole.Tank or PlayerRole.Healer:
                                                 return x.Role is PlayerRole.Tank or PlayerRole.Healer ? 1 : 0;
-                                            case PlayerRole.DPS or PlayerRole.DPS:
+                                            case PlayerRole.DPS:
                                                 switch (x.Role)
                                                 {
-                                                    case PlayerRole.DPS or PlayerRole.DPS:
+                                                    case PlayerRole.DPS:
                                                         return 3;
                                                     case PlayerRole.Healer:
                                                         return 2;

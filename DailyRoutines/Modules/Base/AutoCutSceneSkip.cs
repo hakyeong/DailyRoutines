@@ -77,27 +77,34 @@ public class AutoCutSceneSkip : IDailyModule
         {
             AddonManager.Callback(menu, true, -1);
             menu->Hide(true);
-            AbortActions();
-            return true;
         }
 
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             if (addon->GetTextNodeById(2)->NodeText.ExtractText().Contains("要跳过这段过场动画吗"))
             {
-                if (Click.TrySendClick("select_string1"))
-                {
-                    AbortActions();
-                    return true;
-                }
+                Click.SendClick("select_string1");
             }
+        }
+
+        if (!Service.Condition[ConditionFlag.OccupiedInCutSceneEvent] &&
+            !Service.Condition[ConditionFlag.WatchingCutscene78])
+        {
+            AbortActions();
+            return true;
         }
 
         return false;
     }
 
-    private static void AbortActions()
+    private static unsafe void AbortActions()
     {
+        if (TryGetAddonByName<AtkUnitBase>("SystemMenu", out var menu) && HelpersOm.IsAddonAndNodesReady(menu))
+        {
+            AddonManager.Callback(menu, true, -1);
+            menu->Hide(true);
+        }
+
         IsInCutScene = false;
         TaskManager?.Abort();
         Service.Toast.ErrorToast -= OnErrorToast;
