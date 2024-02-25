@@ -64,8 +64,7 @@ public unsafe class AutoPlayerCommend : IDailyModule
         return true;
     }
 
-    private static void ProcessAddon(
-        AddonEvent type, AddonArgs args, string addonName, int voteOffset, int nameOffset, int callbackIndex)
+    private static void ProcessCommendation(string addonName, int voteOffset, int nameOffset, int callbackIndex)
     {
         var localPlayer = Service.ClientState.LocalPlayer;
         var localPlayerName = localPlayer.Name.ExtractText();
@@ -112,7 +111,7 @@ public unsafe class AutoPlayerCommend : IDailyModule
                         {
                             AddonManager.Callback(addon, true, callbackIndex, i);
                             Service.Chat.Print(
-                                Service.Lang.GetSeString("AutoPlayerCommend-NoticeMessage", player.PlayerName));
+                                Service.Lang.GetSeString("AutoPlayerCommend-NoticeMessage", player.Job, player.PlayerName));
                             return;
                         }
                     }
@@ -124,10 +123,10 @@ public unsafe class AutoPlayerCommend : IDailyModule
         switch (args.AddonName)
         {
             case "VoteMvp":
-                ProcessAddon(type, args, "VoteMvp", 16, 9, 0);
+                ProcessCommendation("VoteMvp", 16, 9, 0);
                 break;
             case "BannerMIP":
-                ProcessAddon(type, args, "BannerMIP", 29, 22, 12);
+                ProcessCommendation("BannerMIP", 29, 22, 12);
                 break;
         }
     }
