@@ -53,7 +53,7 @@ public class NotificationManager
 
     public void Show(string title, string content, ToolTipIcon toolTipIcon = ToolTipIcon.Info)
     {
-        if (icon is not { Visible: true }) CreateIcon();
+        if (icon == null || icon.Visible == false) CreateIcon();
         messagesQueue.Enqueue(new ToastMessage(title, content, toolTipIcon));
 
         if (!isTimerScheduled)
