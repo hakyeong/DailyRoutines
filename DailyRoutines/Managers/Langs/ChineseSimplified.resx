@@ -658,7 +658,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>本插件开源免费, 如需建议/联系/反馈, 请到 GitHub 提交 Issue</value>
   </data>
   <data name="CustomizeASTCardNamesDescription" xml:space="preserve">
-    <value>启用并配置完毕后, 可自定义占星术士六张卡牌各自的名称</value>
+    <value>启用并配置完毕后, 可自定义占星术士六张奥秘卡各自的名称</value>
   </data>
   <data name="CustomizeASTCardNamesTitle" xml:space="preserve">
     <value>自定义奥秘卡名称</value>
