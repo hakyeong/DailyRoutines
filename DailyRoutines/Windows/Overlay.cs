@@ -8,8 +8,7 @@ namespace DailyRoutines.Windows;
 public class Overlay : Window
 {
     private IDailyModule Module { get; init; }
-    public ImGuiWindowFlags WindowFlags { get; set; } =
-        ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar;
+    private const ImGuiWindowFlags WindowFlags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar;
 
     public Overlay(IDailyModule module, string? title = null) : base($"{(string.IsNullOrEmpty(title) ? string.Empty : title)}###{module}")
     {

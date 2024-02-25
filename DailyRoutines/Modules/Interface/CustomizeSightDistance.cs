@@ -21,7 +21,6 @@ public unsafe class CustomizeSightDistance : IDailyModule
         Service.Config.AddConfig(this, "MaxDistance", ConfigMaxDistance);
         ConfigMaxDistance = Service.Config.GetConfig<float>(this, "MaxDistance");
 
-        Service.Log.Debug($"{CameraManager.Instance->GetActiveCamera()->MaxDistance}");
         CameraManager.Instance->GetActiveCamera()->MaxDistance = ConfigMaxDistance;
 
         Service.ClientState.TerritoryChanged += OnZoneChanged;
