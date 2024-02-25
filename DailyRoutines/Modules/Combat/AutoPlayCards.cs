@@ -76,7 +76,7 @@ public unsafe class AutoPlayCards : IDailyModule
             if (member == null) return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
 
             if (ConfigSendMessage)
-                Service.Chat.Print(Service.Lang.GetText("AutoPlayCards-Message", isMeleeCardDrawn ? Service.Lang.GetText("AutoPlayCards-Melee") : "AutoPlayCards-Range", member.ClassJob.GameData.Name.ExtractText(), member.ClassJob.GameData.Name.ExtractText()));
+                Service.Chat.Print(Service.Lang.GetText("AutoPlayCards-Message", Service.Lang.GetText(isMeleeCardDrawn ? "AutoPlayCards-Melee" : "AutoPlayCards-Range"), member.ClassJob.GameData.Name.ExtractText(), member.Name.ExtractText()));
             return useActionSelfHook.Original(actionManager, actionType, actionID, member.ObjectId, a4, a5, a6, a7);
         }
 
