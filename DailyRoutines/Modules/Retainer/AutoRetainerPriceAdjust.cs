@@ -354,7 +354,7 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
             }
 
             // 超过可接受的降价值
-            if (ConfigMaxPriceReduction != 0 && CurrentItemPrice - CurrentMarketLowestPrice > ConfigLowestPrice)
+            if (ConfigMaxPriceReduction != 0 && CurrentItemPrice - CurrentMarketLowestPrice > ConfigMaxPriceReduction)
             {
                 var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-MaxPriceReductionMessage",
                                                        SeString.CreateItemLink(
