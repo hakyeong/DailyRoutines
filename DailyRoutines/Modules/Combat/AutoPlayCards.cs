@@ -5,6 +5,7 @@ using DailyRoutines.Managers;
 using Dalamud.Hooking;
 using ECommons.GameFunctions;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
@@ -53,7 +54,7 @@ public unsafe class AutoPlayCards : IDailyModule
         {
             var isMeleeCardDrawn = MeleeCardStatuses.Any(x => Service.ClientState.LocalPlayer.BattleChara()->GetStatusManager->HasStatus(x)) ;
             var member = Service.PartyList
-                                .Where(x => x.GameObject.IsTargetable && !x.GameObject.IsDead && !x.Statuses.Any(s => CardStatuses.Contains(s.StatusId)))
+                                .Where(x => x.GameObject.IsTargetable && !x.GameObject.IsDead && !x.Statuses.Any(s => CardStatuses.Contains(s.StatusId) && HelpersOm.GetGameDistanceFromObject((GameObject*)Service.ClientState.LocalPlayer.Address, (GameObject*)x.GameObject.Address) <= 30))
                                 .OrderByDescending(x =>
                                 {
                                     return x.ClassJob.GameData.Role switch
@@ -75,9 +76,14 @@ public unsafe class AutoPlayCards : IDailyModule
                                 .FirstOrDefault();
             if (member == null) return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
 
-            if (ConfigSendMessage)
+            var state = useActionSelfHook.Original(actionManager, actionType, actionID, member.ObjectId, a4, a5, a6, a7);
+
+            if (ConfigSendMessage && state)
+            {
                 Service.Chat.Print(Service.Lang.GetText("AutoPlayCards-Message", Service.Lang.GetText(isMeleeCardDrawn ? "AutoPlayCards-Melee" : "AutoPlayCards-Range"), member.ClassJob.GameData.Name.ExtractText(), member.Name.ExtractText()));
-            return useActionSelfHook.Original(actionManager, actionType, actionID, member.ObjectId, a4, a5, a6, a7);
+            }
+                
+            return state;
         }
 
         return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
