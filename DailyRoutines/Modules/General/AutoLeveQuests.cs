@@ -27,13 +27,13 @@ public class AutoLeveQuests : IDailyModule
     private const string LeveAllowanceSig = "88 05 ?? ?? ?? ?? 0F B7 41 06";
 
     private static Dictionary<uint, (string, uint)> LeveQuests = [];
-    private static (uint, string, uint)? SelectedLeve; // Leve ID - Leve Name - Leve Job Category
+    internal static (uint, string, uint)? SelectedLeve; // Leve ID - Leve Name - Leve Job Category
     private static uint LeveMeteDataId;
     private static uint LeveReceiverDataId;
     private static int Allowances;
     private static string SearchString = string.Empty;
 
-    private static int ConfigOperationDelay = 0;
+    private static int ConfigOperationDelay;
 
     private static bool IsOnProcessing;
 
@@ -99,7 +99,7 @@ public class AutoLeveQuests : IDailyModule
         if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-Start")))
         {
             IsOnProcessing = true;
-            Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectYesno", AlwaysYes);
+            Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", AlwaysYes);
 
             TaskManager.Enqueue(InteractWithMete);
         }
@@ -142,6 +142,7 @@ public class AutoLeveQuests : IDailyModule
     private static void OnZoneChanged(object? sender, ushort e)
     {
         LeveQuests.Clear();
+        SelectedLeve = null;
     }
 
     private static void AlwaysYes(AddonEvent type, AddonArgs args)
@@ -175,11 +176,13 @@ public class AutoLeveQuests : IDailyModule
 
     private static unsafe bool? InteractWithMete()
     {
-        // 防止 "要继续交货吗"
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            if (HelpersOm.TryScanSelectStringText(addon, "结束", out var index))
+            if (HelpersOm.TryScanSelectStringText(addon, "继续交货", out var index))
+            {
                 Click.SendClick($"select_string{index + 1}");
+                return false;
+            }
         }
 
         if (IsOccupied()) return false;

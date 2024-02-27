@@ -207,7 +207,7 @@
     <value>自动筹备稀有品</value>
   </data>
   <data name="AutoLeveQuests-GetAreaLeveData" xml:space="preserve">
-    <value>获取当前区域理符任务数据</value>
+    <value>获取本区域理符任务</value>
   </data>
   <data name="AutoLeveQuests-ObtainLeveClientID" xml:space="preserve">
     <value>获取理符委托人 ID</value>
