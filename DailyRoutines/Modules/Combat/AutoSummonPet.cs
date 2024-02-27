@@ -1,11 +1,10 @@
+using System.Collections.Generic;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using ECommons.Automation;
-using FFXIVClientStructs.FFXIV.Client.Game;
-using System.Collections.Generic;
 using ECommons.GameFunctions;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
-using BattleChara = FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace DailyRoutines.Modules;
@@ -24,7 +23,7 @@ public class AutoSummonPet : IDailyModule
         { 28, 17215 },
         // 秘术师 / 召唤师
         { 26, 25798 },
-        { 27, 25798 },
+        { 27, 25798 }
     };
 
     public void Init()

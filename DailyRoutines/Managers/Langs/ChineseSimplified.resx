@@ -191,6 +191,9 @@
   <data name="AutoDrawACardTitle" xml:space="preserve">
     <value>自动抽卡</value>
   </data>
+  <data name="AutoExpertDelivery-SkipHQ" xml:space="preserve">
+    <value>跳过 HQ 物品</value>
+  </data>
   <data name="AutoExpertDelivery-Start" xml:space="preserve">
     <value>开始</value>
   </data>

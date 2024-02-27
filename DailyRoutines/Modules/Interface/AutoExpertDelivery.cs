@@ -70,7 +70,7 @@ public unsafe class AutoExpertDelivery : IDailyModule
         ImGui.Separator();
 
         ImGui.BeginDisabled(IsOnProcess);
-        if (ImGui.Checkbox("跳过 HQ 物品", ref ConfigSkipWhenHQ))
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoExpertDelivery-SkipHQ"), ref ConfigSkipWhenHQ))
             Service.Config.UpdateConfig(this, "SkipWhenHQ", ConfigSkipWhenHQ);
 
         if (ImGui.Button(Service.Lang.GetText("AutoExpertDelivery-Start"))) StartHandOver();
