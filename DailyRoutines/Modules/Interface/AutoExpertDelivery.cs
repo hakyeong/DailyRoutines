@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -10,6 +11,7 @@ using Dalamud.Game.AddonLifecycle;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using ECommons.Automation;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -25,11 +27,27 @@ public unsafe class AutoExpertDelivery : IDailyModule
 
     private static TaskManager? TaskManager;
     private static bool IsOnProcess;
+    private static HashSet<uint> HQItems = [];
+
+    private static bool ConfigSkipWhenHQ;
+
+    private static readonly List<InventoryType> ValidInventoryTypes =
+    [
+        InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3,
+        InventoryType.Inventory4, InventoryType.ArmoryBody, InventoryType.ArmoryEar, InventoryType.ArmoryFeets,
+        InventoryType.ArmoryHands, InventoryType.ArmoryHead, InventoryType.ArmoryLegs, InventoryType.ArmoryRings,
+        InventoryType.ArmoryNeck, InventoryType.ArmoryWrist, InventoryType.ArmoryRings, InventoryType.ArmoryMainHand,
+        InventoryType.ArmoryOffHand
+    ];
 
     public void Init()
     {
+        Service.Config.AddConfig(this, "SkipWhenHQ", ConfigSkipWhenHQ);
+        ConfigSkipWhenHQ = Service.Config.GetConfig<bool>(this, "SkipWhenHQ");
+
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         Overlay ??= new Overlay(this);
+
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "GrandCompanySupplyList", OnAddonSupplyList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "GrandCompanySupplyList", OnAddonSupplyList);
     }
@@ -52,6 +70,9 @@ public unsafe class AutoExpertDelivery : IDailyModule
         ImGui.Separator();
 
         ImGui.BeginDisabled(IsOnProcess);
+        if (ImGui.Checkbox("跳过 HQ 物品", ref ConfigSkipWhenHQ))
+            Service.Config.UpdateConfig(this, "SkipWhenHQ", ConfigSkipWhenHQ);
+
         if (ImGui.Button(Service.Lang.GetText("AutoExpertDelivery-Start"))) StartHandOver();
         ImGui.EndDisabled();
 
@@ -61,15 +82,12 @@ public unsafe class AutoExpertDelivery : IDailyModule
 
     private static void OnAddonSupplyList(AddonEvent type, AddonArgs args)
     {
-        switch (type)
+        Overlay.IsOpen = type switch
         {
-            case AddonEvent.PostSetup:
-                Overlay.IsOpen = true;
-                break;
-            case AddonEvent.PreFinalize:
-                Overlay.IsOpen = false;
-                break;
-        }
+            AddonEvent.PostSetup => true,
+            AddonEvent.PreFinalize => false,
+            _ => Overlay.IsOpen
+        };
     }
 
     private static void OnAddonSupplyReward(AddonEvent type, AddonArgs args)
@@ -82,20 +100,35 @@ public unsafe class AutoExpertDelivery : IDailyModule
         }
     }
 
-    private static void StartHandOver()
+    private static bool? StartHandOver()
     {
+        if (Service.Gui.GetAddonByName("GrandCompanySupplyReward") != nint.Zero) return false;
+
+        var handler = new ClickGrandCompanySupplyListDR();
+        handler.ExpertDelivery();
+
         if (IsSealsReachTheCap())
         {
             EndHandOver();
-            return;
+            return true;
         }
 
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "GrandCompanySupplyReward", OnAddonSupplyReward);
-        var handler = new ClickGrandCompanySupplyListDR();
-        handler.ExpertDelivery();
-        TaskManager.Enqueue(ClickFirstItem);
+        if (!IsOnProcess)
+        {
+            if (ConfigSkipWhenHQ)
+            {
+                HQItems.Clear();
+                HQItems = InventoryScanner(ValidInventoryTypes);
+            }
 
+            Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "GrandCompanySupplyReward",
+                                                    OnAddonSupplyReward);
+        }
+
+        TaskManager.Enqueue(ClickItem);
         IsOnProcess = true;
+
+        return true;
     }
 
     private static void EndHandOver()
@@ -111,60 +144,81 @@ public unsafe class AutoExpertDelivery : IDailyModule
         if (TryGetAddonByName<AddonGrandCompanySupplyList>("GrandCompanySupplyList", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
-            var isNoItems = addon->AtkUnitBase.GetTextNodeById(9)->AtkResNode.IsVisible;
-            if (isNoItems) return true;
+            if (addon->ExpertDeliveryList->ListLength == 0) return true;
 
-            var amountText =
-                Marshal.PtrToStringUTF8((nint)AtkStage.GetSingleton()->GetStringArrayData()[32]->StringArray[2]);
-            var parts = amountText.Split('/');
+            var parts = Marshal.PtrToStringUTF8((nint)AtkStage.GetSingleton()->GetStringArrayData()[32]->StringArray[2])
+                               .Split('/');
             var currentAmount = int.Parse(parts[0].Replace(",", ""));
             var capAmount = int.Parse(parts[1].Replace(",", ""));
 
-            var firstItem =
-                addon->ExpertDeliveryList->AtkComponentBase.UldManager.NodeList[2]->GetAsAtkComponentNode()->Component->
-                    UldManager.NodeList[4]->GetAsAtkTextNode()->NodeText.ExtractText();
-            if (string.IsNullOrEmpty(firstItem))
-            {
-                TaskManager.Abort();
-                return false;
-            }
-
-            var firstItemAmount = int.Parse(firstItem);
-
+            var firstItemAmount = addon->AtkUnitBase.AtkValues[265].UInt;
             return firstItemAmount + currentAmount > capAmount;
         }
 
         return true;
     }
 
-    private static bool? ClickFirstItem()
+    private static bool? ClickItem()
     {
         if (TryGetAddonByName<AddonGrandCompanySupplyList>("GrandCompanySupplyList", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
             var handler = new ClickGrandCompanySupplyListDR();
-            handler.ExpertDelivery();
-            handler.ItemEntry(0);
+            if (ConfigSkipWhenHQ)
+            {
+                var isOnlyHaveHQItems = true;
+                for (var i = 0; i < addon->ExpertDeliveryList->ListLength; i++)
+                {
+                    var isHQItem = HQItems.Contains(addon->AtkUnitBase.AtkValues[i + 425].UInt);
+                    if (isHQItem) continue;
 
-            TaskManager.Enqueue(CheckSealsState);
+                    handler.ItemEntry(i);
+                    isOnlyHaveHQItems = false;
+                }
 
+                if (isOnlyHaveHQItems)
+                {
+                    EndHandOver();
+                    return true;
+                }
+            }
+            else
+                handler.ItemEntry(0);
+
+            TaskManager.Enqueue(StartHandOver);
             return true;
         }
 
         return false;
     }
 
-    private static bool? CheckSealsState()
+    public static HashSet<uint> InventoryScanner(IEnumerable<InventoryType> inventories)
     {
-        if (TryGetAddonByName<AddonGrandCompanySupplyList>("GrandCompanySupplyList", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
-        {
-            StartHandOver();
+        var inventoryManager = InventoryManager.Instance();
 
-            return true;
+        var list = new HashSet<uint>();
+        if (inventoryManager == null) return list;
+
+        foreach (var inventory in inventories)
+        {
+            var container = inventoryManager->GetInventoryContainer(inventory);
+            if (container == null) continue;
+
+            for (var i = 0; i < container->Size; i++)
+            {
+                var slot = container->GetInventorySlot(i);
+                if (slot == null) continue;
+
+                var item = slot->ItemID;
+                if (item == 0) continue;
+
+                if ((slot->Flags & InventoryItem.ItemFlags.HQ) == 0) continue;
+
+                list.Add(item);
+            }
         }
 
-        return false;
+        return list;
     }
 
     public void Uninit()
