@@ -2,7 +2,6 @@ using System.Windows.Forms;
 using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.AddonLifecycle;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Text.SeStringHandling;
 using ECommons.Automation;
@@ -19,13 +18,11 @@ public class AutoCutSceneSkip : IDailyModule
 
     private static TaskManager? TaskManager;
 
-    private static bool IsInCutScene;
-
     public void Init()
     {
         TaskManager ??= new TaskManager { TimeLimitMS = int.MaxValue, ShowDebug = false };
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostUpdate, "NowLoading", OnAddonDrawn);
         Service.Condition.ConditionChange += OnConditionChanged;
+        Service.Toast.ErrorToast += OnErrorToast;
     }
 
     public void ConfigUI()
@@ -39,18 +36,16 @@ public class AutoCutSceneSkip : IDailyModule
     {
         if (flag is ConditionFlag.OccupiedInCutSceneEvent or ConditionFlag.WatchingCutscene78)
         {
-            if (value)
-            {
-                IsInCutScene = true;
-                Service.Toast.ErrorToast += OnErrorToast;
-            }
-            else
+            if (!value)
                 AbortActions();
+            else
+                TaskManager.Enqueue(IsWatchingCutscene);
         }
     }
 
     private static void OnErrorToast(ref SeString message, ref bool isHandled)
     {
+        if (!TaskManager.IsBusy) return;
         if (message.ExtractText().Contains("该过场剧情无法跳过"))
         {
             AbortActions();
@@ -59,24 +54,18 @@ public class AutoCutSceneSkip : IDailyModule
         }
     }
 
-    private static void OnAddonDrawn(AddonEvent type, AddonArgs args)
-    {
-        if (Service.KeyState[Service.Config.ConflictKey]) return;
-
-        if ((Service.Condition[ConditionFlag.OccupiedInCutSceneEvent] ||
-             Service.Condition[ConditionFlag.WatchingCutscene78]) && IsInCutScene)
-            TaskManager.Enqueue(IsWatchingCutscene);
-    }
-
     private static unsafe bool? IsWatchingCutscene()
     {
-        WindowsKeypress.SendKeypress(Keys.Escape);
-
         if (TryGetAddonByName<AtkUnitBase>("SystemMenu", out var menu) && HelpersOm.IsAddonAndNodesReady(menu))
         {
             AddonManager.Callback(menu, true, -1);
             menu->Hide(true);
+
+            TaskManager.Abort();
+            return true;
         }
+
+        WindowsKeypress.SendKeypress(Keys.Escape);
 
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
@@ -86,14 +75,15 @@ public class AutoCutSceneSkip : IDailyModule
             }
         }
 
-        if (!Service.Condition[ConditionFlag.OccupiedInCutSceneEvent] &&
-            !Service.Condition[ConditionFlag.WatchingCutscene78])
+        if (Service.Condition[ConditionFlag.OccupiedInCutSceneEvent] || Service.Condition[ConditionFlag.WatchingCutscene78])
         {
-            AbortActions();
+            TaskManager.DelayNext(100);
+            TaskManager.Enqueue(IsWatchingCutscene);
             return true;
         }
 
-        return false;
+        AbortActions();
+        return true;
     }
 
     private static unsafe void AbortActions()
@@ -104,15 +94,13 @@ public class AutoCutSceneSkip : IDailyModule
             menu->Hide(true);
         }
 
-        IsInCutScene = false;
         TaskManager?.Abort();
-        Service.Toast.ErrorToast -= OnErrorToast;
     }
 
     public void Uninit()
     {
-        Service.AddonLifecycle.UnregisterListener(OnAddonDrawn);
         Service.Condition.ConditionChange -= OnConditionChanged;
+        Service.Toast.ErrorToast -= OnErrorToast;
         AbortActions();
     }
 }
