@@ -63,15 +63,12 @@ public class AutoMaterialize : IDailyModule
 
     private static void OnAddon(AddonEvent type, AddonArgs args)
     {
-        switch (type)
+        Overlay.IsOpen = type switch
         {
-            case AddonEvent.PostSetup:
-                Overlay.IsOpen = true;
-                break;
-            case AddonEvent.PreFinalize:
-                Overlay.IsOpen = false;
-                break;
-        }
+            AddonEvent.PostSetup => true,
+            AddonEvent.PreFinalize => false,
+            _ => Overlay.IsOpen
+        };
     }
 
     private static unsafe void OnDialogAddon(AddonEvent type, AddonArgs args)
