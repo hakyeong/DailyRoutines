@@ -37,9 +37,9 @@ public class AutoSummonPet : IDailyModule
 
     public void OverlayUI() { }
 
-    private void OnZoneChanged(object? sender, ushort e)
+    private static void OnZoneChanged(ushort zone)
     {
-        if (!Service.PresetData.Contents.ContainsKey(e)) return;
+        if (!Service.PresetData.Contents.ContainsKey(zone)) return;
         TaskManager.Abort();
         TaskManager.Enqueue(CheckCurrentJob);
     }
@@ -60,7 +60,7 @@ public class AutoSummonPet : IDailyModule
 
         if (state) return true;
 
-        return ActionManager.Instance()->UseAction(ActionType.Spell, actionID);
+        return ActionManager.Instance()->UseAction(ActionType.Action, actionID);
     }
 
     public void Uninit()

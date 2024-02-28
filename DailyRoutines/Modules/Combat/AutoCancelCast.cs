@@ -29,7 +29,7 @@ public unsafe class AutoCancelCast : IDailyModule
 
     public void Init()
     {
-        SignatureHelper.Initialise(this);
+        Service.Hook.InitializeFromAttributes(this);
         Service.Condition.ConditionChange += OnConditionChanged;
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 

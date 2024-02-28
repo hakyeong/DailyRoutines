@@ -1,12 +1,13 @@
-using DailyRoutines.Infos;
-using DailyRoutines.Windows;
-using ECommons.Automation;
 using System.Linq;
 using System.Numerics;
+using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.AddonLifecycle;
+using DailyRoutines.Windows;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
 using Dalamud.Memory;
+using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -48,17 +49,11 @@ public class AutoMaterialize : IDailyModule
 
         ImGui.SameLine();
         ImGui.BeginDisabled(TaskManager.IsBusy);
-        if (ImGui.Button(Service.Lang.GetText("AutoMaterialize-Start")))
-        {
-            TaskManager.Enqueue(StartARound);
-        }
+        if (ImGui.Button(Service.Lang.GetText("AutoMaterialize-Start"))) TaskManager.Enqueue(StartARound);
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoMaterialize-Stop")))
-        {
-            TaskManager.Abort();
-        }
+        if (ImGui.Button(Service.Lang.GetText("AutoMaterialize-Stop"))) TaskManager.Abort();
     }
 
     private static void OnAddon(AddonEvent type, AddonArgs args)
@@ -99,7 +94,6 @@ public class AutoMaterialize : IDailyModule
             }
 
             foreach (var part in parts)
-            {
                 if (part == "100%")
                 {
                     AddonManager.Callback(addon, true, 2, 0);
@@ -107,7 +101,6 @@ public class AutoMaterialize : IDailyModule
                     TaskManager.Enqueue(StartARound);
                     return true;
                 }
-            }
 
             TaskManager.Abort();
             return true;
@@ -118,9 +111,9 @@ public class AutoMaterialize : IDailyModule
 
     public void Uninit()
     {
-        TaskManager?.Abort();
         Service.AddonLifecycle.UnregisterListener(OnAddon);
         Service.AddonLifecycle.UnregisterListener(OnDialogAddon);
+        TaskManager?.Abort();
 
         if (P.WindowSystem.Windows.Contains(Overlay)) P.WindowSystem.RemoveWindow(Overlay);
         Overlay = null;

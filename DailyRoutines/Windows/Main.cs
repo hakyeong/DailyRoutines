@@ -7,11 +7,11 @@ using System.Numerics;
 using System.Reflection;
 using System.Threading.Tasks;
 using DailyRoutines.Infos;
-using DailyRoutines.Manager;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility;
 using ImGuiNET;
@@ -29,6 +29,22 @@ public class Main : Window, IDisposable
 
     internal static string SearchString = string.Empty;
     private static string ConflictKeySearchString = string.Empty;
+
+    public class Release
+    {
+        public int id { get; set; }
+        public string tag_name { get; set; } = null!;
+        public string name { get; set; } = null!;
+        public string body { get; set; } = null!;
+        public DateTime published_at { get; set; }
+        public List<Asset> assets { get; set; } = null!;
+    }
+
+    public class Asset
+    {
+        public string name { get; set; } = null!;
+        public int download_count { get; set; }
+    }
 
     private static readonly HttpClient client = new();
     private static int TotalDownloadCounts;
@@ -204,7 +220,7 @@ public class Main : Window, IDisposable
     {
         var moduleInstance = ModuleManager.Modules[module];
 
-        moduleInstance?.ConfigUI();
+        moduleInstance.ConfigUI();
     }
 
     private static void DrawTabSettings()
@@ -212,6 +228,7 @@ public class Main : Window, IDisposable
         if (ImGui.BeginTabItem(Service.Lang.GetText("Settings")))
         {
             #region Settings
+
             // 第一列
             ImGui.BeginGroup();
             ImGuiOm.TextIcon(FontAwesomeIcon.Globe, $"{Service.Lang.GetText("Language")}:");
@@ -266,6 +283,7 @@ public class Main : Window, IDisposable
 
             ImGuiOm.HelpMarker(Service.Lang.GetText("ConflictKeyHelp"));
             ImGui.EndGroup();
+
             #endregion
 
             ImGui.Separator();
@@ -292,7 +310,7 @@ public class Main : Window, IDisposable
                 {
                     TotalDownloadCounts = await GetTotalDownloadsAsync("AtmoOmen", "DailyRoutines");
                     var latestVersion = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
-                    
+
                     LatestVersion = latestVersion.version;
                     LatestDownloadCounts = latestVersion.downloadCount;
                     LatestChangelog = latestVersion.description;
@@ -328,7 +346,7 @@ public class Main : Window, IDisposable
                 ImGui.TextWrapped($"{LatestChangelog}");
                 ImGui.Unindent();
             }
-            
+
             ImGui.Separator();
 
             ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("Settings-TipMessage0")}:");
@@ -357,17 +375,14 @@ public class Main : Window, IDisposable
         var releases = JsonConvert.DeserializeObject<List<Release>>(response);
         var totalDownloads = 0;
         foreach (var release in releases)
-        {
-            foreach (var asset in release.assets)
-            {
-                totalDownloads += asset.download_count * 2;
-            }
-        }
+        foreach (var asset in release.assets)
+            totalDownloads += asset.download_count * 2;
         return totalDownloads;
     }
 
     // version - download count - description
-    private static async Task<(string version, int downloadCount, string description, string publishTime)> GetLatestVersionAsync(string userName, string repoName)
+    private static async Task<(string version, int downloadCount, string description, string publishTime)>
+        GetLatestVersionAsync(string userName, string repoName)
     {
         var url = $"https://api.github.com/repos/{userName}/{repoName}/releases/latest";
         client.DefaultRequestHeaders.UserAgent.TryParseAdd("request");
@@ -375,29 +390,10 @@ public class Main : Window, IDisposable
         var latestRelease = JsonConvert.DeserializeObject<Release>(response);
 
         var totalDownloads = 0;
-        foreach (var asset in latestRelease.assets)
-        {
-            totalDownloads += asset.download_count * 2;
-        }
+        foreach (var asset in latestRelease.assets) totalDownloads += asset.download_count * 2;
 
-        return (latestRelease.tag_name, totalDownloads, latestRelease.body.Replace("- ", "· "), latestRelease.published_at.ToShortDateString());
-    }
-
-
-    public class Release
-    {
-        public int id { get; set; }
-        public string tag_name { get; set; } = null!;
-        public string name { get; set; } = null!;
-        public string body { get; set; } = null!;
-        public DateTime published_at { get; set; }
-        public List<Asset> assets { get; set; } = null!;
-    }
-
-    public class Asset
-    {
-        public string name { get; set; } = null!;
-        public int download_count { get; set; }
+        return (latestRelease.tag_name, totalDownloads, latestRelease.body.Replace("- ", "· "),
+                   latestRelease.published_at.ToShortDateString());
     }
 
     private static void GetCurrentVersion()

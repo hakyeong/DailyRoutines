@@ -5,7 +5,8 @@ using ClickLib.Clicks;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.AddonLifecycle;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using ECommons.Automation;
@@ -34,7 +35,9 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
 
     public void ConfigUI()
     {
-        PreviewImageWithHelpText(Service.Lang.GetText("AutoSubmarineCollect-WhatIsTheList"), "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoSubmarineCollect-1.png", new Vector2(400, 222));
+        PreviewImageWithHelpText(Service.Lang.GetText("AutoSubmarineCollect-WhatIsTheList"),
+                                 "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoSubmarineCollect-1.png",
+                                 new Vector2(400, 222));
 
         ImGui.BeginDisabled(TaskManager.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("AutoSubmarineCollect-Start"))) GetSubmarineInfos();
@@ -119,7 +122,8 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
 
     internal static bool? ReadyToRepairSubmarines()
     {
-        if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var addon) &&
+            HelpersOm.IsAddonAndNodesReady(addon))
         {
             var handler = new ClickAirShipExplorationDetailDR();
             handler.Cancel();
@@ -134,7 +138,7 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
             return true;
         }
 
-        
+
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon1) && HelpersOm.IsAddonAndNodesReady(addon1))
         {
             if (!HelpersOm.TryScanSelectStringText(addon1, "修理", out var index)) return false;
@@ -193,7 +197,8 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
 
     private static bool? ClickPreviousVoyageLog()
     {
-        if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var detailAddon) && HelpersOm.IsAddonAndNodesReady(detailAddon))
+        if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var detailAddon) &&
+            HelpersOm.IsAddonAndNodesReady(detailAddon))
         {
             TaskManager.Abort();
             TaskManager.Enqueue(CommenceSubmarineVoyage);

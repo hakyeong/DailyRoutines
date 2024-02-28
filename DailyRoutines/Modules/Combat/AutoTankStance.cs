@@ -63,11 +63,11 @@ public class AutoTankStance : IDailyModule
 
     public void OverlayUI() { }
 
-    private static void OnZoneChanged(object? sender, ushort e)
+    private static void OnZoneChanged(ushort zone)
     {
         TaskManager.Abort();
-        if ((ConfigOnlyAutoStanceWhenOneTank && ContentsWithOneTank.Contains(e)) ||
-            (!ConfigOnlyAutoStanceWhenOneTank && Service.PresetData.Contents.ContainsKey(e)))
+        if ((ConfigOnlyAutoStanceWhenOneTank && ContentsWithOneTank.Contains(zone)) ||
+            (!ConfigOnlyAutoStanceWhenOneTank && Service.PresetData.Contents.ContainsKey(zone)))
             TaskManager.Enqueue(CheckCurrentJob);
     }
 
@@ -86,7 +86,7 @@ public class AutoTankStance : IDailyModule
         foreach (var status in TankStanceStatuses)
             if (player.BattleChara()->GetStatusManager->HasStatus(status))
                 return true;
-        return ActionManager.Instance()->UseAction(ActionType.Spell, actionID);
+        return ActionManager.Instance()->UseAction(ActionType.Action, actionID);
     }
 
     public void Uninit()

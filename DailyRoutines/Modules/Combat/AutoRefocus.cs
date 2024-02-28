@@ -1,8 +1,8 @@
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
+using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 
@@ -15,6 +15,7 @@ public unsafe class AutoRefocus : IDailyModule
     public bool WithConfigUI => false;
 
     private delegate void SetFocusTargetByObjectIDDelegate(TargetSystem* targetSystem, long objectID);
+
     [Signature("E8 ?? ?? ?? ?? BA 0C 00 00 00 48 8D 0D", DetourName = nameof(SetFocusTargetByObjectID))]
     private Hook<SetFocusTargetByObjectIDDelegate>? setFocusTargetByObjectIDHook;
 
@@ -22,10 +23,10 @@ public unsafe class AutoRefocus : IDailyModule
 
     public void Init()
     {
-        SignatureHelper.Initialise(this);
+        Service.Hook.InitializeFromAttributes(this);
         setFocusTargetByObjectIDHook?.Enable();
 
-        if (IsBoundByDuty()) OnZoneChange(null, Service.ClientState.TerritoryType);
+        if (IsBoundByDuty()) OnZoneChange(Service.ClientState.TerritoryType);
         Service.ClientState.TerritoryChanged += OnZoneChange;
     }
 
@@ -33,7 +34,7 @@ public unsafe class AutoRefocus : IDailyModule
 
     public void OverlayUI() { }
 
-    private void OnZoneChange(object? sender, ushort territory)
+    private void OnZoneChange(ushort territory)
     {
         FocusTarget = null;
         if (Service.PresetData.Contents.ContainsKey(territory))
@@ -42,7 +43,7 @@ public unsafe class AutoRefocus : IDailyModule
             Service.Framework.Update -= OnUpdate;
     }
 
-    private void OnUpdate(Framework framework)
+    private void OnUpdate(IFramework framework)
     {
         if (FocusTarget != null && Service.Target.FocusTarget == null)
             setFocusTargetByObjectIDHook.Original(TargetSystem.StaticAddressPointers.pInstance, (long)FocusTarget);
@@ -56,13 +57,16 @@ public unsafe class AutoRefocus : IDailyModule
             FocusTarget = Service.Target.Target?.ObjectId;
         }
         else
-        {
             FocusTarget = Service.Target.Target.ObjectId;
-        }
+
         setFocusTargetByObjectIDHook.Original(targetSystem, objectID);
     }
 
-    public static bool IsBoundByDuty() => Service.Condition[ConditionFlag.BoundByDuty] || Service.Condition[ConditionFlag.BoundByDuty56] || Service.Condition[ConditionFlag.BoundByDuty95];
+    public static bool IsBoundByDuty()
+    {
+        return Service.Condition[ConditionFlag.BoundByDuty] || Service.Condition[ConditionFlag.BoundByDuty56] ||
+               Service.Condition[ConditionFlag.BoundByDuty95];
+    }
 
     public void Uninit()
     {

@@ -11,7 +11,8 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoShareRetainersGilsEvenlyTitle", "AutoShareRetainersGilsEvenlyDescription", ModuleCategories.Retainer)]
+[ModuleDescription("AutoShareRetainersGilsEvenlyTitle", "AutoShareRetainersGilsEvenlyDescription",
+                   ModuleCategories.Retainer)]
 public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
 {
     public bool Initialized { get; set; }
@@ -20,7 +21,7 @@ public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
     private static TaskManager? TaskManager;
 
     private static uint AverageAmount;
-    private static int ConfigAdjustMethod = 0;
+    private static int ConfigAdjustMethod;
 
     public void Init()
     {
@@ -43,17 +44,11 @@ public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
         ImGui.Spacing();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoShareRetainersGilsEvenly-Start")))
-        {
-            GetRetainersGilInfo();
-        }
+        if (ImGui.Button(Service.Lang.GetText("AutoShareRetainersGilsEvenly-Start"))) GetRetainersGilInfo();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoShareRetainersGilsEvenly-Stop")))
-        {
-            TaskManager.Abort();
-        }
+        if (ImGui.Button(Service.Lang.GetText("AutoShareRetainersGilsEvenly-Stop"))) TaskManager.Abort();
 
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoShareRetainersGilsEvenly-Help"));
     }
@@ -69,12 +64,9 @@ public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
 
         AverageAmount = 0;
         var totalGilAmount = 0U;
-        for (var i = 0U; i < retainerCount; i++)
-        {
-            totalGilAmount += retainerManager->GetRetainerBySortedIndex(i)->Gil;
-        }
+        for (var i = 0U; i < retainerCount; i++) totalGilAmount += retainerManager->GetRetainerBySortedIndex(i)->Gil;
 
-        AverageAmount = (uint)Math.Floor(totalGilAmount / (double)retainerCount); 
+        AverageAmount = (uint)Math.Floor(totalGilAmount / (double)retainerCount);
         Service.Log.Debug($"当前 {retainerCount} 个雇员共有 {totalGilAmount} 金币, 平均每个雇员 {AverageAmount} 金币");
 
         if (AverageAmount <= 1) return;
@@ -87,6 +79,7 @@ public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
                     EnqueueSingleRetainerMethodFirst(i);
                     TaskManager.DelayNext(100);
                 }
+
                 break;
             case 1:
                 for (var i = 0; i < retainerCount; i++)
@@ -94,11 +87,13 @@ public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
                     EnqueueSingleRetainerMethodSecond(i);
                     TaskManager.DelayNext(100);
                 }
+
                 for (var i = 0; i < retainerCount; i++)
                 {
                     EnqueueSingleRetainerMethodFirst(i);
                     TaskManager.DelayNext(100);
                 }
+
                 break;
         }
     }
@@ -170,6 +165,7 @@ public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
             addon->Close(true);
             return true;
         }
+
         return false;
     }
 
@@ -181,9 +177,7 @@ public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
             var handler = new ClickBankDR();
 
             if (retainerGils == 0)
-            {
                 handler.Cancel();
-            }
             else
             {
                 handler.DepositInput((uint)retainerGils);
@@ -193,6 +187,7 @@ public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
             addon->Close(true);
             return true;
         }
+
         return false;
     }
 

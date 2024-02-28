@@ -23,13 +23,13 @@ public class AutoNotifyDutyName : IDailyModule
 
     public void ConfigUI()
     {
-        if (ImGui.Checkbox("同时发送 Windows 系统通知", ref ConfigSendWindowsToast))
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoNotifyDutyName-SendWindowsToast"), ref ConfigSendWindowsToast))
             Service.Config.UpdateConfig(this, "SendWindowsToast", ConfigSendWindowsToast);
     }
 
     public void OverlayUI() { }
 
-    private void OnZoneChange(object? sender, ushort territory)
+    private static void OnZoneChange(ushort territory)
     {
         if (!Service.PresetData.Contents.TryGetValue(territory, out var content)) return;
         var contentName = content.Name.RawString;

@@ -2,11 +2,9 @@ using System.Collections.Generic;
 using ClickLib.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game;
-using Dalamud.Game.AddonLifecycle;
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using ECommons.Automation;
-using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -45,7 +43,7 @@ public class AutoRequestItemSubmit : IDailyModule
 
     public void OverlayUI() { }
 
-    private void OnAddonRequest(AddonEvent type, AddonArgs args)
+    private static void OnAddonRequest(AddonEvent type, AddonArgs args)
     {
         if (Service.KeyState[Service.Config.ConflictKey])
         {
@@ -113,7 +111,7 @@ public class AutoRequestItemSubmit : IDailyModule
     {
         if (SlotsFilled.Contains(i)) return true;
 
-        var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextIconMenu");
+        var contextMenu = (AtkUnitBase*)Service.Gui.GetAddonByName("ContextIconMenu");
 
         if (contextMenu is null || !contextMenu->IsVisible)
         {

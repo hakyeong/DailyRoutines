@@ -3,12 +3,10 @@ using System.Diagnostics;
 using System.Numerics;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.AddonLifecycle;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Interface;
-using Dalamud.Interface.Colors;
 using ECommons.Automation;
-using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using ImGuiNET;
 
@@ -42,31 +40,13 @@ public class AutoNotifyCutSceneEnd : IDailyModule
 
     public void ConfigUI()
     {
-        var infoImageState = ThreadLoadImageHandler.TryGetTextureWrap(
-            "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoNotifyCutSceneEnd-1.png",
-            out var imageHandler);
+        PreviewImageWithHelpText(Service.Lang.GetText("AutoNotifyCutSceneEnd-NotificationMessageHelp"),
+                                 "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoNotifyCutSceneEnd-1.png",
+                                 new Vector2(378, 113));
 
-        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoNotifyCutSceneEnd-NotificationMessageHelp")}:");
-
-        ImGui.SameLine();
-        ImGui.PushFont(UiBuilder.IconFont);
-        ImGui.TextDisabled(FontAwesomeIcon.InfoCircle.ToIconString());
-        ImGui.PopFont();
-
-        if (ImGui.IsItemHovered())
-        {
-            ImGui.BeginTooltip();
-            if (infoImageState)
-                ImGui.Image(imageHandler.ImGuiHandle, new Vector2(378, 113));
-            else
-                ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
-            ImGui.EndTooltip();
-        }
-
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoNotifyCutSceneEnd-OnlyWhenBackground"), ref ConfigOnlyNotifyWhenBackground))
-        {
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoNotifyCutSceneEnd-OnlyWhenBackground"),
+                           ref ConfigOnlyNotifyWhenBackground))
             Service.Config.UpdateConfig(this, "OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
-        }
     }
 
     public void OverlayUI() { }
@@ -127,7 +107,8 @@ public class AutoNotifyCutSceneEnd : IDailyModule
     {
         if (ConfigOnlyNotifyWhenBackground)
         {
-            if (!HelpersOm.IsGameForeground()) Service.Notice.Show("", Service.Lang.GetText("AutoNotifyCutSceneEnd-NotificationMessage"));
+            if (!HelpersOm.IsGameForeground())
+                Service.Notice.Show("", Service.Lang.GetText("AutoNotifyCutSceneEnd-NotificationMessage"));
             return true;
         }
 
@@ -135,14 +116,14 @@ public class AutoNotifyCutSceneEnd : IDailyModule
         return true;
     }
 
-    private void OnZoneChanged(object? sender, ushort e)
+    private static void OnZoneChanged(ushort zone)
     {
         Stopwatch.Reset();
         TaskManager.Abort();
         IsDutyEnd = false;
     }
 
-    private void OnDutyComplete(object? sender, ushort e)
+    private static void OnDutyComplete(object? sender, ushort duty)
     {
         Stopwatch.Reset();
         TaskManager.Abort();

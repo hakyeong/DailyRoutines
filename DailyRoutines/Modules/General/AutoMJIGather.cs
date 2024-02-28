@@ -1,16 +1,15 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Windows.Forms;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Interface;
+using Dalamud.Interface.Utility;
 using Dalamud.Memory;
+using Dalamud.Plugin.Services;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.MJI;
@@ -72,6 +71,7 @@ public class AutoMJIGather : IDailyModule
         new Vector3(-179, 66.4f, 121.5f),
         new Vector3(-179, 66.4f, 127)
     ];
+
     #endregion
 
     private static Dictionary<string, AutoMJIGatherGroup> GatherNodes = [];
@@ -213,14 +213,12 @@ public class AutoMJIGather : IDailyModule
                                         QueuedGatheringList.Count));
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoMJIGather-StopWhenReachCaps"), ref ConfigStopWhenReachCaps))
-        {
             Service.Config.UpdateConfig(this, "StopWhenReachCaps", ConfigStopWhenReachCaps);
-        }
     }
 
     public void OverlayUI() { }
 
-    private void OnUpdate(Framework framework)
+    private void OnUpdate(IFramework framework)
     {
         if (!IsOnDataCollecting)
         {
@@ -241,7 +239,8 @@ public class AutoMJIGather : IDailyModule
         }
     }
 
-    private void OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
+    private static void OnChatMessage(
+        XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
         if (!ConfigStopWhenReachCaps) return;
         if (!TaskManager.IsBusy || (ushort)type != 2108) return;

@@ -1,14 +1,12 @@
+using System;
+using System.Collections.Generic;
+using System.Numerics;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Interface.Colors;
-using Dalamud.Interface;
-using ECommons.ImGuiMethods;
+using Dalamud.Interface.Utility;
 using ImGuiNET;
-using System;
-using System.Collections.Generic;
-using System.Numerics;
 
 namespace DailyRoutines.Modules;
 
@@ -59,7 +57,7 @@ public class AutoNotifyMessages : IDailyModule
         { XivChatType.CrossLinkShell5, "跨服贝5" },
         { XivChatType.CrossLinkShell6, "跨服贝6" },
         { XivChatType.CrossLinkShell7, "跨服贝7" },
-        { XivChatType.CrossLinkShell8, "跨服贝8" },
+        { XivChatType.CrossLinkShell8, "跨服贝8" }
     };
 
     public void Init()
@@ -78,48 +76,32 @@ public class AutoNotifyMessages : IDailyModule
 
     public void ConfigUI()
     {
-        var infoImageState = ThreadLoadImageHandler.TryGetTextureWrap(
-            "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoNotifyMessages-1.png",
-            out var imageHandler);
+        PreviewImageWithHelpText(Service.Lang.GetText("AutoNotifyMessages-NotificationMessageHelp"),
+                                 "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoNotifyMessages-1.png",
+                                 new Vector2(450, 193));
 
-        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoNotifyMessages-NotificationMessageHelp")}:");
-
-        ImGui.SameLine();
-        ImGui.PushFont(UiBuilder.IconFont);
-        ImGui.TextDisabled(FontAwesomeIcon.InfoCircle.ToIconString());
-        ImGui.PopFont();
-
-        if (ImGui.IsItemHovered())
-        {
-            ImGui.BeginTooltip();
-            if (infoImageState)
-                ImGui.Image(imageHandler.ImGuiHandle, new Vector2(450, 193));
-            else
-                ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
-            ImGui.EndTooltip();
-        }
-
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoNotifyMessages-OnlyWhenBackground"), ref ConfigOnlyNotifyWhenBackground))
-        {
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoNotifyMessages-OnlyWhenBackground"),
+                           ref ConfigOnlyNotifyWhenBackground))
             Service.Config.UpdateConfig(this, "OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
-        }
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoNotifyMessages-BlockOwnMessages"), ref ConfigBlockOwnMessages))
-        {
             Service.Config.UpdateConfig(this, "BlockOwnMessages", ConfigBlockOwnMessages);
-        }
 
         ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
-        if (ImGui.BeginCombo("###SelectChatTypesCombo", Service.Lang.GetText("AutoNotifyMessages-SelectedTypesAmount", ConfigValidChatTypes.Count), ImGuiComboFlags.HeightLarge))
+        if (ImGui.BeginCombo("###SelectChatTypesCombo",
+                             Service.Lang.GetText("AutoNotifyMessages-SelectedTypesAmount", ConfigValidChatTypes.Count),
+                             ImGuiComboFlags.HeightLarge))
         {
             ImGui.SetNextItemWidth(-1f);
-            ImGui.InputTextWithHint("###ChatTypeSelectInput", $"{Service.Lang.GetText("PleaseSearch")}...", ref SearchChatTypesContent, 50);
+            ImGui.InputTextWithHint("###ChatTypeSelectInput", $"{Service.Lang.GetText("PleaseSearch")}...",
+                                    ref SearchChatTypesContent, 50);
 
             ImGui.Separator();
 
             foreach (var chatType in ChatTypesLoc)
             {
-                if (!string.IsNullOrEmpty(SearchChatTypesContent) && !chatType.Value.Contains(SearchChatTypesContent, StringComparison.OrdinalIgnoreCase)) continue;
+                if (!string.IsNullOrEmpty(SearchChatTypesContent) &&
+                    !chatType.Value.Contains(SearchChatTypesContent, StringComparison.OrdinalIgnoreCase)) continue;
 
                 var existed = ConfigValidChatTypes.Contains(chatType.Key);
                 if (ImGui.Checkbox(chatType.Value, ref existed))
@@ -130,22 +112,23 @@ public class AutoNotifyMessages : IDailyModule
                     Service.Config.UpdateConfig(this, "ValidChatTypes", ConfigValidChatTypes);
                 }
             }
+
             ImGui.EndCombo();
         }
     }
 
     public void OverlayUI() { }
 
-    private void OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
+    private static void OnChatMessage(
+        XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
         if (!ConfigValidChatTypes.Contains(type)) return;
 
         var locState = ChatTypesLoc.TryGetValue(type, out var prefix);
         var isSendByOwn = sender.ExtractText().Contains(Service.ClientState.LocalPlayer?.Name.ExtractText());
-        if ((!ConfigOnlyNotifyWhenBackground || !HelpersOm.IsGameForeground()) && !(ConfigBlockOwnMessages && isSendByOwn))
-        {
+        if ((!ConfigOnlyNotifyWhenBackground || !HelpersOm.IsGameForeground()) &&
+            !(ConfigBlockOwnMessages && isSendByOwn))
             Service.Notice.Show($"[{(locState ? prefix : type)}]  {sender.ExtractText()}", message.ExtractText());
-        }
     }
 
     public void Uninit()
@@ -153,4 +136,3 @@ public class AutoNotifyMessages : IDailyModule
         Service.Chat.ChatMessage -= OnChatMessage;
     }
 }
-

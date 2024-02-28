@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.AddonLifecycle;
-using Dalamud.Interface;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -59,30 +60,24 @@ public class CustomizeASTCardNames : IDailyModule
         }
     }
 
-    public void OverlayUI()
-    {
-    }
+    public void OverlayUI() { }
 
-    private unsafe void OnAddon0(AddonEvent type, AddonArgs args)
+    private static unsafe void OnAddon0(AddonEvent type, AddonArgs args)
     {
         var addon = (AtkUnitBase*)args.Addon;
         if (addon == null) return;
 
         var textNode1 = addon->GetNodeById(18)->GetComponent()->UldManager.NodeList[19]->GetAsAtkTextNode();
-        var textNode2 = addon->GetNodeById(38)->GetComponent()->UldManager.NodeList[8]->GetComponent()->UldManager.NodeList[1]->GetAsAtkTextNode();
+        var textNode2 =
+            addon->GetNodeById(38)->GetComponent()->UldManager.NodeList[8]->GetComponent()->UldManager.NodeList[1]->
+                GetAsAtkTextNode();
 
         var origCardName1 = textNode1->NodeText.ExtractText();
         var origCardName2 = textNode2->NodeText.ExtractText();
         if (CardNames.TryGetValue(origCardName1, out var replacedName1))
-        {
             textNode1->SetText(replacedName1);
-        }
-        else if (CardNames.TryGetValue(origCardName2, out var replacedName2))
-        {
-            textNode2->SetText(replacedName2);
-        }
+        else if (CardNames.TryGetValue(origCardName2, out var replacedName2)) textNode2->SetText(replacedName2);
     }
-
 
     public void Uninit()
     {

@@ -5,8 +5,6 @@ using System.Numerics;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Interface.Colors;
-using Dalamud.Utility.Signatures;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
@@ -30,7 +28,7 @@ public class AutoMarkAetherCurrents : IDailyModule
         397, 398, 399, 400, 401, 612, 613, 614, 620, 621, 622, 813, 814, 815, 816, 817, 818, 956, 957, 958, 959, 960,
         961
     ];
-    
+
     // 坐标可以全部用 Lumina 获取，但是 SE 调了部分风脉在 UI 上的对应顺序，所以就干脆所有都硬编码了
     private readonly List<(uint TerritoryID, AetherCurrent AetherCurrent)> PresetAetherCurrentsData =
     [
@@ -216,10 +214,9 @@ public class AutoMarkAetherCurrents : IDailyModule
         { 961, [] }
     };
 
-
     public void Init()
     {
-        SignatureHelper.Initialise(this);
+        Service.Hook.InitializeFromAttributes(this);
         Service.ClientState.TerritoryChanged += OnZoneChanged;
     }
 
@@ -469,7 +466,7 @@ public class AutoMarkAetherCurrents : IDailyModule
         ImGui.PopID();
     }
 
-    private void OnZoneChanged(object? sender, ushort territoryID)
+    private void OnZoneChanged(ushort territoryID)
     {
         MarkAetherCurrents(territoryID, false);
     }
@@ -478,7 +475,7 @@ public class AutoMarkAetherCurrents : IDailyModule
     {
         if (!ValidTerritories.Contains(territoryID)) return;
 
-        var waymarkIndexesLength = Enum.GetValues(typeof(WaymarkIndex)).Length;
+        var waymarkIndexesLength = Enum.GetValues(typeof(FieldMarkerManager.FieldMarkerPoint)).Length;
 
         List<(uint TerritoryID, AetherCurrent AetherCurrent)> result =
             SelectedAetherCurrents.TryGetValue(Service.ClientState.TerritoryType, out var selectedResult) &&
@@ -500,17 +497,16 @@ public class AutoMarkAetherCurrents : IDailyModule
         {
             if (currentIndex >= waymarkIndexesLength) break;
 
-            var currentMarker = (WaymarkIndex)currentIndex;
+            var currentMarker = (FieldMarkerManager.FieldMarkerPoint)currentIndex;
 
             Service.Waymarks.Place(currentMarker, point.AetherCurrent.Position, true);
-            Service.Log.Debug($"放置了 {currentMarker} 于 {point.AetherCurrent.Position}");
             currentIndex++;
         }
 
         if (currentIndex != 8)
         {
             for (; currentIndex < waymarkIndexesLength; currentIndex++)
-                Service.Waymarks.Place((WaymarkIndex)currentIndex, Vector3.Zero, false);
+                Service.Waymarks.Place((FieldMarkerManager.FieldMarkerPoint)currentIndex, Vector3.Zero, false);
         }
     }
 

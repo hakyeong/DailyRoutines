@@ -31,9 +31,9 @@ public unsafe class AutoDismount : IDailyModule
 
     public void Init()
     {
-        SignatureHelper.Initialise(this);
+        Service.Hook.InitializeFromAttributes(this);
         useActionSelfHook =
-            Hook<UseActionSelfDelegate>.FromAddress((nint)ActionManager.MemberFunctionPointers.UseAction,
+            Service.Hook.HookFromAddress<UseActionSelfDelegate>((nint)ActionManager.MemberFunctionPointers.UseAction,
                                                     UseActionSelf);
 
         TargetSelfOrAreaActions ??=
@@ -72,7 +72,7 @@ public unsafe class AutoDismount : IDailyModule
         {
             useActionSelfHook.Original(actionManager, 5, 23, 0);
             TaskManager.Enqueue(
-                () => ActionManager.Instance()->UseAction((ActionType)actionType, actionId, (long)actionTarget, a5, a6,
+                () => ActionManager.Instance()->UseAction((ActionType)actionType, actionId, actionTarget, a5, a6,
                                                           a7, a8));
         }
 
@@ -85,7 +85,7 @@ public unsafe class AutoDismount : IDailyModule
         if ((ActionType)actionType == ActionType.Mount) return false;
 
         // 0 - 该技能无须下坐骑
-        if (ActionManager.Instance()->GetActionStatus((ActionType)actionType, actionId, (long)actionTarget, false,
+        if (ActionManager.Instance()->GetActionStatus((ActionType)actionType, actionId, actionTarget, false,
                                                       false) == 0) return false;
 
         // 可以自身或地面为目标的技能

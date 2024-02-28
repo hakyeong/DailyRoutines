@@ -1,9 +1,10 @@
+using ClickLib.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.AddonLifecycle;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Internal.Notifications;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using ClickLib.Clicks;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
@@ -28,7 +29,7 @@ public class AutoQuestComplete : IDailyModule
 
     public void OverlayUI() { }
 
-    private unsafe void OnAddonSetup(AddonEvent type, AddonArgs args)
+    private static unsafe void OnAddonSetup(AddonEvent type, AddonArgs args)
     {
         if (Service.KeyState[Service.Config.ConflictKey])
         {

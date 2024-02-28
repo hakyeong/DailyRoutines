@@ -26,17 +26,11 @@ public unsafe class AutoWithdrawRetainersGils : IDailyModule
     public void ConfigUI()
     {
         ImGui.BeginDisabled(TaskManager.IsBusy);
-        if (ImGui.Button(Service.Lang.GetText("AutoWithdrawRetainersGils-Start")))
-        {
-            GetRetainersGilInfo();
-        }
+        if (ImGui.Button(Service.Lang.GetText("AutoWithdrawRetainersGils-Start"))) GetRetainersGilInfo();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoWithdrawRetainersGils-Stop")))
-        {
-            TaskManager.Abort();
-        }
+        if (ImGui.Button(Service.Lang.GetText("AutoWithdrawRetainersGils-Stop"))) TaskManager.Abort();
 
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoWithdrawRetainersGils-Help"));
     }
@@ -51,10 +45,7 @@ public unsafe class AutoWithdrawRetainersGils : IDailyModule
         var retainerCount = retainerManager->GetRetainerCount();
 
         var totalGilAmount = 0U;
-        for (var i = 0U; i < retainerCount; i++)
-        {
-            totalGilAmount += retainerManager->GetRetainerBySortedIndex(i)->Gil;
-        }
+        for (var i = 0U; i < retainerCount; i++) totalGilAmount += retainerManager->GetRetainerBySortedIndex(i)->Gil;
 
         Service.Log.Debug($"当前 {retainerCount} 个雇员共有 {totalGilAmount} 金币,");
 
@@ -103,9 +94,7 @@ public unsafe class AutoWithdrawRetainersGils : IDailyModule
             var handler = new ClickBankDR();
 
             if (retainerGils == 0)
-            {
                 handler.Cancel();
-            }
             else
             {
                 handler.DepositInput((uint)retainerGils);
@@ -115,6 +104,7 @@ public unsafe class AutoWithdrawRetainersGils : IDailyModule
             addon->Close(true);
             return true;
         }
+
         return false;
     }
 

@@ -6,12 +6,13 @@ using System.Text.RegularExpressions;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game;
-using Dalamud.Game.AddonLifecycle;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
-using Dalamud.Interface;
 using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.Utility;
+using Dalamud.Plugin.Services;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -37,7 +38,7 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
     private static int CurrentMarketLowestPrice;
     private static uint CurrentItemSearchItemID;
     private static bool IsCurrentItemHQ;
-    private static RetainerManager.RetainerList.Retainer* CurrentRetainer;
+    private static RetainerManager.Retainer* CurrentRetainer;
 
     public void Init()
     {
@@ -107,7 +108,7 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
 
     public void OverlayUI() { }
 
-    private static void OnUpdate(Framework framework)
+    private static void OnUpdate(IFramework framework)
     {
         if (!TaskManager.IsBusy) return;
 
@@ -267,14 +268,14 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
                 {
                     if (ConfigSeparateNQAndHQ && IsCurrentItemHQ)
                     {
-                        CurrentMarketLowestPrice = result.Where(x => x.HQ).OrderByDescending(x => x.Price).FirstOrDefault().Price;
+                        CurrentMarketLowestPrice = result.Where(x => x.HQ).OrderByDescending(x => x.Price)
+                                                         .FirstOrDefault().Price;
                         if (CurrentMarketLowestPrice == 0)
                             CurrentMarketLowestPrice = result.OrderByDescending(x => x.Price).FirstOrDefault().Price;
                     }
                     else
-                    {
                         CurrentMarketLowestPrice = result.OrderByDescending(x => x.Price).FirstOrDefault().Price;
-                    }
+
                     ui->Close(true);
                     return true;
                 }
@@ -324,7 +325,9 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
         {
             var ui = &addon->AtkUnitBase;
             var priceComponent = addon->AskingPrice;
-            var isOriginalPriceValid = int.TryParse(priceComponent->AtkComponentInputBase.AtkTextNode->NodeText.ExtractText(), out var originalPrice);
+            var isOriginalPriceValid =
+                int.TryParse(priceComponent->AtkComponentInputBase.AtkTextNode->NodeText.ExtractText(),
+                             out var originalPrice);
             var handler = new ClickRetainerSellDR((nint)addon);
 
             if (isOriginalPriceValid && CurrentMarketLowestPrice - ConfigPriceReduction == originalPrice)
@@ -411,9 +414,12 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
 
         for (var i = 0; i < list->ListLength; i++)
         {
-            var listing = list->ItemRendererList[i].AtkComponentListItemRenderer->AtkComponentButton.AtkComponentBase.UldManager.NodeList;
+            var listing = list->ItemRendererList[i].AtkComponentListItemRenderer->AtkComponentButton.AtkComponentBase
+                .UldManager.NodeList;
             var isHQ = listing[8]->IsVisible;
-            if (!int.TryParse(SanitizeManager.Sanitize(listing[6]->GetAsAtkTextNode()->NodeText.ExtractText()).Replace(",", ""), out var price)) continue;
+            if (!int.TryParse(
+                    SanitizeManager.Sanitize(listing[6]->GetAsAtkTextNode()->NodeText.ExtractText()).Replace(",", ""),
+                    out var price)) continue;
             if (!int.TryParse(listing[5]->GetAsAtkTextNode()->NodeText.ExtractText(), out var amount)) continue;
             result.Add((isHQ, price, amount));
         }

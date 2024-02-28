@@ -1,12 +1,11 @@
-using ClickLib;
-using DailyRoutines.Infos;
-using DailyRoutines.Managers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using ClickLib;
+using DailyRoutines.Infos;
 
-namespace DailyRoutines.Manager;
+namespace DailyRoutines.Managers;
 
 public class ModuleManager
 {

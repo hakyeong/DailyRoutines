@@ -3,10 +3,11 @@ using ClickLib;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game;
-using Dalamud.Game.AddonLifecycle;
-using Dalamud.Interface;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.Utility;
+using Dalamud.Plugin.Services;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -49,7 +50,8 @@ public class AutoLogin : IDailyModule
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputText("##AutoLogin-EnterServerName", ref ConfigSelectedServer, 16, ImGuiInputTextFlags.EnterReturnsTrue))
+        if (ImGui.InputText("##AutoLogin-EnterServerName", ref ConfigSelectedServer, 16,
+                            ImGuiInputTextFlags.EnterReturnsTrue))
         {
             if (TryGetWorldByName(ConfigSelectedServer, out _))
             {
@@ -88,14 +90,15 @@ public class AutoLogin : IDailyModule
 
     public void OverlayUI() { }
 
-    private static void OnUpdate(Framework framework)
+    private static void OnUpdate(IFramework framework)
     {
         if (!TaskManager.IsBusy) return;
 
         if (Service.KeyState[Service.Config.ConflictKey])
         {
             TaskManager.Abort();
-            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"), "Daily Routines", NotificationType.Success);
+            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"),
+                                                        "Daily Routines", NotificationType.Success);
         }
     }
 
@@ -169,10 +172,10 @@ public class AutoLogin : IDailyModule
 
     public void Uninit()
     {
-        Service.Config.Save();
+        Service.Framework.Update -= OnUpdate;
         Service.AddonLifecycle.UnregisterListener(OnTitleMenu);
+
         TaskManager?.Abort();
         HasLoginOnce = false;
-        Service.Framework.Update -= OnUpdate;
     }
 }
