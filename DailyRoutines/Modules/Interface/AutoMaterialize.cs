@@ -25,6 +25,7 @@ public class AutoMaterialize : IDailyModule
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         Overlay ??= new Overlay(this);
+        Overlay.Flags |= ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoBackground;
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Materialize", OnAddon);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "Materialize", OnAddon);
@@ -38,13 +39,14 @@ public class AutoMaterialize : IDailyModule
         var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("Materialize");
         if (addon == null) return;
 
-        var pos = new Vector2(addon->GetX() - ImGui.GetWindowSize().X, addon->GetY() + 6);
+        var title = addon->GetNodeById(14)->GetComponent()->GetTextNodeById(3);
+        var pos = new Vector2(title->ScreenX + title->Width + 5, title->ScreenY - 3);
         ImGui.SetWindowPos(pos);
 
+        ImGui.AlignTextToFramePadding();
         ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("AutoMaterializeTitle"));
 
-        ImGui.Separator();
-
+        ImGui.SameLine();
         ImGui.BeginDisabled(TaskManager.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("AutoMaterialize-Start")))
         {
