@@ -58,15 +58,12 @@ public unsafe class AutoDeleteLetters : IDailyModule
 
     private static void OnAddonLetterList(AddonEvent type, AddonArgs _)
     {
-        switch (type)
+        Overlay.IsOpen = type switch
         {
-            case AddonEvent.PostSetup:
-                Overlay.IsOpen = true;
-                break;
-            case AddonEvent.PreFinalize:
-                Overlay.IsOpen = false;
-                break;
-        }
+            AddonEvent.PostSetup => true,
+            AddonEvent.PreFinalize => false,
+            _ => Overlay.IsOpen
+        };
     }
 
     public bool? RightClickLetter()
