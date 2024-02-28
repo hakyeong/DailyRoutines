@@ -48,45 +48,49 @@ public unsafe class AutoPlayCards : IDailyModule
 
     public void OverlayUI() { }
 
-    private bool UseActionSelf(ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6, void* a7)
+    private bool UseActionSelf(
+        ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6, void* a7)
     {
-        if (actionID == 17055)
+        if (actionID != 17055)
+            return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
+
+        bool isMeleeCardDrawn = MeleeCardStatuses.Any(
+                     x => Service.ClientState.LocalPlayer.BattleChara()->GetStatusManager->HasStatus(x)),
+             isRangeCardDrawn = RangeCardStatuses.Any(
+                 x => Service.ClientState.LocalPlayer.BattleChara()->GetStatusManager->HasStatus(x));
+        if (!isMeleeCardDrawn && !isRangeCardDrawn)
+            return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
+
+        var member = Service.PartyList
+                            .Where(x => x.GameObject.IsTargetable && !x.GameObject.IsDead)
+                            .Select(x => new
+                            {
+                                x,
+                                Distance = HelpersOm.GetGameDistanceFromObject(
+                                    (GameObject*)Service.ClientState.LocalPlayer.Address,
+                                    (GameObject*)x.GameObject.Address)
+                            })
+                            .Where(x => !x.x.Statuses.Any(s => CardStatuses.Contains(s.StatusId)) && x.Distance <= 30)
+                            .OrderByDescending(x => x.x.ClassJob.GameData.Role is 2 or 3 ? 1 : 0)
+                            .ThenByDescending(x => x.x.ClassJob.GameData.Role is 1 or 2 ? isMeleeCardDrawn ? 1 : 0 :
+                                                   isMeleeCardDrawn ? 0 : 1)
+                            .Select(x => x.x)
+                            .FirstOrDefault();
+        if (member == null)
+            return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
+
+        var state = useActionSelfHook.Original(actionManager, actionType, actionID, member.ObjectId, a4, a5, a6, a7);
+        if (ConfigSendMessage && state)
         {
-            var isMeleeCardDrawn = MeleeCardStatuses.Any(x => Service.ClientState.LocalPlayer.BattleChara()->GetStatusManager->HasStatus(x)) ;
-            var member = Service.PartyList
-                                .Where(x => x.GameObject.IsTargetable && !x.GameObject.IsDead && !x.Statuses.Any(s => CardStatuses.Contains(s.StatusId) && HelpersOm.GetGameDistanceFromObject((GameObject*)Service.ClientState.LocalPlayer.Address, (GameObject*)x.GameObject.Address) <= 30))
-                                .OrderByDescending(x =>
-                                {
-                                    return x.ClassJob.GameData.Role switch
-                                    {
-                                        2 or 3 => 1,
-                                        1 or 4 => 0,
-                                        _ => 0
-                                    };
-                                })
-                                .ThenByDescending(x =>
-                                {
-                                    return x.ClassJob.GameData.Role switch
-                                    {
-                                        1 or 2 => isMeleeCardDrawn ? 1 : 0,
-                                        3 or 4 => isMeleeCardDrawn ? 0 : 1,
-                                        _ => 0
-                                    };
-                                })
-                                .FirstOrDefault();
-            if (member == null) return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
-
-            var state = useActionSelfHook.Original(actionManager, actionType, actionID, member.ObjectId, a4, a5, a6, a7);
-
-            if (ConfigSendMessage && state)
-            {
-                Service.Chat.Print(Service.Lang.GetText("AutoPlayCards-Message", Service.Lang.GetText(isMeleeCardDrawn ? "AutoPlayCards-Melee" : "AutoPlayCards-Range"), member.ClassJob.GameData.Name.ExtractText(), member.Name.ExtractText()));
-            }
-                
-            return state;
+            string cardTypeText =
+                       Service.Lang.GetText(isMeleeCardDrawn ? "AutoPlayCards-Melee" : "AutoPlayCards-Range"),
+                   jobNameText = member.ClassJob.GameData.Name.ExtractText(),
+                   memberNameText = member.Name.ExtractText();
+            Service.Chat.Print(Service.Lang.GetText("AutoPlayCards-Message", cardTypeText, jobNameText,
+                                                    memberNameText));
         }
 
-        return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
+        return state;
     }
 
     public void Uninit()
@@ -94,3 +98,4 @@ public unsafe class AutoPlayCards : IDailyModule
         useActionSelfHook?.Dispose();
     }
 }
+
