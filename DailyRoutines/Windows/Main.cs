@@ -2,8 +2,10 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Numerics;
 using System.Reflection;
+using System.Threading.Tasks;
 using DailyRoutines.Infos;
 using DailyRoutines.Manager;
 using DailyRoutines.Managers;
@@ -13,6 +15,7 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility;
 using ImGuiNET;
+using Newtonsoft.Json;
 
 namespace DailyRoutines.Windows;
 
@@ -26,6 +29,14 @@ public class Main : Window, IDisposable
 
     internal static string SearchString = string.Empty;
     private static string ConflictKeySearchString = string.Empty;
+
+    private static readonly HttpClient client = new();
+    private static int TotalDownloadCounts;
+    private static int LatestDownloadCounts;
+    private static string? CurrentVersion;
+    private static string? LatestVersion;
+    private static string? LatestChangelog;
+    private static string? LatestPublishTime;
 
     public Main(Plugin plugin) : base("Daily Routines - Main")
     {
@@ -46,6 +57,19 @@ public class Main : Window, IDisposable
                     }
                 });
         AllModules = ModuleCategories.Values.SelectMany(list => list).ToArray();
+
+        Task.Run(async () =>
+        {
+            TotalDownloadCounts = await GetTotalDownloadsAsync("AtmoOmen", "DailyRoutines");
+            var latestVersion = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
+
+            LatestVersion = latestVersion.version;
+            LatestDownloadCounts = latestVersion.downloadCount;
+            LatestChangelog = latestVersion.description;
+            LatestPublishTime = latestVersion.publishTime;
+        });
+
+        GetCurrentVersion();
     }
 
     public override void Draw()
@@ -187,6 +211,7 @@ public class Main : Window, IDisposable
     {
         if (ImGui.BeginTabItem(Service.Lang.GetText("Settings")))
         {
+            #region Settings
             // 第一列
             ImGui.BeginGroup();
             ImGuiOm.TextIcon(FontAwesomeIcon.Globe, $"{Service.Lang.GetText("Language")}:");
@@ -240,18 +265,70 @@ public class Main : Window, IDisposable
             }
 
             ImGuiOm.HelpMarker(Service.Lang.GetText("ConflictKeyHelp"));
-
             ImGui.EndGroup();
+            #endregion
 
             ImGui.Separator();
 
-            ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("Contact")}:");
+            ImGuiHelpers.CenterCursorForText(Service.Lang.GetText("ContactHelp"));
+            ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("ContactHelp"));
 
-            if (ImGui.Button("GitHub")) Util.OpenLink("https://github.com/AtmoOmen/DailyRoutines");
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Contact")}:");
 
             ImGui.SameLine();
-            ImGui.TextColored(ImGuiColors.DalamudOrange, Service.Lang.GetText("ContactHelp"));
+            if (ImGui.Button("GitHub")) Util.OpenLink("https://github.com/AtmoOmen/DailyRoutines");
+            ImGui.SameLine();
+            if (ImGui.Button("bilibili")) Util.OpenLink("https://www.bilibili.com/read/cv31823881/");
 
+            ImGui.Separator();
+
+            ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("Info")}:");
+
+            ImGui.SameLine();
+            if (ImGui.SmallButton(Service.Lang.GetText("Refresh")))
+            {
+                Task.Run(async () =>
+                {
+                    TotalDownloadCounts = await GetTotalDownloadsAsync("AtmoOmen", "DailyRoutines");
+                    var latestVersion = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
+                    
+                    LatestVersion = latestVersion.version;
+                    LatestDownloadCounts = latestVersion.downloadCount;
+                    LatestChangelog = latestVersion.description;
+                    LatestPublishTime = latestVersion.publishTime;
+                });
+            }
+
+            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("TotalDL")}:");
+
+            ImGui.SameLine();
+            ImGui.Text($"{TotalDownloadCounts}");
+
+            ImGui.SameLine();
+            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestDL")}:");
+
+            ImGui.SameLine();
+            ImGui.Text($"{LatestDownloadCounts}");
+
+            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("CurrentVersion")}:");
+
+            ImGui.SameLine();
+            ImGui.Text($"{CurrentVersion}");
+
+            ImGui.SameLine();
+            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestVersion")}:");
+
+            ImGui.SameLine();
+            ImGui.Text($"{LatestVersion}");
+
+            if (ImGui.CollapsingHeader($"{Service.Lang.GetText("Changelog", LatestPublishTime)}:"))
+            {
+                ImGui.Indent();
+                ImGui.TextWrapped($"{LatestChangelog}");
+                ImGui.Unindent();
+            }
+            
             ImGui.Separator();
 
             ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("Settings-TipMessage0")}:");
@@ -270,6 +347,62 @@ public class Main : Window, IDisposable
 
         ModuleCache.Clear();
         P.CommandHandler();
+    }
+
+    private static async Task<int> GetTotalDownloadsAsync(string userName, string repoName)
+    {
+        var url = $"https://api.github.com/repos/{userName}/{repoName}/releases";
+        client.DefaultRequestHeaders.UserAgent.TryParseAdd("request");
+        var response = await client.GetStringAsync(url);
+        var releases = JsonConvert.DeserializeObject<List<Release>>(response);
+        var totalDownloads = 0;
+        foreach (var release in releases)
+        {
+            foreach (var asset in release.assets)
+            {
+                totalDownloads += asset.download_count * 2;
+            }
+        }
+        return totalDownloads;
+    }
+
+    // version - download count - description
+    private static async Task<(string version, int downloadCount, string description, string publishTime)> GetLatestVersionAsync(string userName, string repoName)
+    {
+        var url = $"https://api.github.com/repos/{userName}/{repoName}/releases/latest";
+        client.DefaultRequestHeaders.UserAgent.TryParseAdd("request");
+        var response = await client.GetStringAsync(url);
+        var latestRelease = JsonConvert.DeserializeObject<Release>(response);
+
+        var totalDownloads = 0;
+        foreach (var asset in latestRelease.assets)
+        {
+            totalDownloads += asset.download_count * 2;
+        }
+
+        return (latestRelease.tag_name, totalDownloads, latestRelease.body.Replace("- ", "· "), latestRelease.published_at.ToShortDateString());
+    }
+
+
+    public class Release
+    {
+        public int id { get; set; }
+        public string tag_name { get; set; } = null!;
+        public string name { get; set; } = null!;
+        public string body { get; set; } = null!;
+        public DateTime published_at { get; set; }
+        public List<Asset> assets { get; set; } = null!;
+    }
+
+    public class Asset
+    {
+        public string name { get; set; } = null!;
+        public int download_count { get; set; }
+    }
+
+    private static void GetCurrentVersion()
+    {
+        CurrentVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
     }
 
     public void Dispose()
