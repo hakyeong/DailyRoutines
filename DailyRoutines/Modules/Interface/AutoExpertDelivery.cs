@@ -63,9 +63,6 @@ public unsafe class AutoExpertDelivery : IDailyModule
         ImGui.SetWindowPos(pos);
 
         ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("AutoExpertDeliveryTitle"));
-        ImGui.PushTextWrapPos(300f * ImGuiHelpers.GlobalScale);
-        ImGui.TextDisabled(Service.Lang.GetText("AutoExpertDeliveryDescription"));
-        ImGui.PopTextWrapPos();
 
         ImGui.Separator();
 

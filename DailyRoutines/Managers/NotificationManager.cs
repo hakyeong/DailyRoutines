@@ -32,23 +32,21 @@ public class NotificationManager
         switch (messagesQueue.Count)
         {
             case > 1:
-                ShowBalloonTip(new ToastMessage(
-                                   "",
-                                   Service.Lang.GetText("NotificationManager-ReceiveMultipleMessages",
-                                                        messagesQueue.Count)));
+                ShowBalloonTip(new ToastMessage("", Service.Lang.GetText("NotificationManager-ReceiveMultipleMessages",
+                                                                         messagesQueue.Count)));
+                messagesQueue.Clear();
+                DestroyIcon();
+                isTimerScheduled = false;
                 break;
             case 1:
                 ShowBalloonTip(messagesQueue.Dequeue());
+                ScheduleTimer();
+                break;
+            case 0:
+                DestroyIcon();
+                isTimerScheduled = false;
                 break;
         }
-
-        isTimerScheduled = false;
-        messagesQueue.Clear();
-
-        if (messagesQueue.Count == 0)
-            DestroyIcon();
-        else
-            ScheduleTimer();
     }
 
     public void Show(string title, string content, ToolTipIcon toolTipIcon = ToolTipIcon.Info)
@@ -65,19 +63,18 @@ public class NotificationManager
 
     private void ScheduleTimer()
     {
-        timer.Stop();
-        timer.Start();
+        timer.Restart();
         isTimerScheduled = true;
     }
 
-    private void ShowBalloonTip(ToastMessage message)
+    private static void ShowBalloonTip(ToastMessage message)
     {
         icon.ShowBalloonTip(
             5000, string.IsNullOrEmpty(message.Title) ? P.Name : SanitizeManager.Sanitize(message.Title),
             SanitizeManager.Sanitize(message.Message), message.Icon);
     }
 
-    private void CreateIcon()
+    private static void CreateIcon()
     {
         DestroyIcon();
         icon = new NotifyIcon
@@ -88,7 +85,7 @@ public class NotificationManager
         };
     }
 
-    private void DestroyIcon()
+    private static void DestroyIcon()
     {
         if (icon != null)
         {
