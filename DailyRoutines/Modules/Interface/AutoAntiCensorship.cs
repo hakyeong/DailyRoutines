@@ -226,6 +226,9 @@ public unsafe class AutoAntiCensorship : IDailyModule
 
     private string BypassCensorship(string text)
     {
+        const string placeholder = "\u0001";
+        text = text.Replace("*", placeholder);
+
         var tempResult = new StringBuilder(text.Length);
         bool isCensored;
         do
@@ -282,7 +285,7 @@ public unsafe class AutoAntiCensorship : IDailyModule
         }
         while (isCensored);
 
-        return text;
+        return text.Replace(placeholder, "*");
     }
 
     private static string InsertDots(string input)
