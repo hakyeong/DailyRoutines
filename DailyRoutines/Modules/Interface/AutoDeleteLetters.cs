@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Numerics;
+using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
@@ -26,6 +27,7 @@ public unsafe class AutoDeleteLetters : IDailyModule
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         Overlay ??= new Overlay(this);
 
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectYesno", AlwaysYes);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "LetterList", OnAddonLetterList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "LetterList", OnAddonLetterList);
     }
@@ -100,9 +102,16 @@ public unsafe class AutoDeleteLetters : IDailyModule
         return false;
     }
 
+    private static void AlwaysYes(AddonEvent type, AddonArgs args)
+    {
+        if (!TaskManager.IsBusy) return;
+        Click.SendClick("select_yes");
+    }
+
     public void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonLetterList);
+        Service.AddonLifecycle.UnregisterListener(AlwaysYes);
 
         if (P.WindowSystem.Windows.Contains(Overlay)) P.WindowSystem.RemoveWindow(Overlay);
         Overlay = null;
