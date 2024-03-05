@@ -6,4 +6,4 @@
 	url = https://github.com/AtmoOmen/ECommons.git
 [submodule "ClickLib"]
 	path = ClickLib
-	url = https://github.com/AtmoOmen/ClickLib.git
+	url = https://github.com/Limiana/ClickLib.git
