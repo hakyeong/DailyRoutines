@@ -3,10 +3,9 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using DailyRoutines.Managers;
 using Dalamud.Game.Text.SeStringHandling;
 
-namespace DailyRoutines.Manager;
+namespace DailyRoutines.Managers;
 
 public partial class LanguageManager
 {

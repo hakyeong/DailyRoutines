@@ -2,14 +2,16 @@ using ClickLib;
 using ClickLib.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game;
-using Dalamud.Game.AddonLifecycle;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Internal.Notifications;
-using ECommons.Automation;
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using TaskManager = ECommons.Automation.TaskManager;
 
 namespace DailyRoutines.Modules;
 
@@ -37,7 +39,7 @@ public unsafe class AutoRetainerCollect : IDailyModule
 
     public void OverlayUI() { }
 
-    private static void OnUpdate(Framework framework)
+    private static void OnUpdate(IFramework framework)
     {
         if (!TaskManager.IsBusy) return;
 
@@ -52,7 +54,7 @@ public unsafe class AutoRetainerCollect : IDailyModule
     private static void OnRetainerList(AddonEvent type, AddonArgs args)
     {
         var retainerManager = RetainerManager.Instance();
-        var serverTime = FFXIVClientStructs.FFXIV.Client.System.Framework.Framework.GetServerTime();
+        var serverTime = Framework.GetServerTime();
         for (var i = 0; i < 10; i++)
         {
             var retainerState = retainerManager->GetRetainerBySortedIndex((uint)i)->VentureComplete;

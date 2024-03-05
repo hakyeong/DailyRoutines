@@ -2,9 +2,8 @@ using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
-using DailyRoutines.Managers;
 
-namespace DailyRoutines.Manager;
+namespace DailyRoutines.Managers;
 
 public class LanguageUpdater
 {

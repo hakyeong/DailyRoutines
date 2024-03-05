@@ -25,9 +25,9 @@ public class AutoDrawACard : IDailyModule
 
     public void OverlayUI() { }
 
-    private void OnZoneChanged(object? sender, ushort e)
+    private static void OnZoneChanged(ushort zone)
     {
-        if (!Service.PresetData.Contents.ContainsKey(e)) return;
+        if (!Service.PresetData.Contents.ContainsKey(zone)) return;
         TaskManager.Abort();
         TaskManager.Enqueue(CheckCurrentJob);
     }
@@ -43,7 +43,7 @@ public class AutoDrawACard : IDailyModule
         if (player.ClassJob.Id != 33 || player.Level < 30) return true;
         if (IsOccupied()) return false;
 
-        return ActionManager.Instance()->UseAction(ActionType.Spell, 3590);
+        return ActionManager.Instance()->UseAction(ActionType.Action, 3590);
     }
 
     public void Uninit()

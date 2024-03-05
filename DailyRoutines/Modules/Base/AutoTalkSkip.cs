@@ -1,7 +1,8 @@
 using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.AddonLifecycle;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;

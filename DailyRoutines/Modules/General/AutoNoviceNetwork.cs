@@ -2,7 +2,8 @@ using System.Threading.Tasks;
 using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.AddonLifecycle;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -54,9 +55,8 @@ public class AutoNoviceNetwork : IDailyModule
     {
         if (TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
-        {
-            if (addon->PromptText->NodeText.ExtractText().Contains("新人频道")) Click.SendClick("select_yes");
-        }
+            if (addon->PromptText->NodeText.ExtractText().Contains("新人频道"))
+                Click.SendClick("select_yes");
     }
 
     private static unsafe void ClickNoviceNetworkButton()

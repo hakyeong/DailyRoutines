@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Hooking;
-using Dalamud.Interface;
+using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
 using ImGuiNET;
 
@@ -27,7 +27,7 @@ public class PFPageSizeCustomize : IDailyModule
 
     public void Init()
     {
-        SignatureHelper.Initialise(this);
+        Service.Hook.InitializeFromAttributes(this);
         PartyFinderDisplayAmountHook?.Enable();
 
         Service.Config.AddConfig(this, "DisplayAmount", 100);
@@ -37,7 +37,8 @@ public class PFPageSizeCustomize : IDailyModule
     public void ConfigUI()
     {
         ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputInt(Service.Lang.GetText("PFPageSizeCustomize-DisplayAmount"), ref ConfigDisplayAmount, 10, 10, ImGuiInputTextFlags.EnterReturnsTrue))
+        if (ImGui.InputInt(Service.Lang.GetText("PFPageSizeCustomize-DisplayAmount"), ref ConfigDisplayAmount, 10, 10,
+                           ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigDisplayAmount = Math.Clamp(ConfigDisplayAmount, 1, 100);
             Service.Config.UpdateConfig(this, "DisplayAmount", ConfigDisplayAmount);

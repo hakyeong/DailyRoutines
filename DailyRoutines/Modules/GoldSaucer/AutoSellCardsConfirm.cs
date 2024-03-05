@@ -1,15 +1,16 @@
 using System;
-using DailyRoutines.Infos;
-using DailyRoutines.Managers;
-using Dalamud.Game.AddonLifecycle;
-using ClickLib.Clicks;
-using DailyRoutines.Windows;
-using ECommons.Automation;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using System.Linq;
 using System.Numerics;
-using ImGuiNET;
+using ClickLib.Clicks;
+using DailyRoutines.Infos;
+using DailyRoutines.Managers;
+using DailyRoutines.Windows;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
+using ECommons.Automation;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
@@ -82,7 +83,7 @@ public class AutoSellCardsConfirm : IDailyModule
         }
     }
 
-    private unsafe bool? StartHandOver()
+    private static unsafe bool? StartHandOver()
     {
         if (TryGetAddonByName<AtkUnitBase>("TripleTriadCoinExchange", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(addon))
@@ -114,7 +115,7 @@ public class AutoSellCardsConfirm : IDailyModule
         return false;
     }
 
-    private void EndHandOver()
+    private static void EndHandOver()
     {
         TaskManager?.Abort();
         IsOnProcess = false;

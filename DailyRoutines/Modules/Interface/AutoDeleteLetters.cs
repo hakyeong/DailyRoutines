@@ -1,13 +1,15 @@
+using System.Linq;
+using System.Numerics;
+using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
-using Dalamud.Game.AddonLifecycle;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Interface.Colors;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
-using System.Linq;
-using System.Numerics;
-using Dalamud.Interface.Colors;
 
 namespace DailyRoutines.Modules;
 
@@ -25,6 +27,7 @@ public unsafe class AutoDeleteLetters : IDailyModule
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         Overlay ??= new Overlay(this);
 
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectYesno", AlwaysYes);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "LetterList", OnAddonLetterList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "LetterList", OnAddonLetterList);
     }
@@ -43,17 +46,11 @@ public unsafe class AutoDeleteLetters : IDailyModule
 
         ImGui.Separator();
         ImGui.BeginDisabled(TaskManager.IsBusy);
-        if (ImGui.Button(Service.Lang.GetText("AutoDeleteLetters-Start")))
-        {
-            TaskManager.Enqueue(RightClickLetter);
-        }
+        if (ImGui.Button(Service.Lang.GetText("AutoDeleteLetters-Start"))) TaskManager.Enqueue(RightClickLetter);
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoDeleteLetters-Stop")))
-        {
-            TaskManager.Abort();
-        }
+        if (ImGui.Button(Service.Lang.GetText("AutoDeleteLetters-Stop"))) TaskManager.Abort();
     }
 
     private static void OnAddonLetterList(AddonEvent type, AddonArgs _)
@@ -70,7 +67,8 @@ public unsafe class AutoDeleteLetters : IDailyModule
     {
         if (TryGetAddonByName<AtkUnitBase>("LetterList", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            if (!int.TryParse(addon->GetTextNodeById(23)->NodeText.ExtractText().Split('/')[0], out var currentLetters) || currentLetters == 0)
+            if (!int.TryParse(addon->GetTextNodeById(23)->NodeText.ExtractText().Split('/')[0],
+                              out var currentLetters) || currentLetters == 0)
             {
                 TaskManager.Abort();
                 return true;
@@ -104,9 +102,16 @@ public unsafe class AutoDeleteLetters : IDailyModule
         return false;
     }
 
+    private static void AlwaysYes(AddonEvent type, AddonArgs args)
+    {
+        if (!TaskManager.IsBusy) return;
+        Click.SendClick("select_yes");
+    }
+
     public void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonLetterList);
+        Service.AddonLifecycle.UnregisterListener(AlwaysYes);
 
         if (P.WindowSystem.Windows.Contains(Overlay)) P.WindowSystem.RemoveWindow(Overlay);
         Overlay = null;

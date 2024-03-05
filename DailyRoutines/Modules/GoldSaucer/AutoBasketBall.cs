@@ -2,9 +2,10 @@ using ClickLib;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game;
-using Dalamud.Game.AddonLifecycle;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Plugin.Services;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -42,14 +43,15 @@ public class AutoBasketBall : IDailyModule
 
     public void OverlayUI() { }
 
-    private static void OnUpdate(Framework framework)
+    private static void OnUpdate(IFramework framework)
     {
         if (!TaskManager.IsBusy) return;
 
         if (Service.KeyState[Service.Config.ConflictKey])
         {
             TaskManager.Abort();
-            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"), "Daily Routines", NotificationType.Success);
+            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"),
+                                                        "Daily Routines", NotificationType.Success);
         }
     }
 

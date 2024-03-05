@@ -1,17 +1,18 @@
+using System;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.AddonLifecycle;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using TinyPinyin;
-using System;
 using ImGuiNET;
+using TinyPinyin;
 
 namespace DailyRoutines.Modules;
 
@@ -60,7 +61,7 @@ public unsafe class AutoAntiCensorship : IDailyModule
 
     public void Init()
     {
-        SignatureHelper.Initialise(this);
+        Service.Hook.InitializeFromAttributes(this);
 
         PartyFinderMessageDisplayHook?.Enable();
         LocalMessageDisplayHook?.Enable();
@@ -74,8 +75,10 @@ public unsafe class AutoAntiCensorship : IDailyModule
         if (Service.Gui.GetAddonByName("LookingForGroupCondition") != nint.Zero)
             OnPartyFinderConditionAddonSetup(AddonEvent.PostSetup, null);
         else
+        {
             Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "LookingForGroupCondition",
                                                     OnChatLogAddonSetup);
+        }
     }
 
     public void ConfigUI()
@@ -97,7 +100,8 @@ public unsafe class AutoAntiCensorship : IDailyModule
         ImGui.Text($"{Service.Lang.GetText("AutoAntiCensorship-OrigText")}:");
 
         ImGui.SameLine();
-        if (ImGui.InputText("###PreviewInput", ref PreviewInput, 1000, ImGuiInputTextFlags.EnterReturnsTrue | ImGuiInputTextFlags.AutoSelectAll))
+        if (ImGui.InputText("###PreviewInput", ref PreviewInput, 1000,
+                            ImGuiInputTextFlags.EnterReturnsTrue | ImGuiInputTextFlags.AutoSelectAll))
         {
             PreviewCensorship = GetFilteredString(PreviewInput);
             PreviewBypass = BypassCensorship(PreviewInput);
@@ -134,7 +138,8 @@ public unsafe class AutoAntiCensorship : IDailyModule
     {
         var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("ChatLog");
         var address = (nint)addon->GetNodeById(5)->GetComponent()->AtkEventListener.vfunc[2];
-        ChatLogTextInputHook ??= Hook<AddonReceiveEventDelegate>.FromAddress(address, ChatLogTextInputDetour);
+        ChatLogTextInputHook ??=
+            Service.Hook.HookFromAddress<AddonReceiveEventDelegate>(address, ChatLogTextInputDetour);
         ChatLogTextInputHook?.Enable();
     }
 
@@ -143,7 +148,7 @@ public unsafe class AutoAntiCensorship : IDailyModule
         var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("LookingForGroupCondition");
         var address = (nint)addon->GetNodeById(22)->GetComponent()->AtkEventListener.vfunc[2];
         PartyFinderDescriptionInputHook ??=
-            Hook<AddonReceiveEventDelegate>.FromAddress(address, PartyFinderDescriptionInputDetour);
+            Service.Hook.HookFromAddress<AddonReceiveEventDelegate>(address, PartyFinderDescriptionInputDetour);
         if (!PartyFinderDescriptionInputHook.IsEnabled) PartyFinderDescriptionInputHook?.Enable();
     }
 
@@ -221,6 +226,9 @@ public unsafe class AutoAntiCensorship : IDailyModule
 
     private string BypassCensorship(string text)
     {
+        const string placeholder = "\u0001";
+        text = text.Replace("*", placeholder);
+
         var tempResult = new StringBuilder(text.Length);
         bool isCensored;
         do
@@ -277,8 +285,9 @@ public unsafe class AutoAntiCensorship : IDailyModule
         }
         while (isCensored);
 
-        return text;
+        return text.Replace(placeholder, "*");
     }
+
     private static string InsertDots(string input)
     {
         if (input.Length <= 1) return input;

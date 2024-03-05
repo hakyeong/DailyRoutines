@@ -8,9 +8,10 @@ using System.Text.RegularExpressions;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
-using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface;
+using Dalamud.Interface.Utility;
+using Dalamud.Plugin.Services;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
@@ -49,6 +50,7 @@ public unsafe partial class FastObjectInteract : IDailyModule
     private static float WindowWidth;
 
     private static readonly Dictionary<nint, ObjectWaitSelected> ObjectsWaitSelected = [];
+
     private static readonly Dictionary<ObjectKind, string> ObjectKindLoc = new()
     {
         { ObjectKind.BattleNpc, "战斗类 NPC (不建议)" },
@@ -109,7 +111,7 @@ public unsafe partial class FastObjectInteract : IDailyModule
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputFloat("###FontScaleInput", ref ConfigFontScale, 0f, 0f, ConfigFontScale.ToString(),
+        if (ImGui.InputFloat("###FontScaleInput", ref ConfigFontScale, 0f, 0f, ConfigFontScale.ToString(CultureInfo.InvariantCulture),
                              ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigFontScale = Math.Max(0.1f, ConfigFontScale);
@@ -269,7 +271,8 @@ public unsafe partial class FastObjectInteract : IDailyModule
                 {
                     if (ImGui.MenuItem(Service.Lang.GetText("FastObjectInteract-AddToBlacklist")))
                     {
-                        if (!ConfigBlacklistKeys.Add(FastObjectInteractTitleRegex().Replace(kvp.Value.Name, "").Trim())) return;
+                        if (!ConfigBlacklistKeys.Add(FastObjectInteractTitleRegex().Replace(kvp.Value.Name, "").Trim()))
+                            return;
                         Service.Config.UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
                     }
 
@@ -284,7 +287,7 @@ public unsafe partial class FastObjectInteract : IDailyModule
         WindowWidth = Math.Max(ConfigMinButtonWidth, ImGui.GetItemRectSize().X);
     }
 
-    private void OnUpdate(Framework framework)
+    private void OnUpdate(IFramework framework)
     {
         if (EzThrottler.Throttle("FastSelectObjects", 250))
         {

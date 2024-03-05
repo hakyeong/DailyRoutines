@@ -19,8 +19,9 @@ public unsafe class AutoPlayCards : IDailyModule
     private delegate bool UseActionSelfDelegate(
         ActionManager* actionManager, uint actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
         uint a5 = 0, uint a6 = 0, void* a7 = null);
+
     private Hook<UseActionSelfDelegate>? useActionSelfHook;
-    
+
     private static readonly HashSet<uint> CardStatuses = [1882, 1883, 1884, 1885, 1886, 1887];
     private static readonly HashSet<uint> MeleeCardStatuses = [913, 915, 916]; // 近战卡
     private static readonly HashSet<uint> RangeCardStatuses = [914, 917, 918]; // 远程卡
@@ -30,8 +31,8 @@ public unsafe class AutoPlayCards : IDailyModule
     public void Init()
     {
         useActionSelfHook =
-            Hook<UseActionSelfDelegate>.FromAddress((nint)ActionManager.MemberFunctionPointers.UseAction,
-                                                    UseActionSelf);
+            Service.Hook.HookFromAddress<UseActionSelfDelegate>((nint)ActionManager.MemberFunctionPointers.UseAction,
+                                                                UseActionSelf);
         useActionSelfHook?.Enable();
 
         Service.Config.AddConfig(this, "SendMessage", ConfigSendMessage);
@@ -41,21 +42,20 @@ public unsafe class AutoPlayCards : IDailyModule
     public void ConfigUI()
     {
         if (ImGui.Checkbox(Service.Lang.GetText("AutoPlayCards-SendMessage"), ref ConfigSendMessage))
-        {
             Service.Config.UpdateConfig(this, "SendMessage", ConfigSendMessage);
-        }
     }
 
     public void OverlayUI() { }
 
     private bool UseActionSelf(
-        ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6, void* a7)
+        ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6,
+        void* a7)
     {
         if (actionID != 17055)
             return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
 
         bool isMeleeCardDrawn = MeleeCardStatuses.Any(
-                     x => Service.ClientState.LocalPlayer.BattleChara()->GetStatusManager->HasStatus(x)),
+                 x => Service.ClientState.LocalPlayer.BattleChara()->GetStatusManager->HasStatus(x)),
              isRangeCardDrawn = RangeCardStatuses.Any(
                  x => Service.ClientState.LocalPlayer.BattleChara()->GetStatusManager->HasStatus(x));
         if (!isMeleeCardDrawn && !isRangeCardDrawn)
@@ -98,4 +98,3 @@ public unsafe class AutoPlayCards : IDailyModule
         useActionSelfHook?.Dispose();
     }
 }
-

@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Interface;
+using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using ImGuiNET;
 
@@ -21,7 +21,7 @@ public unsafe class CustomizeSightDistance : IDailyModule
         Service.Config.AddConfig(this, "MaxDistance", ConfigMaxDistance);
         ConfigMaxDistance = Service.Config.GetConfig<float>(this, "MaxDistance");
 
-        CameraManager.Instance->GetActiveCamera()->MaxDistance = ConfigMaxDistance;
+        CameraManager.Instance()->GetActiveCamera()->MaxDistance = ConfigMaxDistance;
 
         Service.ClientState.TerritoryChanged += OnZoneChanged;
     }
@@ -40,20 +40,20 @@ public unsafe class CustomizeSightDistance : IDailyModule
             ConfigMaxDistance = Math.Clamp(ConfigMaxDistance, 1, 100);
 
             Service.Config.UpdateConfig(this, "MaxDistance", ConfigMaxDistance);
-            CameraManager.Instance->GetActiveCamera()->MaxDistance = ConfigMaxDistance;
+            CameraManager.Instance()->GetActiveCamera()->MaxDistance = ConfigMaxDistance;
         }
     }
 
     public void OverlayUI() { }
 
-    private void OnZoneChanged(object? sender, ushort e)
+    private static void OnZoneChanged(ushort zone)
     {
-        CameraManager.Instance->GetActiveCamera()->MaxDistance = ConfigMaxDistance;
+        CameraManager.Instance()->GetActiveCamera()->MaxDistance = ConfigMaxDistance;
     }
 
     public void Uninit()
     {
-        CameraManager.Instance->GetActiveCamera()->MaxDistance = 25;
+        CameraManager.Instance()->GetActiveCamera()->MaxDistance = 25;
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
     }
 }

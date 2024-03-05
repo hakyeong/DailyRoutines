@@ -5,9 +5,9 @@ using System.Timers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
-using Dalamud.Game.AddonLifecycle;
-using Dalamud.Interface;
-using ECommons.Automation;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Timer = System.Timers.Timer;
@@ -61,7 +61,8 @@ public class AutoRefreshPartyFinder : IDailyModule
 
         ImGui.BeginGroup();
         ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputInt(Service.Lang.GetText("AutoRefreshPartyFinder-RefreshInterval"), ref ConfigRefreshInterval, 1, 1, ImGuiInputTextFlags.EnterReturnsTrue))
+        if (ImGui.InputInt(Service.Lang.GetText("AutoRefreshPartyFinder-RefreshInterval"), ref ConfigRefreshInterval, 1,
+                           1, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigRefreshInterval = Math.Max(1, ConfigRefreshInterval);
             Service.Config.UpdateConfig(this, "RefreshInterval", ConfigRefreshInterval);

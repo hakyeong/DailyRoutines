@@ -4,7 +4,8 @@ using ClickLib;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.AddonLifecycle;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.UI;
 

@@ -1,11 +1,9 @@
 using System;
 using System.Numerics;
-using DailyRoutines.Managers;
 using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
-namespace DailyRoutines.Manager;
+namespace DailyRoutines.Managers;
 
 public unsafe class FieldMarkerManager
 {
@@ -15,27 +13,32 @@ public unsafe class FieldMarkerManager
     public nint FieldMarkerData;
     public nint FieldMarkerController;
 
+    public enum FieldMarkerPoint
+    {
+        A, B, C, D, One, Two, Three, Four
+    }
+
     public FieldMarkerManager()
     {
         FieldMarkerController =
             Service.SigScanner.GetStaticAddressFromSig("48 8D 0D ?? ?? ?? ?? 41 B0 ?? E8 ?? ?? ?? ?? 85 C0");
         FieldMarkerData = FieldMarkerController + 0x1E0;
 
-        SignatureHelper.Initialise(this);
+        Service.Hook.InitializeFromAttributes(this);
     }
 
-    public void Place(WaymarkIndex index, Vector3 pos, bool isActive)
+    public void Place(FieldMarkerPoint index, Vector3 pos, bool isActive)
     {
         var markAddress = index switch
         {
-            WaymarkIndex.A => FieldMarkerData + 0x00,
-            WaymarkIndex.B => FieldMarkerData + 0x20,
-            WaymarkIndex.C => FieldMarkerData + 0x40,
-            WaymarkIndex.D => FieldMarkerData + 0x60,
-            WaymarkIndex.One => FieldMarkerData + 0x80,
-            WaymarkIndex.Two => FieldMarkerData + 0xA0,
-            WaymarkIndex.Three => FieldMarkerData + 0xC0,
-            WaymarkIndex.Four => FieldMarkerData + 0xE0,
+            FieldMarkerPoint.A => FieldMarkerData + 0x00,
+            FieldMarkerPoint.B => FieldMarkerData + 0x20,
+            FieldMarkerPoint.C => FieldMarkerData + 0x40,
+            FieldMarkerPoint.D => FieldMarkerData + 0x60,
+            FieldMarkerPoint.One => FieldMarkerData + 0x80,
+            FieldMarkerPoint.Two => FieldMarkerData + 0xA0,
+            FieldMarkerPoint.Three => FieldMarkerData + 0xC0,
+            FieldMarkerPoint.Four => FieldMarkerData + 0xE0,
             _ => IntPtr.Zero
         };
 
@@ -78,18 +81,18 @@ public unsafe class FieldMarkerManager
         MemoryHelper.Write(markAddress + 0x1C, (byte)(isActive ? 1 : 0));
     }
 
-    public void Remove(WaymarkIndex index)
+    public void Remove(FieldMarkerPoint index)
     {
         var markerIndex = index switch
         {
-            WaymarkIndex.A => 0U,
-            WaymarkIndex.B => 1U,
-            WaymarkIndex.C => 2U,
-            WaymarkIndex.D => 3U,
-            WaymarkIndex.One => 4U,
-            WaymarkIndex.Two => 5U,
-            WaymarkIndex.Three => 6U,
-            WaymarkIndex.Four => 7U,
+            FieldMarkerPoint.A => 0U,
+            FieldMarkerPoint.B => 1U,
+            FieldMarkerPoint.C => 2U,
+            FieldMarkerPoint.D => 3U,
+            FieldMarkerPoint.One => 4U,
+            FieldMarkerPoint.Two => 5U,
+            FieldMarkerPoint.Three => 6U,
+            FieldMarkerPoint.Four => 7U,
             _ => 0U
         };
 

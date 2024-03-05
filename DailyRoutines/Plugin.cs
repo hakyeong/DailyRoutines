@@ -3,7 +3,6 @@ global using static ECommons.GenericHelpers;
 global using static DailyRoutines.Infos.Widgets;
 global using OmenTools.ImGuiOm;
 global using OmenTools.Helpers;
-using DailyRoutines.Manager;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Command;
@@ -70,9 +69,7 @@ public sealed class Plugin : IDalamudPlugin
             Main.IsOpen = true;
         }
         else
-        {
             Main.IsOpen = !Main.IsOpen;
-        }
     }
 
     private void DrawUI()

@@ -5,8 +5,9 @@ using ClickLib;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.AddonLifecycle;
-using Dalamud.Interface;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Interface.Utility;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
@@ -50,7 +51,8 @@ public class AutoLeveQuests : IDailyModule
     {
         ImGui.BeginDisabled(IsOnProcessing);
         ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputInt(Service.Lang.GetText("AutoLeveQuests-OperationDelay"), ref ConfigOperationDelay, 0, 0, ImGuiInputTextFlags.EnterReturnsTrue))
+        if (ImGui.InputInt(Service.Lang.GetText("AutoLeveQuests-OperationDelay"), ref ConfigOperationDelay, 0, 0,
+                           ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigOperationDelay = Math.Max(0, ConfigOperationDelay);
             Service.Config.UpdateConfig(this, "OperationDelay", ConfigOperationDelay);
@@ -139,7 +141,7 @@ public class AutoLeveQuests : IDailyModule
         IsOnProcessing = false;
     }
 
-    private static void OnZoneChanged(object? sender, ushort e)
+    private static void OnZoneChanged(ushort zone)
     {
         LeveQuests.Clear();
         SelectedLeve = null;

@@ -1,6 +1,7 @@
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.AddonLifecycle;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
@@ -21,7 +22,7 @@ public class AutoNotifyDutyConfirm : IDailyModule
 
     public void OverlayUI() { }
 
-    private unsafe void OnAddonSetup(AddonEvent type, AddonArgs args)
+    private static unsafe void OnAddonSetup(AddonEvent type, AddonArgs args)
     {
         var addon = (AtkUnitBase*)args.Addon;
         if (addon == null) return;

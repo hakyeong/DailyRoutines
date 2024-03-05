@@ -18,23 +18,20 @@ public class Configuration : IPluginConfiguration
     public int Version { get; set; } = 0;
     public string SelectedLanguage { get; set; } = string.Empty;
     public VirtualKey ConflictKey { get; set; } = VirtualKey.SHIFT;
-    public Dictionary<string, bool> ModuleEnabled { get; set; } = new();
+    public Dictionary<string, bool> ModuleEnabled { get; set; } = [];
 
     [NonSerialized]
     private DalamudPluginInterface? pluginInterface;
 
-    public void Initialize(DalamudPluginInterface pluginInterface)
+    public void Initialize(DalamudPluginInterface pInterface)
     {
-        this.pluginInterface = pluginInterface;
+        pluginInterface = pInterface;
 
         var assembly = Assembly.GetExecutingAssembly();
         var moduleTypes = assembly.GetTypes()
                                   .Where(t => typeof(IDailyModule).IsAssignableFrom(t) && t.IsClass);
 
-        foreach (var module in moduleTypes)
-        {
-            ModuleEnabled.TryAdd(module.Name, false);
-        }
+        foreach (var module in moduleTypes) ModuleEnabled.TryAdd(module.Name, false);
         Save();
     }
 
@@ -70,10 +67,7 @@ public class Configuration : IPluginConfiguration
                 try
                 {
                     var configValue = value.ToObject<T>();
-                    if (configValue == null)
-                    {
-                        Service.Log.Error($"Failed to convert JToken to type {typeof(T).Name}");
-                    }
+                    if (configValue == null) Service.Log.Error($"Failed to convert JToken to type {typeof(T).Name}");
                     return configValue;
                 }
                 catch (Exception ex)
@@ -82,11 +76,9 @@ public class Configuration : IPluginConfiguration
                     return default;
                 }
             }
-            else
-            {
-                Service.Log.Error($"Key '{key}' not found in the config file.");
-                return default;
-            }
+
+            Service.Log.Error($"Key '{key}' not found in the config file.");
+            return default;
         }
         catch (Exception ex)
         {
@@ -108,17 +100,12 @@ public class Configuration : IPluginConfiguration
             {
                 var existingJson = File.ReadAllText(configFile);
                 existingConfig = JsonConvert.DeserializeObject<Dictionary<string, object>>(existingJson);
-                if (existingConfig != null && existingConfig.ContainsKey(key))
-                {
-                    return false;
-                }
+                if (existingConfig != null && existingConfig.ContainsKey(key)) return false;
             }
             else
-            {
-                existingConfig = new();
-            }
+                existingConfig = [];
 
-            existingConfig ??= new Dictionary<string, object>();
+            existingConfig ??= [];
             existingConfig[key] = config;
 
             var jsonString = JsonConvert.SerializeObject(existingConfig, Formatting.Indented);
@@ -202,8 +189,8 @@ public class Configuration : IPluginConfiguration
         }
     }
 
-    public void Uninitialize()
+    public void Uninit()
     {
-
+        Save();
     }
 }
