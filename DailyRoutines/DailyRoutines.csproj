@@ -61,7 +61,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="DalamudPackager" Version="2.1.11" />
+      <PackageReference Include="DalamudPackager" Version="2.1.12" />
       <PackageReference Include="TinyPinyin" Version="1.1.0" />
     </ItemGroup>
 
@@ -97,7 +97,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\ClickLib\ClickLib\ClickLib.csproj" />
       <ProjectReference Include="..\ECommons\ECommons\ECommons.csproj" />
       <ProjectReference Include="..\OmenTools\OmenTools.csproj" />
     </ItemGroup>
