@@ -155,6 +155,12 @@
   <data name="AutoCancelCastTitle" xml:space="preserve">
     <value>自动中断咏唱</value>
   </data>
+  <data name="AutoCheckDesynthesizeDialogDescription" xml:space="preserve">
+    <value>道具分解界面出现后, 自动勾选 "分解珍稀及独占道具" 勾选框</value>
+  </data>
+  <data name="AutoCheckDesynthesizeDialogTitle" xml:space="preserve">
+    <value>自动勾选道具分解勾选框</value>
+  </data>
   <data name="AutoCTSDescription" xml:space="preserve">
     <value>交互游戏机后, 自动开始重复游玩强袭水晶塔</value>
   </data>
