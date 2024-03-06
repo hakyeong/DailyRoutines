@@ -155,11 +155,11 @@
   <data name="AutoCancelCastTitle" xml:space="preserve">
     <value>自动中断咏唱</value>
   </data>
-  <data name="AutoCheckDesynthesizeDialogDescription" xml:space="preserve">
-    <value>道具分解界面出现后, 自动勾选 "分解珍稀及独占道具" 勾选框</value>
+  <data name="AutoConfirmDesynthesizeDialogDescription" xml:space="preserve">
+    <value>道具分解界面出现后, 自动确认</value>
   </data>
-  <data name="AutoCheckDesynthesizeDialogTitle" xml:space="preserve">
-    <value>自动勾选道具分解勾选框</value>
+  <data name="AutoConfirmDesynthesizeDialogTitle" xml:space="preserve">
+    <value>自动确认道具分解</value>
   </data>
   <data name="AutoCTSDescription" xml:space="preserve">
     <value>交互游戏机后, 自动开始重复游玩强袭水晶塔</value>
@@ -173,17 +173,21 @@
   <data name="AutoCutSceneSkipTitle" xml:space="preserve">
     <value>自动跳过过场动画</value>
   </data>
-  <data name="AutoDeleteLetters-Start" xml:space="preserve">
-    <value>开始</value>
-  </data>
-  <data name="AutoDeleteLetters-Stop" xml:space="preserve">
-    <value>结束</value>
-  </data>
   <data name="AutoDeleteLettersDescription" xml:space="preserve">
     <value>打开莫古邮件界面, 切换到指定类别并点击开始后, 即会批量删除该类别下所有的邮件</value>
   </data>
   <data name="AutoDeleteLettersTitle" xml:space="preserve">
     <value>自动批量删除邮件</value>
+  </data>
+  <data name="AutoDesynthesizeItems-SkipHQ" xml:space="preserve">
+    <value>跳过 HQ 物品</value>
+  </data>
+  <data name="AutoDesynthesizeItemsDescription" xml:space="preserve">
+    <value>打开道具分解列表, 并点击开始后, 自动分解所有道具
+(前置模块: 自动确认道具分解)</value>
+  </data>
+  <data name="AutoDesynthesizeItemsTitle" xml:space="preserve">
+    <value>自动道具分解</value>
   </data>
   <data name="AutoDismountDescription" xml:space="preserve">
     <value>当骑乘坐骑时, 若尝试使用可用技能, 则自动下坐骑并使用技能</value>
@@ -199,12 +203,6 @@
   </data>
   <data name="AutoExpertDelivery-SkipHQ" xml:space="preserve">
     <value>跳过 HQ 物品</value>
-  </data>
-  <data name="AutoExpertDelivery-Start" xml:space="preserve">
-    <value>开始</value>
-  </data>
-  <data name="AutoExpertDelivery-Stop" xml:space="preserve">
-    <value>停止</value>
   </data>
   <data name="AutoExpertDeliveryDescription" xml:space="preserve">
     <value>打开筹备任务界面, 并点击开始后, 自动上交装备兑换军票</value>
@@ -235,12 +233,6 @@
   </data>
   <data name="AutoLeveQuests-SelectedLeve" xml:space="preserve">
     <value>选择理符:</value>
-  </data>
-  <data name="AutoLeveQuests-Start" xml:space="preserve">
-    <value>开始</value>
-  </data>
-  <data name="AutoLeveQuests-Stop" xml:space="preserve">
-    <value>结束</value>
   </data>
   <data name="AutoLeveQuestsDescription" xml:space="preserve">
     <value>配置完成并点击开始后, 自动重复完成指定的生产理符任务, 直至理符额度耗尽
@@ -293,12 +285,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoMarkAetherCurrentsTitle" xml:space="preserve">
     <value>自动标记风脉泉</value>
   </data>
-  <data name="AutoMaterialize-Start" xml:space="preserve">
-    <value>开始</value>
-  </data>
-  <data name="AutoMaterialize-Stop" xml:space="preserve">
-    <value>停止</value>
-  </data>
   <data name="AutoMaterializeDescription" xml:space="preserve">
     <value>打开精制魔晶石界面, 并点击开始后, 自动精制当前类别下所有装备的魔晶石</value>
   </data>
@@ -327,12 +313,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoMJIGather-NodesInfo" xml:space="preserve">
     <value>已获取 {0} 类采集点, 已选择 {1} 类, 共 {2} 个</value>
-  </data>
-  <data name="AutoMJIGather-Start" xml:space="preserve">
-    <value>开始</value>
-  </data>
-  <data name="AutoMJIGather-Stop" xml:space="preserve">
-    <value>停止</value>
   </data>
   <data name="AutoMJIGather-StopWhenReachCaps" xml:space="preserve">
     <value>素材达到上限时停止采集并发送通知</value>
@@ -408,12 +388,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoNoviceNetwork-AttemptedTimes" xml:space="preserve">
     <value>已尝试次数</value>
-  </data>
-  <data name="AutoNoviceNetwork-Start" xml:space="preserve">
-    <value>开始</value>
-  </data>
-  <data name="AutoNoviceNetwork-Stop" xml:space="preserve">
-    <value>结束</value>
   </data>
   <data name="AutoNoviceNetworkDescription" xml:space="preserve">
     <value>点击开始后, 自动重复尝试加入新人频道</value>
@@ -532,12 +506,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoSellCardsConfirm-CurrentCardNotInDeckMessage" xml:space="preserve">
     <value>当前幻卡未被收录, 已停止自动幻卡回收</value>
   </data>
-  <data name="AutoSellCardsConfirm-Start" xml:space="preserve">
-    <value>开始</value>
-  </data>
-  <data name="AutoSellCardsConfirm-Stop" xml:space="preserve">
-    <value>结束</value>
-  </data>
   <data name="AutoSellCardsConfirmDescription" xml:space="preserve">
     <value>幻卡回收界面出现后, 自动点击确认按钮
 点击开始后, 自动回收当前所有已收录幻卡</value>
@@ -559,12 +527,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoShareRetainersGilsEvenly-Method2" xml:space="preserve">
     <value>方式2</value>
   </data>
-  <data name="AutoShareRetainersGilsEvenly-Start" xml:space="preserve">
-    <value>开始</value>
-  </data>
-  <data name="AutoShareRetainersGilsEvenly-Stop" xml:space="preserve">
-    <value>结束</value>
-  </data>
   <data name="AutoShareRetainersGilsEvenlyDescription" xml:space="preserve">
     <value>配置完毕并点击开始后, 自动平均各个雇员所保管的金币数量
 (前置模块: 自动跳过对话)</value>
@@ -580,12 +542,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoSubmarineCollect-FailGettingSubmarineInfo" xml:space="preserve">
     <value>获取潜水艇信息失败, 请重试</value>
-  </data>
-  <data name="AutoSubmarineCollect-Start" xml:space="preserve">
-    <value>开始</value>
-  </data>
-  <data name="AutoSubmarineCollect-Stop" xml:space="preserve">
-    <value>停止</value>
   </data>
   <data name="AutoSubmarineCollect-WhatIsTheList" xml:space="preserve">
     <value>什么是潜水艇列表?</value>
@@ -636,12 +592,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>1. 请在雇员列表打开的状态下使用本模块
 2. 请避免在启用了 自动收取雇员 模块且有雇员 即将完成探险的情况下使用本模块
 3. 请避免因金币达到上限而蒙受损失的情况</value>
-  </data>
-  <data name="AutoWithdrawRetainersGils-Start" xml:space="preserve">
-    <value>开始</value>
-  </data>
-  <data name="AutoWithdrawRetainersGils-Stop" xml:space="preserve">
-    <value>结束</value>
   </data>
   <data name="AutoWithdrawRetainersGilsDescription" xml:space="preserve">
     <value>启用并点击开始后, 自动取出所有雇员保管的所有金币
@@ -780,6 +730,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="NotificationManager-ReceiveMultipleMessages" xml:space="preserve">
     <value>收到了 {0} 条新消息</value>
   </data>
+  <data name="Pause" xml:space="preserve">
+    <value>暂停</value>
+  </data>
   <data name="PFPageSizeCustomize-DisplayAmount" xml:space="preserve">
     <value>单页显示数量</value>
   </data>
@@ -812,6 +765,12 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="Settings-TipMessage2" xml:space="preserve">
     <value>2. 若模块描述中出现"前置模块", 则代表该模块必须要有指定模块的辅助才能正常工作, 前置模块可以被其他插件的类似功能替代</value>
+  </data>
+  <data name="Start" xml:space="preserve">
+    <value>开始</value>
+  </data>
+  <data name="Stop" xml:space="preserve">
+    <value>结束</value>
   </data>
   <data name="TotalDL" xml:space="preserve">
     <value>历史总计下载</value>

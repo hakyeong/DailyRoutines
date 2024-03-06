@@ -40,11 +40,11 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
                                  new Vector2(400, 222));
 
         ImGui.BeginDisabled(TaskManager.IsBusy);
-        if (ImGui.Button(Service.Lang.GetText("AutoSubmarineCollect-Start"))) GetSubmarineInfos();
+        if (ImGui.Button(Service.Lang.GetText("Start"))) GetSubmarineInfos();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoSubmarineCollect-Stop"))) TaskManager.Abort();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
     }
 
     public void OverlayUI() { }

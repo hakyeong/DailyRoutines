@@ -8,15 +8,15 @@ using FFXIVClientStructs.FFXIV.Client.UI;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoCheckDesynthesizeDialogTitle", "AutoCheckDesynthesizeDialogDescription", ModuleCategories.Base)]
-public unsafe class AutoCheckDesynthesizeDialog : IDailyModule
+[ModuleDescription("AutoConfirmDesynthesizeDialogTitle", "AutoConfirmDesynthesizeDialogDescription", ModuleCategories.Base)]
+public unsafe class AutoConfirmDesynthesizeDialog : IDailyModule
 {
     public bool Initialized { get; set; }
     public bool WithConfigUI => false;
 
     public void Init()
     {
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SalvageDialog", OnAddon);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreDraw, "SalvageDialog", OnAddon);
     }
 
     public void ConfigUI() { }
@@ -28,12 +28,9 @@ public unsafe class AutoCheckDesynthesizeDialog : IDailyModule
         var addon = (AddonSalvageDialog*)args.Addon;
         if (addon == null) return;
 
-        if (!addon->CheckBox->IsChecked)
-        {
-            MemoryHelper.Write((nint)addon->CheckBox + 232, addon->CheckBox->AtkComponentButton.Flags | 0x40000);
-            var handler = new ClickSalvageDialog();
-            handler.CheckBox();
-        }
+        var handler = new ClickSalvageDialog();
+        handler.CheckBox();
+        handler.Desynthesize();
     }
 
     public void Uninit()

@@ -26,7 +26,7 @@ public class AutoNoviceNetwork : IDailyModule
     public void ConfigUI()
     {
         ImGui.BeginDisabled(IsOnProcessing);
-        if (ImGui.Button(Service.Lang.GetText("AutoNoviceNetwork-Start")))
+        if (ImGui.Button(Service.Lang.GetText("Start")))
         {
             TryTimes = 0;
             Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", ClickYesButton);
@@ -38,7 +38,7 @@ public class AutoNoviceNetwork : IDailyModule
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoNoviceNetwork-Stop"))) EndProcess();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) EndProcess();
 
         ImGui.SameLine();
         ImGui.TextWrapped($"{Service.Lang.GetText("AutoNoviceNetwork-AttemptedTimes")}:");

@@ -51,11 +51,11 @@ public class AutoSellCardsConfirm : IDailyModule
 
         ImGui.SameLine();
         ImGui.BeginDisabled(IsOnProcess);
-        if (ImGui.Button(Service.Lang.GetText("AutoSellCardsConfirm-Start"))) StartHandOver();
+        if (ImGui.Button(Service.Lang.GetText("Start"))) StartHandOver();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoSellCardsConfirm-Stop"))) EndHandOver();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) EndHandOver();
     }
 
     private unsafe void OnAddon(AddonEvent type, AddonArgs args)

@@ -44,11 +44,11 @@ public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
         ImGui.Spacing();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoShareRetainersGilsEvenly-Start"))) GetRetainersGilInfo();
+        if (ImGui.Button(Service.Lang.GetText("Start"))) GetRetainersGilInfo();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoShareRetainersGilsEvenly-Stop"))) TaskManager.Abort();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
 
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoShareRetainersGilsEvenly-Help"));
     }

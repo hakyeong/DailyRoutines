@@ -70,11 +70,11 @@ public unsafe class AutoExpertDelivery : IDailyModule
         if (ImGui.Checkbox(Service.Lang.GetText("AutoExpertDelivery-SkipHQ"), ref ConfigSkipWhenHQ))
             Service.Config.UpdateConfig(this, "SkipWhenHQ", ConfigSkipWhenHQ);
 
-        if (ImGui.Button(Service.Lang.GetText("AutoExpertDelivery-Start"))) StartHandOver();
+        if (ImGui.Button(Service.Lang.GetText("Start"))) StartHandOver();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoExpertDelivery-Stop"))) EndHandOver();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) EndHandOver();
     }
 
     private static void OnAddonSupplyList(AddonEvent type, AddonArgs args)

@@ -46,11 +46,11 @@ public unsafe class AutoDeleteLetters : IDailyModule
 
         ImGui.Separator();
         ImGui.BeginDisabled(TaskManager.IsBusy);
-        if (ImGui.Button(Service.Lang.GetText("AutoDeleteLetters-Start"))) TaskManager.Enqueue(RightClickLetter);
+        if (ImGui.Button(Service.Lang.GetText("Start"))) TaskManager.Enqueue(RightClickLetter);
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoDeleteLetters-Stop"))) TaskManager.Abort();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
     }
 
     private static void OnAddonLetterList(AddonEvent type, AddonArgs _)

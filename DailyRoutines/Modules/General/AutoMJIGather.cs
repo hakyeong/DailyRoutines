@@ -108,8 +108,8 @@ public class AutoMJIGather : IDailyModule
         {
             if (ImGui.Button(Service.Lang.GetText("AutoMJIGather-CollectGatherPointsInfo",
                                                   IsOnDataCollecting
-                                                      ? Service.Lang.GetText("AutoMJIGather-Stop")
-                                                      : Service.Lang.GetText("AutoMJIGather-Start"))))
+                                                      ? Service.Lang.GetText("Stop")
+                                                      : Service.Lang.GetText("Start"))))
             {
                 if (IsOnDataCollecting)
                 {
@@ -180,7 +180,7 @@ public class AutoMJIGather : IDailyModule
 
         ImGui.SameLine();
         ImGui.BeginDisabled(IsOnDataCollecting || !GatherNodes.Any());
-        if (ImGui.Button(Service.Lang.GetText("AutoMJIGather-Start")))
+        if (ImGui.Button(Service.Lang.GetText("Start")))
         {
             TaskManager.Enqueue(SwitchToGatherMode);
             QueuedGatheringList = GatherNodes.Values
@@ -201,7 +201,7 @@ public class AutoMJIGather : IDailyModule
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoMJIGather-Stop")))
+        if (ImGui.Button(Service.Lang.GetText("Stop")))
         {
             IsOnGathering = false;
             TaskManager.Abort();

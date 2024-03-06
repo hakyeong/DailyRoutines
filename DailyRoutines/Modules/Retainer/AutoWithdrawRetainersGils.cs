@@ -26,11 +26,11 @@ public unsafe class AutoWithdrawRetainersGils : IDailyModule
     public void ConfigUI()
     {
         ImGui.BeginDisabled(TaskManager.IsBusy);
-        if (ImGui.Button(Service.Lang.GetText("AutoWithdrawRetainersGils-Start"))) GetRetainersGilInfo();
+        if (ImGui.Button(Service.Lang.GetText("Start"))) GetRetainersGilInfo();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoWithdrawRetainersGils-Stop"))) TaskManager.Abort();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
 
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoWithdrawRetainersGils-Help"));
     }

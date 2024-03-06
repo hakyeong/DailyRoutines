@@ -98,7 +98,7 @@ public class AutoLeveQuests : IDailyModule
         ImGui.SameLine();
         ImGui.BeginDisabled(SelectedLeve == null || LeveMeteDataId == LeveReceiverDataId || LeveMeteDataId == 0 ||
                             LeveReceiverDataId == 0);
-        if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-Start")))
+        if (ImGui.Button(Service.Lang.GetText("Start")))
         {
             IsOnProcessing = true;
             Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", AlwaysYes);
@@ -110,7 +110,7 @@ public class AutoLeveQuests : IDailyModule
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-Stop"))) EndProcessHandler();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) EndProcessHandler();
 
         ImGui.BeginDisabled(IsOnProcessing);
         if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-ObtainLevemeteID")))

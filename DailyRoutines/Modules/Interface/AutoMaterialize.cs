@@ -48,11 +48,11 @@ public class AutoMaterialize : IDailyModule
 
         ImGui.SameLine();
         ImGui.BeginDisabled(TaskManager.IsBusy);
-        if (ImGui.Button(Service.Lang.GetText("AutoMaterialize-Start"))) TaskManager.Enqueue(StartARound);
+        if (ImGui.Button(Service.Lang.GetText("Start"))) TaskManager.Enqueue(StartARound);
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoMaterialize-Stop"))) TaskManager.Abort();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
     }
 
     private static void OnAddon(AddonEvent type, AddonArgs args)
