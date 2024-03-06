@@ -26,7 +26,7 @@ public class AutoMaterialize : IDailyModule
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         Overlay ??= new Overlay(this);
-        Overlay.Flags |= ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoBackground;
+        Overlay.Flags |= ImGuiWindowFlags.NoMove;
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Materialize", OnAddon);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "Materialize", OnAddon);
@@ -40,8 +40,7 @@ public class AutoMaterialize : IDailyModule
         var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("Materialize");
         if (addon == null) return;
 
-        var title = addon->GetNodeById(14)->GetComponent()->GetTextNodeById(3);
-        var pos = new Vector2(title->ScreenX + title->Width + 5, title->ScreenY - 3);
+        var pos = new Vector2(addon->GetX() + 6, addon->GetY() - ImGui.GetWindowSize().Y + 6);
         ImGui.SetWindowPos(pos);
 
         ImGui.AlignTextToFramePadding();
