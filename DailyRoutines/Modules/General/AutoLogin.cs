@@ -9,6 +9,7 @@ using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
 using ECommons.Automation;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -36,7 +37,7 @@ public class AutoLogin : IDailyModule
         ConfigSelectedCharaIndex = Service.Config.GetConfig<int>(this, "SelectedCharaIndex");
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = true };
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "_TitleMenu", OnTitleMenu);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "_TitleMenu", OnTitleMenu);
 
         Service.Framework.Update += OnUpdate;
     }
@@ -102,24 +103,31 @@ public class AutoLogin : IDailyModule
         }
     }
 
-    private static unsafe void OnTitleMenu(AddonEvent eventType, AddonArgs? addonInfo)
+    private static void OnTitleMenu(AddonEvent eventType, AddonArgs? addonInfo)
     {
         if (string.IsNullOrEmpty(ConfigSelectedServer) || ConfigSelectedCharaIndex == -1) return;
         if (HasLoginOnce) return;
         if (Service.KeyState[Service.Config.ConflictKey]) return;
-        if (TryGetAddonByName<AtkUnitBase>("_TitleMenu", out var addon) && IsAddonReady(addon))
-        {
-            HasLoginOnce = true;
-            var handler = new ClickTitleMenuDR();
-            handler.Start();
 
-            TaskManager.Enqueue(WaitAddonCharaSelectListMenu);
-        }
+        TaskManager.Enqueue(SelectStartGame);
+    }
+
+    private static unsafe bool? SelectStartGame()
+    {
+        var agent = AgentModule.Instance()->GetAgentByInternalId(AgentId.Lobby);
+        if (agent == null) return false;
+
+        AgentManager.SendEvent(agent, 0, 1);
+        TaskManager.Enqueue(WaitAddonCharaSelectListMenu);
+        return true;
     }
 
     private static unsafe bool? WaitAddonCharaSelectListMenu()
     {
-        if (TryGetAddonByName<AtkUnitBase>("_CharaSelectListMenu", out var addon) && IsAddonReady(addon))
+        if (Service.Gui.GetAddonByName("_TitleMenu") != nint.Zero) return false;
+
+        if (TryGetAddonByName<AtkUnitBase>("_CharaSelectListMenu", out var addon) &&
+            HelpersOm.IsAddonAndNodesReady(addon))
         {
             var currentServer = addon->GetTextNodeById(8)->NodeText.ExtractText();
             if (string.IsNullOrEmpty(currentServer)) return false;

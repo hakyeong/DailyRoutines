@@ -6,8 +6,8 @@ public class ClickCharaSelectListMenuDR(nint addon = default) : ClickBase<ClickC
 {
     public void SelectChara(int index)
     {
-        FireCallback(5, index);
-        FireCallback(17, 0, index);
-        FireCallback(5, index);
+        FireCallback(6, index);
+        FireCallback(18, 0, index);
+        FireCallback(6, index);
     }
 }
