@@ -8,6 +8,7 @@ using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace DailyRoutines.Modules;
 
@@ -65,56 +66,40 @@ public unsafe class AutoMiniCactpot : IDailyModule
 
         if (IsEzMiniCactpotInstalled())
         {
-            TaskManager.Enqueue(WaitLotteryDailyAddon);
-
-            // 点击格子
             TaskManager.Enqueue(ClickHighlightBlocks);
-
-            // 选择线
-            TaskManager.Enqueue(WaitLotteryDailyAddon);
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(ClickHighlightLine);
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(ClickConfirm);
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(ClickExit);
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(() => Click.TrySendClick("select_yes"));
         }
         else
         {
-            TaskManager.Enqueue(WaitLotteryDailyAddon);
             TaskManager.Enqueue(RandomClick);
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(ClickExit);
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(() => Click.TrySendClick("select_yes"));
         }
     }
 
     private static bool? RandomClick()
     {
-        if (TryGetAddonByName<AddonLotteryDaily>("LotteryDaily", out var addon) && IsAddonReady(&addon->AtkUnitBase))
+        if (!WaitLotteryDailyAddon()) return false;
+        if (TryGetAddonByName<AtkUnitBase>("LotteryDaily", out var addon) && IsAddonReady(addon))
         {
-            var ui = &addon->AtkUnitBase;
-            ui->GetButtonNodeById(67)->AtkComponentBase.SetEnabledState(true);
+            addon->GetButtonNodeById(67)->AtkComponentBase.SetEnabledState(true);
 
-            if (!ui->GetButtonNodeById(67)->IsEnabled) return false;
+            if (!addon->GetButtonNodeById(67)->IsEnabled) return false;
 
             var clickHandler = new ClickLotteryDailyDR();
             clickHandler.Confirm(0);
+
+            TaskManager.DelayNext(100);
+            TaskManager.Enqueue(ClickExit);
             return true;
         }
 
         return false;
     }
 
-    internal static bool? ClickHighlightBlocks()
+    private static bool? ClickHighlightBlocks()
     {
-        if (TryGetAddonByName<AddonLotteryDaily>("LotteryDaily", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
+        if (TryGetAddonByName<AtkUnitBase>("LotteryDaily", out var addon) &&
+            HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var helpText = (&addon->AtkUnitBase)->GetTextNodeById(39)->NodeText.ExtractText();
+            var helpText = addon->GetTextNodeById(39)->NodeText.ExtractText();
 
             if (helpText.Contains("格子"))
             {
@@ -122,13 +107,15 @@ public unsafe class AutoMiniCactpot : IDailyModule
                 return false;
             }
 
+            TaskManager.DelayNext(100);
+            TaskManager.Enqueue(ClickHighlightLine);
             return true;
         }
 
         return false;
     }
 
-    internal static bool? ClickHighlightBlock()
+    private static bool? ClickHighlightBlock()
     {
         if (TryGetAddonByName<AddonLotteryDaily>("LotteryDaily", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
@@ -162,8 +149,9 @@ public unsafe class AutoMiniCactpot : IDailyModule
         return false;
     }
 
-    internal static bool? ClickHighlightLine()
+    private static bool? ClickHighlightLine()
     {
+        if (!WaitLotteryDailyAddon()) return false;
         if (TryGetAddonByName<AddonLotteryDaily>("LotteryDaily", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
@@ -175,6 +163,9 @@ public unsafe class AutoMiniCactpot : IDailyModule
                 {
                     SelectedLineNumber3D4 = LineToUnkNumber3D4[line->AtkResNode.NodeID];
                     addon->UnkNumber3D4 = SelectedLineNumber3D4;
+
+                    TaskManager.DelayNext(100);
+                    TaskManager.Enqueue(ClickConfirm);
                     return true;
                 }
             }
@@ -183,14 +174,17 @@ public unsafe class AutoMiniCactpot : IDailyModule
         return false;
     }
 
-    internal static bool? ClickConfirm()
+    private static bool? ClickConfirm()
     {
+        if (!WaitLotteryDailyAddon()) return false;
         if (TryGetAddonByName<AddonLotteryDaily>("LotteryDaily", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
             var handler = new ClickLotteryDailyDR();
             handler.Confirm(SelectedLineNumber3D4);
 
+            TaskManager.DelayNext(100);
+            TaskManager.Enqueue(ClickExit);
             return true;
         }
 
@@ -206,21 +200,22 @@ public unsafe class AutoMiniCactpot : IDailyModule
             clickHandler.Exit();
             addon->AtkUnitBase.Close(true);
 
+            TaskManager.DelayNext(100);
+            TaskManager.Enqueue(() => Click.TrySendClick("select_yes"));
             return true;
         }
 
         return false;
     }
 
-    private static bool? WaitLotteryDailyAddon()
+    private static bool WaitLotteryDailyAddon()
     {
-        if (TryGetAddonByName<AddonLotteryDaily>("LotteryDaily", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
+        if (TryGetAddonByName<AtkUnitBase>("LotteryDaily", out var addon) &&
+            HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var ui = &addon->AtkUnitBase;
-            var welcomeImageState = ui->GetImageNodeById(4)->AtkResNode.IsVisible;
-            var selectBlockTextState = ui->GetTextNodeById(3)->AtkResNode.IsVisible;
-            var selectLineTextState = ui->GetTextNodeById(2)->AtkResNode.IsVisible;
+            var welcomeImageState = addon->GetImageNodeById(4)->AtkResNode.IsVisible;
+            var selectBlockTextState = addon->GetTextNodeById(3)->AtkResNode.IsVisible;
+            var selectLineTextState = addon->GetTextNodeById(2)->AtkResNode.IsVisible;
 
             if (!welcomeImageState && !selectBlockTextState && !selectLineTextState) return true;
         }
