@@ -11,7 +11,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 namespace DailyRoutines.Modules;
 
 // 完全来自 STP 的 AutoRefreshMarketPrices, 作者为: Chalkos
-[ModuleDescription("AutoRefreshMarketSearchResultTitle", "AutoRefreshMarketSearchResultDescription", ModuleCategories.Interface)]
+[ModuleDescription("AutoRefreshMarketSearchResultTitle", "AutoRefreshMarketSearchResultDescription", ModuleCategories.Base)]
 public unsafe class AutoRefreshMarketSearchResult : IDailyModule
 {
     public bool Initialized { get; set; }
@@ -77,7 +77,7 @@ public unsafe class AutoRefreshMarketSearchResult : IDailyModule
                 if (TryGetAddonByName<AddonItemSearchResult>("ItemSearchResult", out var addonItemSearchResult)
                     && AddonItemSearchResultThrottled(addonItemSearchResult))
                 {
-                    Service.Framework.RunOnTick(RefreshPrices, TimeSpan.FromSeconds(2f + ((0.5f * maxFailCount) - 1)),
+                    Service.Framework.RunOnTick(RefreshPrices, TimeSpan.FromSeconds(2f + (0.5f * maxFailCount - 1)),
                                                 0, cancelSource.Token);
                 }
             });
