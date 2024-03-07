@@ -12,6 +12,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Interface.Utility;
+using Dalamud.Memory;
 using Dalamud.Plugin.Services;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -39,6 +40,7 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
     private static uint CurrentItemSearchItemID;
     private static bool IsCurrentItemHQ;
     private static RetainerManager.Retainer* CurrentRetainer;
+    private static HashSet<string> PlayerRetainers = [];
 
     public void Init()
     {
@@ -54,6 +56,7 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
         ConfigSeparateNQAndHQ = Service.Config.GetConfig<bool>(this, "SeparateNQAndHQ");
         ConfigMaxPriceReduction = Service.Config.GetConfig<int>(this, "MaxPriceReduction");
 
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerList", OnRetainerList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSellList", OnRetainerSellList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSell", OnRetainerSell);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "RetainerSell", OnRetainerSell);
@@ -117,6 +120,24 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
             TaskManager.Abort();
             P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"),
                                                         "Daily Routines", NotificationType.Success);
+        }
+    }
+
+    private static void OnRetainerList(AddonEvent type, AddonArgs args)
+    {
+        var retainerManager = RetainerManager.Instance();
+
+        if (retainerManager == null) return;
+
+        PlayerRetainers.Clear();
+
+        for (var i = 0U; i < retainerManager->GetRetainerCount(); i++)
+        {
+            var retainer = retainerManager->GetRetainerBySortedIndex(i);
+            if (retainer == null) break;
+
+            var retainerName = MemoryHelper.ReadSeStringNullTerminated((nint)retainer->Name).ExtractText();
+            PlayerRetainers.Add(retainerName);
         }
     }
 
@@ -301,14 +322,20 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
 
                 if (!foundHQItem)
                 {
-                    if (!TryScanItemSearchResult(addon, 0, out var result)) return false;
-                    CurrentMarketLowestPrice = result.Price;
+                    for (var i = 0; i < 12; i++)
+                    {
+                        if (!TryScanItemSearchResult(addon, 0, out var result)) continue;
+                        CurrentMarketLowestPrice = result.Price;
+                    }
                 }
             }
             else
             {
-                if (!TryScanItemSearchResult(addon, 0, out var result)) return false;
-                CurrentMarketLowestPrice = result.Price;
+                for (var i = 0; i < 12; i++)
+                {
+                    if (!TryScanItemSearchResult(addon, 0, out var result)) continue;
+                    CurrentMarketLowestPrice = result.Price;
+                }
             }
 
             ui->Close(true);
@@ -403,6 +430,8 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
 
         var priceText =
             SanitizeManager.Sanitize(listing.GetTextNodeById(5)->GetAsAtkTextNode()->NodeText.ExtractText());
+        var retainerName = SanitizeManager.Sanitize(listing.GetTextNodeById(10)->GetAsAtkTextNode()->NodeText.ExtractText());
+        if (PlayerRetainers.Contains(retainerName)) return false;
         if (string.IsNullOrEmpty(priceText)) return false;
         if (!int.TryParse(priceText.Replace(",", ""), out result.Price)) return false;
 
@@ -441,6 +470,7 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
     public void Uninit()
     {
         Service.Framework.Update -= OnUpdate;
+        Service.AddonLifecycle.UnregisterListener(OnRetainerList);
         Service.AddonLifecycle.UnregisterListener(OnRetainerSellList);
         Service.AddonLifecycle.UnregisterListener(OnRetainerSell);
         TaskManager?.Abort();
