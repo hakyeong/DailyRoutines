@@ -114,5 +114,6 @@ public unsafe class AutoDesynthesizeItems : IDailyModule
         Overlay = null;
 
         Service.AddonLifecycle.UnregisterListener(OnAddonList);
+        TaskManager?.Abort();
     }
 }

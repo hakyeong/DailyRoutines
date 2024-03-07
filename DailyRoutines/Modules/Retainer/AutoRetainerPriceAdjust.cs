@@ -334,6 +334,7 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
             {
                 handler.Decline();
                 ui->Close(true);
+                ResetCurrentItemStats();
 
                 return true;
             }
@@ -352,6 +353,7 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
 
                 handler.Decline();
                 ui->Close(true);
+                ResetCurrentItemStats();
 
                 return true;
             }
@@ -370,6 +372,7 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
 
                 handler.Decline();
                 ui->Close(true);
+                ResetCurrentItemStats();
 
                 return true;
             }
@@ -377,6 +380,7 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
             priceComponent->SetValue(CurrentMarketLowestPrice - ConfigPriceReduction);
             handler.Confirm();
             ui->Close(true);
+            ResetCurrentItemStats();
 
             return true;
         }
@@ -425,6 +429,13 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
         }
 
         return result;
+    }
+
+    private static void ResetCurrentItemStats()
+    {
+        CurrentItemPrice = CurrentMarketLowestPrice = 0;
+        CurrentItemSearchItemID = 0;
+        IsCurrentItemHQ = false;
     }
 
     public void Uninit()
