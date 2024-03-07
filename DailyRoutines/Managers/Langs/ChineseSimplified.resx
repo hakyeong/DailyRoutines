@@ -450,7 +450,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>自动重新焦点目标</value>
   </data>
   <data name="AutoRefreshMarketSearchResultDescription" xml:space="preserve">
-    <value>当市场道具搜索结果为 "请稍后" 时, 自动重新请求列表结果</value>
+    <value>当市场道具搜索结果为 "请稍后" 时, 自动重新请求获取</value>
   </data>
   <data name="AutoRefreshMarketSearchResultTitle" xml:space="preserve">
     <value>自动刷新市场搜索结果</value>
