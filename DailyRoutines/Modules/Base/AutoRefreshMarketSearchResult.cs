@@ -110,7 +110,7 @@ public unsafe class AutoRefreshMarketSearchResult : IDailyModule
             !SafeMemory.WriteBytes(waitMessageCodeChangeAddress, waitMessageCodeOriginalBytes))
             Service.Log.Error("Failed to write original instruction");
 
-        HandlePricesHook?.Disable();
+        HandlePricesHook?.Dispose();
         cancelSource?.Cancel();
         cancelSource?.Dispose();
     }

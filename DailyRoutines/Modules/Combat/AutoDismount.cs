@@ -88,6 +88,9 @@ public unsafe class AutoDismount : IDailyModule
         if (ActionManager.Instance()->GetActionStatus((ActionType)actionType, actionId, actionTarget, false,
                                                       false) == 0) return false;
 
+        // 技能当前不可用
+        if (!ActionManager.Instance()->IsActionOffCooldown((ActionType)actionType, actionId)) return false;
+
         // 可以自身或地面为目标的技能
         if (TargetSelfOrAreaActions.Contains(actionId)) return true;
 
