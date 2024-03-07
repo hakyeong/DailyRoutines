@@ -312,9 +312,10 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
             if (ConfigSeparateNQAndHQ && IsCurrentItemHQ)
             {
                 var foundHQItem = false;
-                for (var i = 0; i < 12 && !foundHQItem; i++)
+                for (var i = 0; i < 10 && !foundHQItem; i++)
                 {
                     if (!TryScanItemSearchResult(addon, i, out var result)) break;
+                    if (PlayerRetainers.Contains(result.retainerName)) continue;
                     foundHQItem = result.isHQ;
                     if (!foundHQItem) continue;
                     CurrentMarketLowestPrice = result.Price;
@@ -322,19 +323,23 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
 
                 if (!foundHQItem)
                 {
-                    for (var i = 0; i < 12; i++)
+                    for (var i = 0; i < 10; i++)
                     {
-                        if (!TryScanItemSearchResult(addon, 0, out var result)) continue;
+                        if (!TryScanItemSearchResult(addon, i, out var result)) return false;
+                        if (PlayerRetainers.Contains(result.retainerName)) continue;
                         CurrentMarketLowestPrice = result.Price;
+                        break;
                     }
                 }
             }
             else
             {
-                for (var i = 0; i < 12; i++)
+                for (var i = 0; i < 10; i++)
                 {
-                    if (!TryScanItemSearchResult(addon, 0, out var result)) continue;
+                    if (!TryScanItemSearchResult(addon, i, out var result)) return false;
+                    if (PlayerRetainers.Contains(result.retainerName)) continue;
                     CurrentMarketLowestPrice = result.Price;
+                    break;
                 }
             }
 
@@ -416,9 +421,9 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
     }
 
     public static bool TryScanItemSearchResult(
-        AddonItemSearchResult* addon, int index, out (int Price, bool isHQ) result)
+        AddonItemSearchResult* addon, int index, out (string retainerName, int Price, bool isHQ) result)
     {
-        result = (0, false);
+        result = (string.Empty, 0, false);
         if (index < 0 || addon == null) return false;
 
         var list = addon->Results->ItemRendererList;
@@ -430,13 +435,11 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
 
         var priceText =
             SanitizeManager.Sanitize(listing.GetTextNodeById(5)->GetAsAtkTextNode()->NodeText.ExtractText());
-        var retainerName = SanitizeManager.Sanitize(listing.GetTextNodeById(10)->GetAsAtkTextNode()->NodeText.ExtractText());
-        if (PlayerRetainers.Contains(retainerName)) return false;
+        result.retainerName = listing.GetTextNodeById(10)->GetAsAtkTextNode()->NodeText.ExtractText();
         if (string.IsNullOrEmpty(priceText)) return false;
         if (!int.TryParse(priceText.Replace(",", ""), out result.Price)) return false;
 
         result.isHQ = listing.GetImageNodeById(3)->GetAsAtkImageNode()->AtkResNode.IsVisible;
-
         return true;
     }
 
