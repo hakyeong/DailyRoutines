@@ -433,13 +433,15 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
 
         var listing = itemEntry->AtkComponentButton.AtkComponentBase;
 
-        var priceText =
-            SanitizeManager.Sanitize(listing.GetTextNodeById(5)->GetAsAtkTextNode()->NodeText.ExtractText());
-        result.retainerName = listing.GetTextNodeById(10)->GetAsAtkTextNode()->NodeText.ExtractText();
-        if (string.IsNullOrEmpty(priceText)) return false;
-        if (!int.TryParse(priceText.Replace(",", ""), out result.Price)) return false;
+        var stringArray = UIModule.Instance()->GetRaptureAtkModule()->AtkModule.AtkArrayDataHolder.StringArrays[33]->StringArray;
+        var priceData = stringArray[203 + (6 * index)];
+        var retainerData = stringArray[208 + (6 * index)];
 
-        result.isHQ = listing.GetImageNodeById(3)->GetAsAtkImageNode()->AtkResNode.IsVisible;
+        result.retainerName = SanitizeManager.Sanitize(MemoryHelper.ReadStringNullTerminated((nint)retainerData));
+        if (!int.TryParse(SanitizeManager.Sanitize(MemoryHelper.ReadStringNullTerminated((nint)priceData)).Replace(",", ""), out result.Price)) return false;
+
+        if (index < 10)
+            result.isHQ = listing.GetImageNodeById(3)->GetAsAtkImageNode()->AtkResNode.IsVisible;
         return true;
     }
 
