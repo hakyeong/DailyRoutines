@@ -314,6 +314,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoMJIGather-NodesInfo" xml:space="preserve">
     <value>已获取 {0} 类采集点, 已选择 {1} 类, 共 {2} 个</value>
   </data>
+  <data name="AutoMJIGather-ReachCapsMessage" xml:space="preserve">
+    <value>无人岛素材达到上限, 已停止自动采集</value>
+  </data>
   <data name="AutoMJIGather-StopWhenReachCaps" xml:space="preserve">
     <value>素材达到上限时停止采集并发送通知</value>
   </data>

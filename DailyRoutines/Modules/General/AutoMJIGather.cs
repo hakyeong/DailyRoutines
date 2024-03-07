@@ -207,10 +207,11 @@ public class AutoMJIGather : IDailyModule
             TaskManager.Abort();
         }
 
-        ImGui.SameLine();
         ImGui.Text(Service.Lang.GetText("AutoMJIGather-GatherProcessInfo",
                                         QueuedGatheringList.Count == 0 ? 0 : CurrentGatherIndex + 1,
                                         QueuedGatheringList.Count));
+
+        ImGui.Spacing();
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoMJIGather-StopWhenReachCaps"), ref ConfigStopWhenReachCaps))
             Service.Config.UpdateConfig(this, "StopWhenReachCaps", ConfigStopWhenReachCaps);
@@ -249,7 +250,7 @@ public class AutoMJIGather : IDailyModule
         {
             TaskManager.Abort();
             IsOnGathering = false;
-            Service.Notice.Show("", "无人岛素材达到上限, 已停止自动采集", ToolTipIcon.Warning);
+            Service.Notice.Show("", Service.Lang.GetText("AutoMJIGather-ReachCapsMessage"), ToolTipIcon.Warning);
         }
     }
 
