@@ -449,6 +449,12 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRefocusTitle" xml:space="preserve">
     <value>自动重新焦点目标</value>
   </data>
+  <data name="AutoRefreshMarketSearchResultDescription" xml:space="preserve">
+    <value>当市场道具搜索结果为 "请稍后" 时, 自动重新请求列表结果</value>
+  </data>
+  <data name="AutoRefreshMarketSearchResultTitle" xml:space="preserve">
+    <value>自动刷新市场搜索结果</value>
+  </data>
   <data name="AutoRefreshPartyFinder-OnlyInactive" xml:space="preserve">
     <value>仅未操作状态下</value>
   </data>
@@ -501,7 +507,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoRetainerPriceAdjustDescription" xml:space="preserve">
     <value>打开雇员出售列表后, 自动将所有出售商品价格改为当前市场最低价格减去指定值
-出售物品时, 自动获取当前市场最低价并完成出售</value>
+出售物品时, 自动获取当前市场最低价并完成出售
+(前置模块: 自动刷新市场搜索结果)</value>
   </data>
   <data name="AutoRetainerPriceAdjustTitle" xml:space="preserve">
     <value>自动雇员改价</value>
