@@ -8,6 +8,7 @@ using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
 using Dalamud.Memory;
 using ECommons.Automation;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -95,7 +96,10 @@ public class AutoMaterialize : IDailyModule
             foreach (var part in parts)
                 if (part == "100%")
                 {
-                    AddonManager.Callback(addon, true, 2, 0);
+                    var agent = AgentModule.Instance()->GetAgentByInternalId(AgentId.Materialize);
+                    if (agent == null) return false;
+                    AgentManager.SendEvent(agent, 0, 2, 0);
+
                     TaskManager.DelayNext(1500);
                     TaskManager.Enqueue(StartARound);
                     return true;
