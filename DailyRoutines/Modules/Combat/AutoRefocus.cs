@@ -4,6 +4,7 @@ using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 
 namespace DailyRoutines.Modules;
@@ -45,8 +46,11 @@ public unsafe class AutoRefocus : IDailyModule
 
     private void OnUpdate(IFramework framework)
     {
-        if (FocusTarget != null && Service.Target.FocusTarget == null)
-            setFocusTargetByObjectIDHook.Original(TargetSystem.StaticAddressPointers.pInstance, (long)FocusTarget);
+        if (EzThrottler.Throttle("AutoRefocus"))
+        {
+            if (FocusTarget != null && Service.Target.FocusTarget == null)
+                setFocusTargetByObjectIDHook.Original(TargetSystem.StaticAddressPointers.pInstance, (long)FocusTarget);
+        }
     }
 
     private void SetFocusTargetByObjectID(TargetSystem* targetSystem, long objectID)

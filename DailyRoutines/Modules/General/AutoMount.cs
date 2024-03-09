@@ -5,6 +5,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace DailyRoutines.Modules;
 
@@ -29,8 +30,9 @@ public class AutoMount : IDailyModule
 
     public void OverlayUI() { }
     
-    private static void OnZoneChanged(ushort obj)
+    private static void OnZoneChanged(ushort zone)
     {
+        if (Service.PresetData.Contents.ContainsKey(zone)) return;
         TaskManager.Enqueue(UseMountWhenZoneChanged);
     }
 
@@ -68,6 +70,8 @@ public class AutoMount : IDailyModule
     private static unsafe bool? UseMountWhenZoneChanged()
     {
         if (Service.Condition[ConditionFlag.BetweenAreas]) return false;
+        var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("NowLoading");
+        if (addon->IsVisible) return false;
         if (Service.Condition[ConditionFlag.Mounted] || Service.Condition[ConditionFlag.Mounted2]) return true;
 
         TaskManager.DelayNext(100);
