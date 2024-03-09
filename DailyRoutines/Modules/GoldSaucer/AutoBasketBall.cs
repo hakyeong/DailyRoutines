@@ -90,7 +90,7 @@ public class AutoBasketBall : IDailyModule
     {
         if (IsOccupied()) return false;
         var machineTarget = Service.Target.PreviousTarget;
-        var machine = machineTarget.DataId == 2004804 ? (GameObject*)machineTarget.Address : null;
+        var machine = machineTarget.Name.ExtractText().Contains("怪物投篮") ? (GameObject*)machineTarget.Address : null;
 
         if (machine != null)
         {

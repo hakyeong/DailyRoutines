@@ -90,7 +90,7 @@ public class AutoHummer : IDailyModule
     {
         if (IsOccupied()) return false;
         var machineTarget = Service.Target.PreviousTarget;
-        var machine = machineTarget.DataId == 2005035 ? (GameObject*)machineTarget.Address : null;
+        var machine = machineTarget.Name.ExtractText().Contains("强袭水晶塔") ? (GameObject*)machineTarget.Address : null;
 
         if (machine != null)
         {

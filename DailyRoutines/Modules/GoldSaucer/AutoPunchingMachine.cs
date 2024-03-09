@@ -89,7 +89,7 @@ public class AutoPunchingMachine : IDailyModule
     {
         if (IsOccupied()) return false;
         var machineTarget = Service.Target.PreviousTarget;
-        var machine = machineTarget.DataId == 2005029 ? (GameObject*)machineTarget.Address : null;
+        var machine = machineTarget.Name.ExtractText().Contains("重击伽美什") ? (GameObject*)machineTarget.Address : null;
 
         if (machine != null)
         {

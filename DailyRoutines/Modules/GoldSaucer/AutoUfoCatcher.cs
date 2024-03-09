@@ -90,7 +90,7 @@ public class AutoUfoCatcher : IDailyModule
     {
         if (IsOccupied()) return false;
         var machineTarget = Service.Target.PreviousTarget;
-        var machine = machineTarget.DataId == 2005036 ? (GameObject*)machineTarget.Address : null;
+        var machine = machineTarget.Name.ExtractText().Contains("莫古抓球机") ? (GameObject*)machineTarget.Address : null;
 
         if (machine != null)
         {
