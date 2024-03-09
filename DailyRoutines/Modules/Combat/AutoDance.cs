@@ -2,10 +2,10 @@ using System.Collections.Generic;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Hooking;
-using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using ImGuiNET;
+using TaskManager = ECommons.Automation.TaskManager;
 
 namespace DailyRoutines.Modules;
 
