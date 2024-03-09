@@ -75,10 +75,8 @@ public unsafe class AutoAntiCensorship : IDailyModule
         if (Service.Gui.GetAddonByName("LookingForGroupCondition") != nint.Zero)
             OnPartyFinderConditionAddonSetup(AddonEvent.PostSetup, null);
         else
-        {
             Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "LookingForGroupCondition",
                                                     OnChatLogAddonSetup);
-        }
     }
 
     public void ConfigUI()
@@ -182,7 +180,7 @@ public unsafe class AutoAntiCensorship : IDailyModule
     private nint PartyFinderDescriptionInputDetour(
         AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData)
     {
-        if (eventType is AtkEventType.InputReceived or AtkEventType.FocusStop)
+        if (eventType is AtkEventType.InputReceived or AtkEventType.FocusStop or AtkEventType.MouseClick)
         {
             var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("LookingForGroupCondition");
             var textInput = (AtkComponentTextInput*)addon->GetComponentNodeById(22);
