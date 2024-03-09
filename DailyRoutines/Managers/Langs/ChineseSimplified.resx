@@ -326,6 +326,12 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoMJIGatherTitle" xml:space="preserve">
     <value>自动无人岛采集</value>
   </data>
+  <data name="AutoMountDescription" xml:space="preserve">
+    <value>区域变更或结束采集后, 自动上坐骑</value>
+  </data>
+  <data name="AutoMountTitle" xml:space="preserve">
+    <value>自动上坐骑</value>
+  </data>
   <data name="AutoMT-InterruptNotice" xml:space="preserve">
     <value>注: 仅支持在两场游戏间打断, 若要在游戏过程中打断, 请手动卸载模块</value>
   </data>
