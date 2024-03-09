@@ -25,18 +25,16 @@ public class AutoLeveQuests : IDailyModule
     public bool WithConfigUI => true;
 
     private static TaskManager? TaskManager;
-    private const string LeveAllowanceSig = "88 05 ?? ?? ?? ?? 0F B7 41 06";
 
-    private static Dictionary<uint, (string, uint)> LeveQuests = [];
-    internal static (uint, string, uint)? SelectedLeve; // Leve ID - Leve Name - Leve Job Category
+    private const string LeveAllowanceSig = "88 05 ?? ?? ?? ?? 0F B7 41 06";
+    private static Dictionary<uint, (string LeveName, uint JobCategory)> LeveQuests = [];
+    internal static (uint LeveID, string LeveName, uint JobCategory)? SelectedLeve;
     private static uint LeveMeteDataId;
     private static uint LeveReceiverDataId;
     private static int Allowances;
     private static string SearchString = string.Empty;
 
     private static int ConfigOperationDelay;
-
-    private static bool IsOnProcessing;
 
     public void Init()
     {
@@ -49,7 +47,7 @@ public class AutoLeveQuests : IDailyModule
 
     public void ConfigUI()
     {
-        ImGui.BeginDisabled(IsOnProcessing);
+        ImGui.BeginDisabled(TaskManager.IsBusy);
         ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
         if (ImGui.InputInt(Service.Lang.GetText("AutoLeveQuests-OperationDelay"), ref ConfigOperationDelay, 0, 0,
                            ImGuiInputTextFlags.EnterReturnsTrue))
@@ -67,7 +65,9 @@ public class AutoLeveQuests : IDailyModule
         ImGui.SameLine();
         ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
         if (ImGui.BeginCombo("##SelectedLeve",
-                             SelectedLeve == null ? "" : $"{SelectedLeve.Value.Item1} | {SelectedLeve.Value.Item2}"))
+                             SelectedLeve == null
+                                 ? ""
+                                 : $"{SelectedLeve.Value.LeveID} | {SelectedLeve.Value.LeveName}"))
         {
             if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-GetAreaLeveData"))) GetMapLeveQuests();
 
@@ -81,13 +81,13 @@ public class AutoLeveQuests : IDailyModule
                 foreach (var leveToSelect in LeveQuests)
                 {
                     if (!string.IsNullOrEmpty(SearchString) &&
-                        !leveToSelect.Value.Item1.Contains(SearchString, StringComparison.OrdinalIgnoreCase) &&
+                        !leveToSelect.Value.LeveName.Contains(SearchString, StringComparison.OrdinalIgnoreCase) &&
                         !leveToSelect.Key.ToString().Contains(SearchString, StringComparison.OrdinalIgnoreCase))
                         continue;
-                    if (ImGui.Selectable($"{leveToSelect.Key} | {leveToSelect.Value.Item1}"))
-                        SelectedLeve = (leveToSelect.Key, leveToSelect.Value.Item1, leveToSelect.Value.Item2);
+                    if (ImGui.Selectable($"{leveToSelect.Key} | {leveToSelect.Value.LeveName}"))
+                        SelectedLeve = (leveToSelect.Key, leveToSelect.Value.LeveName, leveToSelect.Value.JobCategory);
                     if (SelectedLeve != null && ImGui.IsWindowAppearing() &&
-                        SelectedLeve.Value.Item1 == leveToSelect.Key)
+                        SelectedLeve.Value.LeveID == leveToSelect.Key)
                         ImGui.SetScrollHereY();
                 }
             }
@@ -100,7 +100,6 @@ public class AutoLeveQuests : IDailyModule
                             LeveReceiverDataId == 0);
         if (ImGui.Button(Service.Lang.GetText("Start")))
         {
-            IsOnProcessing = true;
             Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", AlwaysYes);
 
             TaskManager.Enqueue(InteractWithMete);
@@ -112,9 +111,9 @@ public class AutoLeveQuests : IDailyModule
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("Stop"))) EndProcessHandler();
 
-        ImGui.BeginDisabled(IsOnProcessing);
+        ImGui.BeginDisabled(TaskManager.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-ObtainLevemeteID")))
-            GetCurrentTargetDataID(out LeveMeteDataId);
+            LeveMeteDataId = GetCurrentTargetDataID();
 
         ImGui.SameLine();
         ImGui.Text(LeveMeteDataId.ToString());
@@ -124,7 +123,7 @@ public class AutoLeveQuests : IDailyModule
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-ObtainLeveClientID")))
-            GetCurrentTargetDataID(out LeveReceiverDataId);
+            LeveReceiverDataId = GetCurrentTargetDataID();
 
         ImGui.SameLine();
         ImGui.Text(LeveReceiverDataId.ToString());
@@ -138,7 +137,6 @@ public class AutoLeveQuests : IDailyModule
     {
         TaskManager?.Abort();
         Service.AddonLifecycle.UnregisterListener(AlwaysYes);
-        IsOnProcessing = false;
     }
 
     private static void OnZoneChanged(ushort zone)
@@ -162,18 +160,18 @@ public class AutoLeveQuests : IDailyModule
         {
             LeveQuests = Service.Data.GetExcelSheet<Leve>()
                                 .Where(x => !string.IsNullOrEmpty(x.Name.RawString) &&
-                                            x.ClassJobCategory.RawRow.RowId is >= 9 and <= 16
-                                            && x.PlaceNameIssued.RawRow.RowId == currentTerritoryPlaceNameId.Value)
+                                            x.ClassJobCategory.RawRow.RowId is >= 9 and <= 16 or 19 &&
+                                            x.PlaceNameIssued.RawRow.RowId == currentTerritoryPlaceNameId.Value)
                                 .ToDictionary(x => x.RowId, x => (x.Name.RawString, x.ClassJobCategory.RawRow.RowId));
 
             Service.Log.Debug($"成功获取了 {LeveQuests.Count} 个理符任务");
         }
     }
 
-    private static void GetCurrentTargetDataID(out uint targetDataId)
+    private static uint GetCurrentTargetDataID()
     {
         var currentTarget = Service.Target.Target;
-        targetDataId = currentTarget == null ? 0 : currentTarget.DataId;
+        return currentTarget == null ? 0 : currentTarget.DataId;
     }
 
     private static unsafe bool? InteractWithMete()
@@ -216,9 +214,11 @@ public class AutoLeveQuests : IDailyModule
 
     private static unsafe bool? ClickCraftingLeve()
     {
+        if (SelectedLeve == null) return false;
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            if (HelpersOm.TryScanSelectStringText(addon, "制作", out var index))
+            if (HelpersOm.TryScanSelectStringText(addon, SelectedLeve.Value.JobCategory is 19 ? "采集" : "制作",
+                                                  out var index))
                 Click.SendClick($"select_string{index + 1}");
 
             TaskManager.Enqueue(ClickLeveQuest);
@@ -237,7 +237,7 @@ public class AutoLeveQuests : IDailyModule
         if (TryGetAddonByName<AtkUnitBase>("JournalDetail", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             var handler = new ClickJournalDetailDR();
-            handler.Accept((int)SelectedLeve.Value.Item1);
+            handler.Accept((int)SelectedLeve.Value.LeveID);
 
             TaskManager.Enqueue(ClickExit);
             return true;
@@ -306,7 +306,7 @@ public class AutoLeveQuests : IDailyModule
         if (SelectedLeve == null) return false;
         if (TryGetAddonByName<AtkUnitBase>("SelectIconString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            if (HelpersOm.TryScanSelectIconStringText(addon, SelectedLeve.Value.Item2, out var index))
+            if (HelpersOm.TryScanSelectIconStringText(addon, SelectedLeve.Value.LeveName, out var index))
                 Click.SendClick($"select_icon_string{index + 1}");
 
             TaskManager.Enqueue(InteractWithMete);
