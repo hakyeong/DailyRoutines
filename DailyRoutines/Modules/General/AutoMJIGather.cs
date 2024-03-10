@@ -308,6 +308,12 @@ public class AutoMJIGather : IDailyModule
     private static bool? Teleport(Vector3 pos)
     {
         if (IsGathering()) return false;
+        if (Service.ClientState.TerritoryType != 1055)
+        {
+            TaskManager.Abort();
+            Service.Notice.Show("", Service.Lang.GetText("AutoMJIGather-NotInIslandMessage"), ToolTipIcon.Warning);
+            return true;
+        }
 
         if (Service.ClientState.LocalPlayer != null)
         {

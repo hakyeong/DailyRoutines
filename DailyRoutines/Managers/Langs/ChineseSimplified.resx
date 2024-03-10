@@ -329,6 +329,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoMJIGather-NodesInfo" xml:space="preserve">
     <value>已获取 {0} 类采集点, 已选择 {1} 类, 共 {2} 个</value>
   </data>
+  <data name="AutoMJIGather-NotInIslandMessage" xml:space="preserve">
+    <value>当前未处于无人岛区域, 已停止采集</value>
+  </data>
   <data name="AutoMJIGather-ReachCapsMessage" xml:space="preserve">
     <value>无人岛素材达到上限, 已停止自动采集</value>
   </data>
@@ -573,6 +576,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoSubmarineCollect-FailGettingSubmarineInfo" xml:space="preserve">
     <value>获取潜水艇信息失败, 请重试</value>
+  </data>
+  <data name="AutoSubmarineCollect-LackCeruleumTanks" xml:space="preserve">
+    <value>{0} 不足, 已停止潜水艇自动收取</value>
   </data>
   <data name="AutoSubmarineCollect-WhatIsTheList" xml:space="preserve">
     <value>什么是潜水艇列表?</value>
