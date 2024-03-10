@@ -48,7 +48,15 @@ public class AutoMount : IDailyModule
     {
         if (!TaskManager.IsBusy) return;
 
-        if (message.ExtractText().Contains("这里无法呼叫出坐骑"))
+        var content = message.ExtractText();
+
+        if (content.Contains("无法指定目标"))
+        {
+            message = SeString.Empty;
+            return;
+        }
+
+        if (content.Contains("这里无法呼叫出坐骑"))
         {
             message = SeString.Empty;
             TaskManager.Abort();
@@ -74,6 +82,7 @@ public class AutoMount : IDailyModule
         if (addon->IsVisible) return false;
         if (Service.Condition[ConditionFlag.Mounted] || Service.Condition[ConditionFlag.Mounted2]) return true;
 
+        TaskManager.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.GeneralAction, 9));
         TaskManager.DelayNext(100);
         TaskManager.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.GeneralAction, 9));
 
