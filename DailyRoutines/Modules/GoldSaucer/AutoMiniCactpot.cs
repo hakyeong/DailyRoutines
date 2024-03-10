@@ -123,31 +123,22 @@ public unsafe class AutoMiniCactpot : IDailyModule
             var handler = new ClickLotteryDailyDR();
             for (var i = 0; i < 3; i++)
             {
-                var blockRow1 = addon->GameBoard.Row1[i]->AtkComponentButton.AtkComponentBase.OwnerNode;
-                if (blockRow1->AtkResNode is { MultiplyBlue: 0, MultiplyGreen: 100, MultiplyRed: 0 })
+                var rows = new[] { addon->GameBoard.Row1, addon->GameBoard.Row2, addon->GameBoard.Row3 };
+                foreach (var row in rows)
                 {
-                    handler.Block(BlockToCallbackIndex[blockRow1->AtkResNode.NodeID]);
-                    return true;
-                }
-
-                var blockRow2 = addon->GameBoard.Row2[i]->AtkComponentButton.AtkComponentBase.OwnerNode;
-                if (blockRow2->AtkResNode is { MultiplyBlue: 0, MultiplyGreen: 100, MultiplyRed: 0 })
-                {
-                    handler.Block(BlockToCallbackIndex[blockRow2->AtkResNode.NodeID]);
-                    return true;
-                }
-
-                var blockRow3 = addon->GameBoard.Row3[i]->AtkComponentButton.AtkComponentBase.OwnerNode;
-                if (blockRow3->AtkResNode is { MultiplyBlue: 0, MultiplyGreen: 100, MultiplyRed: 0 })
-                {
-                    handler.Block(BlockToCallbackIndex[blockRow3->AtkResNode.NodeID]);
-                    return true;
+                    var block = row[i]->AtkComponentButton.AtkComponentBase.OwnerNode;
+                    if (block->AtkResNode is { MultiplyBlue: 0, MultiplyGreen: 100, MultiplyRed: 0 })
+                    {
+                        handler.Block(BlockToCallbackIndex[block->AtkResNode.NodeID]);
+                        return true;
+                    }
                 }
             }
         }
 
         return false;
     }
+
 
     private static bool? ClickHighlightLine()
     {
@@ -169,7 +160,7 @@ public unsafe class AutoMiniCactpot : IDailyModule
                 }
             }
         }
-
+        
         return false;
     }
 
