@@ -151,7 +151,6 @@ public unsafe class AutoMiniCactpot : IDailyModule
 
     private static bool? ClickHighlightLine()
     {
-        if (!WaitLotteryDailyAddon()) return false;
         if (TryGetAddonByName<AddonLotteryDaily>("LotteryDaily", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
@@ -176,7 +175,6 @@ public unsafe class AutoMiniCactpot : IDailyModule
 
     private static bool? ClickConfirm()
     {
-        if (!WaitLotteryDailyAddon()) return false;
         if (TryGetAddonByName<AddonLotteryDaily>("LotteryDaily", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
