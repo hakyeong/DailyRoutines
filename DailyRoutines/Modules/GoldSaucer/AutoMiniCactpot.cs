@@ -107,7 +107,7 @@ public unsafe class AutoMiniCactpot : IDailyModule
                 return false;
             }
 
-            TaskManager.DelayNext(100);
+            TaskManager.DelayNext(250);
             TaskManager.Enqueue(ClickHighlightLine);
             return true;
         }
@@ -163,7 +163,7 @@ public unsafe class AutoMiniCactpot : IDailyModule
                     SelectedLineNumber3D4 = LineToUnkNumber3D4[line->AtkResNode.NodeID];
                     addon->UnkNumber3D4 = SelectedLineNumber3D4;
 
-                    TaskManager.DelayNext(100);
+                    TaskManager.DelayNext(250);
                     TaskManager.Enqueue(ClickConfirm);
                     return true;
                 }
