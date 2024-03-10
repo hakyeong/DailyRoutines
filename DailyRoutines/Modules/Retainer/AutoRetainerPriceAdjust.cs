@@ -30,6 +30,13 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
 
     private static TaskManager? TaskManager;
 
+    public class MarketSellItem
+    {
+        public string RetainerName { get; set; } = null!;
+        public int Price { get; set; }
+        public bool IsHQ { get; set; }
+    }
+
     private static int ConfigPriceReduction;
     private static int ConfigLowestPrice;
     private static int ConfigMaxPriceReduction;
@@ -311,36 +318,26 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
             // 区分 HQ 和 NQ
             if (ConfigSeparateNQAndHQ && IsCurrentItemHQ)
             {
-                var foundHQItem = false;
-                for (var i = 0; i < 10 && !foundHQItem; i++)
-                {
-                    if (!TryScanItemSearchResult(addon, i, out var result)) break;
-                    if (PlayerRetainers.Contains(result.retainerName)) continue;
-                    foundHQItem = result.isHQ;
-                    if (!foundHQItem) continue;
-                    CurrentMarketLowestPrice = result.Price;
-                }
+                if (!TryScanItemSearchResult(addon, out var result)) return false;
 
-                if (!foundHQItem)
-                {
-                    for (var i = 0; i < 10; i++)
-                    {
-                        if (!TryScanItemSearchResult(addon, i, out var result)) return false;
-                        if (PlayerRetainers.Contains(result.retainerName)) continue;
-                        CurrentMarketLowestPrice = result.Price;
-                        break;
-                    }
-                }
+                var firstHQItem = result
+                                  .OrderByDescending(x => x.IsHQ)
+                                  .ThenByDescending(x => !PlayerRetainers.Contains(x.RetainerName))
+                                  .ThenBy(x => x.Price)
+                                  .FirstOrDefault();
+
+                CurrentMarketLowestPrice = firstHQItem?.Price ?? 0;
             }
             else
             {
-                for (var i = 0; i < 10; i++)
-                {
-                    if (!TryScanItemSearchResult(addon, i, out var result)) return false;
-                    if (PlayerRetainers.Contains(result.retainerName)) continue;
-                    CurrentMarketLowestPrice = result.Price;
-                    break;
-                }
+                if (!TryScanItemSearchResult(addon, out var result)) return false;
+
+                var firstHQItem = result
+                                  .OrderByDescending(x => !PlayerRetainers.Contains(x.RetainerName))
+                                  .ThenBy(x => x.Price)
+                                  .FirstOrDefault();
+
+                CurrentMarketLowestPrice = firstHQItem?.Price ?? 0;
             }
 
             ui->Close(true);
@@ -421,27 +418,38 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
     }
 
     public static bool TryScanItemSearchResult(
-        AddonItemSearchResult* addon, int index, out (string retainerName, int Price, bool isHQ) result)
+        AddonItemSearchResult* addon, out List<MarketSellItem> result)
     {
-        result = (string.Empty, 0, false);
-        if (index < 0 || addon == null) return false;
+        result = [];
+        if (addon == null) return false;
 
         var list = addon->Results->ItemRendererList;
         if (list == null) return false;
-        var itemEntry = addon->Results->ItemRendererList[index].AtkComponentListItemRenderer;
-        if (itemEntry == null) return false;
+        var resultAmount = addon->Results->ListLength;
 
-        var listing = itemEntry->AtkComponentButton.AtkComponentBase;
+        for (var i = 0; i < resultAmount; i++)
+        {
+            var resultEntry = new MarketSellItem();
 
-        var stringArray = UIModule.Instance()->GetRaptureAtkModule()->AtkModule.AtkArrayDataHolder.StringArrays[33]->StringArray;
-        var priceData = stringArray[203 + (6 * index)];
-        var retainerData = stringArray[208 + (6 * index)];
+            var itemEntry = addon->Results->ItemRendererList[i].AtkComponentListItemRenderer;
+            if (itemEntry == null) break;
 
-        result.retainerName = SanitizeManager.Sanitize(MemoryHelper.ReadStringNullTerminated((nint)retainerData));
-        if (!int.TryParse(SanitizeManager.Sanitize(MemoryHelper.ReadStringNullTerminated((nint)priceData)).Replace(",", ""), out result.Price)) return false;
+            var listing = itemEntry->AtkComponentButton.AtkComponentBase;
+            var stringArray = UIModule.Instance()->GetRaptureAtkModule()->AtkModule.AtkArrayDataHolder.StringArrays[33]->StringArray;
 
-        if (index < 10)
-            result.isHQ = listing.GetImageNodeById(3)->GetAsAtkImageNode()->AtkResNode.IsVisible;
+            var priceData = stringArray[203 + (6 * i)];
+            var retainerData = stringArray[208 + (6 * i)];
+
+            resultEntry.RetainerName = SanitizeManager.Sanitize(MemoryHelper.ReadStringNullTerminated((nint)retainerData));
+            if (!int.TryParse(SanitizeManager.Sanitize(MemoryHelper.ReadStringNullTerminated((nint)priceData)).Replace(",", ""), out var priceResult)) return false;
+            resultEntry.Price = priceResult;
+
+            if (i < 10)
+                resultEntry.IsHQ = listing.GetImageNodeById(3)->GetAsAtkImageNode()->AtkResNode.IsVisible;
+
+            result.Add(resultEntry);
+        }
+
         return true;
     }
 
