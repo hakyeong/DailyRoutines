@@ -8,7 +8,7 @@
 
 
 
-## 仓库项目链接 (仅支持 API8 / Support CN Only)
+## 仓库项目链接 (Support CN Only)
 
 **访问下面的链接, 然后在页面最下方获取在线库链**
 
