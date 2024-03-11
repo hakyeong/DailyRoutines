@@ -188,6 +188,7 @@ public class AutoLeveQuests : IDailyModule
         if (IsOccupied()) return false;
         if (FindObjectToInteractWith(LeveMeteDataId, out var foundObject))
         {
+            TargetSystem.Instance()->Target = foundObject;
             TargetSystem.Instance()->InteractWithObject(foundObject);
             if (ConfigOperationDelay > 0) TaskManager.DelayNext(ConfigOperationDelay);
             TaskManager.Enqueue(ClickCraftingLeve);
@@ -284,6 +285,7 @@ public class AutoLeveQuests : IDailyModule
         if (IsOccupied()) return false;
         if (FindObjectToInteractWith(LeveReceiverDataId, out var foundObject))
         {
+            TargetSystem.Instance()->Target = foundObject;
             TargetSystem.Instance()->InteractWithObject(foundObject);
 
             var levesSpan = QuestManager.Instance()->LeveQuestsSpan;
