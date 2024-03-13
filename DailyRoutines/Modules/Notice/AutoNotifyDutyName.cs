@@ -34,7 +34,7 @@ public class AutoNotifyDutyName : IDailyModule
         if (!Service.PresetData.Contents.TryGetValue(territory, out var content)) return;
         var contentName = content.Name.RawString;
         Service.Chat.Print(Service.Lang.GetSeString("AutoNotifyDutyName-NoticeMessage", contentName));
-        if (ConfigSendWindowsToast) Service.Notice.Show(contentName, contentName);
+        if (ConfigSendWindowsToast) Service.Notice.Notify(contentName, contentName);
     }
 
     public void Uninit()

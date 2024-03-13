@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using System.Timers;
 using System.Windows.Forms;
-using Timer = System.Timers.Timer;
+using ECommons.Automation;
 
 namespace DailyRoutines.Managers;
 
@@ -16,55 +15,46 @@ public class NotificationManager
         public ToolTipIcon Icon { get; set; } = icon;
     }
 
+    private static TaskManager? TaskManager;
+
     private static NotifyIcon? icon;
-    private readonly Queue<ToastMessage> messagesQueue = new();
-    private readonly Timer timer = new(5000);
-    private bool isTimerScheduled;
+    private static readonly Queue<ToastMessage> messagesQueue = new();
 
     public void Init()
     {
-        timer.AutoReset = false;
-        timer.Elapsed += TimerElapsed;
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
     }
 
-    private void TimerElapsed(object? sender, ElapsedEventArgs e)
-    {
-        switch (messagesQueue.Count)
-        {
-            case > 1:
-                ShowBalloonTip(new ToastMessage("", Service.Lang.GetText("NotificationManager-ReceiveMultipleMessages",
-                                                                         messagesQueue.Count)));
-                messagesQueue.Clear();
-                DestroyIcon();
-                isTimerScheduled = false;
-                break;
-            case 1:
-                ShowBalloonTip(messagesQueue.Dequeue());
-                ScheduleTimer();
-                break;
-            case 0:
-                DestroyIcon();
-                isTimerScheduled = false;
-                break;
-        }
-    }
-
-    public void Show(string title, string content, ToolTipIcon toolTipIcon = ToolTipIcon.Info)
+    public void Notify(string title, string content, ToolTipIcon toolTipIcon = ToolTipIcon.Info)
     {
         if (icon == null || icon.Visible == false) CreateIcon();
         messagesQueue.Enqueue(new ToastMessage(title, content, toolTipIcon));
 
-        if (!isTimerScheduled)
-        {
-            ShowBalloonTip(messagesQueue.Dequeue());
-            ScheduleTimer();
-        }
+        TaskManager.DelayNext(200);
+        TaskManager.Enqueue(TryDequeueMessages);
     }
 
-    private void ScheduleTimer()
+    private static void TryDequeueMessages()
     {
-        timer.Restart();
-        isTimerScheduled = true;
+        switch (messagesQueue.Count)
+        {
+            case 0:
+                DestroyIcon();
+                break;
+            case 1:
+                ShowBalloonTip(messagesQueue.Dequeue());
+
+                TaskManager.DelayNext(6000);
+                TaskManager.Enqueue(TryDequeueMessages);
+                break;
+            case >= 2:
+                ShowBalloonTip(new ToastMessage("", Service.Lang.GetText("NotificationManager-ReceiveMultipleMessages", messagesQueue.Count)));
+                messagesQueue.Clear();
+
+                TaskManager.DelayNext(6000);
+                TaskManager.Enqueue(TryDequeueMessages);
+                break;
+        }
     }
 
     private static void ShowBalloonTip(ToastMessage message)
@@ -97,8 +87,7 @@ public class NotificationManager
 
     public void Dispose()
     {
-        timer.Elapsed -= TimerElapsed;
-        timer.Dispose();
         DestroyIcon();
+        TaskManager?.Abort();
     }
 }

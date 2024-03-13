@@ -65,10 +65,13 @@ public class AutoTankStance : IDailyModule
 
     private static void OnZoneChanged(ushort zone)
     {
-        TaskManager.Abort();
+        if (Service.ClientState.IsPvP) return;
         if ((ConfigOnlyAutoStanceWhenOneTank && ContentsWithOneTank.Contains(zone)) ||
             (!ConfigOnlyAutoStanceWhenOneTank && Service.PresetData.Contents.ContainsKey(zone)))
+        {
+            TaskManager.Abort();
             TaskManager.Enqueue(CheckCurrentJob);
+        }
     }
 
     private static unsafe bool? CheckCurrentJob()

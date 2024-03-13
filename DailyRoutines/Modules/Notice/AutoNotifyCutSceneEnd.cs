@@ -108,11 +108,11 @@ public class AutoNotifyCutSceneEnd : IDailyModule
         if (ConfigOnlyNotifyWhenBackground)
         {
             if (!HelpersOm.IsGameForeground())
-                Service.Notice.Show("", Service.Lang.GetText("AutoNotifyCutSceneEnd-NotificationMessage"));
+                Service.Notice.Notify("", Service.Lang.GetText("AutoNotifyCutSceneEnd-NotificationMessage"));
             return true;
         }
 
-        Service.Notice.Show("", Service.Lang.GetText("AutoNotifyCutSceneEnd-NotificationMessage"));
+        Service.Notice.Notify("", Service.Lang.GetText("AutoNotifyCutSceneEnd-NotificationMessage"));
         return true;
     }
 

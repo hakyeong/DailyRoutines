@@ -246,7 +246,7 @@ public class AutoMJIGather : IDailyModule
         if (message.ExtractText().Contains("持有数量已达到上限"))
         {
             TaskManager.Abort();
-            Service.Notice.Show("", Service.Lang.GetText("AutoMJIGather-ReachCapsMessage"), ToolTipIcon.Warning);
+            Service.Notice.Notify("", Service.Lang.GetText("AutoMJIGather-ReachCapsMessage"), ToolTipIcon.Warning);
         }
     }
 
@@ -307,7 +307,7 @@ public class AutoMJIGather : IDailyModule
         if (Service.ClientState.TerritoryType != 1055)
         {
             TaskManager.Abort();
-            Service.Notice.Show("", Service.Lang.GetText("AutoMJIGather-NotInIslandMessage"), ToolTipIcon.Warning);
+            Service.Notice.Notify("", Service.Lang.GetText("AutoMJIGather-NotInIslandMessage"), ToolTipIcon.Warning);
             return true;
         }
 

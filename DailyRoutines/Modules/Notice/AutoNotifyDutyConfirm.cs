@@ -31,7 +31,7 @@ public class AutoNotifyDutyConfirm : IDailyModule
         if (string.IsNullOrWhiteSpace(dutyName)) return;
 
         var loc = Service.Lang.GetText("AutoNotifyDutyConfirm-NoticeMessage", dutyName);
-        Service.Notice.Show(loc, loc);
+        Service.Notice.Notify(loc, loc);
     }
 
     public void Uninit()
