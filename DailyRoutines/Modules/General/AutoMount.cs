@@ -66,7 +66,8 @@ public class AutoMount : IDailyModule
     private static unsafe bool? UseMountAfterGathering()
     {
         if (AgentMap.Instance()->IsPlayerMoving == 1) return true;
-        if (Service.Condition[ConditionFlag.Mounted] || Service.Condition[ConditionFlag.Mounted2] || Service.Condition[ConditionFlag.Casting] || Service.Condition[ConditionFlag.Casting87]) return true;
+        if (Service.Condition[ConditionFlag.Casting] | Service.Condition[ConditionFlag.Casting87]) return true;
+        if (Service.Condition[ConditionFlag.Mounted] || Service.Condition[ConditionFlag.Mounted2]) return true;
         if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 9) != 0) return false;
 
         TaskManager.DelayNext(100);
@@ -80,6 +81,8 @@ public class AutoMount : IDailyModule
         if (Service.Condition[ConditionFlag.BetweenAreas]) return false;
         var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("NowLoading");
         if (addon->IsVisible) return false;
+        if (AgentMap.Instance()->IsPlayerMoving == 1) return true;
+        if (Service.Condition[ConditionFlag.Casting] | Service.Condition[ConditionFlag.Casting87]) return true;
         if (Service.Condition[ConditionFlag.Mounted] || Service.Condition[ConditionFlag.Mounted2]) return true;
 
         TaskManager.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.GeneralAction, 9));

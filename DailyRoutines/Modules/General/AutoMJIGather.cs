@@ -78,7 +78,6 @@ public class AutoMJIGather : IDailyModule
     private static bool ConfigStopWhenReachCaps;
     private static int CurrentGatherIndex;
     private static bool IsOnDataCollecting;
-    private static bool IsOnGathering;
     private static List<Vector3> QueuedGatheringList = [];
 
     public void Init()
@@ -97,7 +96,7 @@ public class AutoMJIGather : IDailyModule
 
     public void ConfigUI()
     {
-        ImGui.BeginDisabled(Service.ClientState.TerritoryType != 1055 || IsOnGathering);
+        ImGui.BeginDisabled(Service.ClientState.TerritoryType != 1055 || TaskManager.IsBusy);
         ImGui.SetNextItemWidth(350f * ImGuiHelpers.GlobalScale);
         if (ImGui.BeginCombo("##AutoMJIGather-GatherNodes",
                              Service.Lang.GetText("AutoMJIGather-NodesInfo", GatherNodes.Count,
@@ -190,7 +189,6 @@ public class AutoMJIGather : IDailyModule
 
             if (QueuedGatheringList.Any() && QueuedGatheringList.Count > 10)
             {
-                IsOnGathering = true;
                 Gather(QueuedGatheringList);
             }
             else
@@ -203,7 +201,6 @@ public class AutoMJIGather : IDailyModule
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("Stop")))
         {
-            IsOnGathering = false;
             TaskManager.Abort();
         }
 
@@ -249,7 +246,6 @@ public class AutoMJIGather : IDailyModule
         if (message.ExtractText().Contains("持有数量已达到上限"))
         {
             TaskManager.Abort();
-            IsOnGathering = false;
             Service.Notice.Show("", Service.Lang.GetText("AutoMJIGather-ReachCapsMessage"), ToolTipIcon.Warning);
         }
     }
@@ -365,7 +361,7 @@ public class AutoMJIGather : IDailyModule
         Service.Framework.Update -= OnUpdate;
         Service.Chat.ChatMessage -= OnChatMessage;
         QueuedGatheringList.Clear();
-        IsOnGathering = IsOnDataCollecting = false;
+        IsOnDataCollecting = false;
         CurrentGatherIndex = 0;
         TaskManager?.Abort();
     }

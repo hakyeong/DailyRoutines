@@ -22,7 +22,6 @@ public class AutoSellCardsConfirm : IDailyModule
     internal static Overlay? Overlay { get; private set; }
 
     private static TaskManager? TaskManager;
-    private static bool IsOnProcess;
 
     public void Init()
     {
@@ -50,15 +49,15 @@ public class AutoSellCardsConfirm : IDailyModule
         ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("AutoSellCardsConfirmTitle"));
 
         ImGui.SameLine();
-        ImGui.BeginDisabled(IsOnProcess);
+        ImGui.BeginDisabled(TaskManager.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("Start"))) StartHandOver();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"))) EndHandOver();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager?.Abort();
     }
 
-    private unsafe void OnAddon(AddonEvent type, AddonArgs args)
+    private static unsafe void OnAddon(AddonEvent type, AddonArgs args)
     {
         var addon = (AtkUnitBase*)args.Addon;
         if (addon == null) return;
@@ -77,7 +76,7 @@ public class AutoSellCardsConfirm : IDailyModule
                     break;
                 case AddonEvent.PreFinalize:
                     Overlay.IsOpen = false;
-                    EndHandOver();
+                    TaskManager?.Abort();
                     break;
             }
         }
@@ -91,7 +90,7 @@ public class AutoSellCardsConfirm : IDailyModule
             var cardsAmount = addon->AtkValues[1].Int;
             if (cardsAmount is 0)
             {
-                EndHandOver();
+                TaskManager?.Abort();
                 return true;
             }
 
@@ -99,14 +98,13 @@ public class AutoSellCardsConfirm : IDailyModule
             if (!isCardInDeck)
             {
                 Service.Chat.Print(Service.Lang.GetSeString("AutoSellCardsConfirm-CurrentCardNotInDeckMessage"));
-                EndHandOver();
+                TaskManager?.Abort();
                 return true;
             }
 
             TaskManager.Enqueue(() => AddonManager.Callback(addon, true, 0, 0, 0));
             addon->OnRefresh(addon->AtkValuesCount, addon->AtkValues);
-            IsOnProcess = true;
-            TaskManager.DelayNext(100);
+            TaskManager.DelayNext(150);
             TaskManager.Enqueue(StartHandOver);
 
             return true;
@@ -115,19 +113,13 @@ public class AutoSellCardsConfirm : IDailyModule
         return false;
     }
 
-    private static void EndHandOver()
-    {
-        TaskManager?.Abort();
-        IsOnProcess = false;
-    }
-
     public void Uninit()
     {
-        EndHandOver();
-
         Service.AddonLifecycle.UnregisterListener(OnAddon);
 
         if (P.WindowSystem.Windows.Contains(Overlay)) P.WindowSystem.RemoveWindow(Overlay);
         Overlay = null;
+
+        TaskManager?.Abort();
     }
 }
