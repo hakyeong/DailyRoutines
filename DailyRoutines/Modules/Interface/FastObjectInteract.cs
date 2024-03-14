@@ -39,6 +39,7 @@ public unsafe partial class FastObjectInteract : IDailyModule
     private static bool ConfigAllowClickToTarget;
     private static bool ConfigWindowInvisibleWhenInteract;
     private static float ConfigFontScale = 1f;
+    private static bool ConfigOnlyDisplayInViewRange;
     private static float ConfigMinButtonWidth = 300f;
     private static int ConfigMaxDisplayAmount = 5;
     private static HashSet<string> ConfigBlacklistKeys = new();
@@ -88,6 +89,7 @@ public unsafe partial class FastObjectInteract : IDailyModule
                                  });
         Service.Config.AddConfig(this, "BlacklistKeys", new HashSet<string>());
         Service.Config.AddConfig(this, "MinButtonWidth", 300f);
+        Service.Config.AddConfig(this, "OnlyDisplayInViewRange", false);
 
         ConfigMaxDisplayAmount = Service.Config.GetConfig<int>(this, "MaxDisplayAmount");
         ConfigAllowClickToTarget = Service.Config.GetConfig<bool>(this, "AllowClickToTarget");
@@ -96,6 +98,7 @@ public unsafe partial class FastObjectInteract : IDailyModule
         ConfigSelectedKinds = Service.Config.GetConfig<HashSet<ObjectKind>>(this, "SelectedKinds");
         ConfigBlacklistKeys = Service.Config.GetConfig<HashSet<string>>(this, "BlacklistKeys");
         ConfigMinButtonWidth = Service.Config.GetConfig<float>(this, "MinButtonWidth");
+        ConfigOnlyDisplayInViewRange = Service.Config.GetConfig<bool>(this, "OnlyDisplayInViewRange");
 
         ENpcTitles ??= Service.Data.GetExcelSheet<ENpcResident>()
                               .Where(x => x.Unknown10)
@@ -211,6 +214,10 @@ public unsafe partial class FastObjectInteract : IDailyModule
                            ref ConfigWindowInvisibleWhenInteract))
             Service.Config.UpdateConfig(this, "WindowInvisibleWhenInteract", ConfigWindowInvisibleWhenInteract);
 
+        if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-OnlyDisplayInViewRange"),
+                           ref ConfigOnlyDisplayInViewRange))
+            Service.Config.UpdateConfig(this, "OnlyDisplayInViewRange", ConfigOnlyDisplayInViewRange);
+
         if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-AllowClickToTarget"),
                            ref ConfigAllowClickToTarget))
             Service.Config.UpdateConfig(this, "AllowClickToTarget", ConfigAllowClickToTarget);
@@ -318,9 +325,10 @@ public unsafe partial class FastObjectInteract : IDailyModule
                 if (ConfigBlacklistKeys.Contains(objName)) continue;
 
                 var gameObj = (GameObject*)obj.Address;
+                if (ConfigOnlyDisplayInViewRange) if (!TargetSystem.Instance()->IsObjectInViewRange(gameObj)) continue;
                 var objDistance = HelpersOm.GetGameDistanceFromObject(localPlayer, gameObj);
                 var verticalDistance = localPlayerY - gameObj->Position.Y;
-                if (objDistance > 10 || verticalDistance > 5) continue;
+                if (objDistance > 10 || verticalDistance > 4) continue;
 
                 var adjustedDistance = objDistance;
                 while (distanceSet.Contains(adjustedDistance)) adjustedDistance += 0.001f;

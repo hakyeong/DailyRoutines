@@ -719,6 +719,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="FastObjectInteract-MinButtonWidth" xml:space="preserve">
     <value>最短按钮长度</value>
   </data>
+  <data name="FastObjectInteract-OnlyDisplayInViewRange" xml:space="preserve">
+    <value>仅显示在视线范围内的物体</value>
+  </data>
   <data name="FastObjectInteract-Remove" xml:space="preserve">
     <value>删除</value>
   </data>

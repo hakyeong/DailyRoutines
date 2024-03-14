@@ -75,11 +75,6 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
         {
             TaskManager.Abort();
         }
-
-        if (content.Contains("不需要修理") || content.Contains("飞空艇或潜水艇操作处理失败"))
-        {
-            message = SeString.Empty;
-        }
     }
 
     // 航程结果 -> 再次出发
@@ -183,42 +178,17 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
                 var endurance = addon->AtkValues[3 + (8 * i)].UInt;
                 if (endurance <= 0)
                 {
-                    var tempIndex = i;
-                    TaskManager.Enqueue(() => AgentManager.SendEvent(AgentId.SubmersibleParts, 0, 3, 0, tempIndex, 0, 0, 0));
-                    TaskManager.DelayNext(150);
+                    AgentManager.SendEvent(AgentId.SubmersibleParts, 0, 3, 0, i, 0, 0, 0);
+                    return false;
                 }
             }
 
-            // 防止意外事故的
-            // TaskManager.Enqueue(CheckRepairStates);
-
+            TaskManager.DelayNext(100);
             TaskManager.Enqueue(handler.Close);
             TaskManager.Enqueue(() => addon->Close(true));
 
             TaskManager.DelayNext(100);
             TaskManager.Enqueue(ClickPreviousVoyageLog);
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private static bool? CheckRepairStates()
-    {
-        if (Service.Gui.GetAddonByName("SelectYesno") != nint.Zero) return false;
-        if (TryGetAddonByName<AtkUnitBase>("CompanyCraftSupply", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(addon))
-        {
-            for (var i = 0; i < 4; i++)
-            {
-                var endurance = addon->AtkValues[3 + (8 * i)].UInt;
-                if (endurance <= 0)
-                {
-                    AgentManager.SendEvent(AgentId.SubmersibleParts, 0, 3, 0, i, 0, 0, 0);
-                    return false;
-                }
-            }
 
             return true;
         }

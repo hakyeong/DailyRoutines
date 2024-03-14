@@ -19,7 +19,7 @@ public class AutoMount : IDailyModule
 
     public void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = true };
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = false };
 
         Service.Condition.ConditionChange += OnConditionChanged;
         Service.ClientState.TerritoryChanged += OnZoneChanged;
