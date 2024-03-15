@@ -413,6 +413,12 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoNotifyMessagesTitle" xml:space="preserve">
     <value>自动通知新消息</value>
   </data>
+  <data name="AutoNotifyRecruitmentEndDescription" xml:space="preserve">
+    <value>在发布的队员招募因各种原因结束时, 自动发送一条 Windows 系统通知</value>
+  </data>
+  <data name="AutoNotifyRecruitmentEndTitle" xml:space="preserve">
+    <value>自动通知招募结束</value>
+  </data>
   <data name="AutoNoviceNetwork-AttemptedTimes" xml:space="preserve">
     <value>已尝试次数</value>
   </data>
