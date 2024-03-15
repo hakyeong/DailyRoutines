@@ -13,7 +13,7 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoInDutySelectYesTitle", "AutoInDutySelectYesDescription", ModuleCategories.Combat)]
 public partial class AutoInDutySelectYes : DailyModuleBase
 {
-    private static readonly HashSet<string> SelectYesSet = ["发现了", "退出任务", "无法战斗"];
+    private static readonly HashSet<string> SelectYesSet = ["发现了", "退出任务", "无法战斗", "即将返回"];
 
     public override void Init()
     {
