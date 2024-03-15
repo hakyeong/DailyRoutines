@@ -26,8 +26,8 @@ public class AutoNotifyCutSceneEnd : DailyModuleBase
         TaskManager ??= new TaskManager { ShowDebug = false, TimeLimitMS = int.MaxValue, AbortOnTimeout = false };
         Stopwatch ??= new Stopwatch();
 
-        Service.Config.AddConfig(this, "OnlyNotifyWhenBackground", true);
-        ConfigOnlyNotifyWhenBackground = Service.Config.GetConfig<bool>(this, "OnlyNotifyWhenBackground");
+        AddConfig(this, "OnlyNotifyWhenBackground", true);
+        ConfigOnlyNotifyWhenBackground = GetConfig<bool>(this, "OnlyNotifyWhenBackground");
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "_PartyList", OnPartyList);
         Service.DutyState.DutyCompleted += OnDutyComplete;
@@ -42,7 +42,7 @@ public class AutoNotifyCutSceneEnd : DailyModuleBase
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoNotifyCutSceneEnd-OnlyWhenBackground"),
                            ref ConfigOnlyNotifyWhenBackground))
-            Service.Config.UpdateConfig(this, "OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
+            UpdateConfig(this, "OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
     }
 
     private unsafe void OnPartyList(AddonEvent type, AddonArgs args)

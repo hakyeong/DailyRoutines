@@ -59,14 +59,14 @@ public class AutoNotifyMessages : DailyModuleBase
 
     public override void Init()
     {
-        Service.Config.AddConfig(this, "OnlyNotifyWhenBackground", true);
-        ConfigOnlyNotifyWhenBackground = Service.Config.GetConfig<bool>(this, "OnlyNotifyWhenBackground");
+        AddConfig(this, "OnlyNotifyWhenBackground", true);
+        ConfigOnlyNotifyWhenBackground = GetConfig<bool>(this, "OnlyNotifyWhenBackground");
 
-        Service.Config.AddConfig(this, "ValidChatTypes", new HashSet<XivChatType> { XivChatType.TellIncoming });
-        ConfigValidChatTypes = Service.Config.GetConfig<HashSet<XivChatType>>(this, "ValidChatTypes");
+        AddConfig(this, "ValidChatTypes", new HashSet<XivChatType> { XivChatType.TellIncoming });
+        ConfigValidChatTypes = GetConfig<HashSet<XivChatType>>(this, "ValidChatTypes");
 
-        Service.Config.AddConfig(this, "BlockOwnMessages", true);
-        ConfigBlockOwnMessages = Service.Config.GetConfig<bool>(this, "BlockOwnMessages");
+        AddConfig(this, "BlockOwnMessages", true);
+        ConfigBlockOwnMessages = GetConfig<bool>(this, "BlockOwnMessages");
 
         Service.Chat.ChatMessage += OnChatMessage;
     }
@@ -79,10 +79,10 @@ public class AutoNotifyMessages : DailyModuleBase
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoNotifyMessages-OnlyWhenBackground"),
                            ref ConfigOnlyNotifyWhenBackground))
-            Service.Config.UpdateConfig(this, "OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
+            UpdateConfig(this, "OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoNotifyMessages-BlockOwnMessages"), ref ConfigBlockOwnMessages))
-            Service.Config.UpdateConfig(this, "BlockOwnMessages", ConfigBlockOwnMessages);
+            UpdateConfig(this, "BlockOwnMessages", ConfigBlockOwnMessages);
 
         ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
         if (ImGui.BeginCombo("###SelectChatTypesCombo",
@@ -106,7 +106,7 @@ public class AutoNotifyMessages : DailyModuleBase
                     if (!ConfigValidChatTypes.Remove(chatType.Key))
                         ConfigValidChatTypes.Add(chatType.Key);
 
-                    Service.Config.UpdateConfig(this, "ValidChatTypes", ConfigValidChatTypes);
+                    UpdateConfig(this, "ValidChatTypes", ConfigValidChatTypes);
                 }
             }
 

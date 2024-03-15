@@ -15,8 +15,8 @@ public unsafe class CustomizeSightDistance : DailyModuleBase
 
     public override void Init()
     {
-        Service.Config.AddConfig(this, "MaxDistance", ConfigMaxDistance);
-        ConfigMaxDistance = Service.Config.GetConfig<float>(this, "MaxDistance");
+        AddConfig(this, "MaxDistance", ConfigMaxDistance);
+        ConfigMaxDistance = GetConfig<float>(this, "MaxDistance");
 
         CameraManager.Instance()->GetActiveCamera()->MaxDistance = ConfigMaxDistance;
         Service.ClientState.TerritoryChanged += OnZoneChanged;
@@ -35,7 +35,7 @@ public unsafe class CustomizeSightDistance : DailyModuleBase
         {
             ConfigMaxDistance = Math.Clamp(ConfigMaxDistance, 1, 100);
 
-            Service.Config.UpdateConfig(this, "MaxDistance", ConfigMaxDistance);
+            UpdateConfig(this, "MaxDistance", ConfigMaxDistance);
             CameraManager.Instance()->GetActiveCamera()->MaxDistance = ConfigMaxDistance;
         }
     }

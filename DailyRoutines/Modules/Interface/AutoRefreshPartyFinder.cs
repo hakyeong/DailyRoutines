@@ -25,11 +25,11 @@ public class AutoRefreshPartyFinder : DailyModuleBase
 
     public override void Init()
     {
-        Service.Config.AddConfig(this, "RefreshInterval", ConfigRefreshInterval);
-        Service.Config.AddConfig(this, "OnlyInactive", ConfigOnlyInactive);
+        AddConfig(this, "RefreshInterval", ConfigRefreshInterval);
+        AddConfig(this, "OnlyInactive", ConfigOnlyInactive);
 
-        ConfigRefreshInterval = Service.Config.GetConfig<int>(this, "RefreshInterval");
-        ConfigOnlyInactive = Service.Config.GetConfig<bool>(this, "OnlyInactive");
+        ConfigRefreshInterval = GetConfig<int>(this, "RefreshInterval");
+        ConfigOnlyInactive = GetConfig<bool>(this, "OnlyInactive");
 
         Overlay ??= new Overlay(this);
 
@@ -58,7 +58,7 @@ public class AutoRefreshPartyFinder : DailyModuleBase
                            1, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigRefreshInterval = Math.Max(1, ConfigRefreshInterval);
-            Service.Config.UpdateConfig(this, "RefreshInterval", ConfigRefreshInterval);
+            UpdateConfig(this, "RefreshInterval", ConfigRefreshInterval);
 
             PFRefreshTimer.Stop();
             PFRefreshTimer.Interval = ConfigRefreshInterval * 1000;
@@ -68,7 +68,7 @@ public class AutoRefreshPartyFinder : DailyModuleBase
 
         ImGui.SameLine();
         if (ImGui.Checkbox(Service.Lang.GetText("AutoRefreshPartyFinder-OnlyInactive"), ref ConfigOnlyInactive))
-            Service.Config.UpdateConfig(this, "OnlyInactive", ConfigOnlyInactive);
+            UpdateConfig(this, "OnlyInactive", ConfigOnlyInactive);
         ImGui.EndGroup();
 
         var contentSize = ImGui.GetItemRectSize();

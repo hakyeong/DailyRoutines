@@ -36,8 +36,8 @@ public class AutoLeveQuests : DailyModuleBase
         Service.ClientState.TerritoryChanged += OnZoneChanged;
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
 
-        Service.Config.AddConfig(this, "OperationDelay", 0);
-        ConfigOperationDelay = Service.Config.GetConfig<int>(this, "OperationDelay");
+        AddConfig(this, "OperationDelay", 0);
+        ConfigOperationDelay = GetConfig<int>(this, "OperationDelay");
     }
 
     public override void ConfigUI()
@@ -48,7 +48,7 @@ public class AutoLeveQuests : DailyModuleBase
                            ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigOperationDelay = Math.Max(0, ConfigOperationDelay);
-            Service.Config.UpdateConfig(this, "OperationDelay", ConfigOperationDelay);
+            UpdateConfig(this, "OperationDelay", ConfigOperationDelay);
         }
 
         ImGui.SameLine();

@@ -36,8 +36,8 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
     public override void Init()
     {
-        Service.Config.AddConfig(this, "SkipWhenHQ", ConfigSkipWhenHQ);
-        ConfigSkipWhenHQ = Service.Config.GetConfig<bool>(this, "SkipWhenHQ");
+        AddConfig(this, "SkipWhenHQ", ConfigSkipWhenHQ);
+        ConfigSkipWhenHQ = GetConfig<bool>(this, "SkipWhenHQ");
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         Overlay ??= new Overlay(this);
@@ -60,7 +60,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
         ImGui.BeginDisabled(IsOnProcess);
         if (ImGui.Checkbox(Service.Lang.GetText("AutoExpertDelivery-SkipHQ"), ref ConfigSkipWhenHQ))
-            Service.Config.UpdateConfig(this, "SkipWhenHQ", ConfigSkipWhenHQ);
+            UpdateConfig(this, "SkipWhenHQ", ConfigSkipWhenHQ);
 
         if (ImGui.Button(Service.Lang.GetText("Start"))) StartHandOver();
         ImGui.EndDisabled();

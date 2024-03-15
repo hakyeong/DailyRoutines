@@ -73,28 +73,28 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         Overlay.Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize |
                         ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoCollapse;
 
-        Service.Config.AddConfig(this, "MaxDisplayAmount", 5);
-        Service.Config.AddConfig(this, "AllowClickToTarget", false);
-        Service.Config.AddConfig(this, "WindowInvisibleWhenInteract", true);
-        Service.Config.AddConfig(this, "FontScale", 1f);
-        Service.Config.AddConfig(this, "SelectedKinds",
+        AddConfig(this, "MaxDisplayAmount", 5);
+        AddConfig(this, "AllowClickToTarget", false);
+        AddConfig(this, "WindowInvisibleWhenInteract", true);
+        AddConfig(this, "FontScale", 1f);
+        AddConfig(this, "SelectedKinds",
                                  new HashSet<ObjectKind>
                                  {
                                      ObjectKind.EventNpc, ObjectKind.EventObj, ObjectKind.Treasure,
                                      ObjectKind.Aetheryte, ObjectKind.GatheringPoint
                                  });
-        Service.Config.AddConfig(this, "BlacklistKeys", new HashSet<string>());
-        Service.Config.AddConfig(this, "MinButtonWidth", 300f);
-        Service.Config.AddConfig(this, "OnlyDisplayInViewRange", false);
+        AddConfig(this, "BlacklistKeys", new HashSet<string>());
+        AddConfig(this, "MinButtonWidth", 300f);
+        AddConfig(this, "OnlyDisplayInViewRange", false);
 
-        ConfigMaxDisplayAmount = Service.Config.GetConfig<int>(this, "MaxDisplayAmount");
-        ConfigAllowClickToTarget = Service.Config.GetConfig<bool>(this, "AllowClickToTarget");
-        ConfigWindowInvisibleWhenInteract = Service.Config.GetConfig<bool>(this, "WindowInvisibleWhenInteract");
-        ConfigFontScale = Service.Config.GetConfig<float>(this, "FontScale");
-        ConfigSelectedKinds = Service.Config.GetConfig<HashSet<ObjectKind>>(this, "SelectedKinds");
-        ConfigBlacklistKeys = Service.Config.GetConfig<HashSet<string>>(this, "BlacklistKeys");
-        ConfigMinButtonWidth = Service.Config.GetConfig<float>(this, "MinButtonWidth");
-        ConfigOnlyDisplayInViewRange = Service.Config.GetConfig<bool>(this, "OnlyDisplayInViewRange");
+        ConfigMaxDisplayAmount = GetConfig<int>(this, "MaxDisplayAmount");
+        ConfigAllowClickToTarget = GetConfig<bool>(this, "AllowClickToTarget");
+        ConfigWindowInvisibleWhenInteract = GetConfig<bool>(this, "WindowInvisibleWhenInteract");
+        ConfigFontScale = GetConfig<float>(this, "FontScale");
+        ConfigSelectedKinds = GetConfig<HashSet<ObjectKind>>(this, "SelectedKinds");
+        ConfigBlacklistKeys = GetConfig<HashSet<string>>(this, "BlacklistKeys");
+        ConfigMinButtonWidth = GetConfig<float>(this, "MinButtonWidth");
+        ConfigOnlyDisplayInViewRange = GetConfig<bool>(this, "OnlyDisplayInViewRange");
 
         ENpcTitles ??= Service.Data.GetExcelSheet<ENpcResident>()
                               .Where(x => x.Unknown10)
@@ -114,7 +114,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                              ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigFontScale = Math.Max(0.1f, ConfigFontScale);
-            Service.Config.UpdateConfig(this, "FontScale", ConfigFontScale);
+            UpdateConfig(this, "FontScale", ConfigFontScale);
         }
 
         ImGui.AlignTextToFramePadding();
@@ -127,7 +127,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                              ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigMinButtonWidth = Math.Max(1, ConfigMinButtonWidth);
-            Service.Config.UpdateConfig(this, "MinButtonWidth", ConfigMinButtonWidth);
+            UpdateConfig(this, "MinButtonWidth", ConfigMinButtonWidth);
         }
 
         ImGui.AlignTextToFramePadding();
@@ -139,7 +139,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                            ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigMaxDisplayAmount = Math.Max(1, ConfigMaxDisplayAmount);
-            Service.Config.UpdateConfig(this, "MaxDisplayAmount", ConfigMaxDisplayAmount);
+            UpdateConfig(this, "MaxDisplayAmount", ConfigMaxDisplayAmount);
         }
 
         ImGui.AlignTextToFramePadding();
@@ -159,7 +159,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                     if (!ConfigSelectedKinds.Remove(kind.Key))
                         ConfigSelectedKinds.Add(kind.Key);
 
-                    Service.Config.UpdateConfig(this, "SelectedKinds", ConfigSelectedKinds);
+                    UpdateConfig(this, "SelectedKinds", ConfigSelectedKinds);
                 }
             }
 
@@ -185,7 +185,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
             {
                 if (!ConfigBlacklistKeys.Add(BlacklistKeyInput)) return;
 
-                Service.Config.UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
+                UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
             }
 
             ImGui.Separator();
@@ -196,7 +196,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                                        Service.Lang.GetText("FastObjectInteract-Remove")))
                 {
                     ConfigBlacklistKeys.Remove(key);
-                    Service.Config.UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
+                    UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
                 }
 
                 ImGui.SameLine();
@@ -208,15 +208,15 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
         if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-WindowInvisibleWhenInteract"),
                            ref ConfigWindowInvisibleWhenInteract))
-            Service.Config.UpdateConfig(this, "WindowInvisibleWhenInteract", ConfigWindowInvisibleWhenInteract);
+            UpdateConfig(this, "WindowInvisibleWhenInteract", ConfigWindowInvisibleWhenInteract);
 
         if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-OnlyDisplayInViewRange"),
                            ref ConfigOnlyDisplayInViewRange))
-            Service.Config.UpdateConfig(this, "OnlyDisplayInViewRange", ConfigOnlyDisplayInViewRange);
+            UpdateConfig(this, "OnlyDisplayInViewRange", ConfigOnlyDisplayInViewRange);
 
         if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-AllowClickToTarget"),
                            ref ConfigAllowClickToTarget))
-            Service.Config.UpdateConfig(this, "AllowClickToTarget", ConfigAllowClickToTarget);
+            UpdateConfig(this, "AllowClickToTarget", ConfigAllowClickToTarget);
     }
 
     public override void OverlayUI()
@@ -251,7 +251,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                     {
                         if (!ConfigBlacklistKeys.Add(AddToBlacklistNameRegex().Replace(kvp.Value.Name, "").Trim()))
                             return;
-                        Service.Config.UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
+                        UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
                     }
 
                     ImGui.EndPopup();
@@ -276,7 +276,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                     {
                         if (!ConfigBlacklistKeys.Add(FastObjectInteractTitleRegex().Replace(kvp.Value.Name, "").Trim()))
                             return;
-                        Service.Config.UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
+                        UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
                     }
 
                     ImGui.EndPopup();

@@ -11,8 +11,8 @@ public class AutoNotifyDutyName : DailyModuleBase
 
     public override void Init()
     {
-        Service.Config.AddConfig(this, "SendWindowsToast", true);
-        ConfigSendWindowsToast = Service.Config.GetConfig<bool>(this, "SendWindowsToast");
+        AddConfig(this, "SendWindowsToast", true);
+        ConfigSendWindowsToast = GetConfig<bool>(this, "SendWindowsToast");
 
         Service.ClientState.TerritoryChanged += OnZoneChange;
     }
@@ -20,7 +20,7 @@ public class AutoNotifyDutyName : DailyModuleBase
     public override void ConfigUI()
     {
         if (ImGui.Checkbox(Service.Lang.GetText("AutoNotifyDutyName-SendWindowsToast"), ref ConfigSendWindowsToast))
-            Service.Config.UpdateConfig(this, "SendWindowsToast", ConfigSendWindowsToast);
+            UpdateConfig(this, "SendWindowsToast", ConfigSendWindowsToast);
     }
 
     private static void OnZoneChange(ushort territory)

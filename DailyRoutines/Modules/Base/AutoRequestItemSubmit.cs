@@ -20,9 +20,9 @@ public class AutoRequestItemSubmit : DailyModuleBase
 
     public override void Init()
     {
-        Service.Config.AddConfig(this, "IsSubmitHQItem", true);
+        AddConfig(this, "IsSubmitHQItem", true);
 
-        ConfigIsSubmitHQItem = Service.Config.GetConfig<bool>(this, "IsSubmitHQItem");
+        ConfigIsSubmitHQItem = GetConfig<bool>(this, "IsSubmitHQItem");
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Request", OnAddonRequest);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Request", OnAddonRequest);
@@ -34,7 +34,7 @@ public class AutoRequestItemSubmit : DailyModuleBase
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
         if (ImGui.Checkbox("递交优质道具", ref ConfigIsSubmitHQItem))
-            Service.Config.UpdateConfig(this, "IsSubmitHQItem", ConfigIsSubmitHQItem);
+            UpdateConfig(this, "IsSubmitHQItem", ConfigIsSubmitHQItem);
     }
     private void OnAddonRequest(AddonEvent type, AddonArgs args)
     {

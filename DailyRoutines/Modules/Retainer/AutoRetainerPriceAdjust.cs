@@ -48,15 +48,15 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
-        Service.Config.AddConfig(this, "PriceReduction", 1);
-        Service.Config.AddConfig(this, "LowestAcceptablePrice", 100);
-        Service.Config.AddConfig(this, "SeparateNQAndHQ", false);
-        Service.Config.AddConfig(this, "MaxPriceReduction", 0);
+        AddConfig(this, "PriceReduction", 1);
+        AddConfig(this, "LowestAcceptablePrice", 100);
+        AddConfig(this, "SeparateNQAndHQ", false);
+        AddConfig(this, "MaxPriceReduction", 0);
 
-        ConfigPriceReduction = Service.Config.GetConfig<int>(this, "PriceReduction");
-        ConfigLowestPrice = Service.Config.GetConfig<int>(this, "LowestAcceptablePrice");
-        ConfigSeparateNQAndHQ = Service.Config.GetConfig<bool>(this, "SeparateNQAndHQ");
-        ConfigMaxPriceReduction = Service.Config.GetConfig<int>(this, "MaxPriceReduction");
+        ConfigPriceReduction = GetConfig<int>(this, "PriceReduction");
+        ConfigLowestPrice = GetConfig<int>(this, "LowestAcceptablePrice");
+        ConfigSeparateNQAndHQ = GetConfig<bool>(this, "SeparateNQAndHQ");
+        ConfigMaxPriceReduction = GetConfig<int>(this, "MaxPriceReduction");
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerList", OnRetainerList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSellList", OnRetainerSellList);
@@ -78,7 +78,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
                 ref ConfigPriceReduction, 100))
         {
             ConfigPriceReduction = Math.Max(1, ConfigPriceReduction);
-            Service.Config.UpdateConfig(this, "SinglePriceReductionValue", ConfigPriceReduction);
+            UpdateConfig(this, "SinglePriceReductionValue", ConfigPriceReduction);
         }
 
 
@@ -88,7 +88,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
                 ref ConfigLowestPrice, 100))
         {
             ConfigLowestPrice = Math.Max(1, ConfigLowestPrice);
-            Service.Config.UpdateConfig(this, "LowestAcceptablePrice", ConfigLowestPrice);
+            UpdateConfig(this, "LowestAcceptablePrice", ConfigLowestPrice);
         }
 
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
@@ -97,7 +97,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
                 ref ConfigMaxPriceReduction, 100))
         {
             ConfigMaxPriceReduction = Math.Max(0, ConfigMaxPriceReduction);
-            Service.Config.UpdateConfig(this, "MaxPriceReduction", ConfigMaxPriceReduction);
+            UpdateConfig(this, "MaxPriceReduction", ConfigMaxPriceReduction);
         }
 
         if (ImGui.IsItemHovered())
@@ -106,7 +106,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         if (ImGui.Checkbox(
                 $"{Service.Lang.GetText("AutoRetainerPriceAdjust-SeparateNQAndHQ")}##AutoRetainerPriceAdjust-SeparateNQAndHQ",
                 ref ConfigSeparateNQAndHQ))
-            Service.Config.UpdateConfig(this, "SeparateNQAndHQ", ConfigSeparateNQAndHQ);
+            UpdateConfig(this, "SeparateNQAndHQ", ConfigSeparateNQAndHQ);
 
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoRetainerPriceAdjust-SeparateNQAndHQHelp"));
     }

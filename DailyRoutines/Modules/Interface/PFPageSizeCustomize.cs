@@ -27,8 +27,8 @@ public class PFPageSizeCustomize : DailyModuleBase
         Service.Hook.InitializeFromAttributes(this);
         PartyFinderDisplayAmountHook?.Enable();
 
-        Service.Config.AddConfig(this, "DisplayAmount", 100);
-        ConfigDisplayAmount = Service.Config.GetConfig<int>(this, "DisplayAmount");
+        AddConfig(this, "DisplayAmount", 100);
+        ConfigDisplayAmount = GetConfig<int>(this, "DisplayAmount");
     }
 
     public override void ConfigUI()
@@ -38,7 +38,7 @@ public class PFPageSizeCustomize : DailyModuleBase
                            ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigDisplayAmount = Math.Clamp(ConfigDisplayAmount, 1, 100);
-            Service.Config.UpdateConfig(this, "DisplayAmount", ConfigDisplayAmount);
+            UpdateConfig(this, "DisplayAmount", ConfigDisplayAmount);
         }
     }
 

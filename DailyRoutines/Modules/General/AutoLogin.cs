@@ -25,11 +25,11 @@ public class AutoLogin : DailyModuleBase
 
     public override void Init()
     {
-        Service.Config.AddConfig(this, "SelectedServer", string.Empty);
-        Service.Config.AddConfig(this, "SelectedCharaIndex", 0);
+        AddConfig(this, "SelectedServer", string.Empty);
+        AddConfig(this, "SelectedCharaIndex", 0);
 
-        ConfigSelectedServer = Service.Config.GetConfig<string>(this, "SelectedServer");
-        ConfigSelectedCharaIndex = Service.Config.GetConfig<int>(this, "SelectedCharaIndex");
+        ConfigSelectedServer = GetConfig<string>(this, "SelectedServer");
+        ConfigSelectedCharaIndex = GetConfig<int>(this, "SelectedCharaIndex");
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = true };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "_TitleMenu", OnTitleMenu);
@@ -51,7 +51,7 @@ public class AutoLogin : DailyModuleBase
         {
             if (TryGetWorldByName(ConfigSelectedServer, out _))
             {
-                Service.Config.UpdateConfig(this, "SelectedServer", ConfigSelectedServer);
+                UpdateConfig(this, "SelectedServer", ConfigSelectedServer);
                 HasLoginOnce = false;
             }
             else
@@ -76,7 +76,7 @@ public class AutoLogin : DailyModuleBase
             if (ConfigSelectedCharaIndex is < 0 or > 8) ConfigSelectedCharaIndex = 0;
             else
             {
-                Service.Config.UpdateConfig(this, "SelectedCharaIndex", ConfigSelectedCharaIndex);
+                UpdateConfig(this, "SelectedCharaIndex", ConfigSelectedCharaIndex);
                 HasLoginOnce = false;
             }
         }

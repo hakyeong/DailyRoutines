@@ -32,14 +32,14 @@ public unsafe class AutoPlayCards : DailyModuleBase
                                                                 UseActionSelf);
         useActionSelfHook?.Enable();
 
-        Service.Config.AddConfig(this, "SendMessage", ConfigSendMessage);
-        ConfigSendMessage = Service.Config.GetConfig<bool>(this, "SendMessage");
+        AddConfig(this, "SendMessage", ConfigSendMessage);
+        ConfigSendMessage = GetConfig<bool>(this, "SendMessage");
     }
 
     public override void ConfigUI()
     {
         if (ImGui.Checkbox(Service.Lang.GetText("AutoPlayCards-SendMessage"), ref ConfigSendMessage))
-            Service.Config.UpdateConfig(this, "SendMessage", ConfigSendMessage);
+            UpdateConfig(this, "SendMessage", ConfigSendMessage);
     }
 
     private bool UseActionSelf(

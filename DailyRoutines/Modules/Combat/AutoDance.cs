@@ -36,15 +36,15 @@ public unsafe class AutoDance : DailyModuleBase
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
 
-        Service.Config.AddConfig(this, "IsAutoFinish", IsAutoFinish);
-        IsAutoFinish = Service.Config.GetConfig<bool>(this, "IsAutoFinish");
+        AddConfig(this, "IsAutoFinish", IsAutoFinish);
+        IsAutoFinish = GetConfig<bool>(this, "IsAutoFinish");
     }
 
     public override void ConfigUI()
     {
         if (ImGui.Checkbox(Service.Lang.GetText("AutoDance-AutoFinish"), ref IsAutoFinish))
         {
-            Service.Config.UpdateConfig(this, "IsAutoFinish", IsAutoFinish);
+            UpdateConfig(this, "IsAutoFinish", IsAutoFinish);
         }
     }
 
