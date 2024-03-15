@@ -6,17 +6,15 @@
 
 提出 ISSUE 或 PR 请随意。
 
+Support CN only, most of the modules are based on CN client, and will not fuction properly in Global or KR client!
 
-
-## 仓库项目链接 (Support CN Only)
+## 仓库项目链接
 
 **访问下面的链接, 然后在页面最下方获取在线库链**
 
 ```
 https://github.com/AtmoOmen/DalamudPlugins
 ```
-
-
 
 ## 界面预览
 
