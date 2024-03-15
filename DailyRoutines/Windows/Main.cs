@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -23,14 +22,13 @@ namespace DailyRoutines.Windows;
 
 public class Main : Window, IDisposable
 {
-    private static readonly ConcurrentDictionary<Type, (string Name, string Title, string Description)>
-        ModuleCache = [];
-
-    private static readonly Dictionary<ModuleCategories, List<Type>> ModuleCategories = [];
-    private static Type[]? AllModules;
-
-    internal static string SearchString = string.Empty;
-    private static string ConflictKeySearchString = string.Empty;
+    public class ModuleInfo
+    {
+        public Type Module { get; set; } = null!;
+        public string Title { get; set; } = null!;
+        public string Description { get; set; } = null!;
+        public ModuleCategories Category { get; set; }
+    }
 
     public class Release
     {
@@ -48,6 +46,11 @@ public class Main : Window, IDisposable
         public int download_count { get; set; }
     }
 
+    private static readonly List<ModuleInfo> Modules = [];
+
+    internal static string SearchString = string.Empty;
+    private static string ConflictKeySearchString = string.Empty;
+
     private static readonly HttpClient client = new();
     private static int TotalDownloadCounts;
     private static int LatestDownloadCounts;
@@ -62,19 +65,22 @@ public class Main : Window, IDisposable
 
         Assembly.GetExecutingAssembly().GetTypes()
                 .Where(t => typeof(DailyModuleBase).IsAssignableFrom(t) && t is { IsClass: true, IsAbstract: false })
-                .OrderBy(t => Service.Lang.GetText(t.GetCustomAttribute<ModuleDescriptionAttribute>()?.TitleKey))
                 .ToList()
                 .ForEach(type =>
                 {
-                    var category = type.GetCustomAttribute<ModuleDescriptionAttribute>()?.Category;
-                    if (category.HasValue)
+                    var categoryAttr = type.GetCustomAttribute<ModuleDescriptionAttribute>();
+                    var category = categoryAttr?.Category ?? ModuleCategories.Base;
+                    var title = Service.Lang.GetText(categoryAttr?.TitleKey ?? "DevModuleTitle");
+                    var description = Service.Lang.GetText(categoryAttr?.DescriptionKey ?? "DevModuleDescription");
+
+                    Modules.Add(new ModuleInfo
                     {
-                        if (!ModuleCategories.ContainsKey(category.Value))
-                            ModuleCategories[category.Value] = [];
-                        ModuleCategories[category.Value].Add(type);
-                    }
+                        Module = type,
+                        Title = title,
+                        Description = description,
+                        Category = category
+                    });
                 });
-        AllModules = ModuleCategories.Values.SelectMany(list => list).ToArray();
 
         Task.Run(async () =>
         {
@@ -101,24 +107,29 @@ public class Main : Window, IDisposable
         {
             if (string.IsNullOrEmpty(SearchString))
             {
-                foreach (var module in ModuleCategories) DrawTabItemModules(module.Value, module.Key);
+                foreach (var category in Enum.GetValues(typeof(ModuleCategories)))
+                    DrawTabItemModules((ModuleCategories)category);
                 DrawTabSettings();
             }
             else
-                DrawTabItemModulesSearchResult(AllModules);
+                DrawTabItemModulesSearchResult(Modules);
 
             ImGui.EndTabBar();
         }
     }
 
-    private static void DrawTabItemModules(IReadOnlyList<Type> modules, ModuleCategories category)
+    private static void DrawTabItemModules(ModuleCategories category)
     {
+        var modulesInCategory = Modules.Where(m => m.Category == category).ToArray();
+
         if (ImGui.BeginTabItem(Service.Lang.GetText(category.ToString())))
         {
-            for (var i = 0; i < modules.Count; i++)
+            for (var i = 0; i < modulesInCategory.Length; i++)
             {
-                ImGui.PushID($"{modules[i]}");
-                DrawModuleCheckbox(modules[i], modules.Count, i);
+                var module = modulesInCategory[i];
+
+                ImGui.PushID($"{module}");
+                DrawModuleCheckbox(module, modulesInCategory.Length, i);
                 ImGui.PopID();
             }
 
@@ -126,14 +137,19 @@ public class Main : Window, IDisposable
         }
     }
 
-    private static void DrawTabItemModulesSearchResult(IReadOnlyList<Type> modules)
+
+    private static void DrawTabItemModulesSearchResult(IReadOnlyList<ModuleInfo> modules)
     {
         if (ImGui.BeginTabItem(Service.Lang.GetText("SearchResult")))
         {
             for (var i = 0; i < modules.Count; i++)
             {
-                ImGui.PushID($"{modules[i]}");
-                DrawModuleCheckbox(modules[i], modules.Count, i);
+                var module = modules[i];
+                if (!module.Title.Contains(SearchString, StringComparison.OrdinalIgnoreCase) &&
+                    !module.Description.Contains(SearchString, StringComparison.OrdinalIgnoreCase)) continue;
+
+                ImGui.PushID($"{module}");
+                DrawModuleCheckbox(module, modules.Count, i);
                 ImGui.PopID();
             }
 
@@ -141,38 +157,29 @@ public class Main : Window, IDisposable
         }
     }
 
-    private static void DrawModuleCheckbox(Type module, int modulesCount, int index)
+    private static void DrawModuleCheckbox(ModuleInfo moduleInfo, int modulesCount, int index)
     {
-        var (boolName, title, description) = ModuleCache.GetOrAdd(module, m =>
-        {
-            var attributes = m.GetCustomAttributes(typeof(ModuleDescriptionAttribute), false);
-            if (attributes.Length == 0) return (m.Name, string.Empty, string.Empty);
-
-            var content = (ModuleDescriptionAttribute)attributes[0];
-            return (m.Name, Service.Lang.GetText(content.TitleKey), Service.Lang.GetText(content.DescriptionKey));
-        });
-
-        if (!Service.Config.ModuleEnabled.TryGetValue(boolName, out var tempModuleBool) ||
-            string.IsNullOrEmpty(title) || string.IsNullOrEmpty(description) ||
-            (!string.IsNullOrWhiteSpace(SearchString) &&
-             !title.Contains(SearchString, StringComparison.OrdinalIgnoreCase) &&
-             !description.Contains(SearchString, StringComparison.OrdinalIgnoreCase)))
+        var moduleName = moduleInfo.Module.Name;
+        if (!Service.Config.ModuleEnabled.TryGetValue(moduleName, out var tempModuleBool))
             return;
 
-        var methodInfo = module.GetMethod("ConfigUI", BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+        var methodInfo =
+            moduleInfo.Module.GetMethod(
+                "ConfigUI", BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
         var isWithUI = methodInfo != null && methodInfo.DeclaringType != typeof(ModuleBase);
 
-        if (ImGuiOm.CheckboxColored($"##{module.Name}", ref tempModuleBool))
+        if (ImGuiOm.CheckboxColored("", ref tempModuleBool))
         {
-            Service.Config.ModuleEnabled[boolName] = tempModuleBool;
-            var component = ModuleManager.Modules[module];
+            Service.Config.ModuleEnabled[moduleName] ^= true;
+
+            var component = ModuleManager.Modules[moduleInfo.Module];
             if (tempModuleBool) ModuleManager.Load(component);
             else ModuleManager.Unload(component);
 
             Service.Config.Save();
         }
 
-        var moduleText = $"[{module.Name}]";
+        var moduleText = $"[{moduleName}]";
         ImGui.SameLine();
         var origCursorPos = ImGui.GetCursorPosX();
         ImGui.SetCursorPosX(ImGui.GetWindowWidth() - (ImGui.CalcTextSize(moduleText).X * 0.8f) -
@@ -192,18 +199,18 @@ public class Main : Window, IDisposable
                 {
                     ImGui.SetCursorPosX(origCursorPos);
                     ImGui.BeginGroup();
-                    DrawModuleUI(module);
+                    DrawModuleUI(moduleInfo);
                     ImGui.EndGroup();
                 }
             }
             else
-                ImGui.TextColored(ImGuiColors.DalamudYellow, title);
+                ImGui.TextColored(ImGuiColors.DalamudYellow, moduleInfo.Title);
         }
         else
-            ImGui.Text(title);
+            ImGui.Text(moduleInfo.Title);
 
         ImGui.SetCursorPosX(origCursorPos);
-        ImGuiOm.TextDisabledWrapped(description);
+        ImGuiOm.TextDisabledWrapped(moduleInfo.Description);
         if (index < modulesCount - 1) ImGui.Separator();
 
         return;
@@ -212,16 +219,16 @@ public class Main : Window, IDisposable
         {
             ImGui.PushStyleColor(ImGuiCol.Text, tempModuleBool ? ImGuiColors.DalamudYellow : ImGuiColors.DalamudWhite);
             ImGui.PushStyleColor(ImGuiCol.Header, ImGui.ColorConvertFloat4ToU32(new Vector4(0)));
-            var collapsingHeader = ImGui.CollapsingHeader($"{title}##{module.Name}");
+            var collapsingHeader = ImGui.CollapsingHeader(moduleInfo.Title);
             ImGui.PopStyleColor(2);
 
             return collapsingHeader;
         }
     }
 
-    private static void DrawModuleUI(Type module)
+    private static void DrawModuleUI(ModuleInfo moduleInfo)
     {
-        var moduleInstance = ModuleManager.Modules[module];
+        var moduleInstance = ModuleManager.Modules[moduleInfo.Module];
 
         moduleInstance.ConfigUI();
     }
@@ -237,6 +244,7 @@ public class Main : Window, IDisposable
             ImGuiOm.TextIcon(FontAwesomeIcon.Globe, $"{Service.Lang.GetText("Language")}:");
 
             ImGui.SameLine();
+            ImGui.BeginDisabled();
             ImGui.SetNextItemWidth(180f * ImGuiHelpers.GlobalScale);
             if (ImGui.BeginCombo("##LanguagesList", Service.Config.SelectedLanguage))
             {
@@ -254,6 +262,8 @@ public class Main : Window, IDisposable
 
                 ImGui.EndCombo();
             }
+
+            ImGui.EndDisabled();
 
             ImGui.EndGroup();
 
@@ -366,7 +376,6 @@ public class Main : Window, IDisposable
         Service.Lang = new LanguageManager(Service.Config.SelectedLanguage);
         Service.Config.Save();
 
-        ModuleCache.Clear();
         P.CommandHandler();
     }
 
