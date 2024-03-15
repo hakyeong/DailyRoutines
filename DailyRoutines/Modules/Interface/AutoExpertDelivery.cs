@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using ClickLib.Clicks;
@@ -19,13 +18,8 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoExpertDeliveryTitle", "AutoExpertDeliveryDescription", ModuleCategories.Interface)]
-public unsafe class AutoExpertDelivery : IDailyModule
+public unsafe class AutoExpertDelivery : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
-    internal static Overlay? Overlay { get; private set; }
-
-    private static TaskManager? TaskManager;
     private static bool IsOnProcess;
     private static HashSet<uint> HQItems = [];
 
@@ -40,7 +34,7 @@ public unsafe class AutoExpertDelivery : IDailyModule
         InventoryType.ArmoryOffHand
     ];
 
-    public void Init()
+    public override void Init()
     {
         Service.Config.AddConfig(this, "SkipWhenHQ", ConfigSkipWhenHQ);
         ConfigSkipWhenHQ = Service.Config.GetConfig<bool>(this, "SkipWhenHQ");
@@ -52,9 +46,7 @@ public unsafe class AutoExpertDelivery : IDailyModule
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "GrandCompanySupplyList", OnAddonSupplyList);
     }
 
-    public void ConfigUI() { }
-
-    public void OverlayUI()
+    public override void OverlayUI()
     {
         var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("GrandCompanySupplyList");
         if (addon == null) return;
@@ -77,7 +69,7 @@ public unsafe class AutoExpertDelivery : IDailyModule
         if (ImGui.Button(Service.Lang.GetText("Stop"))) EndHandOver();
     }
 
-    private static void OnAddonSupplyList(AddonEvent type, AddonArgs args)
+    private void OnAddonSupplyList(AddonEvent type, AddonArgs args)
     {
         Overlay.IsOpen = type switch
         {
@@ -97,7 +89,7 @@ public unsafe class AutoExpertDelivery : IDailyModule
         }
     }
 
-    private static bool? StartHandOver()
+    private bool? StartHandOver()
     {
         if (Service.Gui.GetAddonByName("GrandCompanySupplyReward") != nint.Zero) return false;
 
@@ -128,7 +120,7 @@ public unsafe class AutoExpertDelivery : IDailyModule
         return true;
     }
 
-    private static void EndHandOver()
+    private void EndHandOver()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonSupplyReward);
         TaskManager?.Abort();
@@ -155,7 +147,7 @@ public unsafe class AutoExpertDelivery : IDailyModule
         return true;
     }
 
-    private static bool? ClickItem()
+    private bool? ClickItem()
     {
         if (TryGetAddonByName<AddonGrandCompanySupplyList>("GrandCompanySupplyList", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
@@ -218,13 +210,11 @@ public unsafe class AutoExpertDelivery : IDailyModule
         return list;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         EndHandOver();
-
-        if (P.WindowSystem.Windows.Contains(Overlay)) P.WindowSystem.RemoveWindow(Overlay);
-        Overlay = null;
-
         Service.AddonLifecycle.UnregisterListener(OnAddonSupplyList);
+
+        base.Uninit();
     }
 }

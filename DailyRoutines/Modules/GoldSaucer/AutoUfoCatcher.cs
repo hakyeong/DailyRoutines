@@ -16,36 +16,27 @@ using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoTMPTitle", "AutoTMPDescription", ModuleCategories.GoldSaucer)]
-public class AutoUfoCatcher : IDailyModule
+public class AutoUfoCatcher : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
-    private static TaskManager? TaskManager;
-
-    public void Init()
+    public override void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
         Service.Framework.Update += OnUpdate;
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "UfoCatcher", OnAddonSetup);
-
-        Initialized = true;
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
     }
 
-    public void OverlayUI() { }
-
-    private static void OnAddonSetup(AddonEvent type, AddonArgs args)
+    private void OnAddonSetup(AddonEvent type, AddonArgs args)
     {
         TaskManager.Enqueue(WaitSelectStringAddon);
         TaskManager.Enqueue(ClickGameButton);
     }
 
-    private static void OnUpdate(IFramework framework)
+    private void OnUpdate(IFramework framework)
     {
         if (!TaskManager.IsBusy) return;
 
@@ -65,7 +56,7 @@ public class AutoUfoCatcher : IDailyModule
         return false;
     }
 
-    private static unsafe bool? ClickGameButton()
+    private unsafe bool? ClickGameButton()
     {
         if (TryGetAddonByName<AtkUnitBase>("UfoCatcher", out var addon) && IsAddonReady(addon))
         {
@@ -101,12 +92,11 @@ public class AutoUfoCatcher : IDailyModule
         return false;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.Framework.Update -= OnUpdate;
         Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
-        TaskManager?.Abort();
 
-        Initialized = false;
+        base.Uninit();
     }
 }

@@ -19,13 +19,8 @@ using Lumina.Excel.GeneratedSheets;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoLeveQuestsTitle", "AutoLeveQuestsDescription", ModuleCategories.General)]
-public class AutoLeveQuests : IDailyModule
+public class AutoLeveQuests : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
-    private static TaskManager? TaskManager;
-
     private const string LeveAllowanceSig = "88 05 ?? ?? ?? ?? 0F B7 41 06";
     private static Dictionary<uint, (string LeveName, uint JobCategory)> LeveQuests = [];
     internal static (uint LeveID, string LeveName, uint JobCategory)? SelectedLeve;
@@ -36,7 +31,7 @@ public class AutoLeveQuests : IDailyModule
 
     private static int ConfigOperationDelay;
 
-    public void Init()
+    public override void Init()
     {
         Service.ClientState.TerritoryChanged += OnZoneChanged;
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
@@ -45,7 +40,7 @@ public class AutoLeveQuests : IDailyModule
         ConfigOperationDelay = Service.Config.GetConfig<int>(this, "OperationDelay");
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         ImGui.BeginDisabled(TaskManager.IsBusy);
         ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
@@ -131,9 +126,7 @@ public class AutoLeveQuests : IDailyModule
         ImGui.EndDisabled();
     }
 
-    public void OverlayUI() { }
-
-    private static void EndProcessHandler()
+    private void EndProcessHandler()
     {
         TaskManager?.Abort();
         Service.AddonLifecycle.UnregisterListener(AlwaysYes);
@@ -174,7 +167,7 @@ public class AutoLeveQuests : IDailyModule
         return currentTarget == null ? 0 : currentTarget.DataId;
     }
 
-    private static unsafe bool? InteractWithMete()
+    private unsafe bool? InteractWithMete()
     {
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
@@ -213,7 +206,7 @@ public class AutoLeveQuests : IDailyModule
         return false;
     }
 
-    private static unsafe bool? ClickCraftingLeve()
+    private unsafe bool? ClickCraftingLeve()
     {
         if (SelectedLeve == null) return false;
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
@@ -229,7 +222,7 @@ public class AutoLeveQuests : IDailyModule
         return false;
     }
 
-    private static unsafe bool? ClickLeveQuest()
+    private unsafe bool? ClickLeveQuest()
     {
         if (SelectedLeve == null) return false;
         Allowances = *(byte*)Service.SigScanner.GetStaticAddressFromSig(LeveAllowanceSig);
@@ -247,7 +240,7 @@ public class AutoLeveQuests : IDailyModule
         return false;
     }
 
-    internal static unsafe bool? ClickExit()
+    private unsafe bool? ClickExit()
     {
         if (TryGetAddonByName<AtkUnitBase>("GuildLeve", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(addon))
@@ -263,7 +256,7 @@ public class AutoLeveQuests : IDailyModule
         return false;
     }
 
-    private static unsafe bool? ClickSelectStringExit()
+    private unsafe bool? ClickSelectStringExit()
     {
         if (SelectedLeve == null) return false;
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
@@ -280,7 +273,7 @@ public class AutoLeveQuests : IDailyModule
         return false;
     }
 
-    private static unsafe bool? InteractWithReceiver()
+    private unsafe bool? InteractWithReceiver()
     {
         if (IsOccupied()) return false;
         if (FindObjectToInteractWith(LeveReceiverDataId, out var foundObject))
@@ -303,7 +296,7 @@ public class AutoLeveQuests : IDailyModule
         return false;
     }
 
-    private static unsafe bool? ClickSelectQuest()
+    private unsafe bool? ClickSelectQuest()
     {
         if (SelectedLeve == null) return false;
         if (TryGetAddonByName<AtkUnitBase>("SelectIconString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
@@ -318,9 +311,11 @@ public class AutoLeveQuests : IDailyModule
         return false;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
         EndProcessHandler();
+
+        base.Uninit();
     }
 }

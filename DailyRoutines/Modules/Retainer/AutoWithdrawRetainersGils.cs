@@ -11,19 +11,14 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoWithdrawRetainersGilsTitle", "AutoWithdrawRetainersGilsDescription", ModuleCategories.Retainer)]
-public unsafe class AutoWithdrawRetainersGils : IDailyModule
+public unsafe class AutoWithdrawRetainersGils : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
-    private static TaskManager? TaskManager;
-
-    public void Init()
+    public override void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         ImGui.BeginDisabled(TaskManager.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("Start"))) GetRetainersGilInfo();
@@ -35,9 +30,7 @@ public unsafe class AutoWithdrawRetainersGils : IDailyModule
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoWithdrawRetainersGils-Help"));
     }
 
-    public void OverlayUI() { }
-
-    private static void GetRetainersGilInfo()
+    private void GetRetainersGilInfo()
     {
         if (Service.Gui.GetAddonByName("RetainerList") == nint.Zero) return;
 
@@ -61,7 +54,7 @@ public unsafe class AutoWithdrawRetainersGils : IDailyModule
     }
 
 
-    private static void EnqueueSingleRetainer(int index)
+    private void EnqueueSingleRetainer(int index)
     {
         // 点击指定雇员
         TaskManager.Enqueue(() => ClickSpecificRetainer(index));
@@ -106,10 +99,5 @@ public unsafe class AutoWithdrawRetainersGils : IDailyModule
         }
 
         return false;
-    }
-
-    public void Uninit()
-    {
-        TaskManager?.Abort();
     }
 }

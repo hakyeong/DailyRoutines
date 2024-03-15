@@ -12,17 +12,13 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoRequestItemSubmitTitle", "AutoRequestItemSubmitDescription", ModuleCategories.Base)]
-public class AutoRequestItemSubmit : IDailyModule
+public class AutoRequestItemSubmit : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
     private static bool ConfigIsSubmitHQItem;
 
-    private static TaskManager? TaskManager;
     private static readonly List<int> SlotsFilled = [];
 
-    public void Init()
+    public override void Init()
     {
         Service.Config.AddConfig(this, "IsSubmitHQItem", true);
 
@@ -34,16 +30,13 @@ public class AutoRequestItemSubmit : IDailyModule
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
         if (ImGui.Checkbox("递交优质道具", ref ConfigIsSubmitHQItem))
             Service.Config.UpdateConfig(this, "IsSubmitHQItem", ConfigIsSubmitHQItem);
     }
-
-    public void OverlayUI() { }
-
-    private static void OnAddonRequest(AddonEvent type, AddonArgs args)
+    private void OnAddonRequest(AddonEvent type, AddonArgs args)
     {
         if (Service.KeyState[Service.Config.ConflictKey])
         {
@@ -65,7 +58,7 @@ public class AutoRequestItemSubmit : IDailyModule
         }
     }
 
-    private static void AbortActions()
+    private void AbortActions()
     {
         SlotsFilled.Clear();
         TaskManager?.Abort();
@@ -87,7 +80,7 @@ public class AutoRequestItemSubmit : IDailyModule
         }
     }
 
-    private static unsafe void ClickRequestIcon()
+    private unsafe void ClickRequestIcon()
     {
         if (TryGetAddonByName<AddonRequest>("Request", out var addon))
         {
@@ -137,9 +130,11 @@ public class AutoRequestItemSubmit : IDailyModule
         }
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonRequest);
         AbortActions();
+
+        base.Uninit();
     }
 }

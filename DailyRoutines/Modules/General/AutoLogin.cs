@@ -16,19 +16,14 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoLoginTitle", "AutoLoginDescription", ModuleCategories.General)]
-public class AutoLogin : IDailyModule
+public class AutoLogin : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
-    private static TaskManager? TaskManager;
-
     private static bool HasLoginOnce;
 
     private static string ConfigSelectedServer = string.Empty;
     private static int ConfigSelectedCharaIndex = -1;
 
-    public void Init()
+    public override void Init()
     {
         Service.Config.AddConfig(this, "SelectedServer", string.Empty);
         Service.Config.AddConfig(this, "SelectedCharaIndex", 0);
@@ -42,7 +37,7 @@ public class AutoLogin : IDailyModule
         Service.Framework.Update += OnUpdate;
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
 
@@ -89,9 +84,7 @@ public class AutoLogin : IDailyModule
         ImGuiOm.TooltipHover(Service.Lang.GetText("AutoLogin-CharaIndexInputTooltip"));
     }
 
-    public void OverlayUI() { }
-
-    private static void OnUpdate(IFramework framework)
+    private void OnUpdate(IFramework framework)
     {
         if (!TaskManager.IsBusy) return;
 
@@ -103,7 +96,7 @@ public class AutoLogin : IDailyModule
         }
     }
 
-    private static void OnTitleMenu(AddonEvent eventType, AddonArgs? addonInfo)
+    private void OnTitleMenu(AddonEvent eventType, AddonArgs? addonInfo)
     {
         if (string.IsNullOrEmpty(ConfigSelectedServer) || ConfigSelectedCharaIndex == -1) return;
         if (HasLoginOnce) return;
@@ -112,7 +105,7 @@ public class AutoLogin : IDailyModule
         TaskManager.Enqueue(SelectStartGame);
     }
 
-    private static unsafe bool? SelectStartGame()
+    private unsafe bool? SelectStartGame()
     {
         var agent = AgentModule.Instance()->GetAgentByInternalId(AgentId.Lobby);
         if (agent == null) return false;
@@ -122,7 +115,7 @@ public class AutoLogin : IDailyModule
         return true;
     }
 
-    private static unsafe bool? WaitAddonCharaSelectListMenu()
+    private unsafe bool? WaitAddonCharaSelectListMenu()
     {
         if (Service.Gui.GetAddonByName("_TitleMenu") != nint.Zero) return false;
 
@@ -148,7 +141,7 @@ public class AutoLogin : IDailyModule
         return false;
     }
 
-    private static unsafe bool? WaitCharaSelectWorldServer()
+    private unsafe bool? WaitCharaSelectWorldServer()
     {
         if (TryGetAddonByName<AtkUnitBase>("_CharaSelectWorldServer", out var addon))
         {
@@ -178,12 +171,12 @@ public class AutoLogin : IDailyModule
         return false;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.Framework.Update -= OnUpdate;
         Service.AddonLifecycle.UnregisterListener(OnTitleMenu);
-
-        TaskManager?.Abort();
         HasLoginOnce = false;
+
+        base.Uninit();
     }
 }

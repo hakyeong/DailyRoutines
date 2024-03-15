@@ -8,31 +8,27 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoTalkSkipTitle", "AutoTalkSkipDescription", ModuleCategories.Base)]
-public class AutoTalkSkip : IDailyModule
+public class AutoTalkSkip : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
-    public void Init()
+    public override void Init()
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreDraw, "Talk", OnAddonDraw);
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
     }
-
-    public void OverlayUI() { }
-
     private static void OnAddonDraw(AddonEvent type, AddonArgs args)
     {
         if (Service.KeyState[Service.Config.ConflictKey]) return;
         Click.SendClick("talk");
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonDraw);
+
+        base.Uninit();
     }
 }

@@ -12,11 +12,8 @@ namespace DailyRoutines.Modules;
 
 // 完全来自 STP 的 AutoRefreshMarketPrices, 作者为: Chalkos
 [ModuleDescription("AutoRefreshMarketSearchResultTitle", "AutoRefreshMarketSearchResultDescription", ModuleCategories.Base)]
-public unsafe class AutoRefreshMarketSearchResult : IDailyModule
+public unsafe class AutoRefreshMarketSearchResult : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
-
     private delegate long HandlePricesDelegate(
         void* unk1, void* unk2, void* unk3, void* unk4, void* unk5, void* unk6,
         void* unk7);
@@ -33,7 +30,7 @@ public unsafe class AutoRefreshMarketSearchResult : IDailyModule
 
     private CancellationTokenSource? cancelSource;
 
-    public void Init()
+    public override void Init()
     {
         Service.Hook.InitializeFromAttributes(this);
         HandlePricesHook?.Enable();
@@ -56,10 +53,6 @@ public unsafe class AutoRefreshMarketSearchResult : IDailyModule
             Service.Log.Error("Failed to read original instruction");
         }
     }
-
-    public void ConfigUI() { }
-
-    public void OverlayUI() { }
 
     private long HandlePricesDetour(void* unk1, void* unk2, void* unk3, void* unk4, void* unk5, void* unk6, void* unk7)
     {
@@ -104,7 +97,7 @@ public unsafe class AutoRefreshMarketSearchResult : IDailyModule
                && !addon->HitsMessage->AtkResNode.IsVisible;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         if (!waitMessageCodeError &&
             !SafeMemory.WriteBytes(waitMessageCodeChangeAddress, waitMessageCodeOriginalBytes))
@@ -113,5 +106,7 @@ public unsafe class AutoRefreshMarketSearchResult : IDailyModule
         HandlePricesHook?.Dispose();
         cancelSource?.Cancel();
         cancelSource?.Dispose();
+
+        base.Uninit();
     }
 }

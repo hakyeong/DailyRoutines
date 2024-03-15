@@ -22,12 +22,8 @@ using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("FastObjectInteractTitle", "FastObjectInteractDescription", ModuleCategories.Interface)]
-public unsafe partial class FastObjectInteract : IDailyModule
+public unsafe partial class FastObjectInteract : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-    internal static Overlay? Overlay { get; private set; }
-
     private class ObjectWaitSelected(GameObject* gameObject, string name, ObjectKind kind, float distance)
     {
         public GameObject* GameObject { get; set; } = gameObject;
@@ -71,7 +67,7 @@ public unsafe partial class FastObjectInteract : IDailyModule
 
     private static Dictionary<uint, string>? ENpcTitles;
 
-    public void Init()
+    public override void Init()
     {
         Overlay ??= new Overlay(this, $"Daily Routines {Service.Lang.GetText("FastObjectInteractTitle")}");
         Overlay.Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize |
@@ -107,7 +103,7 @@ public unsafe partial class FastObjectInteract : IDailyModule
         Service.Framework.Update += OnUpdate;
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         ImGui.AlignTextToFramePadding();
         ImGui.Text($"{Service.Lang.GetText("FastObjectInteract-FontScale")}:");
@@ -223,7 +219,7 @@ public unsafe partial class FastObjectInteract : IDailyModule
             Service.Config.UpdateConfig(this, "AllowClickToTarget", ConfigAllowClickToTarget);
     }
 
-    public void OverlayUI()
+    public override void OverlayUI()
     {
         var colors = ImGui.GetStyle().Colors;
         ImGui.BeginGroup();
@@ -411,13 +407,12 @@ public unsafe partial class FastObjectInteract : IDailyModule
         return result;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
-        if (P.WindowSystem.Windows.Contains(Overlay)) P.WindowSystem.RemoveWindow(Overlay);
-        Overlay = null;
-
         Service.Framework.Update -= OnUpdate;
         ObjectsWaitSelected.Clear();
+
+        base.Uninit();
     }
 
     [GeneratedRegex("\\[.*?\\]")]

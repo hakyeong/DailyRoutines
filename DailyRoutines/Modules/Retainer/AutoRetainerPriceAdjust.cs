@@ -23,13 +23,8 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoRetainerPriceAdjustTitle", "AutoRetainerPriceAdjustDescription", ModuleCategories.Retainer)]
-public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
+public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
-    private static TaskManager? TaskManager;
-
     public class MarketSellItem
     {
         public string RetainerName { get; set; } = null!;
@@ -49,7 +44,7 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
     private static RetainerManager.Retainer* CurrentRetainer;
     private static HashSet<string> PlayerRetainers = [];
 
-    public void Init()
+    public override void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
@@ -73,7 +68,7 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
         Initialized = true;
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
 
@@ -116,9 +111,7 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoRetainerPriceAdjust-SeparateNQAndHQHelp"));
     }
 
-    public void OverlayUI() { }
-
-    private static void OnUpdate(IFramework framework)
+    private void OnUpdate(IFramework framework)
     {
         if (!TaskManager.IsBusy) return;
 
@@ -148,7 +141,7 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
         }
     }
 
-    private static void OnRetainerSell(AddonEvent eventType, AddonArgs addonInfo)
+    private void OnRetainerSell(AddonEvent eventType, AddonArgs addonInfo)
     {
         switch (eventType)
         {
@@ -172,7 +165,7 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
         }
     }
 
-    private static void OnRetainerSellList(AddonEvent type, AddonArgs args)
+    private void OnRetainerSellList(AddonEvent type, AddonArgs args)
     {
         var activeRetainer = RetainerManager.Instance()->GetActiveRetainer();
         if (CurrentRetainer == null || CurrentRetainer != activeRetainer)
@@ -190,7 +183,7 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
         }
     }
 
-    private static void EnqueueSingleItem(int index)
+    private void EnqueueSingleItem(int index)
     {
         // 点击物品
         TaskManager.Enqueue(() => ClickSellingItem(index));
@@ -480,15 +473,14 @@ public unsafe partial class AutoRetainerPriceAdjust : IDailyModule
         IsCurrentItemHQ = false;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.Framework.Update -= OnUpdate;
         Service.AddonLifecycle.UnregisterListener(OnRetainerList);
         Service.AddonLifecycle.UnregisterListener(OnRetainerSellList);
         Service.AddonLifecycle.UnregisterListener(OnRetainerSell);
-        TaskManager?.Abort();
-
-        Initialized = false;
+        
+        base.Uninit();
     }
 
     [GeneratedRegex("[^0-9]")]

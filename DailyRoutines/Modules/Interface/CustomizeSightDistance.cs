@@ -9,24 +9,20 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("CustomizeSightDistanceTitle", "CustomizeSightDistanceDescription", ModuleCategories.Interface)]
-public unsafe class CustomizeSightDistance : IDailyModule
+public unsafe class CustomizeSightDistance : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
     private static float ConfigMaxDistance = 80;
 
-    public void Init()
+    public override void Init()
     {
         Service.Config.AddConfig(this, "MaxDistance", ConfigMaxDistance);
         ConfigMaxDistance = Service.Config.GetConfig<float>(this, "MaxDistance");
 
         CameraManager.Instance()->GetActiveCamera()->MaxDistance = ConfigMaxDistance;
-
         Service.ClientState.TerritoryChanged += OnZoneChanged;
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         ImGui.AlignTextToFramePadding();
         ImGui.Text($"{Service.Lang.GetText("CustomizeSightDistance-MaxDistanceInput")}:");
@@ -44,16 +40,16 @@ public unsafe class CustomizeSightDistance : IDailyModule
         }
     }
 
-    public void OverlayUI() { }
-
     private static void OnZoneChanged(ushort zone)
     {
         CameraManager.Instance()->GetActiveCamera()->MaxDistance = ConfigMaxDistance;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         CameraManager.Instance()->GetActiveCamera()->MaxDistance = 25;
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
+
+        base.Uninit();
     }
 }

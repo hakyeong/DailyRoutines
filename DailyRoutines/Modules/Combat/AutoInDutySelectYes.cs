@@ -11,23 +11,16 @@ using FFXIVClientStructs.FFXIV.Client.UI;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoInDutySelectYesTitle", "AutoInDutySelectYesDescription", ModuleCategories.Combat)]
-public partial class AutoInDutySelectYes : IDailyModule
+public partial class AutoInDutySelectYes : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
+    private static readonly HashSet<string> SelectYesSet = ["发现了", "退出任务", "无法战斗"];
 
-    private static readonly HashSet<string> SelectYesSet = ["发现了", "退出任务"];
-
-    public void Init()
+    public override void Init()
     {
         var currentZone = Service.ClientState.TerritoryType;
         if (Service.PresetData.Contents.ContainsKey(currentZone)) OnZoneChanged(currentZone);
         Service.ClientState.TerritoryChanged += OnZoneChanged;
     }
-
-    public void ConfigUI() { }
-
-    public void OverlayUI() { }
 
     private static void OnZoneChanged(ushort zone)
     {
@@ -45,10 +38,12 @@ public partial class AutoInDutySelectYes : IDailyModule
         if (SelectYesRegex().IsMatch(text) || SelectYesSet.Any(text.Contains)) Click.SendClick("select_yes");
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
         Service.AddonLifecycle.UnregisterListener(OnAddonSelectYesno);
+
+        base.Uninit();
     }
 
     [GeneratedRegex("^要(?:(?!传送邀请|救助).)*吗？$")]

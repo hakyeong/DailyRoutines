@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using DailyRoutines.Infos;
+using DailyRoutines.Modules;
 using Dalamud.Configuration;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Plugin;
@@ -40,12 +41,12 @@ public class Configuration : IPluginConfiguration
         pluginInterface!.SavePluginConfig(this);
     }
 
-    public T GetConfig<T>(IDailyModule module, string key)
+    public T GetConfig<T>(DailyModuleBase moduleBase, string key)
     {
         try
         {
             var configDirectory = P.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, module.GetType().Name + ".json");
+            var configFile = Path.Combine(configDirectory, moduleBase.GetType().Name + ".json");
 
             if (!File.Exists(configFile))
             {
@@ -82,17 +83,17 @@ public class Configuration : IPluginConfiguration
         }
         catch (Exception ex)
         {
-            Service.Log.Error(ex, $"Failed to get config for {module.GetType().Name}");
+            Service.Log.Error(ex, $"Failed to get config for {moduleBase.GetType().Name}");
             return default;
         }
     }
 
-    public bool AddConfig(IDailyModule module, string key, object config)
+    public bool AddConfig(DailyModuleBase moduleBase, string key, object config)
     {
         try
         {
             var configDirectory = P.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, module.GetType().Name + ".json");
+            var configFile = Path.Combine(configDirectory, moduleBase.GetType().Name + ".json");
 
             Dictionary<string, object>? existingConfig;
 
@@ -116,21 +117,21 @@ public class Configuration : IPluginConfiguration
         }
         catch (Exception ex)
         {
-            Service.Log.Error(ex, $"Failed to write config for {module.GetType().Name}");
+            Service.Log.Error(ex, $"Failed to write config for {moduleBase.GetType().Name}");
             return false;
         }
     }
 
-    public bool UpdateConfig(IDailyModule module, string key, object newConfig)
+    public bool UpdateConfig(DailyModuleBase moduleBase, string key, object newConfig)
     {
         try
         {
             var configDirectory = P.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, module.GetType().Name + ".json");
+            var configFile = Path.Combine(configDirectory, moduleBase.GetType().Name + ".json");
 
             if (!File.Exists(configFile))
             {
-                Service.Log.Error($"Config file for {module.GetType().Name} does not exist.");
+                Service.Log.Error($"Config file for {moduleBase.GetType().Name} does not exist.");
                 return false;
             }
 
@@ -139,7 +140,7 @@ public class Configuration : IPluginConfiguration
 
             if (!existingConfig.ContainsKey(key))
             {
-                Service.Log.Error($"Key '{key}' does not exist in the config for {module.GetType().Name}.");
+                Service.Log.Error($"Key '{key}' does not exist in the config for {moduleBase.GetType().Name}.");
                 return false;
             }
 
@@ -152,17 +153,17 @@ public class Configuration : IPluginConfiguration
         }
         catch (Exception ex)
         {
-            Service.Log.Error(ex, $"Failed to update config for {module.GetType().Name}");
+            Service.Log.Error(ex, $"Failed to update config for {moduleBase.GetType().Name}");
             return false;
         }
     }
 
-    public bool RemoveConfig(IDailyModule module, string key)
+    public bool RemoveConfig(DailyModuleBase moduleBase, string key)
     {
         try
         {
             var configDirectory = P.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, module.GetType().Name + ".json");
+            var configFile = Path.Combine(configDirectory, moduleBase.GetType().Name + ".json");
 
             Dictionary<string, object>? existingConfig;
 
@@ -184,7 +185,7 @@ public class Configuration : IPluginConfiguration
         }
         catch (Exception ex)
         {
-            Service.Log.Error(ex, $"Failed to remove config for {module.GetType().Name}");
+            Service.Log.Error(ex, $"Failed to remove config for {moduleBase.GetType().Name}");
             return false;
         }
     }

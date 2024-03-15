@@ -10,11 +10,8 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoMarkAetherCurrentsTitle", "AutoMarkAetherCurrentsDescription", ModuleCategories.Interface)]
-public class AutoMarkAetherCurrents : IDailyModule
+public class AutoMarkAetherCurrents : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
     private class AetherCurrent(uint index, Vector3 pos)
     {
         public uint Index { get; } = index;
@@ -214,13 +211,12 @@ public class AutoMarkAetherCurrents : IDailyModule
         { 961, [] }
     };
 
-    public void Init()
+    public override void Init()
     {
-        Service.Hook.InitializeFromAttributes(this);
         Service.ClientState.TerritoryChanged += OnZoneChanged;
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         if (ImGui.Button(Service.Lang.GetText("AutoMarkAetherCurrents-RefreshDisplay")))
             MarkAetherCurrents(Service.ClientState.TerritoryType, false);
@@ -418,8 +414,6 @@ public class AutoMarkAetherCurrents : IDailyModule
         }
     }
 
-    public void OverlayUI() { }
-
     private void DrawManuallySelectGroupOld(
         string territoryName, uint territoryID, ref Dictionary<uint, HashSet<AetherCurrent>> selectedCurrents)
     {
@@ -510,8 +504,10 @@ public class AutoMarkAetherCurrents : IDailyModule
         }
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
+
+        base.Uninit();
     }
 }

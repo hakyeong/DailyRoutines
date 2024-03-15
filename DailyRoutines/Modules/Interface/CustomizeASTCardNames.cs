@@ -10,11 +10,8 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("CustomizeASTCardNamesTitle", "CustomizeASTCardNamesDescription", ModuleCategories.Interface)]
-public class CustomizeASTCardNames : IDailyModule
+public class CustomizeASTCardNames : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
     private static Dictionary<string, string> CardNames = new()
     {
         { "太阳神之衡", "近战卡" },
@@ -25,7 +22,7 @@ public class CustomizeASTCardNames : IDailyModule
         { "建筑神之塔", "远程卡" }
     };
 
-    public void Init()
+    public override void Init()
     {
         Service.Config.AddConfig(this, "CardNames", CardNames);
         CardNames = Service.Config.GetConfig<Dictionary<string, string>>(this, "CardNames");
@@ -33,7 +30,7 @@ public class CustomizeASTCardNames : IDailyModule
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "JobHudAST0", OnAddon0);
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         foreach (var card in CardNames)
         {
@@ -60,8 +57,6 @@ public class CustomizeASTCardNames : IDailyModule
         }
     }
 
-    public void OverlayUI() { }
-
     private static unsafe void OnAddon0(AddonEvent type, AddonArgs args)
     {
         var addon = (AtkUnitBase*)args.Addon;
@@ -79,8 +74,10 @@ public class CustomizeASTCardNames : IDailyModule
         else if (CardNames.TryGetValue(origCardName2, out var replacedName2)) textNode2->SetText(replacedName2);
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddon0);
+
+        base.Uninit();
     }
 }

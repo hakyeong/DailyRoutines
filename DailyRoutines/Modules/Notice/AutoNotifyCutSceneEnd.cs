@@ -14,18 +14,14 @@ namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoNotifyCutSceneEndTitle", "AutoNotifyCutSceneEndDescription",
                    ModuleCategories.Notice)]
-public class AutoNotifyCutSceneEnd : IDailyModule
+public class AutoNotifyCutSceneEnd : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
     private static bool ConfigOnlyNotifyWhenBackground;
     private static bool IsDutyEnd;
 
-    private static TaskManager? TaskManager;
     private static Stopwatch? Stopwatch;
 
-    public void Init()
+    public override void Init()
     {
         TaskManager ??= new TaskManager { ShowDebug = false, TimeLimitMS = int.MaxValue, AbortOnTimeout = false };
         Stopwatch ??= new Stopwatch();
@@ -38,7 +34,7 @@ public class AutoNotifyCutSceneEnd : IDailyModule
         Service.ClientState.TerritoryChanged += OnZoneChanged;
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         PreviewImageWithHelpText(Service.Lang.GetText("AutoNotifyCutSceneEnd-NotificationMessageHelp"),
                                  "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoNotifyCutSceneEnd-1.png",
@@ -49,9 +45,7 @@ public class AutoNotifyCutSceneEnd : IDailyModule
             Service.Config.UpdateConfig(this, "OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
     }
 
-    public void OverlayUI() { }
-
-    private static unsafe void OnPartyList(AddonEvent type, AddonArgs args)
+    private unsafe void OnPartyList(AddonEvent type, AddonArgs args)
     {
         if (TaskManager.IsBusy || Service.ClientState.IsPvP || !IsBoundByDuty() || IsDutyEnd) return;
 
@@ -78,7 +72,7 @@ public class AutoNotifyCutSceneEnd : IDailyModule
         }
     }
 
-    private static unsafe bool? IsNoOneWatchingCutscene()
+    private unsafe bool? IsNoOneWatchingCutscene()
     {
         if (IsDutyEnd)
         {
@@ -116,14 +110,14 @@ public class AutoNotifyCutSceneEnd : IDailyModule
         return true;
     }
 
-    private static void OnZoneChanged(ushort zone)
+    private void OnZoneChanged(ushort zone)
     {
         Stopwatch.Reset();
         TaskManager.Abort();
         IsDutyEnd = false;
     }
 
-    private static void OnDutyComplete(object? sender, ushort duty)
+    private void OnDutyComplete(object? sender, ushort duty)
     {
         Stopwatch.Reset();
         TaskManager.Abort();
@@ -136,13 +130,14 @@ public class AutoNotifyCutSceneEnd : IDailyModule
                Service.Condition[ConditionFlag.BoundByDuty95];
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
-        TaskManager?.Abort();
         Stopwatch.Reset();
 
         Service.DutyState.DutyCompleted -= OnDutyComplete;
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
         Service.AddonLifecycle.UnregisterListener(OnPartyList);
+
+        base.Uninit();
     }
 }

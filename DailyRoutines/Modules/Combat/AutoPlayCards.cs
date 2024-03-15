@@ -11,11 +11,8 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoPlayCardsTitle", "AutoPlayCardsDescription", ModuleCategories.Combat)]
-public unsafe class AutoPlayCards : IDailyModule
+public unsafe class AutoPlayCards : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
     private delegate bool UseActionSelfDelegate(
         ActionManager* actionManager, uint actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
         uint a5 = 0, uint a6 = 0, void* a7 = null);
@@ -28,7 +25,7 @@ public unsafe class AutoPlayCards : IDailyModule
 
     private static bool ConfigSendMessage = true;
 
-    public void Init()
+    public override void Init()
     {
         useActionSelfHook =
             Service.Hook.HookFromAddress<UseActionSelfDelegate>((nint)ActionManager.MemberFunctionPointers.UseAction,
@@ -39,13 +36,11 @@ public unsafe class AutoPlayCards : IDailyModule
         ConfigSendMessage = Service.Config.GetConfig<bool>(this, "SendMessage");
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         if (ImGui.Checkbox(Service.Lang.GetText("AutoPlayCards-SendMessage"), ref ConfigSendMessage))
             Service.Config.UpdateConfig(this, "SendMessage", ConfigSendMessage);
     }
-
-    public void OverlayUI() { }
 
     private bool UseActionSelf(
         ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6,
@@ -91,10 +86,5 @@ public unsafe class AutoPlayCards : IDailyModule
         }
 
         return state;
-    }
-
-    public void Uninit()
-    {
-        useActionSelfHook?.Dispose();
     }
 }

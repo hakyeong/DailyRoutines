@@ -8,31 +8,24 @@ using ECommons.Automation;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoQTETitle", "AutoQTEDescription", ModuleCategories.Combat)]
-public class AutoQTE : IDailyModule
+public class AutoQTE : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
-
     private static readonly string[] QTETypes = ["_QTEKeep", "_QTEMash", "_QTEKeepTime", "_QTEButton"];
 
-    public void Init()
+    public override void Init()
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, QTETypes, OnQTEAddon);
     }
-
-    public void ConfigUI() { }
-
-    public void OverlayUI() { }
 
     private static void OnQTEAddon(AddonEvent type, AddonArgs args)
     {
         WindowsKeypress.SendKeypress(Keys.Space);
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnQTEAddon);
 
-        Initialized = false;
+        base.Uninit();
     }
 }

@@ -11,11 +11,8 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoNotifyMessagesTitle", "AutoNotifyMessagesDescription", ModuleCategories.Notice)]
-public class AutoNotifyMessages : IDailyModule
+public class AutoNotifyMessages : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
     private static bool ConfigOnlyNotifyWhenBackground;
     private static bool ConfigBlockOwnMessages;
     private static HashSet<XivChatType> ConfigValidChatTypes = [];
@@ -60,7 +57,7 @@ public class AutoNotifyMessages : IDailyModule
         { XivChatType.CrossLinkShell8, "跨服贝8" }
     };
 
-    public void Init()
+    public override void Init()
     {
         Service.Config.AddConfig(this, "OnlyNotifyWhenBackground", true);
         ConfigOnlyNotifyWhenBackground = Service.Config.GetConfig<bool>(this, "OnlyNotifyWhenBackground");
@@ -74,7 +71,7 @@ public class AutoNotifyMessages : IDailyModule
         Service.Chat.ChatMessage += OnChatMessage;
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         PreviewImageWithHelpText(Service.Lang.GetText("AutoNotifyMessages-NotificationMessageHelp"),
                                  "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoNotifyMessages-1.png",
@@ -117,8 +114,6 @@ public class AutoNotifyMessages : IDailyModule
         }
     }
 
-    public void OverlayUI() { }
-
     private static void OnChatMessage(
         XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
@@ -131,8 +126,10 @@ public class AutoNotifyMessages : IDailyModule
             Service.Notice.Notify($"[{(locState ? prefix : type)}]  {sender.ExtractText()}", message.ExtractText());
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.Chat.ChatMessage -= OnChatMessage;
+
+        base.Uninit();
     }
 }

@@ -10,14 +10,9 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoMountTitle", "AutoMountDescription", ModuleCategories.General)]
-public class AutoMount : IDailyModule
+public class AutoMount : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
-
-    private static TaskManager? TaskManager;
-
-    public void Init()
+    public override void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = false };
 
@@ -25,12 +20,8 @@ public class AutoMount : IDailyModule
         Service.ClientState.TerritoryChanged += OnZoneChanged;
         Service.Toast.ErrorToast += OnErrorToast;
     }
-
-    public void ConfigUI() { }
-
-    public void OverlayUI() { }
     
-    private static void OnZoneChanged(ushort zone)
+    private void OnZoneChanged(ushort zone)
     {
         if (Service.PresetData.Contents.ContainsKey(zone)) return;
 
@@ -38,7 +29,7 @@ public class AutoMount : IDailyModule
         TaskManager.Enqueue(UseMountWhenZoneChanged);
     }
 
-    private static void OnConditionChanged(ConditionFlag flag, bool value)
+    private void OnConditionChanged(ConditionFlag flag, bool value)
     {
         if (flag is ConditionFlag.Gathering && !value)
         {
@@ -47,7 +38,7 @@ public class AutoMount : IDailyModule
         }
     }
 
-    private static void OnErrorToast(ref SeString message, ref bool isHandled)
+    private void OnErrorToast(ref SeString message, ref bool isHandled)
     {
         if (!TaskManager.IsBusy) return;
         var content = message.ExtractText();
@@ -65,7 +56,7 @@ public class AutoMount : IDailyModule
         }
     }
 
-    private static unsafe bool? UseMountAfterGathering()
+    private unsafe bool? UseMountAfterGathering()
     {
         if (AgentMap.Instance()->IsPlayerMoving == 1) return true;
         if (Service.Condition[ConditionFlag.Casting] | Service.Condition[ConditionFlag.Casting87]) return true;
@@ -78,7 +69,7 @@ public class AutoMount : IDailyModule
         return true;
     }
 
-    private static unsafe bool? UseMountWhenZoneChanged()
+    private unsafe bool? UseMountWhenZoneChanged()
     {
         if (Service.Condition[ConditionFlag.BetweenAreas]) return false;
         var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("NowLoading");
@@ -95,11 +86,12 @@ public class AutoMount : IDailyModule
         return true;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
-        TaskManager?.Abort();
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
         Service.Condition.ConditionChange -= OnConditionChanged;
         Service.Toast.ErrorToast -= OnErrorToast;
+
+        base.Uninit();
     }
 }

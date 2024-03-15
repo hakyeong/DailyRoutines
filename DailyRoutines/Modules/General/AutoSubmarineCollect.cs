@@ -18,24 +18,18 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoSubmarineCollectTitle", "AutoSubmarineCollectDescription", ModuleCategories.General)]
-public unsafe partial class AutoSubmarineCollect : IDailyModule
+public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
-    private static TaskManager? TaskManager;
-
-    public void Init()
+    public override void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = true };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectYesno", AlwaysYes);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "AirShipExplorationResult", OnExplorationResult);
 
-
         Service.Chat.ChatMessage += OnErrorText;
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         PreviewImageWithHelpText(Service.Lang.GetText("AutoSubmarineCollect-WhatIsTheList"),
                                  "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoSubmarineCollect-1.png",
@@ -49,16 +43,14 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
         if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
     }
 
-    public void OverlayUI() { }
-
-    private static void AlwaysYes(AddonEvent type, AddonArgs args)
+    private void AlwaysYes(AddonEvent type, AddonArgs args)
     {
         if (!TaskManager.IsBusy) return;
         Click.SendClick("select_yes");
     }
 
     // 报错处理
-    private static void OnErrorText(
+    private void OnErrorText(
         XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
         if (!TaskManager.IsBusy) return;
@@ -78,7 +70,7 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
     }
 
     // 航程结果 -> 再次出发
-    private static void OnExplorationResult(AddonEvent type, AddonArgs args)
+    private void OnExplorationResult(AddonEvent type, AddonArgs args)
     {
         if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationResult", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(addon))
@@ -89,7 +81,7 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
         }
     }
 
-    private static bool? GetSubmarineInfos()
+    private bool? GetSubmarineInfos()
     {
         if (Service.Condition[ConditionFlag.OccupiedInCutSceneEvent] ||
             Service.Condition[ConditionFlag.WatchingCutscene78]) return false;
@@ -123,7 +115,7 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
         return false;
     }
 
-    private static bool? CommenceSubmarineVoyage()
+    private bool? CommenceSubmarineVoyage()
     {
         if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(addon))
@@ -142,7 +134,7 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
         return false;
     }
 
-    private static bool? ReadyToRepairSubmarines()
+    private bool? ReadyToRepairSubmarines()
     {
         if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(addon))
@@ -165,7 +157,7 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
         return false;
     }
 
-    private static bool? RepairSubmarines()
+    private bool? RepairSubmarines()
     {
         if (Service.Gui.GetAddonByName("SelectYesno") != nint.Zero) return false;
         if (TryGetAddonByName<AtkUnitBase>("CompanyCraftSupply", out var addon) &&
@@ -196,7 +188,7 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
         return false;
     }
 
-    private static bool? ClickPreviousVoyageLog()
+    private bool? ClickPreviousVoyageLog()
     {
         if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var detailAddon) &&
             HelpersOm.IsAddonAndNodesReady(detailAddon))
@@ -226,12 +218,13 @@ public unsafe partial class AutoSubmarineCollect : IDailyModule
         return false;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnExplorationResult);
         Service.AddonLifecycle.UnregisterListener(AlwaysYes);
         Service.Chat.ChatMessage -= OnErrorText;
-        TaskManager?.Abort();
+
+        base.Uninit();
     }
 
 

@@ -10,13 +10,8 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoSummonPetTitle", "AutoSummonPetDescription", ModuleCategories.Combat)]
-public class AutoSummonPet : IDailyModule
+public class AutoSummonPet : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
-
-    private static TaskManager? TaskManager;
-
     private static readonly Dictionary<uint, uint> SummonActions = new()
     {
         // 学者
@@ -26,18 +21,14 @@ public class AutoSummonPet : IDailyModule
         { 27, 25798 }
     };
 
-    public void Init()
+    public override void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
 
         Service.ClientState.TerritoryChanged += OnZoneChanged;
     }
 
-    public void ConfigUI() { }
-
-    public void OverlayUI() { }
-
-    private static void OnZoneChanged(ushort zone)
+    private void OnZoneChanged(ushort zone)
     {
         if (!Service.PresetData.Contents.ContainsKey(zone) || Service.ClientState.IsPvP) return;
         TaskManager.Abort();
@@ -63,9 +54,10 @@ public class AutoSummonPet : IDailyModule
         return ActionManager.Instance()->UseAction(ActionType.Action, actionID);
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
-        TaskManager?.Abort();
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
+
+        base.Uninit();
     }
 }

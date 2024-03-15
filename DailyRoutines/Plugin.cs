@@ -46,10 +46,7 @@ public sealed class Plugin : IDalamudPlugin
         var helpMessage = Service.Lang.GetText("CommandHelp");
 
         Service.Command.RemoveHandler(CommandName);
-        Service.Command.AddHandler(CommandName, new CommandInfo(OnCommand)
-        {
-            HelpMessage = helpMessage
-        });
+        Service.Command.AddHandler(CommandName, new CommandInfo(OnCommand) { HelpMessage = helpMessage });
     }
 
     private void WindowHandler()

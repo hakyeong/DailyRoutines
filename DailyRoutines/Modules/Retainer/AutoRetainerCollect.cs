@@ -16,30 +16,21 @@ using TaskManager = ECommons.Automation.TaskManager;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoRetainerCollectTitle", "AutoRetainerCollectDescription", ModuleCategories.Retainer)]
-public unsafe class AutoRetainerCollect : IDailyModule
+public unsafe class AutoRetainerCollect : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
-    private static TaskManager? TaskManager;
-
-    public void Init()
+    public override void Init()
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerList", OnRetainerList);
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         Service.Framework.Update += OnUpdate;
-
-        Initialized = true;
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
     }
 
-    public void OverlayUI() { }
-
-    private static void OnUpdate(IFramework framework)
+    private void OnUpdate(IFramework framework)
     {
         if (!TaskManager.IsBusy) return;
 
@@ -51,7 +42,7 @@ public unsafe class AutoRetainerCollect : IDailyModule
         }
     }
 
-    private static void OnRetainerList(AddonEvent type, AddonArgs args)
+    private void OnRetainerList(AddonEvent type, AddonArgs args)
     {
         var retainerManager = RetainerManager.Instance();
         var serverTime = Framework.GetServerTime();
@@ -67,7 +58,7 @@ public unsafe class AutoRetainerCollect : IDailyModule
         }
     }
 
-    private static void EnqueueSingleRetainer(int index)
+    private void EnqueueSingleRetainer(int index)
     {
         TaskManager.Enqueue(() => ClickSpecificRetainer(index));
         TaskManager.Enqueue(CheckVentureState);
@@ -89,7 +80,7 @@ public unsafe class AutoRetainerCollect : IDailyModule
         return false;
     }
 
-    private static bool? CheckVentureState()
+    private bool? CheckVentureState()
     {
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
         {
@@ -108,7 +99,7 @@ public unsafe class AutoRetainerCollect : IDailyModule
         return false;
     }
 
-    private static bool? ReturnToRetainerList()
+    private bool? ReturnToRetainerList()
     {
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
         {
@@ -124,12 +115,11 @@ public unsafe class AutoRetainerCollect : IDailyModule
         return false;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.Framework.Update -= OnUpdate;
         Service.AddonLifecycle.UnregisterListener(OnRetainerList);
-        TaskManager?.Abort();
 
-        Initialized = false;
+        base.Uninit();
     }
 }

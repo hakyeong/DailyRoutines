@@ -8,19 +8,12 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoNotifyDutyConfirmTitle", "AutoNotifyDutyConfirmDescription", ModuleCategories.Notice)]
-public class AutoNotifyDutyConfirm : IDailyModule
+public class AutoNotifyDutyConfirm : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
-
-    public void Init()
+    public override void Init()
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "ContentsFinderConfirm", OnAddonSetup);
     }
-
-    public void ConfigUI() { }
-
-    public void OverlayUI() { }
 
     private static unsafe void OnAddonSetup(AddonEvent type, AddonArgs args)
     {
@@ -34,8 +27,10 @@ public class AutoNotifyDutyConfirm : IDailyModule
         Service.Notice.Notify(loc, loc);
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
+
+        base.Uninit();
     }
 }

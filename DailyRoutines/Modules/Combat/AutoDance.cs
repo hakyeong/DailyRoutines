@@ -10,17 +10,12 @@ using TaskManager = ECommons.Automation.TaskManager;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoDanceTitle", "AutoDanceDescription", ModuleCategories.Combat)]
-public unsafe class AutoDance : IDailyModule
+public unsafe class AutoDance : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
     private delegate bool UseActionSelfDelegate(
         ActionManager* actionManager, uint actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
         uint a5 = 0, uint a6 = 0, void* a7 = null);
     private Hook<UseActionSelfDelegate>? useActionSelfHook;
-
-    private static TaskManager? TaskManager;
 
     private static readonly Dictionary<int, uint> StepActions = new()
     {
@@ -32,7 +27,7 @@ public unsafe class AutoDance : IDailyModule
 
     private static bool IsAutoFinish;
 
-    public void Init()
+    public override void Init()
     {
         useActionSelfHook =
             Service.Hook.HookFromAddress<UseActionSelfDelegate>((nint)ActionManager.MemberFunctionPointers.UseAction,
@@ -45,15 +40,13 @@ public unsafe class AutoDance : IDailyModule
         IsAutoFinish = Service.Config.GetConfig<bool>(this, "IsAutoFinish");
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         if (ImGui.Checkbox(Service.Lang.GetText("AutoDance-AutoFinish"), ref IsAutoFinish))
         {
             Service.Config.UpdateConfig(this, "IsAutoFinish", IsAutoFinish);
         }
     }
-
-    public void OverlayUI() { }
 
     private bool UseActionSelf(
         ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6,
@@ -68,10 +61,10 @@ public unsafe class AutoDance : IDailyModule
         return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
     }
 
-    private static bool? DanceStandardStep() => DanceStep(false);
-    private static bool? DanceTechnicalStep() => DanceStep(true);
+    private bool? DanceStandardStep() => DanceStep(false);
+    private bool? DanceTechnicalStep() => DanceStep(true);
 
-    private static bool? DanceStep(bool isTechnicalStep)
+    private bool? DanceStep(bool isTechnicalStep)
     {
         if (TryGetAddonByName<AddonJobHudDNC0>("JobHudDNC0", out var addon))
         {
@@ -107,10 +100,5 @@ public unsafe class AutoDance : IDailyModule
         }
 
         return false;
-    }
-
-    public void Uninit()
-    {
-        useActionSelfHook?.Dispose();
     }
 }

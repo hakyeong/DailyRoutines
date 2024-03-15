@@ -12,11 +12,8 @@ using FFXIVClientStructs.FFXIV.Client.Game.Object;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoDismountTitle", "AutoDismountDescription", ModuleCategories.Combat)]
-public unsafe class AutoDismount : IDailyModule
+public unsafe class AutoDismount : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
-
     private delegate bool UseActionSelfDelegate(
         ActionManager* actionManager, uint actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
         uint a5 = 0, uint a6 = 0, void* a7 = null);
@@ -27,9 +24,8 @@ public unsafe class AutoDismount : IDailyModule
     private readonly delegate* unmanaged<ulong, GameObject*> GetGameObjectFromObjectID;
 
     private static HashSet<uint>? TargetSelfOrAreaActions;
-    private static TaskManager? TaskManager;
 
-    public void Init()
+    public override void Init()
     {
         Service.Hook.InitializeFromAttributes(this);
         useActionSelfHook =
@@ -43,10 +39,6 @@ public unsafe class AutoDismount : IDailyModule
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
-
-    public void ConfigUI() { }
-
-    public void OverlayUI() { }
 
     private void OnConditionChanged(ConditionFlag flag, bool value)
     {
@@ -117,11 +109,10 @@ public unsafe class AutoDismount : IDailyModule
         return true;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.Condition.ConditionChange -= OnConditionChanged;
 
-        useActionSelfHook?.Dispose();
-        TaskManager?.Abort();
+        base.Uninit();
     }
 }

@@ -13,17 +13,12 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoNoviceNetworkTitle", "AutoNoviceNetworkDescription", ModuleCategories.General)]
-public class AutoNoviceNetwork : IDailyModule
+public class AutoNoviceNetwork : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
     private static bool IsOnProcessing;
     private static int TryTimes;
 
-    public void Init() { }
-
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         ImGui.BeginDisabled(IsOnProcessing);
         if (ImGui.Button(Service.Lang.GetText("Start")))
@@ -48,8 +43,6 @@ public class AutoNoviceNetwork : IDailyModule
         ImGui.TextWrapped(TryTimes.ToString());
         ImGui.PopStyleColor();
     }
-
-    public void OverlayUI() { }
 
     private static unsafe void ClickYesButton(AddonEvent type, AddonArgs args)
     {
@@ -89,9 +82,11 @@ public class AutoNoviceNetwork : IDailyModule
         IsOnProcessing = false;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         EndProcess();
         TryTimes = 0;
+
+        base.Uninit();
     }
 }

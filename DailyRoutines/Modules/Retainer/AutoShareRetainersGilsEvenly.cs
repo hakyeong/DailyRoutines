@@ -13,17 +13,12 @@ namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoShareRetainersGilsEvenlyTitle", "AutoShareRetainersGilsEvenlyDescription",
                    ModuleCategories.Retainer)]
-public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
+public unsafe class AutoShareRetainersGilsEvenly : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
-    private static TaskManager? TaskManager;
-
     private static uint AverageAmount;
     private static int ConfigAdjustMethod;
 
-    public void Init()
+    public override void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
 
@@ -31,7 +26,7 @@ public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
         ConfigAdjustMethod = Service.Config.GetConfig<int>(this, "AdjustMethod");
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         ImGui.BeginDisabled(TaskManager.IsBusy);
 
@@ -53,9 +48,7 @@ public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoShareRetainersGilsEvenly-Help"));
     }
 
-    public void OverlayUI() { }
-
-    private static void GetRetainersGilInfo()
+    private void GetRetainersGilInfo()
     {
         if (Service.Gui.GetAddonByName("RetainerList") == nint.Zero) return;
 
@@ -98,7 +91,7 @@ public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
         }
     }
 
-    private static void EnqueueSingleRetainerMethodFirst(int index)
+    private void EnqueueSingleRetainerMethodFirst(int index)
     {
         // 点击指定雇员
         TaskManager.Enqueue(() => ClickSpecificRetainer(index));
@@ -111,7 +104,7 @@ public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
         TaskManager.Enqueue(() => Click.TrySendClick("select_string13"));
     }
 
-    private static void EnqueueSingleRetainerMethodSecond(int index)
+    private void EnqueueSingleRetainerMethodSecond(int index)
     {
         // 点击指定雇员
         TaskManager.Enqueue(() => ClickSpecificRetainer(index));
@@ -189,10 +182,5 @@ public unsafe class AutoShareRetainersGilsEvenly : IDailyModule
         }
 
         return false;
-    }
-
-    public void Uninit()
-    {
-        TaskManager?.Abort();
     }
 }

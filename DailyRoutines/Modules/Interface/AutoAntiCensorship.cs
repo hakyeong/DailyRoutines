@@ -13,15 +13,13 @@ using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using TinyPinyin;
+// ReSharper disable All
 
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoAntiCensorshipTitle", "AutoAntiCensorshipDescription", ModuleCategories.Interface)]
-public unsafe class AutoAntiCensorship : IDailyModule
+public unsafe class AutoAntiCensorship : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
     private nint VulgarInstance = nint.Zero;
 
     [Signature("E8 ?? ?? ?? ?? 48 8B C3 48 83 C4 ?? 5B C3 CC CC CC CC CC CC CC 48 83 EC")]
@@ -59,7 +57,7 @@ public unsafe class AutoAntiCensorship : IDailyModule
     private string PreviewCensorship = string.Empty;
     private string PreviewBypass = string.Empty;
 
-    public void Init()
+    public override void Init()
     {
         Service.Hook.InitializeFromAttributes(this);
 
@@ -79,7 +77,7 @@ public unsafe class AutoAntiCensorship : IDailyModule
                                                     OnChatLogAddonSetup);
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         PreviewImageWithHelpText(Service.Lang.GetText("AutoAntiCensorship-Preview"),
                                  "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoAntiCensorship-1.png",
@@ -129,8 +127,6 @@ public unsafe class AutoAntiCensorship : IDailyModule
         ImGui.SameLine();
         ImGui.InputText("###PreviewBypass", ref PreviewBypass, 1000, ImGuiInputTextFlags.ReadOnly);
     }
-
-    public void OverlayUI() { }
 
     private void OnChatLogAddonSetup(AddonEvent type, AddonArgs? args)
     {
@@ -305,12 +301,10 @@ public unsafe class AutoAntiCensorship : IDailyModule
         return c >= 0x4E00 && c <= 0x9FA5;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
-        PartyFinderMessageDisplayHook?.Dispose();
-        ChatLogTextInputHook?.Dispose();
-        PartyFinderDescriptionInputHook?.Dispose();
-        LocalMessageDisplayHook?.Dispose();
         Service.AddonLifecycle.UnregisterListener(OnChatLogAddonSetup);
+
+        base.Uninit();
     }
 }

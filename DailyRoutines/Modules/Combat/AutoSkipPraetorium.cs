@@ -8,13 +8,11 @@ namespace DailyRoutines.Modules;
 
 // 完全来自 Dalamud.SkipCutScene
 [ModuleDescription("AutoSkipPraetoriumTitle", "AutoSkipPraetoriumDescription", ModuleCategories.Combat)]
-public class AutoSkipPraetorium : IDailyModule
+public class AutoSkipPraetorium : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
     public CutsceneAddressResolver? Address { get; set; }
 
-    public void Init()
+    public override void Init()
     {
         Address = new CutsceneAddressResolver();
         Address.Setup(Service.SigScanner);
@@ -32,13 +30,11 @@ public class AutoSkipPraetorium : IDailyModule
         SafeMemory.Write(Address.Offset2, value2);
     }
 
-    public void ConfigUI() { }
-
-    public void OverlayUI() { }
-
-    public void Uninit()
+    public override void Uninit()
     {
         if (Initialized) SetEnabled(false);
+
+        base.Uninit();
     }
 }
 

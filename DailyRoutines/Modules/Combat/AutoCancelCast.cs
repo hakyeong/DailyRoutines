@@ -12,22 +12,17 @@ using Lumina.Excel.GeneratedSheets;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoCancelCastTitle", "AutoCancelCastDescription", ModuleCategories.Combat)]
-public unsafe class AutoCancelCast : IDailyModule
+public unsafe class AutoCancelCast : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
-
     [Signature("48 83 EC 38 33 D2 C7 44 24 20 00 00 00 00 45 33 C9")]
     private readonly delegate* unmanaged<void> CancelCast;
 
     [Signature("E8 ?? ?? ?? ?? 44 0F B6 C3 48 8B D0")]
     private readonly delegate* unmanaged<ulong, GameObject*> GetGameObjectFromObjectID;
 
-    private static TaskManager? TaskManager;
-
     private static HashSet<uint>? TargetAreaActions;
 
-    public void Init()
+    public override void Init()
     {
         Service.Hook.InitializeFromAttributes(this);
         Service.Condition.ConditionChange += OnConditionChanged;
@@ -37,10 +32,6 @@ public unsafe class AutoCancelCast : IDailyModule
                                      .Where(x => x.TargetArea)
                                      .Select(x => x.RowId).ToHashSet();
     }
-
-    public void ConfigUI() { }
-
-    public void OverlayUI() { }
 
     private void OnConditionChanged(ConditionFlag flag, bool value)
     {
@@ -64,9 +55,10 @@ public unsafe class AutoCancelCast : IDailyModule
         return true;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.Condition.ConditionChange -= OnConditionChanged;
-        TaskManager?.Abort();
+
+        base.Uninit();
     }
 }

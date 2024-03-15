@@ -10,24 +10,17 @@ using Timer = System.Timers.Timer;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoAntiAfkTitle", "AutoAntiAfkDescription", ModuleCategories.Base)]
-public class AutoAntiAfk : IDailyModule
+public class AutoAntiAfk : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
-
     private static Timer? AfkTimer;
 
-    public void Init()
+    public override void Init()
     {
         AfkTimer ??= new Timer(10000);
         AfkTimer.Elapsed += OnAfkStateCheck;
         AfkTimer.AutoReset = true;
         AfkTimer.Enabled = true;
     }
-
-    public void ConfigUI() { }
-
-    public void OverlayUI() { }
 
     private static unsafe void OnAfkStateCheck(object? sender, ElapsedEventArgs e)
     {
@@ -45,11 +38,13 @@ public class AutoAntiAfk : IDailyModule
         }
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         AfkTimer?.Stop();
         if (AfkTimer != null) AfkTimer.Elapsed -= OnAfkStateCheck;
         AfkTimer?.Dispose();
         AfkTimer = null;
+
+        base.Uninit();
     }
 }

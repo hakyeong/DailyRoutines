@@ -10,24 +10,19 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoQuestCompleteTitle", "AutoQuestCompleteDescription", ModuleCategories.Base)]
-public class AutoQuestComplete : IDailyModule
+public class AutoQuestComplete : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
-    public void Init()
+    public override void Init()
     {
         // 如果不用选, PostSetup 可以最快的完成点击, 要选就用 PostDraw 处理
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "JournalResult", OnAddonSetup);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "JournalResult", OnAddonSetup);
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
     }
-
-    public void OverlayUI() { }
 
     private static unsafe void OnAddonSetup(AddonEvent type, AddonArgs args)
     {
@@ -45,8 +40,9 @@ public class AutoQuestComplete : IDailyModule
         handler.Complete();
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
+        base.Uninit();
     }
 }

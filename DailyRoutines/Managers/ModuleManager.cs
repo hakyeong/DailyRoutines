@@ -3,26 +3,27 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using ClickLib;
-using DailyRoutines.Infos;
+using DailyRoutines.Modules;
 
 namespace DailyRoutines.Managers;
 
 public class ModuleManager
 {
-    public static Dictionary<Type, IDailyModule> Modules = new();
+    public static Dictionary<Type, DailyModuleBase> Modules = new();
 
     public ModuleManager()
     {
         Click.Initialize();
 
         var types = Assembly.GetExecutingAssembly().GetTypes()
-                            .Where(t => t.GetInterfaces().Contains(typeof(IDailyModule)) &&
+                            .Where(t => typeof(DailyModuleBase).IsAssignableFrom(t) &&
+                                        !t.IsAbstract &&
                                         t.GetConstructor(Type.EmptyTypes) != null);
 
         foreach (var type in types)
         {
-            var instance = Activator.CreateInstance(type);
-            if (instance is IDailyModule component)
+            var instance = Activator.CreateInstance(type); // 创建实例
+            if (instance is DailyModuleBase component)         // 这个类型检查依然有效，但现在更直接地与 DailyModuleBase 关联
                 Modules.Add(type, component);
         }
     }
@@ -38,7 +39,7 @@ public class ModuleManager
             }
             else
             {
-                Service.Log.Warning($"Fail to get module {component.GetType().Name} configurations, skip loading");
+                Service.Log.Warning($"Fail to get moduleBase {component.GetType().Name} configurations, skip loading");
                 continue;
             }
 
@@ -48,20 +49,20 @@ public class ModuleManager
                 {
                     component.Init();
                     component.Initialized = true;
-                    Service.Log.Debug($"Loaded {component.GetType().Name} module");
+                    Service.Log.Debug($"Loaded {component.GetType().Name} moduleBase");
                 }
                 else
                     Service.Log.Debug($"{component.GetType().Name} has been loaded, skip.");
             }
             catch (Exception ex)
             {
-                Service.Log.Error($"Failed to load module {component.GetType().Name} due to error: {ex.Message}");
+                Service.Log.Error($"Failed to load moduleBase {component.GetType().Name} due to error: {ex.Message}");
                 Service.Log.Error(ex.StackTrace ?? "Unknown");
             }
         }
     }
 
-    public static void Load(IDailyModule component)
+    public static void Load(DailyModuleBase component)
     {
         if (Modules.ContainsValue(component))
         {
@@ -71,7 +72,7 @@ public class ModuleManager
                 {
                     component.Init();
                     component.Initialized = true;
-                    Service.Log.Debug($"Loaded {component.GetType().Name} module");
+                    Service.Log.Debug($"Loaded {component.GetType().Name} moduleBase");
                 }
                 else
                     Service.Log.Debug($"{component.GetType().Name} has been loaded, skip.");
@@ -86,7 +87,7 @@ public class ModuleManager
             Service.Log.Error($"Fail to fetch component {component}");
     }
 
-    public static void Unload(IDailyModule component)
+    public static void Unload(DailyModuleBase component)
     {
         if (Modules.ContainsValue(component))
         {
@@ -94,11 +95,11 @@ public class ModuleManager
             {
                 component.Uninit();
                 component.Initialized = false;
-                Service.Log.Debug($"Unloaded {component.GetType().Name} module");
+                Service.Log.Debug($"Unloaded {component.GetType().Name} moduleBase");
             }
             catch (Exception ex)
             {
-                Service.Log.Error(ex, $"Fail to unload {component.GetType().Name} module");
+                Service.Log.Error(ex, $"Fail to unload {component.GetType().Name} moduleBase");
             }
         }
     }
@@ -113,12 +114,12 @@ public class ModuleManager
                 {
                     component.Uninit();
                     component.Initialized = false;
-                    Service.Log.Debug($"Unloaded {component.GetType().Name} module");
+                    Service.Log.Debug($"Unloaded {component.GetType().Name} moduleBase");
                 }
             }
             catch (Exception ex)
             {
-                Service.Log.Error(ex, $"Fail to unload {component.GetType().Name} module");
+                Service.Log.Error(ex, $"Fail to unload {component.GetType().Name} moduleBase");
             }
         }
     }

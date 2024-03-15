@@ -11,11 +11,8 @@ namespace DailyRoutines.Modules;
 
 // 完全来自 Pandora's Box, NiGuangOwO 写的
 [ModuleDescription("PFPageSizeCustomizeTitle", "PFPageSizeCustomizeDescription", ModuleCategories.Interface)]
-public class PFPageSizeCustomize : IDailyModule
+public class PFPageSizeCustomize : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
     private delegate char PartyFinderDisplayAmountDelegate(long a1, int a2);
 
     [Signature(
@@ -25,7 +22,7 @@ public class PFPageSizeCustomize : IDailyModule
 
     private static int ConfigDisplayAmount = 100;
 
-    public void Init()
+    public override void Init()
     {
         Service.Hook.InitializeFromAttributes(this);
         PartyFinderDisplayAmountHook?.Enable();
@@ -34,7 +31,7 @@ public class PFPageSizeCustomize : IDailyModule
         ConfigDisplayAmount = Service.Config.GetConfig<int>(this, "DisplayAmount");
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
         if (ImGui.InputInt(Service.Lang.GetText("PFPageSizeCustomize-DisplayAmount"), ref ConfigDisplayAmount, 10, 10,
@@ -45,16 +42,9 @@ public class PFPageSizeCustomize : IDailyModule
         }
     }
 
-    public void OverlayUI() { }
-
     private char PartyFinderDisplayAmountDetour(long a1, int a2)
     {
         Marshal.WriteInt16(new nint(a1 + 904), (short)ConfigDisplayAmount);
         return PartyFinderDisplayAmountHook.Original(a1, a2);
-    }
-
-    public void Uninit()
-    {
-        PartyFinderDisplayAmountHook?.Dispose();
     }
 }

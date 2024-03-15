@@ -13,7 +13,6 @@ public partial class LanguageManager
     public string Language { get; private set; }
 
     private readonly Dictionary<string, string>? resourceData;
-    private readonly Dictionary<string, string>? fbResourceData;
 
     public static readonly TranslationInfo[] LanguageNames =
     [
@@ -35,10 +34,6 @@ public partial class LanguageManager
             if (!File.Exists(resourcePath)) LanguageUpdater.DownloadLanguageFilesAsync().GetAwaiter().GetResult();
             resourceData = LoadResourceFile(resourcePath);
         }
-
-        var fbResourcePath = Path.Join(LangsDirectory, "ChineseSimplified.resx");
-
-        fbResourceData = LoadResourceFile(fbResourcePath);
 
         Language = languageName;
     }
@@ -67,7 +62,7 @@ public partial class LanguageManager
 
     public string GetText(string key, params object[] args)
     {
-        var format = resourceData.TryGetValue(key, out var resValue) ? resValue : fbResourceData.GetValueOrDefault(key);
+        resourceData.TryGetValue(key, out var format);
 
         if (string.IsNullOrEmpty(format))
         {
@@ -80,12 +75,12 @@ public partial class LanguageManager
 
     public string GetOrigText(string key)
     {
-        return resourceData.TryGetValue(key, out var resValue) ? resValue : fbResourceData.GetValueOrDefault(key, key);
+        return resourceData.TryGetValue(key, out var resValue) ? resValue : string.Empty;
     }
 
     public SeString GetSeString(string key, params object[] args)
     {
-        var format = resourceData.TryGetValue(key, out var resValue) ? resValue : fbResourceData.GetValueOrDefault(key);
+        resourceData.TryGetValue(key, out var format);
         var ssb = new SeStringBuilder();
         var lastIndex = 0;
 

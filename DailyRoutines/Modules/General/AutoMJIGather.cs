@@ -21,13 +21,8 @@ using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoMJIGatherTitle", "AutoMJIGatherDescription", ModuleCategories.General)]
-public class AutoMJIGather : IDailyModule
+public class AutoMJIGather : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
-    private static TaskManager? TaskManager;
-
     #region StaticStatisitics
     private class AutoMJIGatherGroup
     {
@@ -80,7 +75,7 @@ public class AutoMJIGather : IDailyModule
     private static bool IsOnDataCollecting;
     private static List<Vector3> QueuedGatheringList = [];
 
-    public void Init()
+    public override void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
@@ -94,7 +89,7 @@ public class AutoMJIGather : IDailyModule
         Service.Chat.ChatMessage += OnChatMessage;
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         ImGui.BeginDisabled(Service.ClientState.TerritoryType != 1055 || TaskManager.IsBusy);
         ImGui.SetNextItemWidth(350f * ImGuiHelpers.GlobalScale);
@@ -214,8 +209,6 @@ public class AutoMJIGather : IDailyModule
             Service.Config.UpdateConfig(this, "StopWhenReachCaps", ConfigStopWhenReachCaps);
     }
 
-    public void OverlayUI() { }
-
     private void OnUpdate(IFramework framework)
     {
         if (!IsOnDataCollecting)
@@ -237,7 +230,7 @@ public class AutoMJIGather : IDailyModule
         }
     }
 
-    private static void OnChatMessage(
+    private void OnChatMessage(
         XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
         if (!ConfigStopWhenReachCaps) return;
@@ -250,7 +243,7 @@ public class AutoMJIGather : IDailyModule
         }
     }
 
-    private static bool? Gather(IReadOnlyList<Vector3> nodes)
+    private bool? Gather(IReadOnlyList<Vector3> nodes)
     {
         if (IsOccupied()) return false;
 
@@ -271,7 +264,7 @@ public class AutoMJIGather : IDailyModule
         return true;
     }
 
-    private static unsafe bool? SwitchToGatherMode()
+    private unsafe bool? SwitchToGatherMode()
     {
         if (MJIManager.Instance()->CurrentMode == 1) return true;
 
@@ -301,7 +294,7 @@ public class AutoMJIGather : IDailyModule
         return true;
     }
 
-    private static bool? Teleport(Vector3 pos)
+    private bool? Teleport(Vector3 pos)
     {
         if (IsGathering()) return false;
         if (Service.ClientState.TerritoryType != 1055)
@@ -324,7 +317,7 @@ public class AutoMJIGather : IDailyModule
         return false;
     }
 
-    private static unsafe bool? InteractWithNearestObject(Vector3 node)
+    private unsafe bool? InteractWithNearestObject(Vector3 node)
     {
         if (IsOccupied()) return false;
 
@@ -354,7 +347,7 @@ public class AutoMJIGather : IDailyModule
                Service.Condition[ConditionFlag.OccupiedInQuestEvent];
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.Config.UpdateConfig(this, "GatherNodes", GatherNodes);
 
@@ -363,6 +356,7 @@ public class AutoMJIGather : IDailyModule
         QueuedGatheringList.Clear();
         IsOnDataCollecting = false;
         CurrentGatherIndex = 0;
-        TaskManager?.Abort();
+
+        base.Uninit();
     }
 }

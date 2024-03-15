@@ -11,13 +11,8 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoTankStanceTitle", "AutoTankStanceDescription", ModuleCategories.Combat)]
-public class AutoTankStance : IDailyModule
+public class AutoTankStance : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
-    private static TaskManager? TaskManager;
-
     private static bool ConfigOnlyAutoStanceWhenOneTank = true;
 
     private static HashSet<uint>? ContentsWithOneTank;
@@ -37,7 +32,7 @@ public class AutoTankStance : IDailyModule
         { 37, 16142 }
     };
 
-    public void Init()
+    public override void Init()
     {
         Service.Config.AddConfig(this, "OnlyAutoStanceWhenOneTank", true);
         ConfigOnlyAutoStanceWhenOneTank = Service.Config.GetConfig<bool>(this, "OnlyAutoStanceWhenOneTank");
@@ -52,7 +47,7 @@ public class AutoTankStance : IDailyModule
         Service.ClientState.TerritoryChanged += OnZoneChanged;
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         if (ImGui.Checkbox(Service.Lang.GetText("AutoTankStance-OnlyAutoStanceWhenOneTank"),
                            ref ConfigOnlyAutoStanceWhenOneTank))
@@ -61,9 +56,7 @@ public class AutoTankStance : IDailyModule
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoTankStance-OnlyAutoStanceWhenOneTankHelp"));
     }
 
-    public void OverlayUI() { }
-
-    private static void OnZoneChanged(ushort zone)
+    private void OnZoneChanged(ushort zone)
     {
         if (Service.ClientState.IsPvP) return;
         if ((ConfigOnlyAutoStanceWhenOneTank && ContentsWithOneTank.Contains(zone)) ||
@@ -92,9 +85,10 @@ public class AutoTankStance : IDailyModule
         return ActionManager.Instance()->UseAction(ActionType.Action, actionID);
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
-        TaskManager?.Abort();
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
+
+        base.Uninit();
     }
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Numerics;
 using ClickLib.Clicks;
 using DailyRoutines.Infos;
@@ -15,15 +14,9 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoSellCardsConfirmTitle", "AutoSellCardsConfirmDescription", ModuleCategories.GoldSaucer)]
-public class AutoSellCardsConfirm : IDailyModule
+public class AutoSellCardsConfirm : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
-    internal static Overlay? Overlay { get; private set; }
-
-    private static TaskManager? TaskManager;
-
-    public void Init()
+    public override void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         Overlay ??= new Overlay(this);
@@ -34,9 +27,7 @@ public class AutoSellCardsConfirm : IDailyModule
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "TripleTriadCoinExchange", OnAddon);
     }
 
-    public void ConfigUI() { }
-
-    public unsafe void OverlayUI()
+    public override unsafe void OverlayUI()
     {
         var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("TripleTriadCoinExchange");
         if (addon == null) return;
@@ -54,10 +45,10 @@ public class AutoSellCardsConfirm : IDailyModule
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager?.Abort();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
     }
 
-    private static unsafe void OnAddon(AddonEvent type, AddonArgs args)
+    private unsafe void OnAddon(AddonEvent type, AddonArgs args)
     {
         var addon = (AtkUnitBase*)args.Addon;
         if (addon == null) return;
@@ -82,7 +73,7 @@ public class AutoSellCardsConfirm : IDailyModule
         }
     }
 
-    private static unsafe bool? StartHandOver()
+    private unsafe bool? StartHandOver()
     {
         if (TryGetAddonByName<AtkUnitBase>("TripleTriadCoinExchange", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(addon))
@@ -113,13 +104,10 @@ public class AutoSellCardsConfirm : IDailyModule
         return false;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddon);
 
-        if (P.WindowSystem.Windows.Contains(Overlay)) P.WindowSystem.RemoveWindow(Overlay);
-        Overlay = null;
-
-        TaskManager?.Abort();
+        base.Uninit();
     }
 }

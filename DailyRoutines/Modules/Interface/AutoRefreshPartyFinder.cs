@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Numerics;
 using System.Timers;
 using DailyRoutines.Infos;
@@ -15,12 +14,8 @@ using Timer = System.Timers.Timer;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoRefreshPartyFinderTitle", "AutoRefreshPartyFinderDescription", ModuleCategories.Interface)]
-public class AutoRefreshPartyFinder : IDailyModule
+public class AutoRefreshPartyFinder : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
-    internal static Overlay? Overlay { get; private set; }
-
     private static int ConfigRefreshInterval = 10; // 秒
     private static bool ConfigOnlyInactive = true;
 
@@ -28,7 +23,7 @@ public class AutoRefreshPartyFinder : IDailyModule
 
     private static Timer? PFRefreshTimer;
 
-    public void Init()
+    public override void Init()
     {
         Service.Config.AddConfig(this, "RefreshInterval", ConfigRefreshInterval);
         Service.Config.AddConfig(this, "OnlyInactive", ConfigOnlyInactive);
@@ -49,9 +44,7 @@ public class AutoRefreshPartyFinder : IDailyModule
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "LookingForGroup", OnAddonPF);
     }
 
-    public void ConfigUI() { }
-
-    public unsafe void OverlayUI()
+    public override unsafe void OverlayUI()
     {
         var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("LookingForGroup");
         var refreshButton = addon->GetButtonNodeById(47)->AtkComponentBase.AtkResNode;
@@ -85,7 +78,7 @@ public class AutoRefreshPartyFinder : IDailyModule
                                 refreshButton->ScreenY - framePadding.Y);
     }
 
-    private static void OnAddonPF(AddonEvent type, AddonArgs? args)
+    private void OnAddonPF(AddonEvent type, AddonArgs? args)
     {
         switch (type)
         {
@@ -104,7 +97,7 @@ public class AutoRefreshPartyFinder : IDailyModule
         }
     }
 
-    private unsafe void OnRefreshTimer(object? sender, ElapsedEventArgs e)
+    private static unsafe void OnRefreshTimer(object? sender, ElapsedEventArgs e)
     {
         if (TryGetAddonByName<AtkUnitBase>("LookingForGroup", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
@@ -115,16 +108,18 @@ public class AutoRefreshPartyFinder : IDailyModule
         PFRefreshTimer.Stop();
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonPF);
 
-        if (P.WindowSystem.Windows.Contains(Overlay)) P.WindowSystem.RemoveWindow(Overlay);
-        Overlay = null;
-
-        PFRefreshTimer.Elapsed -= OnRefreshTimer;
-        PFRefreshTimer?.Stop();
+        if (PFRefreshTimer != null)
+        {
+            PFRefreshTimer.Elapsed -= OnRefreshTimer;
+            PFRefreshTimer.Stop();
+        }
         PFRefreshTimer?.Dispose();
         PFRefreshTimer = null;
+
+        base.Uninit();
     }
 }

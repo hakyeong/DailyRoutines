@@ -15,17 +15,11 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoDesynthesizeItemsTitle", "AutoDesynthesizeItemsDescription", ModuleCategories.Interface)]
-public unsafe class AutoDesynthesizeItems : IDailyModule
+public unsafe class AutoDesynthesizeItems : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
-    internal static Overlay? Overlay { get; private set; }
-
-    private static TaskManager? TaskManager;
-
     private static bool ConfigSkipWhenHQ;
 
-    public void Init()
+    public override void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
         Overlay ??= new Overlay(this);
@@ -37,9 +31,7 @@ public unsafe class AutoDesynthesizeItems : IDailyModule
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "SalvageItemSelector", OnAddonList);
     }
 
-    public void ConfigUI() { }
-
-    public void OverlayUI()
+    public override void OverlayUI()
     {
         var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("SalvageItemSelector");
         if (addon == null) return;
@@ -62,7 +54,7 @@ public unsafe class AutoDesynthesizeItems : IDailyModule
         if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
     }
 
-    private static void OnAddonList(AddonEvent type, AddonArgs args)
+    private void OnAddonList(AddonEvent type, AddonArgs args)
     {
         Overlay.IsOpen = type switch
         {
@@ -72,7 +64,7 @@ public unsafe class AutoDesynthesizeItems : IDailyModule
         };
     }
 
-    private static bool? StartDesynthesize()
+    private bool? StartDesynthesize()
     {
         if (IsOccupied()) return false;
         if (TryGetAddonByName<AtkUnitBase>("SalvageItemSelector", out var addon) &&
@@ -108,12 +100,10 @@ public unsafe class AutoDesynthesizeItems : IDailyModule
         return false;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
-        if (P.WindowSystem.Windows.Contains(Overlay)) P.WindowSystem.RemoveWindow(Overlay);
-        Overlay = null;
-
         Service.AddonLifecycle.UnregisterListener(OnAddonList);
-        TaskManager?.Abort();
+
+        base.Uninit();
     }
 }

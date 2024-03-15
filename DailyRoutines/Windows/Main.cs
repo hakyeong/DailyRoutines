@@ -8,12 +8,14 @@ using System.Reflection;
 using System.Threading.Tasks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using DailyRoutines.Modules;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using ImGuiNET;
 using Newtonsoft.Json;
 
@@ -59,7 +61,7 @@ public class Main : Window, IDisposable
         Flags = ImGuiWindowFlags.NoScrollbar;
 
         Assembly.GetExecutingAssembly().GetTypes()
-                .Where(t => typeof(IDailyModule).IsAssignableFrom(t) && t.IsClass)
+                .Where(t => typeof(DailyModuleBase).IsAssignableFrom(t) && t is { IsClass: true, IsAbstract: false })
                 .OrderBy(t => Service.Lang.GetText(t.GetCustomAttribute<ModuleDescriptionAttribute>()?.TitleKey))
                 .ToList()
                 .ForEach(type =>
@@ -157,7 +159,8 @@ public class Main : Window, IDisposable
              !description.Contains(SearchString, StringComparison.OrdinalIgnoreCase)))
             return;
 
-        var isWithUI = ModuleManager.Modules[module].WithConfigUI;
+        var methodInfo = module.GetMethod("ConfigUI", BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+        var isWithUI = methodInfo != null && methodInfo.DeclaringType != typeof(ModuleBase);
 
         if (ImGuiOm.CheckboxColored($"##{module.Name}", ref tempModuleBool))
         {

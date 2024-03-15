@@ -13,13 +13,8 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoMiniCactpotTitle", "AutoMiniCactpotDescription", ModuleCategories.GoldSaucer)]
-public unsafe class AutoMiniCactpot : IDailyModule
+public unsafe class AutoMiniCactpot : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
-
-    private static TaskManager? TaskManager;
-
     // 从左上到右下
     private static readonly Dictionary<uint, uint> BlockToCallbackIndex = new()
     {
@@ -48,33 +43,21 @@ public unsafe class AutoMiniCactpot : IDailyModule
 
     private static int SelectedLineNumber3D4;
 
-    public void Init()
+    public override void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "LotteryDaily", OnAddonSetup);
-
-        Initialized = true;
     }
 
-    public void ConfigUI() { }
-
-    public void OverlayUI() { }
-
-    private static void OnAddonSetup(AddonEvent type, AddonArgs args)
+    private void OnAddonSetup(AddonEvent type, AddonArgs args)
     {
-        if (TaskManager.IsBusy) return;
-
         if (IsEzMiniCactpotInstalled())
-        {
             TaskManager.Enqueue(ClickHighlightBlocks);
-        }
         else
-        {
             TaskManager.Enqueue(RandomClick);
-        }
     }
 
-    private static bool? RandomClick()
+    private bool? RandomClick()
     {
         if (!WaitLotteryDailyAddon()) return false;
         if (TryGetAddonByName<AtkUnitBase>("LotteryDaily", out var addon) && IsAddonReady(addon))
@@ -94,7 +77,7 @@ public unsafe class AutoMiniCactpot : IDailyModule
         return false;
     }
 
-    private static bool? ClickHighlightBlocks()
+    private bool? ClickHighlightBlocks()
     {
         if (TryGetAddonByName<AtkUnitBase>("LotteryDaily", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(addon))
@@ -140,7 +123,7 @@ public unsafe class AutoMiniCactpot : IDailyModule
     }
 
 
-    private static bool? ClickHighlightLine()
+    private bool? ClickHighlightLine()
     {
         if (TryGetAddonByName<AddonLotteryDaily>("LotteryDaily", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
@@ -164,7 +147,7 @@ public unsafe class AutoMiniCactpot : IDailyModule
         return false;
     }
 
-    private static bool? ClickConfirm()
+    private bool? ClickConfirm()
     {
         if (TryGetAddonByName<AddonLotteryDaily>("LotteryDaily", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
@@ -180,7 +163,7 @@ public unsafe class AutoMiniCactpot : IDailyModule
         return false;
     }
 
-    private static bool? ClickExit()
+    private bool? ClickExit()
     {
         if (TryGetAddonByName<AddonLotteryDaily>("LotteryDaily", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
@@ -217,11 +200,10 @@ public unsafe class AutoMiniCactpot : IDailyModule
         return P.PluginInterface.InstalledPlugins.Any(plugin => plugin is { Name: "ezMiniCactpot", IsLoaded: true });
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
-        TaskManager?.Abort();
 
-        Initialized = false;
+        base.Uninit();
     }
 }

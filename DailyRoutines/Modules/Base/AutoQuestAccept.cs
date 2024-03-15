@@ -9,22 +9,17 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoQuestAcceptTitle", "AutoQuestAcceptDescription", ModuleCategories.Base)]
-public class AutoQuestAccept : IDailyModule
+public class AutoQuestAccept : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
-    public void Init()
+    public override void Init()
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "JournalAccept", OnAddonSetup);
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
     }
-
-    public void OverlayUI() { }
 
     private static unsafe void OnAddonSetup(AddonEvent type, AddonArgs args)
     {
@@ -44,8 +39,10 @@ public class AutoQuestAccept : IDailyModule
         AddonManager.Callback(addon, true, 3, questID);
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
+
+        base.Uninit();
     }
 }

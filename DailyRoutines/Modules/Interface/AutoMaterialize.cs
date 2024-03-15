@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Numerics;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -15,15 +14,9 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoMaterializeTitle", "AutoMaterializeDescription", ModuleCategories.Interface)]
-public class AutoMaterialize : IDailyModule
+public class AutoMaterialize : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
-    internal static Overlay? Overlay { get; private set; }
-
-    private static TaskManager? TaskManager;
-
-    public void Init()
+    public override void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         Overlay ??= new Overlay(this);
@@ -34,9 +27,7 @@ public class AutoMaterialize : IDailyModule
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "MaterializeDialog", OnDialogAddon);
     }
 
-    public void ConfigUI() { }
-
-    public unsafe void OverlayUI()
+    public override unsafe void OverlayUI()
     {
         var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("Materialize");
         if (addon == null) return;
@@ -56,7 +47,7 @@ public class AutoMaterialize : IDailyModule
         if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
     }
 
-    private static void OnAddon(AddonEvent type, AddonArgs args)
+    private void OnAddon(AddonEvent type, AddonArgs args)
     {
         Overlay.IsOpen = type switch
         {
@@ -74,7 +65,7 @@ public class AutoMaterialize : IDailyModule
         AddonManager.Callback(addon, true, 0);
     }
 
-    private static unsafe bool? StartARound()
+    private unsafe bool? StartARound()
     {
         if (IsOccupied()) return false;
         if (TryGetAddonByName<AtkUnitBase>("Materialize", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
@@ -112,13 +103,11 @@ public class AutoMaterialize : IDailyModule
         return false;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddon);
         Service.AddonLifecycle.UnregisterListener(OnDialogAddon);
-        TaskManager?.Abort();
 
-        if (P.WindowSystem.Windows.Contains(Overlay)) P.WindowSystem.RemoveWindow(Overlay);
-        Overlay = null;
+        base.Uninit();
     }
 }

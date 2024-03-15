@@ -11,11 +11,8 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoPlayerCommendTitle", "AutoPlayerCommendDescription", ModuleCategories.Combat)]
-public unsafe class AutoPlayerCommend : IDailyModule
+public unsafe class AutoPlayerCommend : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
-
     private enum PlayerRole
     {
         Tank,
@@ -31,9 +28,7 @@ public unsafe class AutoPlayerCommend : IDailyModule
         public string Job { get; set; } = job;
     }
 
-    private static TaskManager? TaskManager;
-
-    public void Init()
+    public override void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
         Service.DutyState.DutyCompleted += OnDutyComplete;
@@ -42,11 +37,7 @@ public unsafe class AutoPlayerCommend : IDailyModule
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "BannerMIP", OnAddonList);
     }
 
-    public void ConfigUI() { }
-
-    public void OverlayUI() { }
-
-    private static void OnDutyComplete(object? sender, ushort dutyID)
+    private void OnDutyComplete(object? sender, ushort dutyID)
     {
         TaskManager.Enqueue(OpenCommendWindow);
     }
@@ -144,10 +135,11 @@ public unsafe class AutoPlayerCommend : IDailyModule
         };
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
-        TaskManager?.Abort();
         Service.AddonLifecycle.UnregisterListener(OnAddonList);
         Service.DutyState.DutyCompleted -= OnDutyComplete;
+
+        base.Uninit();
     }
 }

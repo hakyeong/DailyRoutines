@@ -10,11 +10,8 @@ using FFXIVClientStructs.FFXIV.Client.Game.Control;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoRefocusTitle", "AutoRefocusDescription", ModuleCategories.Combat)]
-public unsafe class AutoRefocus : IDailyModule
+public unsafe class AutoRefocus : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => false;
-
     private delegate void SetFocusTargetByObjectIDDelegate(TargetSystem* targetSystem, long objectID);
 
     [Signature("E8 ?? ?? ?? ?? BA 0C 00 00 00 48 8D 0D", DetourName = nameof(SetFocusTargetByObjectID))]
@@ -22,7 +19,7 @@ public unsafe class AutoRefocus : IDailyModule
 
     private static ulong? FocusTarget;
 
-    public void Init()
+    public override void Init()
     {
         Service.Hook.InitializeFromAttributes(this);
         setFocusTargetByObjectIDHook?.Enable();
@@ -30,10 +27,6 @@ public unsafe class AutoRefocus : IDailyModule
         if (IsBoundByDuty()) OnZoneChange(Service.ClientState.TerritoryType);
         Service.ClientState.TerritoryChanged += OnZoneChange;
     }
-
-    public void ConfigUI() { }
-
-    public void OverlayUI() { }
 
     private void OnZoneChange(ushort territory)
     {
@@ -72,10 +65,11 @@ public unsafe class AutoRefocus : IDailyModule
                Service.Condition[ConditionFlag.BoundByDuty95];
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
-        setFocusTargetByObjectIDHook.Dispose();
         Service.ClientState.TerritoryChanged -= OnZoneChange;
         Service.Framework.Update -= OnUpdate;
+
+        base.Uninit();
     }
 }

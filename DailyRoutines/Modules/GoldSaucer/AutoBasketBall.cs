@@ -16,14 +16,9 @@ using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoMTTitle", "AutoMTDescription", ModuleCategories.GoldSaucer)]
-public class AutoBasketBall : IDailyModule
+public class AutoBasketBall : DailyModuleBase
 {
-    public bool Initialized { get; set; }
-    public bool WithConfigUI => true;
-
-    private static TaskManager? TaskManager;
-
-    public void Init()
+    public override void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
@@ -31,19 +26,15 @@ public class AutoBasketBall : IDailyModule
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "BasketBall", OnAddonSetup);
 
         Service.Framework.Update += OnUpdate;
-
-        Initialized = true;
     }
 
-    public void ConfigUI()
+    public override void ConfigUI()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoMT-InterruptNotice"));
     }
 
-    public void OverlayUI() { }
-
-    private static void OnUpdate(IFramework framework)
+    private void OnUpdate(IFramework framework)
     {
         if (!TaskManager.IsBusy) return;
 
@@ -55,7 +46,7 @@ public class AutoBasketBall : IDailyModule
         }
     }
 
-    private static unsafe void OnAddonSetup(AddonEvent type, AddonArgs args)
+    private unsafe void OnAddonSetup(AddonEvent type, AddonArgs args)
     {
         switch (type)
         {
@@ -101,13 +92,12 @@ public class AutoBasketBall : IDailyModule
         return false;
     }
 
-    public void Uninit()
+    public override void Uninit()
     {
         Service.Framework.Update -= OnUpdate;
         Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
         Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
-        TaskManager?.Abort();
 
-        Initialized = false;
+        base.Uninit();
     }
 }
