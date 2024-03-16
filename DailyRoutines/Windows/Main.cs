@@ -128,7 +128,7 @@ public class Main : Window, IDisposable
             {
                 var module = modulesInCategory[i];
 
-                ImGui.PushID($"{module}");
+                ImGui.PushID($"{module.Module.Name}-{module.Category}-{module.Title}-{module.Description}");
                 DrawModuleCheckbox(module, modulesInCategory.Length, i);
                 ImGui.PopID();
             }
@@ -136,7 +136,6 @@ public class Main : Window, IDisposable
             ImGui.EndTabItem();
         }
     }
-
 
     private static void DrawTabItemModulesSearchResult(IReadOnlyList<ModuleInfo> modules)
     {

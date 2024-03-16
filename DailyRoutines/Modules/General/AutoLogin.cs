@@ -86,7 +86,7 @@ public class AutoLogin : DailyModuleBase
 
     private void OnUpdate(IFramework framework)
     {
-        if (!TaskManager.IsBusy) return;
+        if (HasLoginOnce || !TaskManager.IsBusy) return;
 
         if (Service.KeyState[Service.Config.ConflictKey])
         {

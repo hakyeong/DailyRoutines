@@ -17,6 +17,7 @@ using Dalamud.Plugin.Services;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -42,7 +43,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     private static uint CurrentItemSearchItemID;
     private static bool IsCurrentItemHQ;
     private static RetainerManager.Retainer* CurrentRetainer;
-    private static HashSet<string> PlayerRetainers = [];
+    private static readonly HashSet<string> PlayerRetainers = [];
 
     public override void Init()
     {
@@ -59,6 +60,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         ConfigMaxPriceReduction = GetConfig<int>(this, "MaxPriceReduction");
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerList", OnRetainerList);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "RetainerList", OnRetainerList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSellList", OnRetainerSellList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSell", OnRetainerSell);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "RetainerSell", OnRetainerSell);
@@ -125,19 +127,26 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
     private static void OnRetainerList(AddonEvent type, AddonArgs args)
     {
-        var retainerManager = RetainerManager.Instance();
-
-        if (retainerManager == null) return;
-
-        PlayerRetainers.Clear();
-
-        for (var i = 0U; i < retainerManager->GetRetainerCount(); i++)
+        switch (type)
         {
-            var retainer = retainerManager->GetRetainerBySortedIndex(i);
-            if (retainer == null) break;
+            case AddonEvent.PostSetup:
+                var retainerManager = RetainerManager.Instance();
+                if (retainerManager == null) return;
 
-            var retainerName = MemoryHelper.ReadSeStringNullTerminated((nint)retainer->Name).ExtractText();
-            PlayerRetainers.Add(retainerName);
+                PlayerRetainers.Clear();
+
+                for (var i = 0U; i < retainerManager->GetRetainerCount(); i++)
+                {
+                    var retainer = retainerManager->GetRetainerBySortedIndex(i);
+                    if (retainer == null) break;
+
+                    var retainerName = MemoryHelper.ReadSeStringNullTerminated((nint)retainer->Name).ExtractText();
+                    PlayerRetainers.Add(retainerName);
+                }
+                break;
+            case AddonEvent.PreFinalize:
+                CurrentRetainer = null;
+                break;
         }
     }
 
@@ -220,8 +229,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     {
         if (TryGetAddonByName<AtkUnitBase>("RetainerSellList", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var handler = new ClickRetainerSellListDR((nint)addon);
-            handler.ItemEntry(index);
+            AgentManager.SendEvent(AgentId.Retainer, 3, 0, index, 1);
             return true;
         }
 
@@ -232,8 +240,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     {
         if (TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var handler = new ClickRetainerSellListContextMenuDR((nint)addon);
-            handler.AdjustPrice();
+            AgentManager.SendEvent(AgentId.Context, 0, 0, 0, 0, 0, 0);
 
             return true;
         }

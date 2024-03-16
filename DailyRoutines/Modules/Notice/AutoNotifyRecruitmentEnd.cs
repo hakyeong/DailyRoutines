@@ -1,6 +1,7 @@
 using System;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 
@@ -17,6 +18,7 @@ public class AutoNotifyRecruitmentEnd : DailyModuleBase
     private static void OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
         if (type != XivChatType.SystemMessage) return;
+        if (Service.Condition[ConditionFlag.BoundByDuty] || Service.Condition[ConditionFlag.BoundByDuty56] || Service.Condition[ConditionFlag.BoundByDuty95] || Service.Condition[ConditionFlag.BoundToDuty97]) return;
 
         var content = message.ExtractText();
         if (!content.StartsWith("招募队员结束")) return;
