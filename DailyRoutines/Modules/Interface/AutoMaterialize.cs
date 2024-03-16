@@ -4,6 +4,7 @@ using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Colors;
 using Dalamud.Memory;
 using ECommons.Automation;
@@ -67,6 +68,12 @@ public class AutoMaterialize : DailyModuleBase
 
     private unsafe bool? StartARound()
     {
+        if (Service.Condition[ConditionFlag.Mounted])
+        {
+            TaskManager.Abort();
+            return true;
+        }
+
         if (IsOccupied()) return false;
         if (TryGetAddonByName<AtkUnitBase>("Materialize", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
