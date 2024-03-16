@@ -13,11 +13,8 @@ using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Colors;
 using Dalamud.Memory;
-using Dalamud.Plugin.Services;
 using ECommons.Automation;
-using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -68,7 +65,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
         var pos = new Vector2(addon->GetX() + 6, addon->GetY() - ImGui.GetWindowSize().Y + 6);
         ImGui.SetWindowPos(pos);
-        
+
         ImGui.AlignTextToFramePadding();
         ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("AutoSubmarineCollectTitle"));
 
@@ -131,10 +128,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
             return;
         }
 
-        if (content.Contains("没有修理所必需的"))
-        {
-            TaskManager.Abort();
-        }
+        if (content.Contains("没有修理所必需的")) TaskManager.Abort();
     }
 
     // 航程结果 -> 再次出发
@@ -157,7 +151,8 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         // 桶装青磷水不足
         if (InventoryManager.Instance()->GetInventoryItemCount(10155) < 10)
         {
-            Service.Chat.Print(Service.Lang.GetSeString("AutoSubmarineCollect-LackCeruleumTanks", SeString.CreateItemLink(
+            Service.Chat.Print(Service.Lang.GetSeString("AutoSubmarineCollect-LackCeruleumTanks",
+                                                        SeString.CreateItemLink(
                                                             10155)));
             TaskManager.Abort();
             return true;
@@ -211,7 +206,8 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
             addon->Close(true);
         }
 
-        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var selectStringAddon) && HelpersOm.IsAddonAndNodesReady(selectStringAddon))
+        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var selectStringAddon) &&
+            HelpersOm.IsAddonAndNodesReady(selectStringAddon))
         {
             if (!HelpersOm.TryScanSelectStringText(selectStringAddon, "修理", out var index)) return false;
 
@@ -232,7 +228,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
             HelpersOm.IsAddonAndNodesReady(addon))
         {
             var handler = new ClickCompanyCraftSupplyDR();
-            
+
             for (var i = 0; i < 4; i++)
             {
                 var endurance = addon->AtkValues[3 + (8 * i)].UInt;

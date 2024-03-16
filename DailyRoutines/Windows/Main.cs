@@ -124,15 +124,18 @@ public class Main : Window, IDisposable
 
         if (ImGui.BeginTabItem(Service.Lang.GetText(category.ToString())))
         {
-            for (var i = 0; i < modulesInCategory.Length; i++)
+            if (ImGui.BeginChild(category.ToString()))
             {
-                var module = modulesInCategory[i];
+                for (var i = 0; i < modulesInCategory.Length; i++)
+                {
+                    var module = modulesInCategory[i];
 
-                ImGui.PushID($"{module.Module.Name}-{module.Category}-{module.Title}-{module.Description}");
-                DrawModuleCheckbox(module, modulesInCategory.Length, i);
-                ImGui.PopID();
+                    ImGui.PushID($"{module.Module.Name}-{module.Category}-{module.Title}-{module.Description}");
+                    DrawModuleCheckbox(module, modulesInCategory.Length, i);
+                    ImGui.PopID();
+                }
+                ImGui.EndChild();
             }
-
             ImGui.EndTabItem();
         }
     }
@@ -182,7 +185,7 @@ public class Main : Window, IDisposable
         ImGui.SameLine();
         var origCursorPos = ImGui.GetCursorPosX();
         ImGui.SetCursorPosX(ImGui.GetWindowWidth() - (ImGui.CalcTextSize(moduleText).X * 0.8f) -
-                            (2 * ImGui.GetStyle().FramePadding.X));
+                            (4 * ImGui.GetStyle().FramePadding.X));
         ImGui.SetWindowFontScale(0.8f);
         ImGui.TextDisabled(moduleText);
         ImGui.SetWindowFontScale(1f);
