@@ -26,8 +26,17 @@ public class AutoSummonPet : DailyModuleBase
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
 
         Service.ClientState.TerritoryChanged += OnZoneChanged;
+        Service.DutyState.DutyRecommenced += OnDutyRecommenced;
     }
 
+    // 重新挑战
+    private void OnDutyRecommenced(object? sender, ushort e)
+    {
+        TaskManager.Abort();
+        TaskManager.Enqueue(CheckCurrentJob);
+    }
+
+    // 进入副本
     private void OnZoneChanged(ushort zone)
     {
         if (!Service.PresetData.Contents.ContainsKey(zone) || Service.ClientState.IsPvP) return;
@@ -56,6 +65,7 @@ public class AutoSummonPet : DailyModuleBase
 
     public override void Uninit()
     {
+        Service.DutyState.DutyRecommenced -= OnDutyRecommenced;
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
 
         base.Uninit();

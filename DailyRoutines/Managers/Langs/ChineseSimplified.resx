@@ -597,7 +597,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>自动收取潜水艇</value>
   </data>
   <data name="AutoSummonPetDescription" xml:space="preserve">
-    <value>进入副本后, 若当前职业需要但未召唤召唤兽, 则自动读条召唤召唤兽</value>
+    <value>进入副本或副本内触发重新挑战后, 若当前职业需要但未召唤召唤兽, 则自动读条召唤召唤兽</value>
   </data>
   <data name="AutoSummonPetTitle" xml:space="preserve">
     <value>自动召唤召唤兽</value>
