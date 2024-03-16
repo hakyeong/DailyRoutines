@@ -29,7 +29,8 @@ public class AutoNotifyRecruitmentEnd : DailyModuleBase
             return;
         }
 
-        Service.Notice.Notify(parts[0], parts[0]);
+        var title = parts[0].Trim('。');
+        Service.Notice.Notify(title, title);
     }
 
     public override void Uninit()
