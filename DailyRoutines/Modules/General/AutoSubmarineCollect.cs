@@ -1,16 +1,23 @@
+using System.Collections.Generic;
 using System.Numerics;
 using System.Text.RegularExpressions;
 using ClickLib;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Interface.Colors;
+using Dalamud.Memory;
+using Dalamud.Plugin.Services;
 using ECommons.Automation;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -20,13 +27,20 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoSubmarineCollectTitle", "AutoSubmarineCollectDescription", ModuleCategories.General)]
 public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 {
+    private static readonly HashSet<uint> CompanyWorkshopZones = [423, 425, 425, 653, 984];
+
     public override void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = true };
+        Overlay ??= new Overlay(this);
+
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectYesno", AlwaysYes);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "AirShipExplorationResult", OnExplorationResult);
 
         Service.Chat.ChatMessage += OnErrorText;
+        if (CompanyWorkshopZones.Contains(Service.ClientState.TerritoryType))
+            OnZoneChanged(Service.ClientState.TerritoryType);
+        Service.ClientState.TerritoryChanged += OnZoneChanged;
     }
 
     public override void ConfigUI()
@@ -41,6 +55,60 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
+    }
+
+    public override void OverlayUI()
+    {
+        var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
+        if (addon == null)
+        {
+            Overlay.IsOpen = false;
+            return;
+        }
+
+        var pos = new Vector2(addon->GetX() + 6, addon->GetY() - ImGui.GetWindowSize().Y + 6);
+        ImGui.SetWindowPos(pos);
+        
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("AutoSubmarineCollectTitle"));
+
+        ImGui.SameLine();
+
+        ImGui.BeginDisabled(TaskManager.IsBusy);
+        if (ImGui.Button(Service.Lang.GetText("Start"))) GetSubmarineInfos();
+        ImGui.EndDisabled();
+
+        ImGui.SameLine();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
+    }
+
+    private void OnZoneChanged(ushort zone)
+    {
+        if (CompanyWorkshopZones.Contains(zone))
+        {
+            Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectString", OnAddonSelectString);
+            return;
+        }
+
+        Service.AddonLifecycle.UnregisterListener(OnAddonSelectString);
+    }
+
+    private void OnAddonSelectString(AddonEvent type, AddonArgs args)
+    {
+        TaskManager.Enqueue(() =>
+        {
+            Overlay.IsOpen = false;
+            if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+            {
+                var title = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[2].String);
+                if (string.IsNullOrWhiteSpace(title) || !title.Contains("请选择潜水艇")) return true;
+
+                Overlay.IsOpen = true;
+                return true;
+            }
+
+            return false;
+        });
     }
 
     private void AlwaysYes(AddonEvent type, AddonArgs args)
@@ -223,6 +291,8 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         Service.AddonLifecycle.UnregisterListener(OnExplorationResult);
         Service.AddonLifecycle.UnregisterListener(AlwaysYes);
         Service.Chat.ChatMessage -= OnErrorText;
+        Service.AddonLifecycle.UnregisterListener(OnAddonSelectString);
+        Service.ClientState.TerritoryChanged -= OnZoneChanged;
 
         base.Uninit();
     }
