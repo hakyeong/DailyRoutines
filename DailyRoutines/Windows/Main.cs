@@ -83,7 +83,7 @@ public class Main : Window, IDisposable
 
         Task.Run(async () =>
         {
-            TotalDownloadCounts = await GetTotalDownloadsAsync("AtmoOmen", "DailyRoutines");
+            TotalDownloadCounts = await GetTotalDownloadsAsync();
             var latestVersion = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
 
             LatestVersion = latestVersion.version;
@@ -323,7 +323,7 @@ public class Main : Window, IDisposable
             {
                 Task.Run(async () =>
                 {
-                    TotalDownloadCounts = await GetTotalDownloadsAsync("AtmoOmen", "DailyRoutines");
+                    TotalDownloadCounts = await GetTotalDownloadsAsync();
                     var latestVersion = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
 
                     LatestVersion = latestVersion.version;
@@ -381,17 +381,11 @@ public class Main : Window, IDisposable
         P.CommandHandler();
     }
 
-    private static async Task<int> GetTotalDownloadsAsync(string userName, string repoName)
+    private static async Task<int> GetTotalDownloadsAsync()
     {
-        var url = $"https://api.github.com/repos/{userName}/{repoName}/releases";
-        client.DefaultRequestHeaders.UserAgent.TryParseAdd("request");
+        const string url = "https://raw.gitmirror.com/AtmoOmen/DailyRoutines/main/downloads.txt";
         var response = await client.GetStringAsync(url);
-        var releases = JsonConvert.DeserializeObject<List<Release>>(response);
-        var totalDownloads = 0;
-        foreach (var release in releases)
-        foreach (var asset in release.assets)
-            totalDownloads += asset.download_count * 2;
-        return totalDownloads;
+        return int.TryParse(response, out var totalDownloads) ? totalDownloads : 0;
     }
 
     // version - download count - description
