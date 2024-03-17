@@ -14,6 +14,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Colors;
 using Dalamud.Memory;
 using ECommons.Automation;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -83,7 +84,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
     {
         if (CompanyWorkshopZones.Contains(zone))
         {
-            Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectString", OnAddonSelectString);
+            Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectString", OnAddonSelectString);
             return;
         }
 
@@ -92,20 +93,17 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
     private void OnAddonSelectString(AddonEvent type, AddonArgs args)
     {
-        TaskManager.Enqueue(() =>
+        if (EzThrottler.Throttle(GetType().Name))
         {
             Overlay.IsOpen = false;
             if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
             {
                 var title = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[2].String);
-                if (string.IsNullOrWhiteSpace(title) || !title.Contains("请选择潜水艇")) return true;
+                if (string.IsNullOrWhiteSpace(title) || !title.Contains("请选择潜水艇")) return;
 
                 Overlay.IsOpen = true;
-                return true;
             }
-
-            return false;
-        });
+        }
     }
 
     private void AlwaysYes(AddonEvent type, AddonArgs args)
