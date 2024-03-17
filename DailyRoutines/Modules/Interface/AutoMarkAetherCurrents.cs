@@ -4,11 +4,16 @@ using System.Linq;
 using System.Numerics;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using DailyRoutines.Windows;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
+// 硬编码领域大神
 [ModuleDescription("AutoMarkAetherCurrentsTitle", "AutoMarkAetherCurrentsDescription", ModuleCategories.Interface)]
 public class AutoMarkAetherCurrents : DailyModuleBase
 {
@@ -211,25 +216,57 @@ public class AutoMarkAetherCurrents : DailyModuleBase
         { 961, [] }
     };
 
+    private static uint selectedTab;
+
     public override void Init()
     {
         Service.ClientState.TerritoryChanged += OnZoneChanged;
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "AetherCurrent", OnAddon);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "AetherCurrent", OnAddon);
+
+        Overlay ??= new Overlay(this);
+        Overlay.Flags |= ImGuiWindowFlags.NoMove;
     }
 
-    public override void ConfigUI()
+    public override unsafe void OverlayUI()
     {
+        var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("AetherCurrent");
+        if (addon == null) return;
+
+        var pos = new Vector2(addon->GetX() + 6, addon->GetY() - ImGui.GetWindowSize().Y + 6);
+        ImGui.SetWindowPos(pos);
+
+        selectedTab = addon->AtkValues[3].Int switch
+        {
+            0 => 0,
+            1 => 1,
+            2 => 2,
+            3 => 3,
+            _ => selectedTab
+        };
+
         if (ImGui.Button(Service.Lang.GetText("AutoMarkAetherCurrents-RefreshDisplay")))
             MarkAetherCurrents(Service.ClientState.TerritoryType, false);
+        ImGuiOm.TooltipHover(Service.Lang.GetText("AutoMarkAetherCurrents-FieldMarkerHelp"), 25f);
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("AutoMarkAetherCurrents-DisplayLeftCurrents")))
             MarkAetherCurrents(Service.ClientState.TerritoryType, true);
-
-        if (ImGui.IsItemHovered())
-            ImGui.SetTooltip(Service.Lang.GetText("AutoMarkAetherCurrents-DisplayLeftCurrentsHelp"));
+        ImGuiOm.TooltipHover(Service.Lang.GetText("AutoMarkAetherCurrents-DisplayLeftCurrentsHelp"));
 
         ImGui.SameLine();
-        ImGuiOm.HelpMarker(Service.Lang.GetText("AutoMarkAetherCurrents-FieldMarkerHelp"));
+        if (ImGui.Button(Service.Lang.GetText("AutoMarkAetherCurrents-RemoveAllWaymarks")))
+        {
+            for (var i = 0; i < 8; i++) Service.Waymarks.Remove((FieldMarkerManager.FieldMarkerPoint)i);
+        }
+
+        ImGui.SameLine();
+        if (ImGui.Button(Service.Lang.GetText("AutoMarkAetherCurrents-RemoveSelectedAC")))
+        {
+            foreach (var zoneCurrents in SelectedAetherCurrents) zoneCurrents.Value.Clear();
+        }
+
+        ImGui.Separator();
 
         ImGui.TextColored(ImGuiColors.DalamudOrange,
                           $"{Service.Lang.GetText("AutoMarkAetherCurrents-ManuallySelectCurrent")}:");
@@ -237,181 +274,83 @@ public class AutoMarkAetherCurrents : DailyModuleBase
 
         if (ImGui.BeginTabBar("AutoMarkAetherCurrent-ManuallySelect"))
         {
-            if (ImGui.BeginTabItem("3.0"))
+            var tabs = new[] { "3.0", "4.0", "5.0", "6.0" };
+            foreach (var tab in tabs)
+                if (selectedTab != Array.IndexOf(tabs, tab))
+                    ImGui.SetTabItemClosed(tab);
+
+            void DisplayRegion(string tab, IReadOnlyCollection<(string Name, int Id, bool isNew)> regions)
             {
-                // 左半边
-                ImGui.BeginGroup();
-                ImGui.BeginGroup();
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("库尔札斯西部高地");
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("龙堡内陆低地");
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("阿巴拉提亚云海");
-                ImGui.EndGroup();
+                if (ImGui.BeginTabItem(tab))
+                {
+                    void DisplayHalf((string Name, int Id, bool isNew)[] half)
+                    {
+                        ImGui.BeginGroup();
+                        ImGui.BeginGroup();
+                        foreach (var region in half)
+                        {
+                            ImGui.AlignTextToFramePadding();
+                            ImGui.Text(region.Name);
+                        }
 
-                ImGui.SameLine();
-                ImGui.BeginGroup();
-                DrawManuallySelectGroupOld("库尔札斯西部高地", 397, ref SelectedAetherCurrents);
-                DrawManuallySelectGroupOld("龙堡内陆低地", 399, ref SelectedAetherCurrents);
-                DrawManuallySelectGroupOld("阿巴拉提亚云海", 401, ref SelectedAetherCurrents);
-                ImGui.EndGroup();
-                ImGui.EndGroup();
+                        ImGui.EndGroup();
 
-                // 右半边
-                ImGui.SameLine();
-                ImGui.BeginGroup();
-                ImGui.BeginGroup();
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("龙堡参天高地");
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("翻云雾海");
-                ImGui.EndGroup();
+                        ImGui.SameLine();
+                        ImGui.BeginGroup();
+                        foreach (var region in half)
+                            if (region.isNew)
+                                DrawManuallySelectGroupNew(region.Name, (uint)region.Id, ref SelectedAetherCurrents);
+                            else
+                                DrawManuallySelectGroupOld(region.Name, (uint)region.Id, ref SelectedAetherCurrents);
+                        ImGui.EndGroup();
+                        ImGui.EndGroup();
+                    }
 
-                ImGui.SameLine();
-                ImGui.BeginGroup();
-                DrawManuallySelectGroupOld("龙堡参天高地", 398, ref SelectedAetherCurrents);
-                DrawManuallySelectGroupOld("翻云雾海", 400, ref SelectedAetherCurrents);
-                ImGui.EndGroup();
-                ImGui.EndGroup();
+                    DisplayHalf(regions.Take(3).ToArray());
+                    ImGui.SameLine();
+                    DisplayHalf(regions.Skip(3).ToArray());
 
-                ImGui.EndTabItem();
+                    ImGui.EndTabItem();
+                }
             }
 
-            if (ImGui.BeginTabItem("4.0"))
-            {
-                // 左半边
-                ImGui.BeginGroup();
-                ImGui.BeginGroup();
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("基拉巴尼亚边区");
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("基拉巴尼亚山区");
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("基拉巴尼亚湖区");
-                ImGui.EndGroup();
-
-                ImGui.SameLine();
-                ImGui.BeginGroup();
-                DrawManuallySelectGroupOld("基拉巴尼亚边区", 612, ref SelectedAetherCurrents);
-                DrawManuallySelectGroupOld("基拉巴尼亚山区", 620, ref SelectedAetherCurrents);
-                DrawManuallySelectGroupOld("基拉巴尼亚湖区", 621, ref SelectedAetherCurrents);
-                ImGui.EndGroup();
-                ImGui.EndGroup();
-
-                // 右半边
-                ImGui.SameLine();
-                ImGui.BeginGroup();
-                ImGui.BeginGroup();
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("红玉海");
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("延夏");
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("太阳神草原");
-                ImGui.EndGroup();
-
-                ImGui.SameLine();
-                ImGui.BeginGroup();
-                DrawManuallySelectGroupOld("红玉海", 613, ref SelectedAetherCurrents);
-                DrawManuallySelectGroupOld("延夏", 614, ref SelectedAetherCurrents);
-                DrawManuallySelectGroupOld("太阳神草原", 622, ref SelectedAetherCurrents);
-                ImGui.EndGroup();
-                ImGui.EndGroup();
-
-                ImGui.EndTabItem();
-            }
-
-            if (ImGui.BeginTabItem("5.0"))
-            {
-                // 左半边
-                ImGui.BeginGroup();
-                ImGui.BeginGroup();
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("雷克兰德");
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("伊尔美格");
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("拉凯提卡大森林");
-                ImGui.EndGroup();
-
-                ImGui.SameLine();
-                ImGui.BeginGroup();
-                DrawManuallySelectGroupOld("雷克兰德", 813, ref SelectedAetherCurrents);
-                DrawManuallySelectGroupOld("伊尔美格", 816, ref SelectedAetherCurrents);
-                DrawManuallySelectGroupOld("拉凯提卡大森林", 817, ref SelectedAetherCurrents);
-                ImGui.EndGroup();
-                ImGui.EndGroup();
-
-                // 右半边
-                ImGui.SameLine();
-                ImGui.BeginGroup();
-                ImGui.BeginGroup();
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("安穆·艾兰");
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("珂露西亚岛");
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("黑风海");
-                ImGui.EndGroup();
-
-                ImGui.SameLine();
-                ImGui.BeginGroup();
-                DrawManuallySelectGroupOld("安穆·艾兰", 815, ref SelectedAetherCurrents);
-                DrawManuallySelectGroupOld("珂露西亚岛", 814, ref SelectedAetherCurrents);
-                DrawManuallySelectGroupOld("黑风海", 818, ref SelectedAetherCurrents);
-                ImGui.EndGroup();
-                ImGui.EndGroup();
-
-                ImGui.EndTabItem();
-            }
-
-            if (ImGui.BeginTabItem("6.0"))
-            {
-                // 左半边
-                ImGui.BeginGroup();
-                ImGui.BeginGroup();
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("迷津");
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("加雷马");
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("厄尔庇斯");
-                ImGui.EndGroup();
-
-                ImGui.SameLine();
-                ImGui.BeginGroup();
-                DrawManuallySelectGroupNew("迷津", 956, ref SelectedAetherCurrents);
-                DrawManuallySelectGroupNew("加雷马", 958, ref SelectedAetherCurrents);
-                DrawManuallySelectGroupNew("厄尔庇斯", 961, ref SelectedAetherCurrents);
-                ImGui.EndGroup();
-                ImGui.EndGroup();
-
-                // 右半边
-                ImGui.SameLine();
-                ImGui.BeginGroup();
-                ImGui.BeginGroup();
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("萨维奈岛");
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("叹息海");
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("天外天垓");
-                ImGui.EndGroup();
-
-                ImGui.SameLine();
-                ImGui.BeginGroup();
-                DrawManuallySelectGroupNew("萨维奈岛", 957, ref SelectedAetherCurrents);
-                DrawManuallySelectGroupNew("叹息海", 959, ref SelectedAetherCurrents);
-                DrawManuallySelectGroupNew("天外天垓", 960, ref SelectedAetherCurrents);
-                ImGui.EndGroup();
-                ImGui.EndGroup();
-
-                ImGui.EndTabItem();
-            }
+            DisplayRegion(
+                "3.0",
+                [
+                    ("库尔札斯西部高地", 397, false), ("龙堡内陆低地", 399, false), ("阿巴拉提亚云海", 401, false), ("龙堡参天高地", 398, false),
+                    ("翻云雾海", 400, false)
+                ]);
+            DisplayRegion(
+                "4.0",
+                [
+                    ("基拉巴尼亚边区", 612, false), ("基拉巴尼亚山区", 620, false), ("基拉巴尼亚湖区", 621, false), ("红玉海", 613, false),
+                    ("延夏", 614, false), ("太阳神草原", 622, false)
+                ]);
+            DisplayRegion(
+                "5.0",
+                [
+                    ("雷克兰德", 813, false), ("伊尔美格", 816, false), ("拉凯提卡大森林", 817, false), ("安穆·艾兰", 815, false),
+                    ("珂露西亚岛", 814, false), ("黑风海", 818, false)
+                ]);
+            DisplayRegion(
+                "6.0",
+                [
+                    ("迷津", 956, true), ("加雷马", 958, true), ("厄尔庇斯", 961, true), ("萨维奈岛", 957, true), ("叹息海", 959, true),
+                    ("天外天垓", 960, true)
+                ]);
 
             ImGui.EndTabBar();
         }
+    }
+
+    private void OnAddon(AddonEvent type, AddonArgs args)
+    {
+        Overlay.IsOpen = type switch
+        {
+            AddonEvent.PostSetup => true,
+            AddonEvent.PreFinalize => false,
+            _ => Overlay.IsOpen
+        };
     }
 
     private void DrawManuallySelectGroupOld(
@@ -507,6 +446,7 @@ public class AutoMarkAetherCurrents : DailyModuleBase
     public override void Uninit()
     {
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
+        Service.AddonLifecycle.UnregisterListener(OnAddon);
 
         base.Uninit();
     }

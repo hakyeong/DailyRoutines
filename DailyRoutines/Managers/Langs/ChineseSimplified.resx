@@ -294,6 +294,12 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoMarkAetherCurrents-RefreshDisplay" xml:space="preserve">
     <value>刷新标点显示</value>
   </data>
+  <data name="AutoMarkAetherCurrents-RemoveAllWaymarks" xml:space="preserve">
+    <value>清除所有标点</value>
+  </data>
+  <data name="AutoMarkAetherCurrents-RemoveSelectedAC" xml:space="preserve">
+    <value>清除已选风脉</value>
+  </data>
   <data name="AutoMarkAetherCurrentsDescription" xml:space="preserve">
     <value>在地图上自动标记所有风脉泉的位置, 并允许自定义待显示的风脉泉</value>
   </data>
