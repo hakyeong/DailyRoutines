@@ -47,6 +47,7 @@ public class Main : Window, IDisposable
     }
 
     private static readonly List<ModuleInfo> Modules = [];
+    private static readonly Dictionary<ModuleCategories, List<ModuleInfo>> categorizedModules = new();
 
     internal static string SearchString = string.Empty;
     private static string ConflictKeySearchString = string.Empty;
@@ -63,24 +64,22 @@ public class Main : Window, IDisposable
     {
         Flags = ImGuiWindowFlags.NoScrollbar;
 
-        Assembly.GetExecutingAssembly().GetTypes()
-                .Where(t => typeof(DailyModuleBase).IsAssignableFrom(t) && t is { IsClass: true, IsAbstract: false })
-                .ToList()
-                .ForEach(type =>
-                {
-                    var categoryAttr = type.GetCustomAttribute<ModuleDescriptionAttribute>();
-                    var category = categoryAttr?.Category ?? ModuleCategories.Base;
-                    var title = Service.Lang.GetText(categoryAttr?.TitleKey ?? "DevModuleTitle");
-                    var description = Service.Lang.GetText(categoryAttr?.DescriptionKey ?? "DevModuleDescription");
+        var allModules = Assembly.GetExecutingAssembly().GetTypes()
+                                 .Where(t => typeof(DailyModuleBase).IsAssignableFrom(t) && t is { IsClass: true, IsAbstract: false })
+                                 .Select(type => new ModuleInfo
+                                 {
+                                     Module = type,
+                                     Title = Service.Lang.GetText(type.GetCustomAttribute<ModuleDescriptionAttribute>()?.TitleKey ?? "DevModuleTitle"),
+                                     Description = Service.Lang.GetText(type.GetCustomAttribute<ModuleDescriptionAttribute>()?.DescriptionKey ?? "DevModuleDescription"),
+                                     Category = type.GetCustomAttribute<ModuleDescriptionAttribute>()?.Category ?? ModuleCategories.Base
+                                 }).ToList();
+        
+        Modules.AddRange(allModules);
 
-                    Modules.Add(new ModuleInfo
-                    {
-                        Module = type,
-                        Title = title,
-                        Description = description,
-                        Category = category
-                    });
-                });
+        allModules.GroupBy(m => m.Category).ToList().ForEach(group =>
+        {
+            categorizedModules[group.Key] = [.. group.OrderBy(m => m.Title)];
+        });
 
         Task.Run(async () =>
         {
@@ -120,7 +119,8 @@ public class Main : Window, IDisposable
 
     private static void DrawTabItemModules(ModuleCategories category)
     {
-        var modulesInCategory = Modules.Where(m => m.Category == category).ToArray();
+        if (!categorizedModules.ContainsKey(category)) return;
+        var modulesInCategory = categorizedModules[category].ToArray();
 
         if (ImGui.BeginTabItem(Service.Lang.GetText(category.ToString())))
         {
