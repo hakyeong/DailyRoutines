@@ -22,4 +22,4 @@ def get_total_downloads(user_name, repo_name):
 user_name = 'AtmoOmen'
 repo_name = 'DailyRoutines'
 total_downloads = get_total_downloads(user_name, repo_name)
-print(f"Total Downloads: {total_downloads}")
+print(f"{total_downloads}")
