@@ -28,6 +28,4 @@ jobs:
         git config --global user.name "GitHub Actions"
         git add downloads.txt
         git commit -m "Update total downloads" -a || echo "No changes to commit"
-        git -c http.extraheader="AUTHORIZATION: basic ${GITHUB_TOKEN}" push
-      env:
-        GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        git push
