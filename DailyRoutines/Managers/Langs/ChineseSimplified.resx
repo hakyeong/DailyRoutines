@@ -515,6 +515,13 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRefreshPartyFinderTitle" xml:space="preserve">
     <value>自动刷新招募板</value>
   </data>
+  <data name="AutoRemoveArmoireItemsFromDresserDescription" xml:space="preserve">
+    <value>打开投影台界面, 切换到主手栏, 并点击开始后, 自动取出投影台中所有可放入收藏柜的装备
+(请预留尽可能多的背包空间并随时准备停止) (可能有 百分之五 左右的误取率)</value>
+  </data>
+  <data name="AutoRemoveArmoireItemsFromDresserTitle" xml:space="preserve">
+    <value>自动取出投影台中可放入收藏柜装备</value>
+  </data>
   <data name="AutoRequestItemSubmitDescription" xml:space="preserve">
     <value>在递交物品时, 自动选择物品并完成递交</value>
   </data>
