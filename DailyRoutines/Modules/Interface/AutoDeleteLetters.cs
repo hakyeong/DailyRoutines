@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Numerics;
 using ClickLib;
 using DailyRoutines.Infos;
