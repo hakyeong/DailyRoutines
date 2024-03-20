@@ -14,7 +14,7 @@ namespace DailyRoutines.Modules;
 public partial class AutoInDutySelectYes : DailyModuleBase
 {
     private static readonly HashSet<string> SelectYesSet = ["发现了"];
-    private static readonly HashSet<string> NoSelectSet = ["退出任务", "无法战斗", "即将返回"];
+    private static readonly HashSet<string> NoSelectSet = ["无法战斗", "即将返回"];
 
     public override void Init()
     {
@@ -36,7 +36,7 @@ public partial class AutoInDutySelectYes : DailyModuleBase
         var addon = (AddonSelectYesno*)args.Addon;
 
         var text = addon->PromptText->NodeText.ExtractText();
-        if (!NoSelectSet.Contains(text) || SelectYesSet.Any(text.Contains) || SelectYesRegex().IsMatch(text)) Click.SendClick("select_yes");
+        if (!NoSelectSet.Any(text.Contains) || SelectYesSet.Any(text.Contains) || SelectYesRegex().IsMatch(text)) Click.SendClick("select_yes");
     }
 
     public override void Uninit()
