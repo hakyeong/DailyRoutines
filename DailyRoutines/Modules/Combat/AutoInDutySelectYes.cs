@@ -14,7 +14,7 @@ namespace DailyRoutines.Modules;
 public partial class AutoInDutySelectYes : DailyModuleBase
 {
     private static readonly HashSet<string> SelectYesSet = ["发现了"];
-    private static readonly HashSet<string> NoSelectSet = ["无法战斗", "即将返回"];
+    private static readonly HashSet<string> NoSelectSet = ["无法战斗", "即将返回", "开始地点"];
 
     public override void Init()
     {
