@@ -473,6 +473,12 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoPlayerCommendTitle" xml:space="preserve">
     <value>自动最优队员推荐</value>
   </data>
+  <data name="AutoPreventDuplicateStatusDescription" xml:space="preserve">
+    <value>启用并配置完成后, 使用相应技能时, 会自动检测相关状态是否已存在, 以防止团辅/团减等重叠</value>
+  </data>
+  <data name="AutoPreventDuplicateStatusTitle" xml:space="preserve">
+    <value>自动防技能重复</value>
+  </data>
   <data name="AutoQTEDescription" xml:space="preserve">
     <value>在副本中, 自动完成全种类的动态演练 (QTE)</value>
   </data>
