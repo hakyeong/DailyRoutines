@@ -46,7 +46,7 @@ public unsafe class AutoPlayCards : DailyModuleBase
         ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6,
         void* a7)
     {
-        if (actionID != 17055)
+        if (actionType != 1 || actionID != 17055)
             return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
 
         bool isMeleeCardDrawn = MeleeCardStatuses.Any(
