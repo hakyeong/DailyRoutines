@@ -446,6 +446,18 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoNoviceNetworkTitle" xml:space="preserve">
     <value>自动加入新人频道</value>
   </data>
+  <data name="AutoPlantGardens-Seed" xml:space="preserve">
+    <value>种子</value>
+  </data>
+  <data name="AutoPlantGardens-Soil" xml:space="preserve">
+    <value>土壤</value>
+  </data>
+  <data name="AutoPlantGardensDescription" xml:space="preserve">
+    <value>启用并配置完成后, 点击播种, 自动选取种子和土壤并确认种植</value>
+  </data>
+  <data name="AutoPlantGardensTitle" xml:space="preserve">
+    <value>自动种植园圃作物</value>
+  </data>
   <data name="AutoPlayCards-Melee" xml:space="preserve">
     <value>近战</value>
   </data>
