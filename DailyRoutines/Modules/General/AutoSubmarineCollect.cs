@@ -35,11 +35,9 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectYesno", AlwaysYes);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "AirShipExplorationResult", OnExplorationResult);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectString", OnAddonSelectString);
 
         Service.Chat.ChatMessage += OnErrorText;
-        if (CompanyWorkshopZones.Contains(Service.ClientState.TerritoryType))
-            OnZoneChanged(Service.ClientState.TerritoryType);
-        Service.ClientState.TerritoryChanged += OnZoneChanged;
     }
 
     public override void ConfigUI()
@@ -81,20 +79,9 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
     }
 
-    private void OnZoneChanged(ushort zone)
-    {
-        if (CompanyWorkshopZones.Contains(zone))
-        {
-            Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectString", OnAddonSelectString);
-            return;
-        }
-
-        Service.AddonLifecycle.UnregisterListener(OnAddonSelectString);
-    }
-
     private void OnAddonSelectString(AddonEvent type, AddonArgs args)
     {
-        if (EzThrottler.Throttle(GetType().Name))
+        if (EzThrottler.Throttle("AutoSubmarineCollectOverlay"))
         {
             Overlay.IsOpen = false;
             if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
@@ -287,7 +274,6 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         Service.AddonLifecycle.UnregisterListener(AlwaysYes);
         Service.Chat.ChatMessage -= OnErrorText;
         Service.AddonLifecycle.UnregisterListener(OnAddonSelectString);
-        Service.ClientState.TerritoryChanged -= OnZoneChanged;
 
         base.Uninit();
     }
