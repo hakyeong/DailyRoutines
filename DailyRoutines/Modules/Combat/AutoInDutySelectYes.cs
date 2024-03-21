@@ -14,7 +14,6 @@ namespace DailyRoutines.Modules;
 public partial class AutoInDutySelectYes : DailyModuleBase
 {
     private static readonly HashSet<string> SelectYesSet = ["发现了"];
-    private static readonly HashSet<string> NoSelectSet = ["无法战斗", "即将返回", "开始地点"];
 
     public override void Init()
     {
@@ -36,7 +35,7 @@ public partial class AutoInDutySelectYes : DailyModuleBase
         var addon = (AddonSelectYesno*)args.Addon;
 
         var text = addon->PromptText->NodeText.ExtractText();
-        if (!NoSelectSet.Any(text.Contains) || SelectYesSet.Any(text.Contains) || SelectYesRegex().IsMatch(text)) Click.SendClick("select_yes");
+        if (SelectYesSet.Any(text.Contains) || SelectYesRegex().IsMatch(text)) Click.SendClick("select_yes");
     }
 
     public override void Uninit()
@@ -47,6 +46,6 @@ public partial class AutoInDutySelectYes : DailyModuleBase
         base.Uninit();
     }
 
-    [GeneratedRegex("^要(?:(?!传送邀请|救助).)*吗？$")]
+    [GeneratedRegex("^要(?:(?!传送邀请|救助|无法战斗|即将返回|开始地点).)*吗？$")]
     private static partial Regex SelectYesRegex();
 }
