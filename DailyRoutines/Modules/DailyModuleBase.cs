@@ -9,6 +9,7 @@ using System.IO;
 using System;
 using System.Linq;
 using System.Reflection;
+using Dalamud.Interface.Internal.Notifications;
 
 namespace DailyRoutines.Modules;
 
@@ -171,6 +172,19 @@ public abstract class DailyModuleBase
             Service.Log.Error(ex, $"Failed to remove config for {moduleBase.GetType().Name}");
             return false;
         }
+    }
+
+    protected bool InterruptByConflictKey()
+    {
+        if (Service.KeyState[Service.Config.ConflictKey])
+        {
+            TaskManager?.Abort();
+            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"),
+                                                        "Daily Routines", NotificationType.Success);
+            return true;
+        }
+
+        return false;
     }
 
     public virtual void Uninit()

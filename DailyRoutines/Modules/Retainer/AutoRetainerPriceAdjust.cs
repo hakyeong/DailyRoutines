@@ -65,8 +65,6 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSell", OnRetainerSell);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "RetainerSell", OnRetainerSell);
 
-        Service.Framework.Update += OnUpdate;
-
         Initialized = true;
     }
 
@@ -113,23 +111,13 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoRetainerPriceAdjust-SeparateNQAndHQHelp"));
     }
 
-    private void OnUpdate(IFramework framework)
-    {
-        if (!TaskManager.IsBusy) return;
-
-        if (Service.KeyState[Service.Config.ConflictKey])
-        {
-            TaskManager.Abort();
-            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"),
-                                                        "Daily Routines", NotificationType.Success);
-        }
-    }
-
-    private static void OnRetainerList(AddonEvent type, AddonArgs args)
+    private void OnRetainerList(AddonEvent type, AddonArgs args)
     {
         switch (type)
         {
             case AddonEvent.PostSetup:
+                if (InterruptByConflictKey()) return;
+
                 var retainerManager = RetainerManager.Instance();
                 if (retainerManager == null) return;
 
@@ -155,6 +143,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         switch (eventType)
         {
             case AddonEvent.PostSetup:
+                if (InterruptByConflictKey()) return;
                 if (TaskManager.IsBusy) return;
                 // 点击比价
                 TaskManager.Enqueue(ClickComparePrice);
@@ -168,6 +157,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
                 TaskManager.Enqueue(FillLowestPrice);
                 break;
             case AddonEvent.PreFinalize:
+                if (InterruptByConflictKey()) return;
                 if (TaskManager.NumQueuedTasks <= 1)
                     TaskManager.Abort();
                 break;
@@ -176,6 +166,8 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
     private void OnRetainerSellList(AddonEvent type, AddonArgs args)
     {
+        if (InterruptByConflictKey()) return;
+
         var activeRetainer = RetainerManager.Instance()->GetActiveRetainer();
         if (CurrentRetainer == null || CurrentRetainer != activeRetainer)
             CurrentRetainer = activeRetainer;
@@ -194,6 +186,8 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
     private void EnqueueSingleItem(int index)
     {
+        if (InterruptByConflictKey()) return;
+
         // 点击物品
         TaskManager.Enqueue(() => ClickSellingItem(index));
         TaskManager.DelayNext(100);
@@ -213,9 +207,11 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         TaskManager.DelayNext(800);
     }
 
-    private static void GetSellListItems(out uint availableItems)
+    private void GetSellListItems(out uint availableItems)
     {
         availableItems = 0;
+        if (InterruptByConflictKey()) return;
+
         if (TryGetAddonByName<AtkUnitBase>("RetainerSellList", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             for (var i = 0; i < 20; i++)
@@ -225,8 +221,10 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         }
     }
 
-    private static bool? ClickSellingItem(int index)
+    private bool? ClickSellingItem(int index)
     {
+        if (InterruptByConflictKey()) return true;
+
         if (TryGetAddonByName<AtkUnitBase>("RetainerSellList", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             AgentManager.SendEvent(AgentId.Retainer, 3, 0, index, 1);
@@ -236,8 +234,10 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         return false;
     }
 
-    private static bool? ClickAdjustPrice()
+    private bool? ClickAdjustPrice()
     {
+        if (InterruptByConflictKey()) return true;
+
         if (TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             AgentManager.SendEvent(AgentId.Context, 0, 0, 0, 0, 0, 0);
@@ -248,8 +248,10 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         return false;
     }
 
-    private static bool? ClickComparePrice()
+    private bool? ClickComparePrice()
     {
+        if (InterruptByConflictKey()) return true;
+
         if (TryGetAddonByName<AtkUnitBase>("RetainerSell", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             CurrentItemPrice = addon->AtkValues[5].Int;
@@ -264,8 +266,10 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         return false;
     }
 
-    private static bool? GetLowestPrice()
+    private bool? GetLowestPrice()
     {
+        if (InterruptByConflictKey()) return true;
+
         if (TryGetAddonByName<AddonItemSearchResult>("ItemSearchResult", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
@@ -347,8 +351,10 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         return false;
     }
 
-    private static bool? FillLowestPrice()
+    private bool? FillLowestPrice()
     {
+        if (InterruptByConflictKey()) return true;
+
         if (TryGetAddonByName<AddonRetainerSell>("RetainerSell", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
@@ -417,7 +423,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         return false;
     }
 
-    public static bool TryScanItemSearchResult(
+    public bool TryScanItemSearchResult(
         AddonItemSearchResult* addon, out List<MarketSellItem> result)
     {
         result = [];
@@ -482,7 +488,6 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
     public override void Uninit()
     {
-        Service.Framework.Update -= OnUpdate;
         Service.AddonLifecycle.UnregisterListener(OnRetainerList);
         Service.AddonLifecycle.UnregisterListener(OnRetainerSellList);
         Service.AddonLifecycle.UnregisterListener(OnRetainerSell);

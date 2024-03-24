@@ -4,13 +4,10 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using Dalamud.Interface.Internal.Notifications;
-using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using ImGuiNET;
 using TaskManager = ECommons.Automation.TaskManager;
 
 namespace DailyRoutines.Modules;
@@ -22,25 +19,14 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerList", OnRetainerList);
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
-        Service.Framework.Update += OnUpdate;
     }
 
     public override void ConfigUI() => ConflictKeyText();
 
-    private void OnUpdate(IFramework framework)
-    {
-        if (!TaskManager.IsBusy) return;
-
-        if (Service.KeyState[Service.Config.ConflictKey])
-        {
-            TaskManager.Abort();
-            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"),
-                                                        "Daily Routines", NotificationType.Success);
-        }
-    }
-
     private void OnRetainerList(AddonEvent type, AddonArgs args)
     {
+        if (InterruptByConflictKey()) return;
+
         var retainerManager = RetainerManager.Instance();
         var serverTime = Framework.GetServerTime();
         for (var i = 0; i < 10; i++)
@@ -57,6 +43,8 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
 
     private void EnqueueSingleRetainer(int index)
     {
+        if (InterruptByConflictKey()) return;
+
         TaskManager.Enqueue(() => ClickSpecificRetainer(index));
         TaskManager.Enqueue(CheckVentureState);
         TaskManager.Enqueue(() => Click.TrySendClick("retainer_venture_result_reassign"));
@@ -64,8 +52,10 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
         TaskManager.Enqueue(ReturnToRetainerList);
     }
 
-    private static bool? ClickSpecificRetainer(int index)
+    private bool? ClickSpecificRetainer(int index)
     {
+        if (InterruptByConflictKey()) return true;
+
         if (TryGetAddonByName<AddonRetainerList>("RetainerList", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
@@ -79,6 +69,8 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
 
     private bool? CheckVentureState()
     {
+        if (InterruptByConflictKey()) return true;
+
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
         {
             if (!HelpersOm.TryScanSelectStringText(addon, "返回", out var returnIndex) ||
@@ -98,6 +90,8 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
 
     private bool? ReturnToRetainerList()
     {
+        if (InterruptByConflictKey()) return true;
+
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
         {
             if (!HelpersOm.TryScanSelectStringText(addon, "返回", out var index))
@@ -114,7 +108,6 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
 
     public override void Uninit()
     {
-        Service.Framework.Update -= OnUpdate;
         Service.AddonLifecycle.UnregisterListener(OnRetainerList);
 
         base.Uninit();

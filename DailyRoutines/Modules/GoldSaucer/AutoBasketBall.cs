@@ -5,12 +5,10 @@ using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Internal.Notifications;
-using Dalamud.Plugin.Services;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using ImGuiNET;
 using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
@@ -25,7 +23,6 @@ public class AutoBasketBall : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "BasketBall", OnAddonSetup);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "BasketBall", OnAddonSetup);
 
-        Service.Framework.Update += OnUpdate;
     }
 
     public override void ConfigUI()
@@ -34,23 +31,13 @@ public class AutoBasketBall : DailyModuleBase
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoMT-InterruptNotice"));
     }
 
-    private void OnUpdate(IFramework framework)
-    {
-        if (!TaskManager.IsBusy) return;
-
-        if (Service.KeyState[Service.Config.ConflictKey])
-        {
-            TaskManager.Abort();
-            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"),
-                                                        "Daily Routines", NotificationType.Success);
-        }
-    }
-
     private unsafe void OnAddonSetup(AddonEvent type, AddonArgs args)
     {
         switch (type)
         {
             case AddonEvent.PostDraw:
+                if (InterruptByConflictKey()) return;
+
                 if (TryGetAddonByName<AtkUnitBase>("BasketBall", out var addon) && IsAddonReady(addon))
                 {
                     if (TryGetAddonByName<AddonSelectString>("SelectString", out var addonSelectString) &&
@@ -72,13 +59,17 @@ public class AutoBasketBall : DailyModuleBase
 
                 break;
             case AddonEvent.PreFinalize:
+                if (InterruptByConflictKey()) return;
+
                 TaskManager.Enqueue(StartAnotherRound);
                 break;
         }
     }
 
-    private static unsafe bool? StartAnotherRound()
+    private unsafe bool? StartAnotherRound()
     {
+        if (InterruptByConflictKey()) return true;
+
         if (IsOccupied()) return false;
         var machineTarget = Service.Target.PreviousTarget;
         var machine = machineTarget.Name.ExtractText().Contains("怪物投篮") ? (GameObject*)machineTarget.Address : null;
@@ -94,7 +85,6 @@ public class AutoBasketBall : DailyModuleBase
 
     public override void Uninit()
     {
-        Service.Framework.Update -= OnUpdate;
         Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
         Service.AddonLifecycle.UnregisterListener(OnAddonSetup);
 

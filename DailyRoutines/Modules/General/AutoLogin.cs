@@ -5,9 +5,7 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Interface.Utility;
-using Dalamud.Plugin.Services;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -33,8 +31,6 @@ public class AutoLogin : DailyModuleBase
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = true };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "_TitleMenu", OnTitleMenu);
-
-        Service.Framework.Update += OnUpdate;
     }
 
     public override void ConfigUI()
@@ -84,29 +80,20 @@ public class AutoLogin : DailyModuleBase
         ImGuiOm.TooltipHover(Service.Lang.GetText("AutoLogin-CharaIndexInputTooltip"));
     }
 
-    private void OnUpdate(IFramework framework)
-    {
-        if (HasLoginOnce || !TaskManager.IsBusy) return;
-
-        if (Service.KeyState[Service.Config.ConflictKey])
-        {
-            TaskManager.Abort();
-            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"),
-                                                        "Daily Routines", NotificationType.Success);
-        }
-    }
-
     private void OnTitleMenu(AddonEvent eventType, AddonArgs? addonInfo)
     {
         if (string.IsNullOrEmpty(ConfigSelectedServer) || ConfigSelectedCharaIndex == -1) return;
         if (HasLoginOnce) return;
-        if (Service.KeyState[Service.Config.ConflictKey]) return;
+
+        if (InterruptByConflictKey()) return;
 
         TaskManager.Enqueue(SelectStartGame);
     }
 
     private unsafe bool? SelectStartGame()
     {
+        if (InterruptByConflictKey()) return true;
+
         var agent = AgentModule.Instance()->GetAgentByInternalId(AgentId.Lobby);
         if (agent == null) return false;
 
@@ -117,6 +104,8 @@ public class AutoLogin : DailyModuleBase
 
     private unsafe bool? WaitAddonCharaSelectListMenu()
     {
+        if (InterruptByConflictKey()) return true;
+
         if (Service.Gui.GetAddonByName("_TitleMenu") != nint.Zero) return false;
 
         if (TryGetAddonByName<AtkUnitBase>("_CharaSelectListMenu", out var addon) &&
@@ -143,6 +132,8 @@ public class AutoLogin : DailyModuleBase
 
     private unsafe bool? WaitCharaSelectWorldServer()
     {
+        if (InterruptByConflictKey()) return true;
+
         if (TryGetAddonByName<AtkUnitBase>("_CharaSelectWorldServer", out var addon))
         {
             var stringArray = AtkStage.GetSingleton()->GetStringArrayData()[1];
@@ -173,7 +164,6 @@ public class AutoLogin : DailyModuleBase
 
     public override void Uninit()
     {
-        Service.Framework.Update -= OnUpdate;
         Service.AddonLifecycle.UnregisterListener(OnTitleMenu);
         HasLoginOnce = false;
 
