@@ -32,7 +32,7 @@ public class AutoRequestItemSubmit : DailyModuleBase
 
     public override void ConfigUI()
     {
-        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
+        ConflictKeyText();
         if (ImGui.Checkbox("递交优质道具", ref ConfigIsSubmitHQItem))
             UpdateConfig(this, "IsSubmitHQItem", ConfigIsSubmitHQItem);
     }

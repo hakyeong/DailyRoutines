@@ -30,7 +30,7 @@ public class AutoBasketBall : DailyModuleBase
 
     public override void ConfigUI()
     {
-        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
+        ConflictKeyText();
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoMT-InterruptNotice"));
     }
 

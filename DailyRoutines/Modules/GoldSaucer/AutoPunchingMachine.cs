@@ -26,10 +26,7 @@ public class AutoPunchingMachine : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "PunchingMachine", OnAddonSetup);
     }
 
-    public override void ConfigUI()
-    {
-        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
-    }
+    public override void ConfigUI() => ConflictKeyText();
 
     private void OnUpdate(IFramework framework)
     {

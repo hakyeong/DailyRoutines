@@ -25,10 +25,7 @@ public class AutoHummer : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Hummer", OnAddonSetup);
     }
 
-    public override void ConfigUI()
-    {
-        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
-    }
+    public override void ConfigUI() => ConflictKeyText();
 
     private void OnUpdate(IFramework framework)
     {

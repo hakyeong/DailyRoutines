@@ -30,4 +30,9 @@ public class Widgets
             ImGui.EndTooltip();
         }
     }
+
+    public static void ConflictKeyText()
+    {
+        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
+    }
 }

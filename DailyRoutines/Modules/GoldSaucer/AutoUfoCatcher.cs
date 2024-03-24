@@ -25,10 +25,7 @@ public class AutoUfoCatcher : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "UfoCatcher", OnAddonSetup);
     }
 
-    public override void ConfigUI()
-    {
-        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
-    }
+    public override void ConfigUI() => ConflictKeyText();
 
     private void OnAddonSetup(AddonEvent type, AddonArgs args)
     {

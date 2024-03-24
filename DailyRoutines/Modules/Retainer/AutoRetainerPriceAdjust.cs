@@ -72,7 +72,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
     public override void ConfigUI()
     {
-        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
+        ConflictKeyText();
 
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
         if (ImGui.InputInt(

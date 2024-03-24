@@ -4,7 +4,6 @@ using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Internal.Notifications;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
@@ -16,10 +15,7 @@ public class AutoQuestAccept : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "JournalAccept", OnAddonSetup);
     }
 
-    public override void ConfigUI()
-    {
-        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
-    }
+    public override void ConfigUI() => ConflictKeyText();
 
     private static unsafe void OnAddonSetup(AddonEvent type, AddonArgs args)
     {

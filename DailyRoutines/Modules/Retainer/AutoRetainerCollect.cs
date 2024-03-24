@@ -25,10 +25,7 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
         Service.Framework.Update += OnUpdate;
     }
 
-    public override void ConfigUI()
-    {
-        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
-    }
+    public override void ConfigUI() => ConflictKeyText();
 
     private void OnUpdate(IFramework framework)
     {

@@ -39,7 +39,7 @@ public class AutoLogin : DailyModuleBase
 
     public override void ConfigUI()
     {
-        ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
+        ConflictKeyText();
 
         ImGui.AlignTextToFramePadding();
         ImGui.Text($"{Service.Lang.GetText("AutoLogin-ServerName")}:");
