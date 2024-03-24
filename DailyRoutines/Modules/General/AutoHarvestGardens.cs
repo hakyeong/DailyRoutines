@@ -30,10 +30,12 @@ public unsafe class AutoHarvestGardens : DailyModuleBase
 
     public override void ConfigUI()
     {
+        ImGui.BeginDisabled(TaskManager.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("Start")))
         {
             Start();
         }
+        ImGui.EndDisabled();
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("Stop")))

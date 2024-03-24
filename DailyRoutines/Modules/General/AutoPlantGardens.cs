@@ -77,6 +77,7 @@ public class AutoPlantGardens : DailyModuleBase
 
     public override void ConfigUI()
     {
+        ImGui.BeginDisabled(TaskManager.IsBusy);
         ImGui.AlignTextToFramePadding();
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoPlantGardens-Seed")}:");
 
@@ -129,6 +130,7 @@ public class AutoPlantGardens : DailyModuleBase
 
             ImGui.EndCombo();
         }
+        ImGui.EndDisabled();
     }
 
     private unsafe bool? FillContextMenu(string itemNameToSelect)
