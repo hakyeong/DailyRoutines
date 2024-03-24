@@ -46,6 +46,6 @@ public partial class AutoInDutySelectYes : DailyModuleBase
         base.Uninit();
     }
 
-    [GeneratedRegex("^要(?:(?!传送邀请|救助|无法战斗|即将返回|开始地点).)*吗？$")]
+    [GeneratedRegex("^要(?:(?!传送邀请|救助|无法战斗|即将返回|开始地点|小队).)*吗？$")]
     private static partial Regex SelectYesRegex();
 }
