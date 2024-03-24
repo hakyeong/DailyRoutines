@@ -167,6 +167,12 @@
   <data name="AutoConfirmDesynthesizeDialogTitle" xml:space="preserve">
     <value>自动确认道具分解</value>
   </data>
+  <data name="AutoConstantlyInspectDescription" xml:space="preserve">
+    <value>道具鉴定结果界面出现后, 自动点击继续鉴定按钮</value>
+  </data>
+  <data name="AutoConstantlyInspectTitle" xml:space="preserve">
+    <value>自动连续鉴定</value>
+  </data>
   <data name="AutoCTSDescription" xml:space="preserve">
     <value>交互游戏机后, 自动开始重复游玩强袭水晶塔</value>
   </data>
