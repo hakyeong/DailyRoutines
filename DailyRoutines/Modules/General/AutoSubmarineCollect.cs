@@ -120,11 +120,9 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
     // 航程结果 -> 再次出发
     private void OnExplorationResult(AddonEvent type, AddonArgs args)
     {
-        if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationResult", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationResult", out var addon))
         {
-            AddonManager.Callback(addon, true, 1);
-
+            AgentManager.SendEvent(AgentId.SubmersibleExplorationResult, 0, 1);
             if (TaskManager.IsBusy) addon->IsVisible = false;
         }
     }
@@ -133,6 +131,12 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
     {
         if (Service.Condition[ConditionFlag.OccupiedInCutSceneEvent] ||
             Service.Condition[ConditionFlag.WatchingCutscene78]) return false;
+
+        if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationResult", out var resultAddon))
+        {
+            resultAddon->FireCloseCallback();
+            resultAddon->Close(true);
+        }
 
         // 桶装青磷水不足
         if (InventoryManager.Instance()->GetInventoryItemCount(10155) < 10)
