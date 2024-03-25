@@ -29,7 +29,7 @@ public class AutoLogin : DailyModuleBase
         ConfigSelectedServer = GetConfig<string>(this, "SelectedServer");
         ConfigSelectedCharaIndex = GetConfig<int>(this, "SelectedCharaIndex");
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = true };
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = false };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "_TitleMenu", OnTitleMenu);
     }
 
