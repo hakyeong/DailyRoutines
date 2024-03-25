@@ -38,6 +38,7 @@ public class AutoLeveQuests : DailyModuleBase
 
         AddConfig(this, "OperationDelay", 0);
         ConfigOperationDelay = GetConfig<int>(this, "OperationDelay");
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", AlwaysYes);
     }
 
     public override void ConfigUI()
@@ -62,7 +63,7 @@ public class AutoLeveQuests : DailyModuleBase
         if (ImGui.BeginCombo("##SelectedLeve",
                              SelectedLeve == null
                                  ? ""
-                                 : $"{SelectedLeve.Value.LeveID} | {SelectedLeve.Value.LeveName}"))
+                                 : $"{SelectedLeve.Value.LeveID} | {SelectedLeve.Value.LeveName}", ImGuiComboFlags.HeightLarge))
         {
             if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-GetAreaLeveData"))) GetMapLeveQuests();
 
@@ -79,8 +80,12 @@ public class AutoLeveQuests : DailyModuleBase
                         !leveToSelect.Value.LeveName.Contains(SearchString, StringComparison.OrdinalIgnoreCase) &&
                         !leveToSelect.Key.ToString().Contains(SearchString, StringComparison.OrdinalIgnoreCase))
                         continue;
-                    if (ImGui.Selectable($"{leveToSelect.Key} | {leveToSelect.Value.LeveName}"))
+
+                    if (ImGui.Selectable($"{leveToSelect.Value.LeveName} ({leveToSelect.Key})"))
                         SelectedLeve = (leveToSelect.Key, leveToSelect.Value.LeveName, leveToSelect.Value.JobCategory);
+
+                    ImGui.Separator();
+
                     if (SelectedLeve != null && ImGui.IsWindowAppearing() &&
                         SelectedLeve.Value.LeveID == leveToSelect.Key)
                         ImGui.SetScrollHereY();
@@ -94,17 +99,13 @@ public class AutoLeveQuests : DailyModuleBase
         ImGui.BeginDisabled(SelectedLeve == null || LeveMeteDataId == LeveReceiverDataId || LeveMeteDataId == 0 ||
                             LeveReceiverDataId == 0);
         if (ImGui.Button(Service.Lang.GetText("Start")))
-        {
-            Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", AlwaysYes);
-
             TaskManager.Enqueue(InteractWithMete);
-        }
 
         ImGui.EndDisabled();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"))) EndProcessHandler();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
 
         ImGui.BeginDisabled(TaskManager.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-ObtainLevemeteID")))
@@ -126,20 +127,15 @@ public class AutoLeveQuests : DailyModuleBase
         ImGui.EndDisabled();
     }
 
-    private void EndProcessHandler()
-    {
-        TaskManager?.Abort();
-        Service.AddonLifecycle.UnregisterListener(AlwaysYes);
-    }
-
     private static void OnZoneChanged(ushort zone)
     {
         LeveQuests.Clear();
         SelectedLeve = null;
     }
 
-    private static void AlwaysYes(AddonEvent type, AddonArgs args)
+    private void AlwaysYes(AddonEvent type, AddonArgs args)
     {
+        if (!TaskManager.IsBusy) return;
         Click.SendClick("select_yes");
     }
 
@@ -155,8 +151,8 @@ public class AutoLeveQuests : DailyModuleBase
                                 .Where(x => !string.IsNullOrEmpty(x.Name.RawString) &&
                                             x.ClassJobCategory.RawRow.RowId is >= 9 and <= 16 or 19 &&
                                             x.PlaceNameIssued.RawRow.RowId == currentTerritoryPlaceNameId.Value)
-                                .ToDictionary(x => x.RowId, x => (x.Name.RawString, x.ClassJobCategory.RawRow.RowId));
-
+                                .ToDictionary(x => x.RowId, x => (string.Concat(Service.Data.GetExcelSheet<ClassJobCategory>().GetRow(x.ClassJobCategory.Row).Name.RawString, x.Name.RawString.AsSpan(x.Name.RawString.IndexOf('：'))), x.ClassJobCategory.Row));
+            // x.Name.RawString.Replace("制作委托", Service.Data.GetExcelSheet<ClassJobCategory>().GetRow(x.ClassJobCategory.Row).Name.RawString
             Service.Log.Debug($"成功获取了 {LeveQuests.Count} 个理符任务");
         }
     }
@@ -213,7 +209,8 @@ public class AutoLeveQuests : DailyModuleBase
         {
             if (HelpersOm.TryScanSelectStringText(addon, SelectedLeve.Value.JobCategory is 19 ? "采集" : "制作",
                                                   out var index))
-                Click.SendClick($"select_string{index + 1}");
+                if (!Click.TrySendClick($"select_string{index + 1}"))
+                    return false;
 
             TaskManager.Enqueue(ClickLeveQuest);
             return true;
@@ -226,7 +223,7 @@ public class AutoLeveQuests : DailyModuleBase
     {
         if (SelectedLeve == null) return false;
         Allowances = *(byte*)Service.SigScanner.GetStaticAddressFromSig(LeveAllowanceSig);
-        if (Allowances <= 0) EndProcessHandler();
+        if (Allowances <= 0) TaskManager.Abort();
 
         if (TryGetAddonByName<AtkUnitBase>("JournalDetail", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
@@ -245,8 +242,7 @@ public class AutoLeveQuests : DailyModuleBase
         if (TryGetAddonByName<AtkUnitBase>("GuildLeve", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(addon))
         {
-            var handler = new ClickGuildLeveDR();
-            handler.Exit();
+            addon->FireCloseCallback();
             addon->Close(true);
 
             TaskManager.Enqueue(ClickSelectStringExit);
@@ -258,15 +254,13 @@ public class AutoLeveQuests : DailyModuleBase
 
     private unsafe bool? ClickSelectStringExit()
     {
-        if (SelectedLeve == null) return false;
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             if (HelpersOm.TryScanSelectStringText(addon, "取消", out var index))
-                Click.SendClick($"select_string{index + 1}");
+                if (!Click.TrySendClick($"select_string{index + 1}"))
+                    return false;
 
-            addon->Close(true);
             TaskManager.Enqueue(InteractWithReceiver);
-
             return true;
         }
 
@@ -302,7 +296,8 @@ public class AutoLeveQuests : DailyModuleBase
         if (TryGetAddonByName<AtkUnitBase>("SelectIconString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             if (HelpersOm.TryScanSelectIconStringText(addon, SelectedLeve.Value.LeveName, out var index))
-                Click.SendClick($"select_icon_string{index + 1}");
+                if (!Click.TrySendClick($"select_icon_string{index + 1}"))
+                    return false;
 
             TaskManager.Enqueue(InteractWithMete);
             return true;
@@ -314,7 +309,7 @@ public class AutoLeveQuests : DailyModuleBase
     public override void Uninit()
     {
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
-        EndProcessHandler();
+        Service.AddonLifecycle.UnregisterListener(AlwaysYes);
 
         base.Uninit();
     }
