@@ -178,6 +178,12 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
         {
             foreach (var status in statusTuple.StatusID)
             {
+                // 防止提拉纳被禁用
+                if (status == 1822)
+                {
+                    if (statusManager->HasStatus(2698))
+                        return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
+                }
                 var statusIndex = statusManager->GetStatusIndex(status);
                 if (statusIndex != -1 && statusManager->StatusSpan[statusIndex].RemainingTime > 1.5)
                     return false;
