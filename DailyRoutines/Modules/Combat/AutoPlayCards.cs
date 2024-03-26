@@ -49,27 +49,31 @@ public unsafe class AutoPlayCards : DailyModuleBase
         if (actionType != 1 || actionID != 17055)
             return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
 
+        var localPlayer = Service.ClientState.LocalPlayer;
+
         bool isMeleeCardDrawn = MeleeCardStatuses.Any(
-                 x => Service.ClientState.LocalPlayer.BattleChara()->GetStatusManager->HasStatus(x)),
+                 x => localPlayer.BattleChara()->GetStatusManager->HasStatus(x)),
              isRangeCardDrawn = RangeCardStatuses.Any(
-                 x => Service.ClientState.LocalPlayer.BattleChara()->GetStatusManager->HasStatus(x));
+                 x => localPlayer.BattleChara()->GetStatusManager->HasStatus(x));
         if (!isMeleeCardDrawn && !isRangeCardDrawn)
             return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
 
         var member = Service.PartyList
-                            .Where(x => x.GameObject.IsTargetable && !x.GameObject.IsDead)
+                            .Where(x => x.GameObject != null && x.GameObject.IsValid() && 
+                                        x.GameObject.IsTargetable && !x.GameObject.IsDead)
                             .Select(x => new
                             {
-                                x,
+                                Member = x,
                                 Distance = HelpersOm.GetGameDistanceFromObject(
-                                    (GameObject*)Service.ClientState.LocalPlayer.Address,
+                                    (GameObject*)localPlayer.Address,
                                     (GameObject*)x.GameObject.Address)
                             })
-                            .Where(x => !x.x.Statuses.Any(s => CardStatuses.Contains(s.StatusId)) && x.Distance <= 30)
-                            .OrderByDescending(x => x.x.ClassJob.GameData.Role is 2 or 3 ? 1 : 0)
-                            .ThenByDescending(x => x.x.ClassJob.GameData.Role is 1 or 2 ? isMeleeCardDrawn ? 1 : 0 :
+                            .Where(x => !x.Member.Statuses.Any(s => CardStatuses.Contains(s.StatusId))
+                                        && x.Distance <= 30)
+                            .OrderByDescending(x => x.Member.ClassJob.GameData.Role is 2 or 3 ? 1 : 0)
+                            .ThenByDescending(x => x.Member.ClassJob.GameData.Role is 1 or 2 ? isMeleeCardDrawn ? 1 : 0 :
                                                    isMeleeCardDrawn ? 0 : 1)
-                            .Select(x => x.x)
+                            .Select(x => x.Member)
                             .FirstOrDefault();
         if (member == null)
             return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
