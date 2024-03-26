@@ -78,7 +78,9 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
         { 7523, ([148], DetectType.Target) },
         { 18317, ([148], DetectType.Target) },
         // 必灭之炎
-        { 34579, ([3643], DetectType.Target)}
+        { 34579, ([3643], DetectType.Target)},
+        // 魔法吐息
+        { 34567, ([3712], DetectType.Target)},
     };
 
     private static Dictionary<uint, bool> ConfigEnabledActions = [];
@@ -185,7 +187,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
                         return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
                 }
                 var statusIndex = statusManager->GetStatusIndex(status);
-                if (statusIndex != -1 && statusManager->StatusSpan[statusIndex].RemainingTime > 1.5)
+                if (statusIndex != -1 && statusManager->StatusSpan[statusIndex].RemainingTime > 3)
                     return false;
             }
         }
