@@ -22,11 +22,10 @@ namespace DailyRoutines.Modules;
 public class AutoLeveQuests : DailyModuleBase
 {
     private const string LeveAllowanceSig = "88 05 ?? ?? ?? ?? 0F B7 41 06";
-    private static Dictionary<uint, (string LeveName, uint JobCategory)> LeveQuests = [];
-    internal static (uint LeveID, string LeveName, uint JobCategory)? SelectedLeve;
+    private static Dictionary<uint, Leve> LeveQuests = [];
+    internal static Leve? SelectedLeve;
     private static uint LeveMeteDataId;
     private static uint LeveReceiverDataId;
-    private static int Allowances;
     private static string SearchString = string.Empty;
 
     private static int ConfigOperationDelay;
@@ -61,9 +60,8 @@ public class AutoLeveQuests : DailyModuleBase
         ImGui.SameLine();
         ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
         if (ImGui.BeginCombo("##SelectedLeve",
-                             SelectedLeve == null
-                                 ? ""
-                                 : $"{SelectedLeve.Value.LeveID} | {SelectedLeve.Value.LeveName}", ImGuiComboFlags.HeightLarge))
+                             SelectedLeve == null ? 
+                                 "" : $"{SelectedLeve.Name.RawString}", ImGuiComboFlags.HeightLarge))
         {
             if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-GetAreaLeveData"))) GetMapLeveQuests();
 
@@ -74,21 +72,17 @@ public class AutoLeveQuests : DailyModuleBase
             ImGui.Separator();
             if (LeveQuests.Any())
             {
-                foreach (var leveToSelect in LeveQuests)
+                foreach (var leve in LeveQuests)
                 {
                     if (!string.IsNullOrEmpty(SearchString) &&
-                        !leveToSelect.Value.LeveName.Contains(SearchString, StringComparison.OrdinalIgnoreCase) &&
-                        !leveToSelect.Key.ToString().Contains(SearchString, StringComparison.OrdinalIgnoreCase))
+                        !leve.Value.Name.RawString.Contains(SearchString, StringComparison.OrdinalIgnoreCase) &&
+                        !leve.Value.ClassJobCategory.Value.Name.RawString.Contains(SearchString, StringComparison.OrdinalIgnoreCase))
                         continue;
 
-                    if (ImGui.Selectable($"{leveToSelect.Value.LeveName} ({leveToSelect.Key})"))
-                        SelectedLeve = (leveToSelect.Key, leveToSelect.Value.LeveName, leveToSelect.Value.JobCategory);
+                    if (ImGui.Selectable($"{leve.Value.ClassJobCategory.Value.Name.RawString}{leve.Value.Name.RawString[leve.Value.Name.RawString.IndexOf('：')..]}"))
+                        SelectedLeve = leve.Value;
 
                     ImGui.Separator();
-
-                    if (SelectedLeve != null && ImGui.IsWindowAppearing() &&
-                        SelectedLeve.Value.LeveID == leveToSelect.Key)
-                        ImGui.SetScrollHereY();
                 }
             }
 
@@ -99,13 +93,14 @@ public class AutoLeveQuests : DailyModuleBase
         ImGui.BeginDisabled(SelectedLeve == null || LeveMeteDataId == LeveReceiverDataId || LeveMeteDataId == 0 ||
                             LeveReceiverDataId == 0);
         if (ImGui.Button(Service.Lang.GetText("Start")))
-            TaskManager.Enqueue(InteractWithMete);
+            EnqueueARound();
 
         ImGui.EndDisabled();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
+        if (ImGui.Button(Service.Lang.GetText("Stop")))
+            TaskManager.Abort();
 
         ImGui.BeginDisabled(TaskManager.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-ObtainLevemeteID")))
@@ -139,31 +134,32 @@ public class AutoLeveQuests : DailyModuleBase
         Click.SendClick("select_yes");
     }
 
-    private static void GetMapLeveQuests()
+    public unsafe void EnqueueARound()
     {
-        var currentTerritoryPlaceNameId = Service.Data.GetExcelSheet<TerritoryType>()
-                                                 .FirstOrDefault(y => y.RowId == Service.ClientState.TerritoryType)?
-                                                 .PlaceName.RawRow.RowId;
-
-        if (currentTerritoryPlaceNameId.HasValue)
+        var allowances = *(byte*)Service.SigScanner.GetStaticAddressFromSig(LeveAllowanceSig);
+        if (SelectedLeve == null || allowances <= 0)
         {
-            LeveQuests = Service.Data.GetExcelSheet<Leve>()
-                                .Where(x => !string.IsNullOrEmpty(x.Name.RawString) &&
-                                            x.ClassJobCategory.RawRow.RowId is >= 9 and <= 16 or 19 &&
-                                            x.PlaceNameIssued.RawRow.RowId == currentTerritoryPlaceNameId.Value)
-                                .ToDictionary(x => x.RowId, x => (string.Concat(Service.Data.GetExcelSheet<ClassJobCategory>().GetRow(x.ClassJobCategory.Row).Name.RawString, x.Name.RawString.AsSpan(x.Name.RawString.IndexOf('：'))), x.ClassJobCategory.Row));
-            // x.Name.RawString.Replace("制作委托", Service.Data.GetExcelSheet<ClassJobCategory>().GetRow(x.ClassJobCategory.Row).Name.RawString
-            Service.Log.Debug($"成功获取了 {LeveQuests.Count} 个理符任务");
+            TaskManager.Abort();
+            return;
         }
+
+        // 与理符发行人交互
+        TaskManager.Enqueue(InteractWithMete);
+        // 点击对应理符类别
+        if (ConfigOperationDelay > 0) TaskManager.DelayNext(ConfigOperationDelay);
+        TaskManager.Enqueue(ClickLeveGenre);
+        // 接取对应理符任务
+        TaskManager.Enqueue(AcceptLeveQuest);
+        // 退出理符任务界面
+        TaskManager.Enqueue(ExitLeveInterface);
+        // 与理符委托人交互
+        if (ConfigOperationDelay > 0) TaskManager.DelayNext(ConfigOperationDelay);
+        TaskManager.Enqueue(InteractWithReceiver);
+        // 检查是否有多个理符待提交
+        TaskManager.Enqueue(CheckIfMultipleLevesToSubmit);
     }
 
-    private static uint GetCurrentTargetDataID()
-    {
-        var currentTarget = Service.Target.Target;
-        return currentTarget == null ? 0 : currentTarget.DataId;
-    }
-
-    private unsafe bool? InteractWithMete()
+    private static unsafe bool? InteractWithMete()
     {
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
@@ -179,12 +175,103 @@ public class AutoLeveQuests : DailyModuleBase
         {
             TargetSystem.Instance()->Target = foundObject;
             TargetSystem.Instance()->InteractWithObject(foundObject);
-            if (ConfigOperationDelay > 0) TaskManager.DelayNext(ConfigOperationDelay);
-            TaskManager.Enqueue(ClickCraftingLeve);
             return true;
         }
 
         return false;
+    }
+
+    private static unsafe bool? ClickLeveGenre()
+    {
+        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        {
+            if (HelpersOm.TryScanSelectStringText(addon, SelectedLeve.ClassJobCategory.Row is 19 ? "采集" : "制作",
+                                                  out var index))
+                if (!Click.TrySendClick($"select_string{index + 1}"))
+                    return false;
+            
+            return true;
+        }
+
+        return false;
+    }
+
+    private static unsafe bool? AcceptLeveQuest()
+    {
+        if (TryGetAddonByName<AtkUnitBase>("JournalDetail", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        {
+            var handler = new ClickJournalDetailDR();
+            handler.Accept((int)SelectedLeve.RowId);
+
+            return QuestManager.Instance()->GetLeveQuestById((ushort)SelectedLeve.RowId) != null;
+        }
+
+        return false;
+    }
+
+    private static unsafe bool? ExitLeveInterface()
+    {
+        if (TryGetAddonByName<AtkUnitBase>("GuildLeve", out var addon) &&
+            HelpersOm.IsAddonAndNodesReady(addon))
+        {
+            addon->FireCloseCallback();
+            addon->Close(true);
+
+            return false;
+        }
+
+        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var selectStringAddon) && 
+            HelpersOm.IsAddonAndNodesReady(selectStringAddon))
+        {
+            if (HelpersOm.TryScanSelectStringText(selectStringAddon, "取消", out var index))
+                if (!Click.TrySendClick($"select_string{index + 1}"))
+                    return false;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private static unsafe bool? InteractWithReceiver()
+    {
+        if (IsOccupied()) return false;
+        if (FindObjectToInteractWith(LeveReceiverDataId, out var foundObject))
+        {
+            TargetSystem.Instance()->Target = foundObject;
+            TargetSystem.Instance()->InteractWithObject(foundObject);
+            return true;
+        }
+
+        return false;
+    }
+
+    private unsafe bool? CheckIfMultipleLevesToSubmit()
+    {
+        var levesSpan = QuestManager.Instance()->LeveQuestsSpan;
+        var qualifiedCount = 0;
+
+        foreach (var leve in levesSpan)
+            if (LeveQuests.ContainsKey(leve.LeveId)) // 判断是否为当前地图的理符
+                qualifiedCount++;
+
+        if (qualifiedCount > 1)
+        {
+            if (TryGetAddonByName<AtkUnitBase>("SelectIconString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+            {
+                if (HelpersOm.TryScanSelectIconStringText(addon, SelectedLeve.Name.RawString, out var index))
+                    if (!Click.TrySendClick($"select_icon_string{index + 1}"))
+                        return false;
+
+                EnqueueARound();
+                return true;
+            }
+
+            return false;
+        }
+
+        EnqueueARound();
+        return true;
     }
 
     private static unsafe bool FindObjectToInteractWith(uint dataId, out GameObject* foundObject)
@@ -202,109 +289,29 @@ public class AutoLeveQuests : DailyModuleBase
         return false;
     }
 
-    private unsafe bool? ClickCraftingLeve()
+    private static void GetMapLeveQuests()
     {
-        if (SelectedLeve == null) return false;
-        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        var currentTerritoryPlaceNameId = Service.Data.GetExcelSheet<TerritoryType>()
+                                                 .GetRow(Service.ClientState.TerritoryType)?
+                                                 .PlaceName.Row;
+
+        if (currentTerritoryPlaceNameId != null)
         {
-            if (HelpersOm.TryScanSelectStringText(addon, SelectedLeve.Value.JobCategory is 19 ? "采集" : "制作",
-                                                  out var index))
-                if (!Click.TrySendClick($"select_string{index + 1}"))
-                    return false;
-
-            TaskManager.Enqueue(ClickLeveQuest);
-            return true;
+            LeveQuests = Service.Data.GetExcelSheet<Leve>()
+                                .Where(x => !string.IsNullOrEmpty(x.Name.RawString) &&
+                                            x.ClassJobCategory.Row is >= 9 and <= 16 or 19 &&
+                                            x.PlaceNameIssued.Row == currentTerritoryPlaceNameId)
+                                .ToDictionary(x => x.RowId, x => x);
+            Service.Log.Debug($"成功获取了 {LeveQuests.Count} 个理符任务");
         }
-
-        return false;
     }
 
-    private unsafe bool? ClickLeveQuest()
+    private static uint GetCurrentTargetDataID()
     {
-        if (SelectedLeve == null) return false;
-        Allowances = *(byte*)Service.SigScanner.GetStaticAddressFromSig(LeveAllowanceSig);
-        if (Allowances <= 0) TaskManager.Abort();
-
-        if (TryGetAddonByName<AtkUnitBase>("JournalDetail", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
-        {
-            var handler = new ClickJournalDetailDR();
-            handler.Accept((int)SelectedLeve.Value.LeveID);
-
-            TaskManager.Enqueue(ClickExit);
-            return true;
-        }
-
-        return false;
+        var currentTarget = Service.Target.Target;
+        return currentTarget == null ? 0 : currentTarget.DataId;
     }
 
-    private unsafe bool? ClickExit()
-    {
-        if (TryGetAddonByName<AtkUnitBase>("GuildLeve", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(addon))
-        {
-            addon->FireCloseCallback();
-            addon->Close(true);
-
-            TaskManager.Enqueue(ClickSelectStringExit);
-            return true;
-        }
-
-        return false;
-    }
-
-    private unsafe bool? ClickSelectStringExit()
-    {
-        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
-        {
-            if (HelpersOm.TryScanSelectStringText(addon, "取消", out var index))
-                if (!Click.TrySendClick($"select_string{index + 1}"))
-                    return false;
-
-            TaskManager.Enqueue(InteractWithReceiver);
-            return true;
-        }
-
-        return false;
-    }
-
-    private unsafe bool? InteractWithReceiver()
-    {
-        if (IsOccupied()) return false;
-        if (FindObjectToInteractWith(LeveReceiverDataId, out var foundObject))
-        {
-            TargetSystem.Instance()->Target = foundObject;
-            TargetSystem.Instance()->InteractWithObject(foundObject);
-
-            var levesSpan = QuestManager.Instance()->LeveQuestsSpan;
-            var qualifiedCount = 0;
-
-            for (var i = 0; i < levesSpan.Length; i++)
-                if (LeveQuests.ContainsKey(levesSpan[i].LeveId)) // 判断是否为当前地图的理符
-                    qualifiedCount++;
-
-            if (ConfigOperationDelay > 0) TaskManager.DelayNext(ConfigOperationDelay);
-            TaskManager.Enqueue(qualifiedCount > 1 ? ClickSelectQuest : InteractWithMete);
-            return true;
-        }
-
-        return false;
-    }
-
-    private unsafe bool? ClickSelectQuest()
-    {
-        if (SelectedLeve == null) return false;
-        if (TryGetAddonByName<AtkUnitBase>("SelectIconString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
-        {
-            if (HelpersOm.TryScanSelectIconStringText(addon, SelectedLeve.Value.LeveName, out var index))
-                if (!Click.TrySendClick($"select_icon_string{index + 1}"))
-                    return false;
-
-            TaskManager.Enqueue(InteractWithMete);
-            return true;
-        }
-
-        return false;
-    }
 
     public override void Uninit()
     {
