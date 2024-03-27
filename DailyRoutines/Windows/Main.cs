@@ -358,7 +358,7 @@ public class Main : Window, IDisposable
             if (ImGui.CollapsingHeader($"{Service.Lang.GetText("Changelog", LatestPublishTime)}:"))
             {
                 ImGui.Indent();
-                ImGui.TextWrapped($"{LatestChangelog}");
+                ImGui.TextWrapped(LatestChangelog);
                 ImGui.Unindent();
             }
 
@@ -400,7 +400,7 @@ public class Main : Window, IDisposable
         var totalDownloads = 0;
         foreach (var asset in latestRelease.assets) totalDownloads += asset.download_count * 2;
 
-        return (latestRelease.tag_name, totalDownloads, latestRelease.body.Replace("- ", "· "),
+        return (latestRelease.tag_name, totalDownloads, latestRelease.body,
                    latestRelease.published_at.ToShortDateString());
     }
 
