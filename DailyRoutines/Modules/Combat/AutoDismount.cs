@@ -99,8 +99,6 @@ public unsafe class AutoDismount : DailyModuleBase
                 var localPlayer = (GameObject*)Service.ClientState.LocalPlayer.Address;
                 // 562 - 看不到目标; 566 - 目标在射程外
                 if (ActionManager.GetActionInRangeOrLoS(actionId, localPlayer, actionObject) is 562 or 566) return false;
-                // 目标在范围外
-                if (!HelpersOm.CanUseActionOnObject(localPlayer, actionObject, actionRange)) return false;
 
                 // 无法对目标使用技能
                 if (!ActionManager.CanUseActionOnTarget(actionId, actionObject)) return false;
