@@ -24,8 +24,6 @@ public class AutoLogin : DailyModuleBase
 
     private static bool HasLoginOnce;
 
-    // private static string ConfigSelectedServer = string.Empty;
-
     private static string WorldInput = string.Empty;
     private static SavedWorld? ConfigSelectedWorld;
     private static int ConfigSelectedCharaIndex = -1;
@@ -36,7 +34,7 @@ public class AutoLogin : DailyModuleBase
         AddConfig(this, "SelectedCharaIndex", 0);
 
         ConfigSelectedWorld = GetConfig<SavedWorld?>(this, "SelectedWorld");
-        WorldInput = ConfigSelectedWorld?.Name;
+        WorldInput = ConfigSelectedWorld == null ? string.Empty : ConfigSelectedWorld.Name;
         ConfigSelectedCharaIndex = GetConfig<int>(this, "SelectedCharaIndex");
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = false };
