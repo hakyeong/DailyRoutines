@@ -274,6 +274,18 @@
   <data name="AutoLogin-CharaIndexInputTooltip" xml:space="preserve">
     <value>各服务器下, 第一名角色的索引为 0, 第二名为 1, 以此类推</value>
   </data>
+  <data name="AutoLogin-CurrentWorld" xml:space="preserve">
+    <value>当前服务器</value>
+  </data>
+  <data name="AutoLogin-HaveNotLogin" xml:space="preserve">
+    <value>未登录过</value>
+  </data>
+  <data name="AutoLogin-LoginOnce" xml:space="preserve">
+    <value>已登录过</value>
+  </data>
+  <data name="AutoLogin-LoginState" xml:space="preserve">
+    <value>登录状态</value>
+  </data>
   <data name="AutoLogin-ServerName" xml:space="preserve">
     <value>服务器名</value>
   </data>

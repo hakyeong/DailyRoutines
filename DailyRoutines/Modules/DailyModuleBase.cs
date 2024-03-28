@@ -72,7 +72,7 @@ public abstract class DailyModuleBase
         }
     }
 
-    protected static bool AddConfig(DailyModuleBase moduleBase, string key, object config)
+    protected static bool AddConfig(DailyModuleBase moduleBase, string key, object? config)
     {
         try
         {
@@ -106,7 +106,7 @@ public abstract class DailyModuleBase
         }
     }
 
-    protected static bool UpdateConfig(DailyModuleBase moduleBase, string key, object newConfig)
+    protected static bool UpdateConfig(DailyModuleBase moduleBase, string key, object? newConfig)
     {
         try
         {
@@ -120,7 +120,7 @@ public abstract class DailyModuleBase
             }
 
             var existingJson = File.ReadAllText(configFile);
-            var existingConfig = JsonConvert.DeserializeObject<Dictionary<string, object>>(existingJson);
+            var existingConfig = JsonConvert.DeserializeObject<Dictionary<string, object?>>(existingJson);
 
             if (!existingConfig.ContainsKey(key))
             {
