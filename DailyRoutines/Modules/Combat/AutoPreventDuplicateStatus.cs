@@ -187,7 +187,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
                         return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
                 }
                 var statusIndex = statusManager->GetStatusIndex(status);
-                if (statusIndex != -1 && statusManager->StatusSpan[statusIndex].RemainingTime > 3)
+                if (statusIndex != -1 && statusManager->StatusSpan[statusIndex].RemainingTime > 3.5)
                     return false;
             }
         }
