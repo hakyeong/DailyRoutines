@@ -76,12 +76,14 @@ public unsafe class AutoDismount : DailyModuleBase
         // 使用的技能是坐骑
         if ((ActionType)actionType == ActionType.Mount) return false;
 
+        var actionManager = ActionManager.Instance();
+
         // 0 - 该技能无须下坐骑
-        if (ActionManager.Instance()->GetActionStatus((ActionType)actionType, actionId, actionTarget, false,
-                                                      false) == 0) return false;
+        if (actionManager->GetActionStatus((ActionType)actionType, actionId, actionTarget, false,
+                                           false) == 0) return false;
 
         // 技能当前不可用
-        if (!ActionManager.Instance()->IsActionOffCooldown((ActionType)actionType, actionId)) return false;
+        if (!actionManager->IsActionOffCooldown((ActionType)actionType, actionId)) return false;
 
         // 可以自身或地面为目标的技能
         if (TargetSelfOrAreaActions.Contains(actionId)) return true;

@@ -10,7 +10,6 @@ using ECommons.ExcelServices;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 

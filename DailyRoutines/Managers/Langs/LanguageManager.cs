@@ -73,10 +73,7 @@ public partial class LanguageManager
         return string.Format(format, args);
     }
 
-    public string GetOrigText(string key)
-    {
-        return resourceData.TryGetValue(key, out var resValue) ? resValue : string.Empty;
-    }
+    public string GetOriginalText(string key) => resourceData.TryGetValue(key, out var value) ? value : string.Empty;
 
     public SeString GetSeString(string key, params object[] args)
     {
