@@ -55,10 +55,10 @@ public class Main : Window, IDisposable
     private static readonly HttpClient client = new();
     private static int TotalDownloadCounts;
     private static int LatestDownloadCounts;
-    private static string? CurrentVersion;
-    private static string? LatestVersion;
-    private static string? LatestChangelog;
-    private static string? LatestPublishTime;
+    private static string CurrentVersion = string.Empty;
+    private static string LatestVersion = string.Empty;
+    private static string LatestChangelog = string.Empty;
+    private static string LatestPublishTime = string.Empty;
 
     public Main(Plugin plugin) : base("Daily Routines - Main")
     {
