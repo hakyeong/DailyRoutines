@@ -1,6 +1,5 @@
 using System;
 using System.Numerics;
-using ClickLib.Clicks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
@@ -8,6 +7,7 @@ using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
 using ECommons.Automation;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -55,21 +55,24 @@ public class AutoSellCardsConfirm : DailyModuleBase
 
         if (args.AddonName == "ShopCardDialog")
         {
-            var handler = new ClickShopCardDialog();
-            handler.Sell();
-        }
-        else
-        {
-            switch (type)
+            if (!TaskManager.IsBusy)
             {
-                case AddonEvent.PostSetup:
-                    Overlay.IsOpen = true;
-                    break;
-                case AddonEvent.PreFinalize:
-                    Overlay.IsOpen = false;
-                    TaskManager?.Abort();
-                    break;
+                AgentManager.SendEvent(AgentId.TripleTriadCoinExchange, 1, 0, 1);
+                addon->FireCloseCallback();
+                addon->Close(true);
             }
+            return;
+        }
+
+        switch (type)
+        {
+            case AddonEvent.PostSetup:
+                Overlay.IsOpen = true;
+                break;
+            case AddonEvent.PreFinalize:
+                Overlay.IsOpen = false;
+                TaskManager?.Abort();
+                break;
         }
     }
 
@@ -94,8 +97,20 @@ public class AutoSellCardsConfirm : DailyModuleBase
             }
 
             TaskManager.Enqueue(() => AddonManager.Callback(addon, true, 0, 0, 0));
-            addon->OnRefresh(addon->AtkValuesCount, addon->AtkValues);
-            TaskManager.DelayNext(150);
+            TaskManager.Enqueue(() =>
+            {
+                if (TryGetAddonByName<AtkUnitBase>("ShopCardDialog", out var addon) &&
+                    HelpersOm.IsAddonAndNodesReady(addon))
+                {
+                    AgentManager.SendEvent(AgentId.TripleTriadCoinExchange, 1, 0, 1);
+                    addon->FireCloseCallback();
+                    addon->Close(true);
+                    return true;
+                }
+
+                return false;
+            });
+            TaskManager.DelayNext(100);
             TaskManager.Enqueue(StartHandOver);
 
             return true;
