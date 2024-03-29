@@ -19,3 +19,7 @@ https://github.com/AtmoOmen/DalamudPlugins
 ## 界面预览
 
 ![UI1](https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/UI-1.png)
+
+## 国内反馈渠道:
+
+- QQ群: [951926472](https://qm.qq.com/q/opOtwlpqkU)
