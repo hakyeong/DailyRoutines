@@ -312,9 +312,20 @@ public class Main : Window, IDisposable
             ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Contact")}:");
 
             ImGui.SameLine();
+            ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.DalamudGrey3);
             if (ImGui.Button("GitHub")) Util.OpenLink("https://github.com/AtmoOmen/DailyRoutines");
+            ImGui.PopStyleColor();
+            
             ImGui.SameLine();
+            ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedPink);
             if (ImGui.Button("bilibili")) Util.OpenLink("https://www.bilibili.com/read/cv31823881/");
+            ImGui.PopStyleColor();
+
+            ImGui.SameLine();
+            ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.TankBlue);
+            if (ImGui.Button("QQ 群")) Util.OpenLink("https://qm.qq.com/q/QlImB8pn2");
+            ImGui.PopStyleColor();
+            ImGuiOm.TooltipHover("951926472");
 
             ImGui.Separator();
 
