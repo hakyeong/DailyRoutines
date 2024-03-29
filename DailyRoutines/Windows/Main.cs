@@ -22,6 +22,7 @@ namespace DailyRoutines.Windows;
 
 public class Main : Window, IDisposable
 {
+    #region Info
     public class ModuleInfo
     {
         public Type Module { get; set; } = null!;
@@ -46,6 +47,15 @@ public class Main : Window, IDisposable
         public int download_count { get; set; }
     }
 
+    public class VersionInfo
+    {
+        public Version Version { get; set; } = new();
+        public DateTime PublishTime { get; set; } = DateTime.MinValue;
+        public string Changelog { get; set; } = string.Empty;
+        public int DownloadCount { get; set; }
+    }
+    #endregion
+
     private static readonly List<ModuleInfo> Modules = [];
     private static readonly Dictionary<ModuleCategories, List<ModuleInfo>> categorizedModules = new();
 
@@ -54,11 +64,8 @@ public class Main : Window, IDisposable
 
     private static readonly HttpClient client = new();
     private static int TotalDownloadCounts;
-    private static int LatestDownloadCounts;
-    private static string CurrentVersion = string.Empty;
-    private static string LatestVersion = string.Empty;
-    private static string LatestChangelog = string.Empty;
-    private static string LatestPublishTime = string.Empty;
+    private static Version CurrentVersion = new();
+    private static VersionInfo LatestVersionInfo = new();
 
     public Main(Plugin plugin) : base("Daily Routines - Main")
     {
@@ -84,15 +91,10 @@ public class Main : Window, IDisposable
         Task.Run(async () =>
         {
             TotalDownloadCounts = await GetTotalDownloadsAsync();
-            var latestVersion = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
-
-            LatestVersion = latestVersion.version;
-            LatestDownloadCounts = latestVersion.downloadCount;
-            LatestChangelog = latestVersion.description;
-            LatestPublishTime = latestVersion.publishTime;
+            LatestVersionInfo = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
         });
 
-        GetCurrentVersion();
+        CurrentVersion = GetCurrentVersion();
     }
 
     public override void Draw()
@@ -119,8 +121,8 @@ public class Main : Window, IDisposable
 
     private static void DrawTabItemModules(ModuleCategories category)
     {
-        if (!categorizedModules.ContainsKey(category)) return;
-        var modulesInCategory = categorizedModules[category].ToArray();
+        if (!categorizedModules.TryGetValue(category, out var modules)) return;
+        var modulesInCategory = modules.ToArray();
 
         if (ImGui.BeginTabItem(Service.Lang.GetText(category.ToString())))
         {
@@ -324,12 +326,7 @@ public class Main : Window, IDisposable
                 Task.Run(async () =>
                 {
                     TotalDownloadCounts = await GetTotalDownloadsAsync();
-                    var latestVersion = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
-
-                    LatestVersion = latestVersion.version;
-                    LatestDownloadCounts = latestVersion.downloadCount;
-                    LatestChangelog = latestVersion.description;
-                    LatestPublishTime = latestVersion.publishTime;
+                    LatestVersionInfo = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
                 });
             }
 
@@ -342,7 +339,7 @@ public class Main : Window, IDisposable
             ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestDL")}:");
 
             ImGui.SameLine();
-            ImGui.Text($"{LatestDownloadCounts}");
+            ImGui.Text($"{LatestVersionInfo.DownloadCount}");
 
             ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("CurrentVersion")}:");
 
@@ -353,12 +350,12 @@ public class Main : Window, IDisposable
             ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestVersion")}:");
 
             ImGui.SameLine();
-            ImGui.Text($"{LatestVersion}");
+            ImGui.Text($"{LatestVersionInfo.Version}");
 
-            if (ImGui.CollapsingHeader($"{Service.Lang.GetText("Changelog", LatestPublishTime)}:"))
+            if (ImGui.CollapsingHeader($"{Service.Lang.GetText("Changelog", LatestVersionInfo.PublishTime.ToShortDateString())}:"))
             {
                 ImGui.Indent();
-                ImGui.TextWrapped(LatestChangelog);
+                ImGui.TextWrapped(LatestVersionInfo.Changelog);
                 ImGui.Unindent();
             }
 
@@ -389,8 +386,7 @@ public class Main : Window, IDisposable
     }
 
     // version - download count - description
-    private static async Task<(string version, int downloadCount, string description, string publishTime)>
-        GetLatestVersionAsync(string userName, string repoName)
+    private static async Task<VersionInfo> GetLatestVersionAsync(string userName, string repoName)
     {
         var url = $"https://api.github.com/repos/{userName}/{repoName}/releases/latest";
         client.DefaultRequestHeaders.UserAgent.TryParseAdd("request");
@@ -398,16 +394,18 @@ public class Main : Window, IDisposable
         var latestRelease = JsonConvert.DeserializeObject<Release>(response);
 
         var totalDownloads = 0;
+        var version = new VersionInfo();
         foreach (var asset in latestRelease.assets) totalDownloads += asset.download_count * 2;
 
-        return (latestRelease.tag_name, totalDownloads, latestRelease.body,
-                   latestRelease.published_at.ToShortDateString());
+        version.Version = new Version(latestRelease.tag_name);
+        version.PublishTime = latestRelease.published_at;
+        version.Changelog = latestRelease.body;
+        version.DownloadCount = totalDownloads;
+
+        return version;
     }
 
-    private static void GetCurrentVersion()
-    {
-        CurrentVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-    }
+    private static Version GetCurrentVersion() => Assembly.GetExecutingAssembly().GetName().Version;
 
     public void Dispose()
     {
