@@ -44,30 +44,38 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
 
     private static readonly Dictionary<uint, DuplicateActionInfo> DuplicateActions = new()
     {
-        // 雪仇
-        { 7535, new(7535, DetectType.Target, [1193], []) },
+        // 牵制
+        { 7549, new(7549, DetectType.Target, [1195], []) },
         // 昏乱
         { 7560, new(7560, DetectType.Target, [1203], []) },
         // 抗死
         { 25857, new(25857, DetectType.Self, [2707], []) },
-        // 牵制
-        { 7549, new(7549, DetectType.Target, [1195], []) },
         // 武装解除
         { 2887, new(2887, DetectType.Target, [860], []) },
-        // 策动，行吟，防守之桑巴
+        // 策动，防守之桑巴, 行吟
         { 16889, new(16889, DetectType.Self, [1951, 1934, 1826], []) },
-        { 7405, new(7405, DetectType.Self, [1951, 1934, 1826], []) },
         { 16012, new(16012, DetectType.Self, [1951, 1934, 1826], []) },
+        { 7405, new(7405, DetectType.Self, [1951, 1934, 1826], []) },
+        // 大地神的抒情恋歌
+        { 7408, new(7408, DetectType.Self, [1202], []) },
+        // 雪仇
+        { 7535, new(7535, DetectType.Target, [1193], []) },
         // 摆脱
         { 7388, new(7388, DetectType.Self, [1457], []) },
         // 圣光幕帘
         { 3540, new(3540, DetectType.Self, [1362], []) },
-        // 擢升
-        { 25873, new(25873, DetectType.Target, [2717], []) },
+        // 干预
+        { 7382, new(7382, DetectType.Target, [1174], []) },
+        // 献奉
+        { 25754, new(25754, DetectType.Target, [2682], []) },
+        // 至黑之夜
+        { 7393, new(7393, DetectType.Target, [1178], []) },
+        // 刚玉之心
+        { 25758, new(25758, DetectType.Target, [2683], []) },
         // 极光
         { 16151, new(16151, DetectType.Target, [1835], []) },
-        // 大地神的抒情恋歌
-        { 7408, new(7408, DetectType.Self, [1202], []) },
+        // 擢升
+        { 25873, new(25873, DetectType.Target, [2717], []) },
         // 扫腿，下踢，盾牌猛击
         { 7863, new(7863, DetectType.Target, [2], []) },
         { 7540, new(7540, DetectType.Target, [2], []) },
