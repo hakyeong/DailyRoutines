@@ -1,3 +1,5 @@
+using System;
+using System.Runtime.InteropServices;
 using System.Timers;
 using System.Windows.Forms;
 using DailyRoutines.Infos;
@@ -12,6 +14,17 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoAntiAfkTitle", "AutoAntiAfkDescription", ModuleCategories.Base)]
 public class AutoAntiAfk : DailyModuleBase
 {
+    [StructLayout(LayoutKind.Sequential)]
+    private struct LastInputInfo
+    {
+        public uint Size;
+        public uint LastInputTickCount;
+    }
+
+    [DllImport("User32.dll")]
+    private static extern bool GetLastInputInfo(ref LastInputInfo info);
+
+
     private static Timer? AfkTimer;
 
     public override void Init()
@@ -24,7 +37,8 @@ public class AutoAntiAfk : DailyModuleBase
 
     private static unsafe void OnAfkStateCheck(object? sender, ElapsedEventArgs e)
     {
-        if (Framework.Instance()->WindowInactive)
+        var idleTime = GetIdleTime();
+        if (idleTime > TimeSpan.FromSeconds(10) || Framework.Instance()->WindowInactive)
         {
             switch (Service.Config.ConflictKey)
             {
@@ -36,6 +50,14 @@ public class AutoAntiAfk : DailyModuleBase
                     break;
             }
         }
+    }
+
+    public static TimeSpan GetIdleTime()
+    {
+        var lastInputInfo = new LastInputInfo { Size = (uint)Marshal.SizeOf(typeof(LastInputInfo)) };
+        GetLastInputInfo(ref lastInputInfo);
+
+        return TimeSpan.FromMilliseconds(Environment.TickCount - (int)lastInputInfo.LastInputTickCount);
     }
 
     public override void Uninit()

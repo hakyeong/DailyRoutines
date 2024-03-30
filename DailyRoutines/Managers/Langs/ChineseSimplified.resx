@@ -121,7 +121,7 @@
     <value>自动</value>
   </data>
   <data name="AutoAntiAfkDescription" xml:space="preserve">
-    <value>当游戏处于后台时, 每隔固定时间向游戏发送按键, 以防止进入离开状态</value>
+    <value>当电脑非活跃或游戏位于后台时, 每隔固定时间向游戏发送按键, 以防止进入离开状态</value>
   </data>
   <data name="AutoAntiAfkTitle" xml:space="preserve">
     <value>自动防离开状态</value>
