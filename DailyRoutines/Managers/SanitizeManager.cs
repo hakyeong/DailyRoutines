@@ -1,34 +1,27 @@
+using Dalamud.Game.Text;
 using System;
 using System.Collections.Generic;
-using Dalamud.Game.Text;
+using System.Linq;
 
 namespace DailyRoutines.Managers;
 
 public class SanitizeManager
 {
-    private static Dictionary<char, string>? ChineseSimplified;
+    private static readonly Lazy<Dictionary<char, string>> ChineseSimplifiedInitializer = new(() =>
+    {
+        return Enum.GetValues(typeof(SeIconChar))
+                   .Cast<SeIconChar>()
+                   .ToDictionary(icon => char.ConvertFromUtf32((int)icon)[0], icon => string.Empty);
+    });
 
     public static string Sanitize(string str)
     {
-        if (ChineseSimplified == null)
-        {
-            ChineseSimplified = [];
-            foreach (SeIconChar icon in Enum.GetValues(typeof(SeIconChar)))
-            {
-                ChineseSimplified.Add(char.ConvertFromUtf32((int)icon)[0], string.Empty);
-            }
-        }
-        
-        return SanitizeByDict(str, ChineseSimplified);
+        var chineseSimplified = ChineseSimplifiedInitializer.Value;
+        return SanitizeByDict(str, chineseSimplified);
     }
 
     private static string SanitizeByDict(string str, Dictionary<char, string> dict)
     {
-        foreach (var kvp in dict)
-        {
-            str = str.Replace(kvp.Key.ToString(), kvp.Value);
-        }
-        return str;
+        return dict.Aggregate(str, (current, kvp) => current.Replace(kvp.Key.ToString(), kvp.Value));
     }
-
 }
