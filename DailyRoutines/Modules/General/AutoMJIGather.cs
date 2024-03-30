@@ -128,7 +128,7 @@ public class AutoMJIGather : DailyModuleBase
 
             ImGui.Separator();
 
-            if (GatherNodes.Any())
+            if (GatherNodes.Count != 0)
             {
                 ImGui.BeginGroup();
                 foreach (var nodeGroup in GatherNodes)
@@ -173,7 +173,7 @@ public class AutoMJIGather : DailyModuleBase
         }
 
         ImGui.SameLine();
-        ImGui.BeginDisabled(IsOnDataCollecting || !GatherNodes.Any());
+        ImGui.BeginDisabled(IsOnDataCollecting || GatherNodes.Count == 0);
         if (ImGui.Button(Service.Lang.GetText("Start")))
         {
             TaskManager.Enqueue(SwitchToGatherMode);
@@ -182,7 +182,7 @@ public class AutoMJIGather : DailyModuleBase
                                              .SelectMany(group => group.Nodes ?? Enumerable.Empty<Vector3>())
                                              .ToList();
 
-            if (QueuedGatheringList.Any() && QueuedGatheringList.Count > 10)
+            if (QueuedGatheringList.Count != 0 && QueuedGatheringList.Count > 10)
             {
                 Gather(QueuedGatheringList);
             }

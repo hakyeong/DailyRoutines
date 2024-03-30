@@ -70,7 +70,7 @@ public class AutoLeveQuests : DailyModuleBase
             ImGui.InputText("##AutoLeveQuests-SearchLeveQuest", ref SearchString, 100);
 
             ImGui.Separator();
-            if (LeveQuests.Any())
+            if (LeveQuests.Count != 0)
             {
                 foreach (var leve in LeveQuests)
                 {
