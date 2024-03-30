@@ -3,10 +3,10 @@ using System.Linq;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Hooking;
 using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
@@ -17,8 +17,16 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
     private enum DetectType
     {
         Self = 0,
-        // Member = 1,
+        Member = 1,
         Target = 2
+    }
+
+    private class DuplicateActionInfo(uint actionID, DetectType detectType, uint[] statusID, uint[] secondStatusID)
+    {
+        public uint ActionID { get; set; } = actionID;
+        public DetectType DetectType { get; set; } = detectType;
+        public uint[] StatusID { get; set; } = statusID;
+        public uint[] SecondStatusID { get; set; } = secondStatusID;
     }
 
     private delegate bool UseActionSelfDelegate(
@@ -27,60 +35,95 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
 
     private Hook<UseActionSelfDelegate>? useActionSelfHook;
 
-    // Action ID - Status ID - DetectType
-    private static readonly Dictionary<uint, (uint[] StatusID, DetectType DetectType)> DuplicateActions = new()
+    private static readonly Dictionary<DetectType, string> DetectTypeLoc = new()
+    {
+        { DetectType.Self, Service.Lang.GetText("AutoPreventDuplicateStatus-Self") },
+        { DetectType.Member, Service.Lang.GetText("AutoPreventDuplicateStatus-Member") },
+        { DetectType.Target, Service.Lang.GetText("AutoPreventDuplicateStatus-Target") }
+    };
+
+    private static readonly Dictionary<uint, DuplicateActionInfo> DuplicateActions = new()
     {
         // 雪仇
-        { 7535, ([1193], DetectType.Target) },
+        { 7535, new(7535, DetectType.Target, [1193], []) },
         // 昏乱
-        { 7560, ([1203], DetectType.Target) },
+        { 7560, new(7560, DetectType.Target, [1203], []) },
+        // 抗死
+        { 25857, new(25857, DetectType.Self, [2707], []) },
         // 牵制
-        { 7549, ([1195], DetectType.Target) },
+        { 7549, new(7549, DetectType.Target, [1195], []) },
         // 武装解除
-        { 2887, ([860], DetectType.Target) },
-        // 策动, 行吟, 防守之桑巴
-        { 16889, ([1951, 1934, 1826], DetectType.Self) },
-        { 7405, ([1951, 1934, 1826], DetectType.Self) },
-        { 16012, ([1951, 1934, 1826], DetectType.Self) },
-        // 扫腿, 下踢, 盾牌猛击
-        { 7863, ([2], DetectType.Target) },
-        { 7540, ([2], DetectType.Target) },
-        { 16, ([2], DetectType.Target) },
+        { 2887, new(2887, DetectType.Target, [860], []) },
+        // 策动，行吟，防守之桑巴
+        { 16889, new(16889, DetectType.Self, [1951, 1934, 1826], []) },
+        { 7405, new(7405, DetectType.Self, [1951, 1934, 1826], []) },
+        { 16012, new(16012, DetectType.Self, [1951, 1934, 1826], []) },
         // 摆脱
-        { 7388, ([1457], DetectType.Self) },
+        { 7388, new(7388, DetectType.Self, [1457], []) },
+        // 圣光幕帘
+        { 3540, new(3540, DetectType.Self, [1362], []) },
+        // 擢升
+        { 25873, new(25873, DetectType.Target, [2717], []) },
+        // 极光
+        { 16151, new(16151, DetectType.Target, [1835], []) },
         // 大地神的抒情恋歌
-        { 7408, ([1202], DetectType.Self) },
+        { 7408, new(7408, DetectType.Self, [1202], []) },
+        // 扫腿，下踢，盾牌猛击
+        { 7863, new(7863, DetectType.Target, [2], []) },
+        { 7540, new(7540, DetectType.Target, [2], []) },
+        { 16, new(16, DetectType.Target, [2], []) },
+        // 插言, 伤头
+        { 7538, new(7538, DetectType.Target, [1], []) },
+        { 7551, new(7551, DetectType.Target, [1], []) },
+        // 真北
+        { 7546, new(7546, DetectType.Self, [1250], []) },
+        // 亲疏自行 (战士)
+        { 7548, new(7548, DetectType.Self, [2663], []) },
         // 战斗连祷
-        { 3557, ([786], DetectType.Self) },
-        // 夺取
-        { 2248, ([638], DetectType.Target) },
-        // 神秘环
-        { 24405, ([2599], DetectType.Self) },
+        { 3557, new(3557, DetectType.Self, [786], []) },
+        // 龙剑
+        { 83, new(83, DetectType.Self, [116], []) },
+        // 震脚
+        { 69, new(69, DetectType.Self, [110], []) },
         // 义结金兰
-        { 7396, ([1182, 1185], DetectType.Self) },
+        { 7396, new(7396, DetectType.Self, [1182, 1185], []) },
+        // 夺取
+        { 2248, new(2248, DetectType.Target, [638], []) },
+        // 神秘环
+        { 24405, new(24405, DetectType.Self, [2599], []) },
+        // 明镜止水
+        { 7499, new(7499, DetectType.Self, [1233], []) },
         // 灼热之光
-        { 25801, ([2703], DetectType.Self) },
+        { 25801, new(25801, DetectType.Self, [2703], []) },
         // 鼓励
-        { 7520, ([1239], DetectType.Self) },
-        // 技巧舞步
-        { 15998, ([1822], DetectType.Self) },
-        // 战斗之声
-        { 118, ([141], DetectType.Self) },
-        // 连环计
-        { 7436, ([1221], DetectType.Target) },
-        // 占卜
-        { 16552, ([1878], DetectType.Self) },
-        // 复活, 复生, 生辰, 复苏, 赤复活, 天使低语
-        { 125, ([148], DetectType.Target) },
-        { 173, ([148], DetectType.Target) },
-        { 3603, ([148], DetectType.Target) },
-        { 24287, ([148], DetectType.Target) },
-        { 7523, ([148], DetectType.Target) },
-        { 18317, ([148], DetectType.Target) },
+        { 7520, new(7520, DetectType.Self, [1297], []) },
+        // 三连咏唱
+        { 7421, new(7421, DetectType.Self, [1211], []) },
+        // 激情咏唱
+        { 3574, new(3574, DetectType.Self, [867], []) },
+        // 促进
+        { 7518, new(7518, DetectType.Self, [1238], []) },
         // 必灭之炎
-        { 34579, ([3643], DetectType.Target)},
+        { 34579, new(34579, DetectType.Target, [3643], []) },
         // 魔法吐息
-        { 34567, ([3712], DetectType.Target)},
+        { 34567, new(34567, DetectType.Target, [3712], []) },
+        // 战斗之声
+        { 118, new(118, DetectType.Self, [141], []) },
+        // 技巧舞步
+        { 15998, new(15998, DetectType.Self, [1822], [2698]) },
+        // 连环计
+        { 7436, new(7436, DetectType.Target, [786], []) },
+        // 占卜
+        { 16552, new(16552, DetectType.Self, [1878], []) },
+        // 抽卡
+        { 3590, new(3590, DetectType.Self, [913, 914, 915, 916, 917, 918], []) },
+        // 复活，复生，生辰，复苏，赤复活，天使低语
+        { 125, new(125, DetectType.Target, [148], []) },
+        { 173, new(173, DetectType.Target, [148], []) },
+        { 3603, new(3603, DetectType.Target, [148], []) },
+        { 24287, new(24287, DetectType.Target, [148], []) },
+        { 7523, new(7523, DetectType.Target, [148], []) },
+        { 18317, new(18317, DetectType.Target, [148], []) }
     };
 
     private static Dictionary<uint, bool> ConfigEnabledActions = [];
@@ -104,25 +147,28 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
 
     public override void ConfigUI()
     {
-        if (ImGui.BeginCombo("###ActionEnabledCombo", $"已启用 {ConfigEnabledActions.Count(x => x.Value)} 个技能", ImGuiComboFlags.HeightLarge))
+        if (ImGui.BeginCombo("###ActionEnabledCombo", $"已启用 {ConfigEnabledActions.Count(x => x.Value)} 个技能",
+                             ImGuiComboFlags.HeightLarge))
         {
-            if (ImGui.BeginTable("###ActionTable", 2, ImGuiTableFlags.Borders))
+            if (ImGui.BeginTable("###ActionTable", 3, ImGuiTableFlags.Borders))
             {
                 ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
                 ImGui.TableNextColumn();
-                ImGui.Text("技能");
+                ImGui.Text(Service.Lang.GetText("AutoPreventDuplicateStatus-Action"));
                 ImGui.TableNextColumn();
-                ImGui.Text("关联状态");
+                ImGui.Text(Service.Lang.GetText("AutoPreventDuplicateStatus-DetectType"));
+                ImGui.TableNextColumn();
+                ImGui.Text(Service.Lang.GetText("AutoPreventDuplicateStatus-RelatedStatus"));
 
-                foreach (var tuple in DuplicateActions)
+                foreach (var info in DuplicateActions)
                 {
-                    if (!Service.PresetData.PlayerActions.TryGetValue(tuple.Key, out var result)) continue;
+                    if (!Service.PresetData.PlayerActions.TryGetValue(info.Key, out var result)) continue;
                     ImGui.TableNextRow();
                     ImGui.TableNextColumn();
-                    var isActionEnabled = ConfigEnabledActions[tuple.Key];
-                    if (ImGui.Checkbox($"###Is{tuple.Key}Enabled", ref isActionEnabled))
+                    var isActionEnabled = ConfigEnabledActions[info.Key];
+                    if (ImGui.Checkbox($"###Is{info.Key}Enabled", ref isActionEnabled))
                     {
-                        ConfigEnabledActions[tuple.Key] = isActionEnabled;
+                        ConfigEnabledActions[info.Key] = isActionEnabled;
                         UpdateConfig(this, "EnabledActions", ConfigEnabledActions);
                     }
 
@@ -137,18 +183,22 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
                     ImGui.Text($"{result.Name.ExtractText()}");
 
                     ImGui.TableNextColumn();
+                    ImGui.Text($"    {DetectTypeLoc[info.Value.DetectType]}    ");
 
+                    ImGui.TableNextColumn();
                     ImGui.Spacing();
-
-                    foreach (var status in tuple.Value.StatusID)
+                    foreach (var status in info.Value.StatusID)
                     {
+                        if (info.Key is 7551 or 7538) continue;
                         var statusResult = Service.PresetData.Statuses[status];
                         ImGui.SameLine();
-                        ImGui.Image(Service.Texture.GetIcon(statusResult.Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(24f));
+                        ImGui.Image(Service.Texture.GetIcon(statusResult.Icon).ImGuiHandle,
+                                    ImGuiHelpers.ScaledVector2(24f));
 
                         ImGuiOm.TooltipHover(statusResult.Name.ExtractText());
                     }
                 }
+
                 ImGui.EndTable();
             }
 
@@ -160,34 +210,54 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
         ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6,
         void* a7)
     {
-        if (actionType != 1 || !DuplicateActions.TryGetValue(actionID, out var statusTuple) ||
+        if (actionType != 1 || !DuplicateActions.TryGetValue(actionID, out var info) ||
             !ConfigEnabledActions[actionID])
             return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
 
+        if (actionID is 7551 or 7538)
+        {
+            if (Service.Target.Target is not BattleChara chara)
+                return false;
+            if (!chara.IsCasting || !chara.IsCastInterruptible)
+                return false;
+
+            return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
+        }
+
         StatusManager* statusManager = null;
-        switch (statusTuple.DetectType)
+        switch (info.DetectType)
         {
             case DetectType.Self:
-                statusManager = ((BattleChara*)Service.ClientState.LocalPlayer.Address)->GetStatusManager;
+                statusManager =
+                    ((FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara*)Service.ClientState.LocalPlayer
+                            .Address)->GetStatusManager;
                 break;
             case DetectType.Target:
                 if (Service.Target.Target != null && Service.Target.Target.ObjectKind == ObjectKind.BattleNpc)
-                    statusManager = ((BattleChara*)Service.Target.Target.Address)->GetStatusManager;
+                    statusManager = ((FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara*)Service.Target.Target.Address)
+                        ->GetStatusManager;
+                if (Service.Target.Target == null && targetID == 0xE000_0000)
+                    statusManager = ((FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara*)Service.ClientState.LocalPlayer.Address)
+                        ->GetStatusManager;
                 break;
         }
 
         if (statusManager != null)
         {
-            foreach (var status in statusTuple.StatusID)
+            if (info.SecondStatusID.Length > 0)
             {
-                // 防止提拉纳被禁用
-                if (status == 1822)
-                {
-                    if (statusManager->HasStatus(2698))
-                        return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
-                }
+                foreach (var secondStatus in info.SecondStatusID)
+                    if (statusManager->HasStatus(secondStatus))
+                        return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6,
+                                                          a7);
+            }
+
+            foreach (var status in info.StatusID)
+            {
                 var statusIndex = statusManager->GetStatusIndex(status);
-                if (statusIndex != -1 && statusManager->StatusSpan[statusIndex].RemainingTime > 3.5)
+                if (statusIndex != -1 &&
+                    (Service.PresetData.Statuses[status].IsPermanent ||
+                     statusManager->StatusSpan[statusIndex].RemainingTime > 3.5))
                     return false;
             }
         }

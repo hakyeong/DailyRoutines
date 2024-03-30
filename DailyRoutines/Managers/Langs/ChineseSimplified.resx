@@ -503,6 +503,24 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoPlayerCommendTitle" xml:space="preserve">
     <value>自动最优队员推荐</value>
   </data>
+  <data name="AutoPreventDuplicateStatus-Action" xml:space="preserve">
+    <value>技能</value>
+  </data>
+  <data name="AutoPreventDuplicateStatus-DetectType" xml:space="preserve">
+    <value>检测类型</value>
+  </data>
+  <data name="AutoPreventDuplicateStatus-Member" xml:space="preserve">
+    <value>队友</value>
+  </data>
+  <data name="AutoPreventDuplicateStatus-RelatedStatus" xml:space="preserve">
+    <value>关联状态</value>
+  </data>
+  <data name="AutoPreventDuplicateStatus-Self" xml:space="preserve">
+    <value>自身</value>
+  </data>
+  <data name="AutoPreventDuplicateStatus-Target" xml:space="preserve">
+    <value>目标</value>
+  </data>
   <data name="AutoPreventDuplicateStatusDescription" xml:space="preserve">
     <value>启用并配置完成后, 使用相应技能时, 会自动检测相关状态是否已存在, 以防止团辅/团减等重叠</value>
   </data>
