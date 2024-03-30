@@ -70,6 +70,8 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
         { 25754, new(25754, DetectType.Target, [2682], []) },
         // 至黑之夜
         { 7393, new(7393, DetectType.Target, [1178], []) },
+        // 光之心
+        { 16160, new(16160, DetectType.Self, [1839], []) },
         // 刚玉之心
         { 25758, new(25758, DetectType.Target, [2683], []) },
         // 极光
