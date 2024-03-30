@@ -19,6 +19,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
@@ -26,6 +27,9 @@ namespace DailyRoutines.Modules;
 public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 {
     private static readonly HashSet<uint> CompanyWorkshopZones = [423, 425, 425, 653, 984];
+
+    private static string RequisiteMaterialsName = string.Empty;
+    private static int? RequisiteMaterials;
 
     public override void Init()
     {
@@ -38,20 +42,8 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectString", OnAddonSelectString);
 
         Service.Chat.ChatMessage += OnErrorText;
-    }
 
-    public override void ConfigUI()
-    {
-        PreviewImageWithHelpText(Service.Lang.GetText("AutoSubmarineCollect-WhatIsTheList"),
-                                 "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoSubmarineCollect-1.png",
-                                 new Vector2(400, 222));
-
-        ImGui.BeginDisabled(TaskManager.IsBusy);
-        if (ImGui.Button(Service.Lang.GetText("Start"))) GetSubmarineInfos();
-        ImGui.EndDisabled();
-
-        ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
+        RequisiteMaterialsName = Service.Data.GetExcelSheet<Item>().GetRow(10373).Name.RawString;
     }
 
     public override void OverlayUI()
@@ -77,6 +69,20 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
+
+        RequisiteMaterials ??= InventoryManager.Instance()->GetInventoryItemCount(10373);
+
+        ImGui.SameLine();
+        ImGui.Text($"{RequisiteMaterialsName}:");
+
+        ImGui.SameLine();
+        ImGui.TextColored(RequisiteMaterials < 20 ? ImGuiColors.DPSRed : ImGuiColors.HealerGreen, RequisiteMaterials.ToString());
+
+        if (EzThrottler.Throttle("AutoSubmarineCollectOverlay-RequestItemAmount", 1000))
+        {
+            var inventoryManager = InventoryManager.Instance();
+            RequisiteMaterials = inventoryManager->GetInventoryItemCount(10373);
+        }
     }
 
     private void OnAddonSelectString(AddonEvent type, AddonArgs args)
@@ -134,8 +140,9 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         if (Service.Condition[ConditionFlag.OccupiedInCutSceneEvent] ||
             Service.Condition[ConditionFlag.WatchingCutscene78]) return false;
 
-        // 桶装青磷水不足
-        if (InventoryManager.Instance()->GetInventoryItemCount(10155) < 10)
+        // 魔导机械修理材料/桶装青磷水不足
+        var inventoryManager = InventoryManager.Instance();
+        if (inventoryManager->GetInventoryItemCount(10373) < 20 || inventoryManager->GetInventoryItemCount(10155) < 15)
         {
             Service.Chat.Print(Service.Lang.GetSeString("AutoSubmarineCollect-LackCeruleumTanks",
                                                         SeString.CreateItemLink(
