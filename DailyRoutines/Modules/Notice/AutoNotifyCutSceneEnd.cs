@@ -5,7 +5,6 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using Dalamud.Game.ClientState.Conditions;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using ImGuiNET;
@@ -47,7 +46,7 @@ public class AutoNotifyCutSceneEnd : DailyModuleBase
 
     private unsafe void OnPartyList(AddonEvent type, AddonArgs args)
     {
-        if (TaskManager.IsBusy || Service.ClientState.IsPvP || !IsBoundByDuty() || IsDutyEnd) return;
+        if (TaskManager.IsBusy || Service.ClientState.IsPvP || !Flags.BoundByDuty() || IsDutyEnd) return;
 
         var isSBInCutScene = false;
         foreach (var member in Service.PartyList)
@@ -65,14 +64,13 @@ public class AutoNotifyCutSceneEnd : DailyModuleBase
 
         if (isSBInCutScene)
         {
-            Service.Log.Debug("检测到有成员正在过场动画中");
             Stopwatch.Restart();
-            TaskManager.Enqueue(IsNoOneWatchingCutscene);
+            TaskManager.Enqueue(WaitAllMembersCutsceneEnd);
             TaskManager.Enqueue(ShowNoticeMessage);
         }
     }
 
-    private unsafe bool? IsNoOneWatchingCutscene()
+    private unsafe bool? WaitAllMembersCutsceneEnd()
     {
         if (IsDutyEnd)
         {
@@ -88,7 +86,7 @@ public class AutoNotifyCutSceneEnd : DailyModuleBase
             if (chara->CharacterData.OnlineStatus == 15) return false;
         }
 
-        if (Stopwatch.Elapsed < TimeSpan.FromSeconds(5))
+        if (Stopwatch.Elapsed < TimeSpan.FromSeconds(4))
         {
             Stopwatch.Reset();
             TaskManager.Abort();
@@ -122,12 +120,6 @@ public class AutoNotifyCutSceneEnd : DailyModuleBase
         Stopwatch.Reset();
         TaskManager.Abort();
         IsDutyEnd = true;
-    }
-
-    public static bool IsBoundByDuty()
-    {
-        return Service.Condition[ConditionFlag.BoundByDuty] || Service.Condition[ConditionFlag.BoundByDuty56] ||
-               Service.Condition[ConditionFlag.BoundByDuty95];
     }
 
     public override void Uninit()
