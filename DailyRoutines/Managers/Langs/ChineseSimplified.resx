@@ -865,11 +865,20 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="LatestVersion" xml:space="preserve">
     <value>最新版本</value>
   </data>
+  <data name="ModulesConfig" xml:space="preserve">
+    <value>模块配置</value>
+  </data>
+  <data name="ModulesConfigHelp" xml:space="preserve">
+    <value>除非你知道你的操作可能带来的任何后果, 不然请不要随意修改模块配置文件中的内容</value>
+  </data>
   <data name="Notice" xml:space="preserve">
     <value>通知</value>
   </data>
   <data name="NotificationManager-ReceiveMultipleMessages" xml:space="preserve">
     <value>收到了 {0} 条新消息</value>
+  </data>
+  <data name="OpenFolder" xml:space="preserve">
+    <value>打开文件夹</value>
   </data>
   <data name="Pause" xml:space="preserve">
     <value>暂停</value>

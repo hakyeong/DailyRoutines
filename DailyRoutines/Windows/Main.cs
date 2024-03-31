@@ -266,8 +266,17 @@ public class Main : Window, IDisposable
 
                 ImGui.EndCombo();
             }
-
             ImGui.EndDisabled();
+
+            ImGuiOm.TextIcon(FontAwesomeIcon.FolderOpen, Service.Lang.GetText("ModulesConfig"));
+
+            ImGui.SameLine();
+            if (ImGui.Button(Service.Lang.GetText("OpenFolder")))
+            {
+                HelpersOm.OpenFolder(P.PluginInterface.ConfigDirectory.FullName);
+            }
+
+            ImGuiOm.TooltipHover(Service.Lang.GetText("ModulesConfigHelp"));
 
             ImGui.EndGroup();
 
