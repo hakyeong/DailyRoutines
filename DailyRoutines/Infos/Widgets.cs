@@ -9,7 +9,8 @@ namespace DailyRoutines.Infos;
 
 public class Widgets
 {
-    public static void PreviewImageWithHelpText(string helpText, string imageUrl, Vector2 imageSize, FontAwesomeIcon imageIcon = FontAwesomeIcon.InfoCircle)
+    public static void PreviewImageWithHelpText(
+        string helpText, string imageUrl, Vector2 imageSize, FontAwesomeIcon imageIcon = FontAwesomeIcon.InfoCircle)
     {
         var imageState = ThreadLoadImageHandler.TryGetTextureWrap(imageUrl, out var imageHandler);
 
