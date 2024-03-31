@@ -325,7 +325,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>清除已选风脉</value>
   </data>
   <data name="AutoMarkAetherCurrentsDescription" xml:space="preserve">
-    <value>在地图上自动标记所有风脉泉的位置, 并允许自定义待显示的风脉泉</value>
+    <value>在地图上自动标记所有风脉泉的位置, 打开风脉泉界面后, 允许自定义待显示的风脉泉</value>
   </data>
   <data name="AutoMarkAetherCurrentsTitle" xml:space="preserve">
     <value>自动标记风脉泉</value>
