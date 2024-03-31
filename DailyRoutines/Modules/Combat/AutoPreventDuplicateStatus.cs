@@ -122,7 +122,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
         // 技巧舞步
         { 15998, new(15998, DetectType.Self, [1822], [2698]) },
         // 连环计
-        { 7436, new(7436, DetectType.Target, [786], []) },
+        { 7436, new(7436, DetectType.Target, [1221], []) },
         // 占卜
         { 16552, new(16552, DetectType.Self, [1878], []) },
         // 抽卡
