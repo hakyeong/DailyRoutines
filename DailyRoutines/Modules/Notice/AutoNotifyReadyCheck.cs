@@ -15,7 +15,8 @@ public class AutoNotifyReadyCheck : DailyModuleBase
 
     private static void OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
-        if (type != XivChatType.SystemMessage && type != (XivChatType)313) return;
+        var uintType = (uint)type;
+        if (uintType != 57 && uintType != 313 && uintType != 569) return;
 
         var content = message.ExtractText();
         if (!content.Contains("发起了准备确认")) return;
