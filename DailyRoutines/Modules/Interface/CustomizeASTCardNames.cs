@@ -62,16 +62,37 @@ public class CustomizeASTCardNames : DailyModuleBase
         var addon = (AtkUnitBase*)args.Addon;
         if (addon == null) return;
 
-        var textNode1 = addon->GetNodeById(18)->GetComponent()->UldManager.NodeList[19]->GetAsAtkTextNode();
-        var textNode2 =
-            addon->GetNodeById(38)->GetComponent()->UldManager.NodeList[8]->GetComponent()->UldManager.NodeList[1]->
-                GetAsAtkTextNode();
+        // 完整 HUD
+        var completeComponent = addon->GetNodeById(18);
+        if (completeComponent != null)
+        {
+            var node = completeComponent->GetComponent()->GetTextNodeById(2);
+            if (node != null)
+            {
+                var completeTextNode = node->GetAsAtkTextNode();
+                var origCardName = completeTextNode->NodeText.ExtractText();
+                if (CardNames.TryGetValue(origCardName, out var replacedName))
+                    completeTextNode->SetText(replacedName);
+            }
+        }
 
-        var origCardName1 = textNode1->NodeText.ExtractText();
-        var origCardName2 = textNode2->NodeText.ExtractText();
-        if (CardNames.TryGetValue(origCardName1, out var replacedName1))
-            textNode1->SetText(replacedName1);
-        else if (CardNames.TryGetValue(origCardName2, out var replacedName2)) textNode2->SetText(replacedName2);
+        // 轻量 HUD
+        var liteComponent = addon->GetNodeById(38);
+        if (liteComponent != null)
+        {
+            var node = liteComponent->GetComponent()->UldManager.NodeList[8];
+            if (node != null)
+            {
+                var node1 = node->GetComponent()->GetTextNodeById(2);
+                if (node1 != null)
+                {
+                    var liteNode = node1->GetAsAtkTextNode();
+                    var origCardName = liteNode->NodeText.ExtractText();
+                    if (CardNames.TryGetValue(origCardName, out var replacedName))
+                        liteNode->SetText(replacedName);
+                }
+            }
+        }
     }
 
     public override void Uninit()
