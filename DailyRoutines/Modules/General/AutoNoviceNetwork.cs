@@ -1,39 +1,65 @@
-using System.Threading.Tasks;
+using System;
+using System.Runtime.InteropServices;
+using System.Timers;
 using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using TaskManager = ECommons.Automation.TaskManager;
 
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoNoviceNetworkTitle", "AutoNoviceNetworkDescription", ModuleCategories.General)]
 public class AutoNoviceNetwork : DailyModuleBase
 {
-    private static bool IsOnProcessing;
+    [StructLayout(LayoutKind.Sequential)]
+    private struct LastInputInfo
+    {
+        public uint Size;
+        public uint LastInputTickCount;
+    }
+
+    [DllImport("User32.dll")]
+    private static extern bool GetLastInputInfo(ref LastInputInfo info);
+
+    private static Timer? AfkTimer;
     private static int TryTimes;
+    private static bool IsInNoviceNetwork;
+    private static bool ConfigIsTryJoinWhenInactive;
+
+    public override void Init()
+    {
+        AddConfig(this, "IsTryJoinWhenInactive", false);
+        ConfigIsTryJoinWhenInactive = GetConfig<bool>(this, "IsTryJoinWhenInactive");
+
+        AfkTimer ??= new Timer(10000);
+        AfkTimer.Elapsed += OnAfkStateCheck;
+        AfkTimer.AutoReset = true;
+        AfkTimer.Enabled = true;
+
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", ClickYesButton);
+    }
 
     public override void ConfigUI()
     {
-        ImGui.BeginDisabled(IsOnProcessing);
+        ImGui.BeginDisabled(TaskManager.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("Start")))
         {
             TryTimes = 0;
-            Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", ClickYesButton);
-            IsOnProcessing = true;
-
-            ClickNoviceNetworkButton();
+            TaskManager.Enqueue(EnqueueARound);
         }
-
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"))) EndProcess();
+        if (ImGui.Button(Service.Lang.GetText("Stop")))
+            TaskManager.Abort();
 
         ImGui.SameLine();
         ImGui.TextWrapped($"{Service.Lang.GetText("AutoNoviceNetwork-AttemptedTimes")}:");
@@ -42,49 +68,94 @@ public class AutoNoviceNetwork : DailyModuleBase
         ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudYellow);
         ImGui.TextWrapped(TryTimes.ToString());
         ImGui.PopStyleColor();
+
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoNoviceNetwork-TryJoinWhenInactive"), ref ConfigIsTryJoinWhenInactive))
+        {
+            UpdateConfig(this, "IsTryJoinWhenInactive", ConfigIsTryJoinWhenInactive);
+        }
+
+        ImGuiOm.HelpMarker(Service.Lang.GetText("AutoNoviceNetwork-TryJoinWhenInactiveHelp"));
+
+        ImGui.SameLine();
+        ImGui.Text($"{Service.Lang.GetText("AutoNoviceNetwork-JoinState")}:");
+
+        ImGui.SameLine();
+        ImGui.TextColored(IsInNoviceNetwork ? ImGuiColors.HealerGreen : ImGuiColors.DPSRed,
+                          IsInNoviceNetwork ? Service.Lang.GetText("AutoNoviceNetwork-HaveJoined") : Service.Lang.GetText("AutoNoviceNetwork-HaveNotJoined"));
+
+        ImGui.SameLine();
+        if (ImGui.SmallButton(Service.Lang.GetText("Refresh")))
+        {
+            IsInNoviceNetwork = false;
+        }
     }
 
-    private static unsafe void ClickYesButton(AddonEvent type, AddonArgs args)
+    private unsafe void ClickYesButton(AddonEvent type, AddonArgs args)
     {
+        if (!TaskManager.IsBusy) return;
         if (TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
+        {
             if (addon->PromptText->NodeText.ExtractText().Contains("新人频道"))
                 Click.SendClick("select_yes");
+        }
+    }
+
+    private void EnqueueARound()
+    {
+        TaskManager.Enqueue(ClickNoviceNetworkButton);
+        TaskManager.DelayNext(500);
+        TaskManager.Enqueue(() => CheckJoinState(false));
+        TryTimes++;
     }
 
     private static unsafe void ClickNoviceNetworkButton()
     {
-        if (!IsOnProcessing) return;
-        var agent = AgentModule.Instance()->GetAgentByInternalId(AgentId.ChatLog);
-        if (agent == null)
+        AgentManager.SendEvent(AgentId.ChatLog, 0, 3);
+    }
+
+    private void CheckJoinState(bool isOnlyOneRound)
+    {
+        if (Service.Gui.GetAddonByName("BeginnerChatList") != nint.Zero)
         {
-            EndProcess();
-            return;
+            IsInNoviceNetwork = true;
+            TaskManager.Abort();
         }
-
-        AgentManager.SendEvent(agent, 0, 3);
-        TryTimes++;
-
-        Task.Delay(500).ContinueWith(_ => CheckJoinState());
+        else if (!isOnlyOneRound)
+            EnqueueARound();
     }
 
-    private static unsafe void CheckJoinState()
+    private unsafe void OnAfkStateCheck(object? sender, ElapsedEventArgs e)
     {
-        if (TryGetAddonByName<AtkUnitBase>("BeginnerChatList", out _))
-            EndProcess();
-        else
-            ClickNoviceNetworkButton();
+        if (!ConfigIsTryJoinWhenInactive || IsInNoviceNetwork || TaskManager.IsBusy) return;
+        if (Flags.BoundByDuty() || Flags.OccupiedInEvent()) return;
+
+        var idleTime = GetIdleTime();
+        if (idleTime > TimeSpan.FromSeconds(10) || Framework.Instance()->WindowInactive)
+        {
+            TaskManager.Enqueue(ClickNoviceNetworkButton);
+            TaskManager.DelayNext(500);
+            TaskManager.Enqueue(() => CheckJoinState(true));
+        }
     }
 
-    private static void EndProcess()
+    public static TimeSpan GetIdleTime()
     {
-        Service.AddonLifecycle.UnregisterListener(ClickYesButton);
-        IsOnProcessing = false;
+        var lastInputInfo = new LastInputInfo { Size = (uint)Marshal.SizeOf(typeof(LastInputInfo)) };
+        GetLastInputInfo(ref lastInputInfo);
+
+        return TimeSpan.FromMilliseconds(Environment.TickCount - (int)lastInputInfo.LastInputTickCount);
     }
 
     public override void Uninit()
     {
-        EndProcess();
+        AfkTimer?.Stop();
+        if (AfkTimer != null) AfkTimer.Elapsed -= OnAfkStateCheck;
+        AfkTimer?.Dispose();
+        AfkTimer = null;
+
+        IsInNoviceNetwork = false;
+        Service.AddonLifecycle.UnregisterListener(ClickYesButton);
         TryTimes = 0;
 
         base.Uninit();

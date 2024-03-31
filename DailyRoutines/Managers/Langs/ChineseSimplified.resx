@@ -121,7 +121,7 @@
     <value>自动</value>
   </data>
   <data name="AutoAntiAfkDescription" xml:space="preserve">
-    <value>当电脑非活跃或游戏位于后台时, 每隔固定时间向游戏发送按键, 以防止进入离开状态</value>
+    <value>每隔固定时间, 重置游戏内部的相关计时器, 以防止进入离开状态</value>
   </data>
   <data name="AutoAntiAfkTitle" xml:space="preserve">
     <value>自动防离开状态</value>
@@ -457,6 +457,22 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoNoviceNetwork-AttemptedTimes" xml:space="preserve">
     <value>已尝试次数</value>
+  </data>
+  <data name="AutoNoviceNetwork-HaveJoined" xml:space="preserve">
+    <value>已加入过</value>
+  </data>
+  <data name="AutoNoviceNetwork-HaveNotJoined" xml:space="preserve">
+    <value>未加入过</value>
+  </data>
+  <data name="AutoNoviceNetwork-JoinState" xml:space="preserve">
+    <value>加入状态</value>
+  </data>
+  <data name="AutoNoviceNetwork-TryJoinWhenInactive" xml:space="preserve">
+    <value>自动尝试加入新人频道</value>
+  </data>
+  <data name="AutoNoviceNetwork-TryJoinWhenInactiveHelp" xml:space="preserve">
+    <value>当游戏处于不活跃状态/后台, 且当前状态可加入新人频道时,
+每隔固定时间, 自动尝试加入新人频道一次</value>
   </data>
   <data name="AutoNoviceNetworkDescription" xml:space="preserve">
     <value>点击开始后, 自动重复尝试加入新人频道</value>
