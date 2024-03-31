@@ -77,7 +77,7 @@ public class AutoNotifyMessages : DailyModuleBase
                                  "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoNotifyMessages-1.png",
                                  new Vector2(450, 193));
 
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoNotifyMessages-OnlyWhenBackground"),
+        if (ImGui.Checkbox(Service.Lang.GetText("OnlyNotifyWhenBackground"),
                            ref ConfigOnlyNotifyWhenBackground))
             UpdateConfig(this, "OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
 

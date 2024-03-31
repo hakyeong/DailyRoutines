@@ -395,9 +395,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoNotifyCutSceneEnd-NotificationMessageHelp" xml:space="preserve">
     <value>提示信息外观 (Windows 10+)</value>
   </data>
-  <data name="AutoNotifyCutSceneEnd-OnlyWhenBackground" xml:space="preserve">
-    <value>仅当游戏位于后台时提醒</value>
-  </data>
   <data name="AutoNotifyCutSceneEndDescription" xml:space="preserve">
     <value>在副本内, 如若队友观看过场剧情超过五秒, 则在全部队友的过场剧情都已结束时, 自动发送一条 Windows 系统通知</value>
   </data>
@@ -425,14 +422,20 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoNotifyDutyNameTitle" xml:space="preserve">
     <value>自动通知副本名称</value>
   </data>
+  <data name="AutoNotifyDutyStart-NotificationMessage" xml:space="preserve">
+    <value>副本任务已开始</value>
+  </data>
+  <data name="AutoNotifyDutyStartDescription" xml:space="preserve">
+    <value>在副本内, 当副本任务开始时, 自动发送一条 Windows 系统通知</value>
+  </data>
+  <data name="AutoNotifyDutyStartTitle" xml:space="preserve">
+    <value>自动通知副本开始</value>
+  </data>
   <data name="AutoNotifyMessages-BlockOwnMessages" xml:space="preserve">
     <value>屏蔽自己发送的消息</value>
   </data>
   <data name="AutoNotifyMessages-NotificationMessageHelp" xml:space="preserve">
     <value>提示信息外观 (Windows 10+)</value>
-  </data>
-  <data name="AutoNotifyMessages-OnlyWhenBackground" xml:space="preserve">
-    <value>仅当游戏位于后台时提醒</value>
   </data>
   <data name="AutoNotifyMessages-SelectedTypesAmount" xml:space="preserve">
     <value>已选择 {0} 种消息类型</value>
@@ -876,6 +879,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="NotificationManager-ReceiveMultipleMessages" xml:space="preserve">
     <value>收到了 {0} 条新消息</value>
+  </data>
+  <data name="OnlyNotifyWhenBackground" xml:space="preserve">
+    <value>仅当游戏位于后台时提醒</value>
   </data>
   <data name="OpenFolder" xml:space="preserve">
     <value>打开文件夹</value>

@@ -11,8 +11,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoNotifyCutSceneEndTitle", "AutoNotifyCutSceneEndDescription",
-                   ModuleCategories.Notice)]
+[ModuleDescription("AutoNotifyCutSceneEndTitle", "AutoNotifyCutSceneEndDescription", ModuleCategories.Notice)]
 public class AutoNotifyCutSceneEnd : DailyModuleBase
 {
     private static bool ConfigOnlyNotifyWhenBackground;
@@ -39,7 +38,7 @@ public class AutoNotifyCutSceneEnd : DailyModuleBase
                                  "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoNotifyCutSceneEnd-1.png",
                                  new Vector2(378, 113));
 
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoNotifyCutSceneEnd-OnlyWhenBackground"),
+        if (ImGui.Checkbox(Service.Lang.GetText("OnlyNotifyWhenBackground"),
                            ref ConfigOnlyNotifyWhenBackground))
             UpdateConfig(this, "OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
     }
