@@ -55,12 +55,9 @@ public class AutoSellCardsConfirm : DailyModuleBase
 
         if (args.AddonName == "ShopCardDialog")
         {
-            if (!TaskManager.IsBusy)
-            {
-                AgentManager.SendEvent(AgentId.TripleTriadCoinExchange, 1, 0, 1);
-                addon->FireCloseCallback();
-                addon->Close(true);
-            }
+            AgentManager.SendEvent(AgentId.TripleTriadCoinExchange, 1, 0, 1);
+            addon->FireCloseCallback();
+            addon->Close(true);
             return;
         }
 
@@ -97,20 +94,7 @@ public class AutoSellCardsConfirm : DailyModuleBase
             }
 
             TaskManager.Enqueue(() => AddonManager.Callback(addon, true, 0, 0, 0));
-            TaskManager.Enqueue(() =>
-            {
-                if (TryGetAddonByName<AtkUnitBase>("ShopCardDialog", out var addon) &&
-                    HelpersOm.IsAddonAndNodesReady(addon))
-                {
-                    AgentManager.SendEvent(AgentId.TripleTriadCoinExchange, 1, 0, 1);
-                    addon->FireCloseCallback();
-                    addon->Close(true);
-                    return true;
-                }
-
-                return false;
-            });
-            TaskManager.DelayNext(100);
+            TaskManager.DelayNext(400);
             TaskManager.Enqueue(StartHandOver);
 
             return true;
