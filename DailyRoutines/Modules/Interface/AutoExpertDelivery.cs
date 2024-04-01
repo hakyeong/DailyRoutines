@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using ClickLib;
 using ClickLib.Clicks;
 using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
@@ -42,6 +43,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         Overlay ??= new Overlay(this);
 
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", AlwaysYes);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "GrandCompanySupplyList", OnAddonSupplyList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "GrandCompanySupplyList", OnAddonSupplyList);
     }
@@ -67,6 +69,12 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("Stop"))) EndHandOver();
+    }
+
+    private void AlwaysYes(AddonEvent type, AddonArgs args)
+    {
+        if (!TaskManager.IsBusy) return;
+        Click.SendClick("select_yes");
     }
 
     private void OnAddonSupplyList(AddonEvent type, AddonArgs args)
@@ -213,6 +221,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
     public override void Uninit()
     {
         EndHandOver();
+        Service.AddonLifecycle.UnregisterListener(AlwaysYes);
         Service.AddonLifecycle.UnregisterListener(OnAddonSupplyList);
 
         base.Uninit();
