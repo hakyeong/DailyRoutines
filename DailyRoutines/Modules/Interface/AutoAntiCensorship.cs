@@ -223,7 +223,7 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
         const string placeholder = "\u0001";
         text = text.Replace("*", placeholder);
 
-        var tempResult = new StringBuilder(text.Length);
+        StringBuilder tempResult = new(text.Length);
         bool isCensored;
         do
         {
@@ -231,8 +231,7 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
             var processedText = GetFilteredString(text);
             tempResult.Clear();
 
-            var i = 0;
-            while (i < processedText.Length)
+            for (var i = 0; i < processedText.Length; )
             {
                 if (processedText[i] == '<')
                 {
@@ -244,13 +243,11 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
                         continue;
                     }
                 }
-
-                if (processedText[i] == '*')
+                else if (processedText[i] == '*')
                 {
                     isCensored = true;
-
                     var start = i;
-                    while (i < processedText.Length && processedText[i] == '*') i++;
+                    while (++i < processedText.Length && processedText[i] == '*');
 
                     var length = i - start;
                     if (length == 1 && IsChineseCharacter(text[start]))
@@ -270,14 +267,12 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
                 }
                 else
                 {
-                    tempResult.Append(text[i]);
-                    i++;
+                    tempResult.Append(processedText[i++]);
                 }
             }
 
             text = tempResult.ToString();
-        }
-        while (isCensored);
+        } while (isCensored);
 
         return text.Replace(placeholder, "*");
     }
