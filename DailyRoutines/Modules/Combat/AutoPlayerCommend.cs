@@ -49,10 +49,10 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
         if (Service.Gui.GetAddonByName("VoteMvp") != nint.Zero) return true;
 
         var notification = (AtkUnitBase*)Service.Gui.GetAddonByName("_Notification");
-        if (notification == null) return false;
+        var notificationMvp = (AtkUnitBase*)Service.Gui.GetAddonByName("_NotificationIcMvp");
+        if (notification == null && notificationMvp == null) return false;
 
         AddonManager.Callback(notification, true, 0, 11);
-        AddonManager.Callback(notification, true, 0, 11, "");
         return true;
     }
 
