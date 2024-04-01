@@ -231,11 +231,32 @@
   <data name="AutoExpertDeliveryTitle" xml:space="preserve">
     <value>自动筹备稀有品</value>
   </data>
-  <data name="AutoHarvestGardensDescription" xml:space="preserve">
-    <value>点击开始后, 自动收取周围可及园圃中成熟的作物</value>
+  <data name="AutoGardensWork-AutoFertilize" xml:space="preserve">
+    <value>自动施肥</value>
   </data>
-  <data name="AutoHarvestGardensTitle" xml:space="preserve">
-    <value>自动收获园圃作物</value>
+  <data name="AutoGardensWork-AutoGather" xml:space="preserve">
+    <value>自动收获</value>
+  </data>
+  <data name="AutoGardensWork-AutoPlant" xml:space="preserve">
+    <value>自动种植</value>
+  </data>
+  <data name="AutoGardensWork-AutoTend" xml:space="preserve">
+    <value>自动护理</value>
+  </data>
+  <data name="AutoGardensWork-Fertilizer" xml:space="preserve">
+    <value>肥料</value>
+  </data>
+  <data name="AutoGardensWork-Seed" xml:space="preserve">
+    <value>种子</value>
+  </data>
+  <data name="AutoGardensWork-Soil" xml:space="preserve">
+    <value>土壤</value>
+  </data>
+  <data name="AutoGardensWorkDescription" xml:space="preserve">
+    <value>启用并配置完成后, 帮你自动或半自动完成园圃相关作业</value>
+  </data>
+  <data name="AutoGardensWorkTitle" xml:space="preserve">
+    <value>自动园圃作业</value>
   </data>
   <data name="AutoInDutySelectYesDescription" xml:space="preserve">
     <value>进入副本后, 自动确认副本内交互物体时出现的对话框</value>
@@ -482,18 +503,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoNoviceNetworkTitle" xml:space="preserve">
     <value>自动加入新人频道</value>
-  </data>
-  <data name="AutoPlantGardens-Seed" xml:space="preserve">
-    <value>种子</value>
-  </data>
-  <data name="AutoPlantGardens-Soil" xml:space="preserve">
-    <value>土壤</value>
-  </data>
-  <data name="AutoPlantGardensDescription" xml:space="preserve">
-    <value>启用并配置完成后, 点击播种, 自动选取种子和土壤并确认种植</value>
-  </data>
-  <data name="AutoPlantGardensTitle" xml:space="preserve">
-    <value>自动种植园圃作物</value>
   </data>
   <data name="AutoPlayCards-Melee" xml:space="preserve">
     <value>近战</value>
