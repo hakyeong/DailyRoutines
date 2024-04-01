@@ -75,6 +75,7 @@ public class AutoSellCardsConfirm : DailyModuleBase
 
     private unsafe bool? StartHandOver()
     {
+        if (Service.Gui.GetAddonByName("ShopCardDialog") != nint.Zero) return false;
         if (TryGetAddonByName<AtkUnitBase>("TripleTriadCoinExchange", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(addon))
         {
