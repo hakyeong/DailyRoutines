@@ -76,6 +76,12 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
         { 25758, new(25758, DetectType.Target, [2683], []) },
         // 极光
         { 16151, new(16151, DetectType.Target, [1835], []) },
+        // 神祝祷
+        { 7432, new(7432, DetectType.Target, [1218], []) },
+        // 水流幕
+        { 25861, new(25861, DetectType.Target, [2708], []) },
+        // 无中生有
+        { 7430, new(7430, DetectType.Target, [1217], []) },
         // 擢升
         { 25873, new(25873, DetectType.Target, [2717], []) },
         // 扫腿，下踢，盾牌猛击
@@ -145,10 +151,10 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
                                                                 UseActionSelf);
         useActionSelfHook?.Enable();
 
-        AddConfig(this, "EnabledActions", ConfigEnabledActions);
+        AddConfig(this, "EnabledActions", new Dictionary<uint, bool>());
         ConfigEnabledActions = GetConfig<Dictionary<uint, bool>>(this, "EnabledActions");
 
-        DuplicateActions.Keys.ToList().ForEach(key => ConfigEnabledActions[key] = true);
+        DuplicateActions.Keys.Except(ConfigEnabledActions.Keys).ToList().ForEach(key => ConfigEnabledActions[key] = true);
         ConfigEnabledActions.Keys.Except(DuplicateActions.Keys).ToList()
                             .ForEach(key => ConfigEnabledActions.Remove(key));
 
@@ -178,7 +184,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
                     var isActionEnabled = ConfigEnabledActions[info.Key];
                     if (ImGui.Checkbox($"###Is{info.Key}Enabled", ref isActionEnabled))
                     {
-                        ConfigEnabledActions[info.Key] = isActionEnabled;
+                        ConfigEnabledActions[info.Key] ^= true;
                         UpdateConfig(this, "EnabledActions", ConfigEnabledActions);
                     }
 
