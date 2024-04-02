@@ -152,7 +152,7 @@ public class Main : Window, IDisposable
                 if (!module.Title.Contains(SearchString, StringComparison.OrdinalIgnoreCase) &&
                     !module.Description.Contains(SearchString, StringComparison.OrdinalIgnoreCase)) continue;
 
-                ImGui.PushID($"{module}");
+                ImGui.PushID($"{module.Category}-{module.Description}-{module.Title}-{module.Module}");
                 DrawModuleCheckbox(module, modules.Count, i);
                 ImGui.PopID();
             }
