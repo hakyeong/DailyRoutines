@@ -81,7 +81,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
         // 水流幕
         { 25861, new(25861, DetectType.Target, [2708], []) },
         // 无中生有
-        { 7430, new(7430, DetectType.Target, [1217], []) },
+        { 7430, new(7430, DetectType.Self, [1217], []) },
         // 擢升
         { 25873, new(25873, DetectType.Target, [2717], []) },
         // 扫腿，下踢，盾牌猛击
@@ -249,7 +249,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
                             .Address)->GetStatusManager;
                 break;
             case DetectType.Target:
-                if (Service.Target.Target != null && Service.Target.Target.ObjectKind == ObjectKind.BattleNpc)
+                if (Service.Target.Target != null && Service.Target.Target is BattleChara)
                     statusManager = ((FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara*)Service.Target.Target.Address)
                         ->GetStatusManager;
                 if (Service.Target.Target == null && targetID == 0xE000_0000)
