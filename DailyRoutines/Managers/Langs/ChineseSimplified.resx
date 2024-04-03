@@ -579,6 +579,12 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRefocusTitle" xml:space="preserve">
     <value>自动重新焦点目标</value>
   </data>
+  <data name="AutoRefreshInvalidPortraitsDescription" xml:space="preserve">
+    <value>打开肖像列表, 并点击开始后, 自动刷新所有肖像, 以避免出现失效状态</value>
+  </data>
+  <data name="AutoRefreshInvalidPortraitsTitle" xml:space="preserve">
+    <value>自动刷新失效肖像</value>
+  </data>
   <data name="AutoRefreshMarketSearchResultDescription" xml:space="preserve">
     <value>当市场道具搜索结果为 "请稍后" 时, 自动重新请求获取</value>
   </data>
