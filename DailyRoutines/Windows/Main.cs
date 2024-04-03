@@ -297,11 +297,16 @@ public class Main : Window, IDisposable
                                         ref ConflictKeySearchString, 20);
                 ImGui.Separator();
 
-                foreach (VirtualKey keyToSelect in Enum.GetValues(typeof(VirtualKey)))
+                var validKeys = Service.KeyState.GetValidVirtualKeys();
+                foreach (var keyToSelect in validKeys)
                 {
-                    if (!string.IsNullOrWhiteSpace(ConflictKeySearchString) && !keyToSelect.ToString()
+                    if (!string.IsNullOrWhiteSpace(ConflictKeySearchString) && !keyToSelect.GetFancyName()
                             .Contains(ConflictKeySearchString, StringComparison.OrdinalIgnoreCase)) continue;
-                    if (ImGui.Selectable(keyToSelect.ToString())) Service.Config.ConflictKey = keyToSelect;
+                    if (ImGui.Selectable(keyToSelect.GetFancyName()))
+                    {
+                        Service.Config.ConflictKey = keyToSelect;
+                        Service.Config.Save();
+                    }
                 }
 
                 ImGui.EndCombo();

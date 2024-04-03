@@ -1,6 +1,7 @@
 using System.Linq;
 using DailyRoutines.Infos;
 using Dalamud.Game;
+using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.IoC;
 using Dalamud.Plugin;
@@ -17,6 +18,7 @@ public class Service
         pluginInterface.Create<Service>();
 
         InitLanguage();
+        CheckConflictKeyValidation();
         AddonManager.Init();
         PresetData = new();
         Notice = new();
@@ -39,6 +41,16 @@ public class Service
         }
 
         Lang = new LanguageManager(playerLang);
+    }
+
+    private static void CheckConflictKeyValidation()
+    {
+        var validKeys = KeyState.GetValidVirtualKeys();
+        if (!validKeys.Contains(Config.ConflictKey))
+        {
+            Config.ConflictKey = VirtualKey.SHIFT;
+            Config.Save();
+        }
     }
 
     internal static void Uninit()
