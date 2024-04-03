@@ -1,13 +1,17 @@
+using System;
+using System.Collections.Generic;
 using System.Numerics;
 using DailyRoutines.Managers;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using static DailyRoutines.Modules.QuickChatPanel;
 
 namespace DailyRoutines.Infos;
 
-public class Widgets
+public static class Widgets
 {
     public static void PreviewImageWithHelpText(
         string helpText, string imageUrl, Vector2 imageSize, FontAwesomeIcon imageIcon = FontAwesomeIcon.InfoCircle)
@@ -35,5 +39,29 @@ public class Widgets
     public static void ConflictKeyText()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
+    }
+
+    /// <summary>
+    /// You need to specify the position and category by yourself
+    /// </summary>
+    /// <param name="macro"></param>
+    /// <returns></returns>
+    public static SavedMacro ToSavedMacro(this RaptureMacroModule.Macro macro)
+    {
+        var savedMacro = new SavedMacro
+        {
+            Name = macro.Name.ExtractText(),
+            IconID = macro.IconId,
+            LastUpdateTime = DateTime.Now
+        };
+
+        var macroLines = new List<string>();
+        foreach (var line in macro.LinesSpan)
+        {
+            macroLines.Add(line.ExtractText());
+        }
+        savedMacro.CommandLines = macroLines;
+
+        return savedMacro;
     }
 }
