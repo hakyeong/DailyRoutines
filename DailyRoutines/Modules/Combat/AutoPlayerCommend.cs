@@ -46,18 +46,18 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
     {
         if (IsOccupied()) return false;
 
-        if (Service.Gui.GetAddonByName("VoteMvp") != nint.Zero) return true;
-
         var notification = (AtkUnitBase*)Service.Gui.GetAddonByName("_Notification");
         var notificationMvp = (AtkUnitBase*)Service.Gui.GetAddonByName("_NotificationIcMvp");
-        if (notification == null && notificationMvp == null) return false;
+        if (notification == null && notificationMvp == null) return true;
 
         AddonManager.Callback(notification, true, 0, 11);
         return true;
     }
 
-    private static void ProcessCommendation(string addonName, int voteOffset, int nameOffset, int callbackIndex)
+    private void ProcessCommendation(string addonName, int voteOffset, int nameOffset, int callbackIndex)
     {
+        TaskManager.Abort();
+
         var localPlayer = Service.ClientState.LocalPlayer;
         var localPlayerName = localPlayer.Name.ExtractText();
         var localPlayerRole = GetCharacterJobRole(localPlayer.ClassJob.GameData.Role);
@@ -111,7 +111,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
         }
     }
 
-    private static void OnAddonList(AddonEvent type, AddonArgs args)
+    private void OnAddonList(AddonEvent type, AddonArgs args)
     {
         switch (args.AddonName)
         {
