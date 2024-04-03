@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -153,16 +154,26 @@ public static unsafe class AddonManager
         return str.ToString();
     }
 
-    /// <summary>
-    ///     Makes an image node with allocated and initialized components:<br />
-    ///     1x AtkUldPartsList<br />
-    ///     1x AtkUldPart<br />
-    ///     1x AtkUldAsset<br />
-    /// </summary>
-    /// <param name="id">Id of the new node</param>
-    /// <param name="partInfo">Texture U,V coordinates and Texture Width,Height</param>
-    /// <remarks>Returns null if allocation of any component failed</remarks>
-    /// <returns>Fully Allocated AtkImageNode</returns>
+    #region AddonFireback
+    public static bool? ClickContextMenuByText(string text)
+    {
+        if (TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        {
+            if (!HelpersOm.TryScanContextMenuText(addon, text, out var index))
+            {
+                addon->FireCloseCallback();
+                addon->Close(true);
+                return true;
+            }
+
+            Callback(addon, true, 0, index, 0U, 0, 0);
+        }
+
+        return false;
+    }
+    #endregion
+
+    #region NodeManagement
     public static AtkImageNode* MakeImageNode(uint id, PartInfo partInfo)
     {
         if (!TryMakeImageNode(id, 0, 0, 0, 0, out var imageNode))
@@ -400,82 +411,7 @@ public static unsafe class AddonManager
     {
         FireCallback = null;
     }
-}
 
-public unsafe class SimpleEvent : IDisposable
-{
-    public delegate void SimpleEventDelegate(AtkEventType eventType, AtkUnitBase* atkUnitBase, AtkResNode* node);
-
-    public SimpleEventDelegate Action { get; }
-    public uint ParamKey { get; }
-
-    public SimpleEvent(SimpleEventDelegate action)
-    {
-        var newParam = 0x53540000u;
-        while (EventHandlers.ContainsKey(newParam))
-            if (++newParam >= 0x53550000u)
-                throw new Exception("Too many event handlers...");
-
-        ParamKey = newParam;
-        Action = action;
-
-        EventHandlers.Add(newParam, this);
-    }
-
-    public void Dispose()
-    {
-        EventHandlers.Remove(ParamKey);
-    }
-
-    public void Add(AtkUnitBase* unitBase, AtkResNode* node, AtkEventType eventType)
-    {
-        node->AddEvent(eventType, ParamKey, (AtkEventListener*)unitBase, node, true);
-    }
-
-    public void Remove(AtkUnitBase* unitBase, AtkResNode* node, AtkEventType eventType)
-    {
-        node->RemoveEvent(eventType, ParamKey, (AtkEventListener*)unitBase, true);
-    }
-
-    private delegate void* GlobalEventDelegate(
-        AtkUnitBase* atkUnitBase, AtkEventType eventType, uint eventParam, AtkResNode** eventData, uint* a5);
-
-    private static readonly Hook<GlobalEventDelegate>? GlobalEventHook;
-
-    static SimpleEvent()
-    {
-        GlobalEventHook = Service.Hook.HookFromSignature<GlobalEventDelegate>(
-            "48 89 5C 24 ?? 48 89 7C 24 ?? 55 41 56 41 57 48 8B EC 48 83 EC 50 44 0F B7 F2",
-            GlobalEventDetour);
-        GlobalEventHook?.Enable();
-    }
-
-    private static void* GlobalEventDetour(
-        AtkUnitBase* atkUnitBase, AtkEventType eventType, uint eventParam, AtkResNode** eventData, uint* a5)
-    {
-        if (EventHandlers.TryGetValue(eventParam, out var handler))
-        {
-            // Service.Log.Debug($"Simple Event #{eventParam:X} [{eventType}] on {MemoryHelper.ReadString(new IntPtr(atkUnitBase->Name), 0x20)} ({(ulong)eventData[0]:X})");
-
-            try
-            {
-                handler.Action(eventType, atkUnitBase, eventData[0]);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Service.Log.Error(ex.Message);
-            }
-        }
-
-        return GlobalEventHook.Original(atkUnitBase, eventType, eventParam, eventData, a5);
-    }
-
-    internal static void Destroy()
-    {
-        GlobalEventHook?.Disable();
-        GlobalEventHook?.Dispose();
-    }
-
-    private static readonly Dictionary<uint, SimpleEvent> EventHandlers = new();
+    #endregion
+    
 }
