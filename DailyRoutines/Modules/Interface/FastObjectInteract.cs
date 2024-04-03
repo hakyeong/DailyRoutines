@@ -40,6 +40,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     private static int ConfigMaxDisplayAmount = 5;
     private static HashSet<string> ConfigBlacklistKeys = new();
     private static HashSet<ObjectKind> ConfigSelectedKinds = new();
+    private static bool ConfigLockWindow;
 
     private static string BlacklistKeyInput = string.Empty;
     private readonly List<ObjectWaitSelected> tempObjects = new(596);
@@ -69,10 +70,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     public override void Init()
     {
-        Overlay ??= new Overlay(this, $"Daily Routines {Service.Lang.GetText("FastObjectInteractTitle")}");
-        Overlay.Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize |
-                        ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoCollapse;
-
         AddConfig(this, "MaxDisplayAmount", 5);
         AddConfig(this, "AllowClickToTarget", false);
         AddConfig(this, "WindowInvisibleWhenInteract", true);
@@ -86,6 +83,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         AddConfig(this, "BlacklistKeys", new HashSet<string>());
         AddConfig(this, "MinButtonWidth", 300f);
         AddConfig(this, "OnlyDisplayInViewRange", false);
+        AddConfig(this, "LockWindow", false);
 
         ConfigMaxDisplayAmount = GetConfig<int>(this, "MaxDisplayAmount");
         ConfigAllowClickToTarget = GetConfig<bool>(this, "AllowClickToTarget");
@@ -95,12 +93,22 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         ConfigBlacklistKeys = GetConfig<HashSet<string>>(this, "BlacklistKeys");
         ConfigMinButtonWidth = GetConfig<float>(this, "MinButtonWidth");
         ConfigOnlyDisplayInViewRange = GetConfig<bool>(this, "OnlyDisplayInViewRange");
+        ConfigLockWindow = GetConfig<bool>(this, "LockWindow");
 
         ENpcTitles ??= Service.Data.GetExcelSheet<ENpcResident>()
                               .Where(x => x.Unknown10)
                               .ToDictionary(x => x.RowId, x => x.Title.RawString);
 
         Service.Framework.Update += OnUpdate;
+
+        Overlay ??= new Overlay(this, $"Daily Routines {Service.Lang.GetText("FastObjectInteractTitle")}");
+        Overlay.Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize |
+                        ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoCollapse;
+
+        if (ConfigLockWindow)
+            Overlay.Flags |= ImGuiWindowFlags.NoMove;
+        else
+            Overlay.Flags &= ~ImGuiWindowFlags.NoMove;
     }
 
     public override void ConfigUI()
@@ -210,6 +218,17 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                            ref ConfigWindowInvisibleWhenInteract))
             UpdateConfig(this, "WindowInvisibleWhenInteract", ConfigWindowInvisibleWhenInteract);
 
+        if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-LockWindow"),
+                           ref ConfigLockWindow))
+        {
+            UpdateConfig(this, "LockWindow", ConfigLockWindow);
+
+            if (ConfigLockWindow)
+                Overlay.Flags |= ImGuiWindowFlags.NoMove;
+            else
+                Overlay.Flags &= ~ImGuiWindowFlags.NoMove;
+        }
+
         if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-OnlyDisplayInViewRange"),
                            ref ConfigOnlyDisplayInViewRange))
             UpdateConfig(this, "OnlyDisplayInViewRange", ConfigOnlyDisplayInViewRange);
@@ -221,6 +240,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     public override void OverlayUI()
     {
+        Service.Font.Axis14.Push();
         var colors = ImGui.GetStyle().Colors;
         ImGui.BeginGroup();
         foreach (var kvp in ObjectsWaitSelected)
@@ -288,6 +308,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
         ImGui.EndGroup();
         WindowWidth = Math.Max(ConfigMinButtonWidth, ImGui.GetItemRectSize().X);
+        Service.Font.Axis14.Pop();
     }
 
     private void OnUpdate(IFramework framework)
