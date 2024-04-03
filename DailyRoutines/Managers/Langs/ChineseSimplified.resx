@@ -829,6 +829,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="FastObjectInteract-FontScale" xml:space="preserve">
     <value>字体缩放倍数</value>
   </data>
+  <data name="FastObjectInteract-LockWindow" xml:space="preserve">
+    <value>锁定窗口</value>
+  </data>
   <data name="FastObjectInteract-MaxDisplayAmount" xml:space="preserve">
     <value>最多同时显示个数</value>
   </data>

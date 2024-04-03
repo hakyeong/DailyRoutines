@@ -21,6 +21,7 @@ public class Service
         PresetData = new();
         Notice = new();
         Waymarks = new();
+        Font = new();
     }
 
     private static void InitLanguage()
@@ -68,6 +69,7 @@ public class Service
     [PluginService] public static IDutyState DutyState { get; private set; } = null!;
     [PluginService] public static IGameInteropProvider Hook { get; private set; } = null!;
     public static SigScanner SigScanner { get; private set; } = new();
+    public static FontManager Font { get; private set; } = null!;
     public static PresetExcelData PresetData { get; set; } = null!;
     public static FieldMarkerManager Waymarks { get; set; } = null!;
     public static NotificationManager Notice { get; private set; } = null!;

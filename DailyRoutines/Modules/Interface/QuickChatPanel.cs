@@ -58,8 +58,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
     private static Vector2 ButtonPos = new(0);
     private static Vector2 WindowSize = new(200);
     private static IAddonEventHandle? MouseClickHandle;
-    private static IFontHandle? Axis36FontHandle;
-    private static IFontAtlas? FontAtlas;
     private static string MessageInput = string.Empty;
 
     private static List<string> ConfigSavedMessages = [];
@@ -74,9 +72,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
         AddConfig(this, "SavedMacros", ConfigSavedMacros);
         ConfigSavedMacros = GetConfig<List<SavedMacro>>(this, "SavedMacros");
-
-        FontAtlas ??= P.PluginInterface.UiBuilder.CreateFontAtlas(FontAtlasAutoRebuildMode.OnNewFrame);
-        Axis36FontHandle ??= FontAtlas.NewGameFontHandle(new GameFontStyle(GameFontFamilyAndSize.Axis14));
 
         var tempSeIconList = new List<char>();
         foreach (SeIconChar seIconChar in Enum.GetValues(typeof(SeIconChar)))
@@ -265,7 +260,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
         {
             if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-Messages")))
             {
-                Axis36FontHandle.Push();
+                Service.Font.Axis14.Push();
                 ImGui.SetWindowFontScale(1.5f);
                 var maxTextWidth = 200f;
                 for (var i = 0; i < ConfigSavedMessages.Count; i++)
@@ -287,7 +282,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                         ImGui.Separator();
                 }
 
-                Axis36FontHandle.Pop();
+                Service.Font.Axis14.Pop();
                 ImGui.SetWindowFontScale(1f);
 
                 ImGui.SetWindowSize(new(Math.Max(WindowSize.X, maxTextWidth), 240 * ImGuiHelpers.GlobalScale));
@@ -297,7 +292,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
             if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-Macro")))
             {
-                Axis36FontHandle.Push();
+                Service.Font.Axis14.Push();
                 ImGui.SetWindowFontScale(1.5f);
                 var maxTextWidth = 200f;
                 for (var i = 0; i < ConfigSavedMacros.Count; i++)
@@ -319,7 +314,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 }
 
                 ImGui.SetWindowFontScale(1f);
-                Axis36FontHandle.Pop();
+                Service.Font.Axis14.Pop();
 
                 ImGui.SetWindowSize(new(Math.Max(WindowSize.X, maxTextWidth), 240 * ImGuiHelpers.GlobalScale));
 
@@ -328,7 +323,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
             if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-SpecialIconChar")))
             {
-                Axis36FontHandle.Push();
+                Service.Font.Axis14.Push();
                 ImGui.BeginGroup();
                 ImGui.SetWindowFontScale(1.5f);
                 for (var i = 0; i < SeIconChars.Length; i++)
@@ -345,7 +340,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
                 WindowSize = ImGui.GetItemRectSize();
                 ImGui.SetWindowFontScale(1f);
-                Axis36FontHandle.Pop();
+                Service.Font.Axis14.Pop();
                 ImGui.EndTabItem();
             }
 
@@ -444,7 +439,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
     {
         FreeNode();
         Service.AddonLifecycle.UnregisterListener(OnAddon);
-        Axis36FontHandle = null;
 
         base.Uninit();
     }
