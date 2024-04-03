@@ -650,6 +650,15 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRetainerPriceAdjustTitle" xml:space="preserve">
     <value>自动雇员改价</value>
   </data>
+  <data name="AutoRetainersDispatch-WhatIsTheList" xml:space="preserve">
+    <value>什么是雇员登记市场变更列表?</value>
+  </data>
+  <data name="AutoRetainersDispatchDescription" xml:space="preserve">
+    <value>打开雇员窗口的雇员登记市场变更列表, 点击开始后, 自动将所有雇员的登记市场改为当前城市 </value>
+  </data>
+  <data name="AutoRetainersDispatchTitle" xml:space="preserve">
+    <value>自动变更雇员登记市场</value>
+  </data>
   <data name="AutoSellCardsConfirm-CurrentCardNotInDeckMessage" xml:space="preserve">
     <value>当前幻卡未被收录, 已停止自动幻卡回收</value>
   </data>
