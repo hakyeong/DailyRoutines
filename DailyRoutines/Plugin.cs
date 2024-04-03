@@ -66,7 +66,12 @@ public sealed class Plugin : IDalamudPlugin
             Main.IsOpen = true;
         }
         else
-            Main.IsOpen = !Main.IsOpen;
+        {
+            if (string.IsNullOrEmpty(args))
+                Main.SearchString = string.Empty;
+
+            Main.IsOpen ^= true;
+        }
     }
 
     private void DrawUI()
