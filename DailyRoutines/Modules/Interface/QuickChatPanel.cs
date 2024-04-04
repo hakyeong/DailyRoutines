@@ -60,6 +60,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
     private static List<string> ConfigSavedMessages = [];
     private static List<SavedMacro> ConfigSavedMacros = [];
+    private static float ConfigFontScale = 1.5f;
 
     private static AtkUnitBase* AddonChatLog => (AtkUnitBase*)Service.Gui.GetAddonByName("ChatLog");
 
@@ -70,6 +71,9 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
         AddConfig(this, "SavedMacros", ConfigSavedMacros);
         ConfigSavedMacros = GetConfig<List<SavedMacro>>(this, "SavedMacros");
+
+        AddConfig(this, "FontScale", 1.5f);
+        ConfigFontScale = GetConfig<float>(this, "FontScale");
 
         var tempSeIconList = new List<char>();
         foreach (SeIconChar seIconChar in Enum.GetValues(typeof(SeIconChar)))
@@ -86,16 +90,21 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
     public override void ConfigUI()
     {
+        // 左半边
         ImGui.BeginGroup();
         ImGui.AlignTextToFramePadding();
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("QuickChatPanel-Messages")}:");
 
         ImGui.AlignTextToFramePadding();
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("QuickChatPanel-Macro")}:");
+
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("QuickChatPanel-FontScale")}:");
         ImGui.EndGroup();
 
         ImGui.SameLine();
 
+        // 右半边
         ImGui.BeginGroup();
         ImGui.SetNextItemWidth(240f * ImGuiHelpers.GlobalScale);
         if (ImGui.BeginCombo("###MessagesCombo",
@@ -223,6 +232,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                     currentSavedMacro.Position = i;
                     currentSavedMacro.Category = 1;
 
+                    ImGui.PushID($"{currentSavedMacro.Category}-{currentSavedMacro.Position}");
                     if (ImGuiOm.SelectableImageWithText(icon.ImGuiHandle, new(24), name,
                                                         ConfigSavedMacros.Contains(currentSavedMacro),
                                                         ImGuiSelectableFlags.DontClosePopups))
@@ -233,6 +243,30 @@ public unsafe class QuickChatPanel : DailyModuleBase
                             UpdateConfig(this, "SavedMacros", ConfigSavedMacros);
                         }
                     }
+
+                    if (ConfigSavedMacros.Contains(currentSavedMacro) && ImGui.BeginPopupContextItem())
+                    {
+                        ImGui.TextColored(ImGuiColors.DalamudOrange,
+                                          $"{Service.Lang.GetText("QuickChatPanel-LastUpdateTime")}:");
+
+                        ImGui.SameLine();
+                        ImGui.Text(
+                            $"{ConfigSavedMacros.FirstOrDefault(x => x.Category == 1 && x.Position == i)?.LastUpdateTime}");
+
+                        ImGui.Separator();
+
+                        if (ImGuiOm.SelectableTextCentered(Service.Lang.GetText("Refresh")))
+                        {
+                            if (ConfigSavedMacros.Remove(currentSavedMacro))
+                            {
+                                ConfigSavedMacros.Add(currentSavedMacro);
+                                UpdateConfig(this, "SavedMacros", ConfigSavedMacros);
+                            }
+                        }
+
+                        ImGui.EndPopup();
+                    }
+                    ImGui.PopID();
                 }
 
                 ImGui.EndChild();
@@ -241,6 +275,12 @@ public unsafe class QuickChatPanel : DailyModuleBase
             ImGui.EndCombo();
         }
 
+        ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
+        if (ImGui.InputFloat("###FontScaleInput", ref ConfigFontScale, 0, 0, ConfigFontScale.ToString(), ImGuiInputTextFlags.EnterReturnsTrue))
+        {
+            ConfigFontScale = (float)Math.Clamp(ConfigFontScale, 0.1, 10f);
+            UpdateConfig(this, "FontScale", ConfigFontScale);
+        }
         ImGui.EndGroup();
     }
 
@@ -259,7 +299,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-Messages")))
             {
                 Service.Font.Axis14.Push();
-                ImGui.SetWindowFontScale(1.5f);
+                ImGui.SetWindowFontScale(ConfigFontScale);
                 var maxTextWidth = 200f;
                 for (var i = 0; i < ConfigSavedMessages.Count; i++)
                 {
@@ -291,7 +331,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-Macro")))
             {
                 Service.Font.Axis14.Push();
-                ImGui.SetWindowFontScale(1.5f);
+                ImGui.SetWindowFontScale(ConfigFontScale);
                 var maxTextWidth = 200f;
                 for (var i = 0; i < ConfigSavedMacros.Count; i++)
                 {
@@ -323,7 +363,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             {
                 Service.Font.Axis14.Push();
                 ImGui.BeginGroup();
-                ImGui.SetWindowFontScale(1.5f);
+                ImGui.SetWindowFontScale(ConfigFontScale);
                 for (var i = 0; i < SeIconChars.Length; i++)
                 {
                     var icon = SeIconChars[i];

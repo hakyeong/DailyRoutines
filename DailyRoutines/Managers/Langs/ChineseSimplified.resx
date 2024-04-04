@@ -935,6 +935,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="PleaseSearch" xml:space="preserve">
     <value>请搜索</value>
   </data>
+  <data name="QuickChatPanel-FontScale" xml:space="preserve">
+    <value>字体缩放倍数</value>
+  </data>
   <data name="QuickChatPanel-IndividualMacros" xml:space="preserve">
     <value>角色专用</value>
   </data>
