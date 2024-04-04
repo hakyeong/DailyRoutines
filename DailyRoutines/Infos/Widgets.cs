@@ -4,6 +4,7 @@ using System.Numerics;
 using DailyRoutines.Managers;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface;
+using Dalamud.Memory;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -54,13 +55,6 @@ public static class Widgets
             IconID = macro.IconId,
             LastUpdateTime = DateTime.Now
         };
-
-        var macroLines = new List<string>();
-        foreach (var line in macro.LinesSpan)
-        {
-            macroLines.Add(line.ExtractText());
-        }
-        savedMacro.CommandLines = macroLines;
 
         return savedMacro;
     }

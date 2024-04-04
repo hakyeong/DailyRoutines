@@ -935,6 +935,18 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="PleaseSearch" xml:space="preserve">
     <value>请搜索</value>
   </data>
+  <data name="QuickChatPanel-ButtonIcon" xml:space="preserve">
+    <value>按钮图标</value>
+  </data>
+  <data name="QuickChatPanel-ButtonOffset" xml:space="preserve">
+    <value>按钮位置偏移</value>
+  </data>
+  <data name="QuickChatPanel-Buttons" xml:space="preserve">
+    <value>按钮</value>
+  </data>
+  <data name="QuickChatPanel-ButtonSize" xml:space="preserve">
+    <value>按钮大小</value>
+  </data>
   <data name="QuickChatPanel-FontScale" xml:space="preserve">
     <value>字体缩放倍数</value>
   </data>
@@ -944,11 +956,23 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="QuickChatPanel-LastUpdateTime" xml:space="preserve">
     <value>上次更新时间</value>
   </data>
+  <data name="QuickChatPanel-List" xml:space="preserve">
+    <value>列表</value>
+  </data>
   <data name="QuickChatPanel-Macro" xml:space="preserve">
     <value>宏</value>
   </data>
   <data name="QuickChatPanel-Messages" xml:space="preserve">
     <value>消息</value>
+  </data>
+  <data name="QuickChatPanel-OpenIconBrowser" xml:space="preserve">
+    <value>打开图标浏览界面</value>
+  </data>
+  <data name="QuickChatPanel-OverlayHeight" xml:space="preserve">
+    <value>窗口高度</value>
+  </data>
+  <data name="QuickChatPanel-OverlayMacroDisplayMode" xml:space="preserve">
+    <value>宏显示模式</value>
   </data>
   <data name="QuickChatPanel-SavedMacrosAmountText" xml:space="preserve">
     <value>已选择 {0} 个用户宏</value>
