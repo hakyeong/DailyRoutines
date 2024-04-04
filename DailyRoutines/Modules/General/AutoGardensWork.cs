@@ -67,7 +67,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         Service.Hook.InitializeFromAttributes(this);
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = true };
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "HousingGardening", OnAddon);
     }
 
