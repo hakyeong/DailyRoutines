@@ -660,7 +660,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>什么是雇员登记市场变更列表?</value>
   </data>
   <data name="AutoRetainersDispatchDescription" xml:space="preserve">
-    <value>打开雇员窗口的雇员登记市场变更列表, 点击开始后, 自动将所有雇员的登记市场改为当前城市 </value>
+    <value>打开雇员窗口的雇员登记市场变更列表, 点击开始后, 自动将所有雇员的登记市场改为当前城市
+(前置模块: 自动跳过对话)</value>
   </data>
   <data name="AutoRetainersDispatchTitle" xml:space="preserve">
     <value>自动变更雇员登记市场</value>
