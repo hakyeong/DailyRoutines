@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Hooking;
 using Dalamud.Interface.Utility;
@@ -193,7 +192,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
 
                     ImGui.SameLine();
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 2.5f);
-                    ImGui.Image(Service.Texture.GetIcon(result.Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(20f));
+                    ImGui.Image(IconManager.GetIcon(result.Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(20f));
 
                     ImGui.SameLine();
                     ImGui.Text($"{result.Name.ExtractText()}");
