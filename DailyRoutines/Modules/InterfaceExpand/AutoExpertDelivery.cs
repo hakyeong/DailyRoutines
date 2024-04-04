@@ -18,7 +18,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoExpertDeliveryTitle", "AutoExpertDeliveryDescription", ModuleCategories.Interface)]
+[ModuleDescription("AutoExpertDeliveryTitle", "AutoExpertDeliveryDescription", ModuleCategories.InterfaceExpand)]
 public unsafe class AutoExpertDelivery : DailyModuleBase
 {
     private static bool IsOnProcess;

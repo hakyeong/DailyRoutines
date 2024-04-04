@@ -13,7 +13,7 @@ using Timer = System.Timers.Timer;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoRefreshPartyFinderTitle", "AutoRefreshPartyFinderDescription", ModuleCategories.Interface)]
+[ModuleDescription("AutoRefreshPartyFinderTitle", "AutoRefreshPartyFinderDescription", ModuleCategories.InterfaceExpand)]
 public class AutoRefreshPartyFinder : DailyModuleBase
 {
     private static int ConfigRefreshInterval = 10; // 秒

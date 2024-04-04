@@ -14,7 +14,7 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 // 硬编码领域大神
-[ModuleDescription("AutoMarkAetherCurrentsTitle", "AutoMarkAetherCurrentsDescription", ModuleCategories.Interface)]
+[ModuleDescription("AutoMarkAetherCurrentsTitle", "AutoMarkAetherCurrentsDescription", ModuleCategories.InterfaceExpand)]
 public class AutoMarkAetherCurrents : DailyModuleBase
 {
     private class AetherCurrent(uint index, Vector3 pos)

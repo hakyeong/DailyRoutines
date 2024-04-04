@@ -10,7 +10,7 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 // 完全来自 Pandora's Box, NiGuangOwO 写的
-[ModuleDescription("PFPageSizeCustomizeTitle", "PFPageSizeCustomizeDescription", ModuleCategories.Interface)]
+[ModuleDescription("PFPageSizeCustomizeTitle", "PFPageSizeCustomizeDescription", ModuleCategories.InterfaceExpand)]
 public class PFPageSizeCustomize : DailyModuleBase
 {
     private delegate char PartyFinderDisplayAmountDelegate(long a1, int a2);
@@ -44,7 +44,7 @@ public class PFPageSizeCustomize : DailyModuleBase
 
     private char PartyFinderDisplayAmountDetour(long a1, int a2)
     {
-        Marshal.WriteInt16(new nint(a1 + 904), (short)ConfigDisplayAmount);
+        Marshal.WriteInt16((nint)a1 + 904, (short)ConfigDisplayAmount);
         return PartyFinderDisplayAmountHook.Original(a1, a2);
     }
 }

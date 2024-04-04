@@ -890,6 +890,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Interface" xml:space="preserve">
     <value>界面</value>
   </data>
+  <data name="InterfaceExpand" xml:space="preserve">
+    <value>界面扩展</value>
+  </data>
   <data name="Language" xml:space="preserve">
     <value>语言</value>
   </data>

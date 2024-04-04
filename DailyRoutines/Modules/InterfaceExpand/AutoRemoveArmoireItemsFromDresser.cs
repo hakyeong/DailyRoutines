@@ -15,7 +15,7 @@ using Lumina.Excel.GeneratedSheets;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoRemoveArmoireItemsFromDresserTitle", "AutoRemoveArmoireItemsFromDresserDescription",
-                   ModuleCategories.Interface)]
+                   ModuleCategories.InterfaceExpand)]
 public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
 {
     private static HashSet<uint>? ArmoireAvailableItems;

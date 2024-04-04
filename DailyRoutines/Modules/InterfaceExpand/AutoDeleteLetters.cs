@@ -10,9 +10,9 @@ using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
-namespace DailyRoutines.Modules;
+namespace DailyRoutines.Modules; 
 
-[ModuleDescription("AutoDeleteLettersTitle", "AutoDeleteLettersDescription", ModuleCategories.Interface)]
+[ModuleDescription("AutoDeleteLettersTitle", "AutoDeleteLettersDescription", ModuleCategories.InterfaceExpand)]
 public unsafe class AutoDeleteLetters : DailyModuleBase
 {
     public override void Init()
