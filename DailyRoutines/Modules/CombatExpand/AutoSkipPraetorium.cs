@@ -7,7 +7,7 @@ using Dalamud.Game;
 namespace DailyRoutines.Modules;
 
 // 完全来自 Dalamud.SkipCutScene
-[ModuleDescription("AutoSkipPraetoriumTitle", "AutoSkipPraetoriumDescription", ModuleCategories.Combat)]
+[ModuleDescription("AutoSkipPraetoriumTitle", "AutoSkipPraetoriumDescription", ModuleCategories.CombatExpand)]
 public class AutoSkipPraetorium : DailyModuleBase
 {
     public CutsceneAddressResolver? Address { get; set; }

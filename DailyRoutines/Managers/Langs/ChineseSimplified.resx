@@ -784,6 +784,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Combat" xml:space="preserve">
     <value>战斗</value>
   </data>
+  <data name="CombatExpand" xml:space="preserve">
+    <value>战斗扩展</value>
+  </data>
   <data name="CommandHelp" xml:space="preserve">
     <value>打开主界面
 /pdr &lt;关键词&gt; → 打开主界面, 并搜索指定关键词</value>
