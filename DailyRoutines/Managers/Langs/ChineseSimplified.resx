@@ -769,6 +769,15 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Base" xml:space="preserve">
     <value>基础</value>
   </data>
+  <data name="BiggerHDWindowText-FontScale" xml:space="preserve">
+    <value>缩放倍数</value>
+  </data>
+  <data name="BiggerHDWindowTextDescription" xml:space="preserve">
+    <value>启用并配置完毕后, 允许你自定义输入法窗口缩放倍数, 并使部分窗口的文本变得更加清晰</value>
+  </data>
+  <data name="BiggerHDWindowTextTitle" xml:space="preserve">
+    <value>自定义高清化输入法窗口</value>
+  </data>
   <data name="Changelog" xml:space="preserve">
     <value>更新日志 ({0})</value>
   </data>
