@@ -18,6 +18,8 @@ namespace DailyRoutines.Modules;
                    ModuleCategories.InterfaceExpand)]
 public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
 {
+    private static AtkUnitBase* AddonMiragePrismPrismBox => (AtkUnitBase*)Service.Gui.GetAddonByName("MiragePrismPrismBox");
+
     private static HashSet<uint>? ArmoireAvailableItems;
 
     public override void Init()
@@ -35,7 +37,15 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
 
     public override void ConfigUI()
     {
-        if (ImGui.Button(Service.Lang.GetText("Start"))) TryRemoveItem();
+        ImGui.BeginDisabled(TaskManager.IsBusy);
+        if (ImGui.Button(Service.Lang.GetText("Start")))
+        {
+            if (AddonMiragePrismPrismBox == null) return;
+            TaskManager.Enqueue(() => AddonManager.Callback(AddonMiragePrismPrismBox, true, 0U, 0U));
+            TaskManager.DelayNext(20);
+            TaskManager.Enqueue(TryRemoveItem);
+        }
+        ImGui.EndDisabled();
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
@@ -45,13 +55,12 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
     {
         if (Service.Gui.GetAddonByName("SelectYesno") != nint.Zero) return false;
 
-        var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("MiragePrismPrismBox");
-        if (addon == null) return false;
+        if (AddonMiragePrismPrismBox == null) return false;
 
         var itemCountCurrentPage = 0;
-        for (var i = 0; i < addon->AtkValuesCount; i++)
+        for (var i = 0; i < AddonMiragePrismPrismBox->AtkValuesCount; i++)
         {
-            var itemID = addon->AtkValues[i].UInt;
+            var itemID = AddonMiragePrismPrismBox->AtkValues[i].UInt;
             if (itemID == 0) break;
 
             itemCountCurrentPage++;
@@ -59,13 +68,13 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
 
         for (var i = 0U; i < itemCountCurrentPage; i++)
         {
-            var currentAtkValue = addon->AtkValues[i + 100].UInt;
+            var currentAtkValue = AddonMiragePrismPrismBox->AtkValues[i + 100].UInt;
 
             var currentItemID = currentAtkValue > 100000 ? currentAtkValue % 100000 : currentAtkValue;
             Service.Log.Debug(currentItemID.ToString());
             if (ArmoireAvailableItems.Contains(currentItemID))
             {
-                AgentManager.SendEvent(AgentId.MiragePrismPrismBox, 0, 3U, i);
+                AddonManager.Callback(AddonMiragePrismPrismBox, true, 3U, i);
 
                 TaskManager.DelayNext(200);
                 TaskManager.Enqueue(ClickRestoreItem);
@@ -73,17 +82,18 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
             }
         }
 
-        var nextPageButton = addon->GetButtonNodeById(82);
+        var nextPageButton = AddonMiragePrismPrismBox->GetButtonNodeById(82);
         if (nextPageButton == null) return false;
         if (nextPageButton->IsEnabled)
         {
-            AgentManager.SendEvent(AgentId.MiragePrismPrismBox, 0, 1U, 1U);
+            AddonManager.Callback(AddonMiragePrismPrismBox, true, 1U, 1U);
+
             TaskManager.DelayNext(200);
             TaskManager.Enqueue(TryRemoveItem);
             return true;
         }
 
-        TaskManager.Enqueue(ClickNextPage);
+        TaskManager.Enqueue(ClickNextCategory);
 
         return true;
     }
@@ -104,15 +114,17 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
         return false;
     }
 
-    private bool? ClickNextPage()
+    private bool? ClickNextCategory()
     {
         var agent = AgentMiragePrismPrismBox.Instance();
         if (agent == null) return false;
+        if (AddonMiragePrismPrismBox == null) return false;
 
         var currentTabIndex = agent->TabIndex;
         if (currentTabIndex < 10)
         {
-            AgentManager.SendEvent(AgentId.MiragePrismPrismBox, 0, 0U, (uint)(currentTabIndex + 1));
+            AddonManager.Callback(AddonMiragePrismPrismBox, true, 0U, (uint)(currentTabIndex + 1));
+
             TaskManager.DelayNext(200);
             TaskManager.Enqueue(TryRemoveItem);
         }
