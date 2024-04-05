@@ -1004,6 +1004,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="QuickChatPanelTitle" xml:space="preserve">
     <value>快捷聊天面板</value>
   </data>
+  <data name="QuickChatPanelTitle-DragHelp" xml:space="preserve">
+    <value>按住 左SHIFT 键, 可拖拽调整窗口内消息与宏的位置</value>
+  </data>
   <data name="Refresh" xml:space="preserve">
     <value>刷新</value>
   </data>

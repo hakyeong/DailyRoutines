@@ -408,7 +408,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
         ImGui.SetWindowPos(buttonPos with { Y = buttonPos.Y - ImGui.GetWindowSize().Y - 5 });
 
-        ImGui.BeginGroup();
         if (ImGui.BeginTabBar("###QuickChatPanel"))
         {
             if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-Messages")))
@@ -427,22 +426,25 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
                         ImGuiOm.SelectableTextCentered(message);
 
-                        if (ImGui.BeginDragDropSource())
+                        if (ImGui.IsKeyDown(ImGuiKey.LeftShift))
                         {
-                            if (ImGui.SetDragDropPayload("MessageReorder", nint.Zero, 0)) _dropMacroIndex = i;
-                            ImGui.TextColored(ImGuiColors.DalamudYellow, message);
-                            ImGui.EndDragDropSource();
-                        }
-
-                        if (ImGui.BeginDragDropTarget())
-                        {
-                            if (_dropMacroIndex >= 0 || ImGui.AcceptDragDropPayload("MessageReorder").NativePtr != null)
+                            if (ImGui.BeginDragDropSource())
                             {
-                                SwapMessages(_dropMacroIndex, i);
-                                _dropMacroIndex = -1;
+                                if (ImGui.SetDragDropPayload("MessageReorder", nint.Zero, 0)) _dropMacroIndex = i;
+                                ImGui.TextColored(ImGuiColors.DalamudYellow, message);
+                                ImGui.EndDragDropSource();
                             }
 
-                            ImGui.EndDragDropTarget();
+                            if (ImGui.BeginDragDropTarget())
+                            {
+                                if (_dropMacroIndex >= 0 || ImGui.AcceptDragDropPayload("MessageReorder").NativePtr != null)
+                                {
+                                    SwapMessages(_dropMacroIndex, i);
+                                    _dropMacroIndex = -1;
+                                }
+
+                                ImGui.EndDragDropTarget();
+                            }
                         }
 
                         if (ImGui.IsItemClicked(ImGuiMouseButton.Left)) ImGui.SetClipboardText(message);
@@ -503,22 +505,25 @@ public unsafe class QuickChatPanel : DailyModuleBase
                                 break;
                         }
 
-                        if (ImGui.BeginDragDropSource())
+                        if (ImGui.IsKeyDown(ImGuiKey.LeftShift))
                         {
-                            if (ImGui.SetDragDropPayload("MacroReorder", nint.Zero, 0)) _dropMacroIndex = i;
-                            ImGui.TextColored(ImGuiColors.DalamudYellow, name);
-                            ImGui.EndDragDropSource();
-                        }
-
-                        if (ImGui.BeginDragDropTarget())
-                        {
-                            if (_dropMacroIndex >= 0 || ImGui.AcceptDragDropPayload("MacroReorder").NativePtr != null)
+                            if (ImGui.BeginDragDropSource())
                             {
-                                SwapMacros(_dropMacroIndex, i);
-                                _dropMacroIndex = -1;
+                                if (ImGui.SetDragDropPayload("MacroReorder", nint.Zero, 0)) _dropMacroIndex = i;
+                                ImGui.TextColored(ImGuiColors.DalamudYellow, name);
+                                ImGui.EndDragDropSource();
                             }
 
-                            ImGui.EndDragDropTarget();
+                            if (ImGui.BeginDragDropTarget())
+                            {
+                                if (_dropMacroIndex >= 0 || ImGui.AcceptDragDropPayload("MacroReorder").NativePtr != null)
+                                {
+                                    SwapMacros(_dropMacroIndex, i);
+                                    _dropMacroIndex = -1;
+                                }
+
+                                ImGui.EndDragDropTarget();
+                            }
                         }
 
                         switch (ConfigOverlayMacroDisplayMode)
@@ -590,24 +595,23 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 ImGui.EndTabItem();
             }
 
-            ImGui.EndTabBar();
-        }
-
-        ImGui.EndGroup();
-
-        ImGui.SameLine();
-        ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - (28f * ImGuiHelpers.GlobalScale),
-                               ImGui.GetCursorPosY() - (2f * ImGuiHelpers.GlobalScale)));
-        if (ImGuiOm.ButtonIcon("OpenQuickChatPanelSettings", FontAwesomeIcon.Cog))
-        {
-            P.Main.IsOpen ^= true;
-            if (P.Main.IsOpen)
+            ImGui.SameLine();
+            if (ImGuiOm.ButtonIcon("OpenQuickChatPanelSettings", FontAwesomeIcon.Cog))
             {
-                Main.SearchString = Service.Lang.GetText("QuickChatPanelTitle");
-                return;
+                P.Main.IsOpen ^= true;
+                if (P.Main.IsOpen)
+                {
+                    Main.SearchString = Service.Lang.GetText("QuickChatPanelTitle");
+                    return;
+                }
+
+                Main.SearchString = string.Empty;
             }
 
-            Main.SearchString = string.Empty;
+            ImGui.SameLine();
+            ImGuiOm.HelpMarker(Service.Lang.GetText("QuickChatPanelTitle-DragHelp"));
+
+            ImGui.EndTabBar();
         }
     }
 
@@ -732,8 +736,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
     private void SwapMessages(int index1, int index2)
     {
-        (ConfigSavedMessages[index1], ConfigSavedMessages[index2]) =
-            (ConfigSavedMessages[index2], ConfigSavedMessages[index1]);
+        (ConfigSavedMessages[index1], ConfigSavedMessages[index2]) = (ConfigSavedMessages[index2], ConfigSavedMessages[index1]);
 
         TaskManager.Abort();
 
