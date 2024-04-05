@@ -70,6 +70,7 @@ public class Main : Window, IDisposable
     public Main(Plugin plugin) : base("Daily Routines - Main")
     {
         Flags = ImGuiWindowFlags.NoScrollbar;
+        SizeConstraints = new WindowSizeConstraints { MinimumSize = new(650, 300)};
 
         var allModules = Assembly.GetExecutingAssembly().GetTypes()
                                  .Where(t => typeof(DailyModuleBase).IsAssignableFrom(t) && t is { IsClass: true, IsAbstract: false })
