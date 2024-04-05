@@ -7,6 +7,7 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using ECommons.Automation;
 using ECommons.ExcelServices;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -146,9 +147,9 @@ public class AutoLogin : DailyModuleBase
             if (agent->WorldId == 0) return false;
             if (agent->WorldId == ConfigSelectedWorld.WorldID)
             {
-                AgentManager.SendEvent(AgentId.Lobby, 0, 6, ConfigSelectedCharaIndex);
-                AgentManager.SendEvent(AgentId.Lobby, 0, 18, 0, ConfigSelectedCharaIndex);
-                AgentManager.SendEvent(AgentId.Lobby, 0, 6, ConfigSelectedCharaIndex);
+                AddonManager.Callback(addon, true, 6, ConfigSelectedCharaIndex);
+                AddonManager.Callback(addon, true, 18, 0, ConfigSelectedCharaIndex);
+                AddonManager.Callback(addon, true, 6, ConfigSelectedCharaIndex);
 
                 TaskManager.Enqueue(() => Click.TrySendClick("select_yes"));
                 TaskManager.Enqueue(() => HasLoginOnce = true);
@@ -164,6 +165,7 @@ public class AutoLogin : DailyModuleBase
 
     private unsafe bool? SelectWorld()
     {
+        if (!EzThrottler.Throttle("AutoLogin-SelectWorld")) return false;
         if (InterruptByConflictKey()) return true;
 
         var agent = AgentLobby.Instance();
@@ -173,11 +175,11 @@ public class AutoLogin : DailyModuleBase
         {
             for (var i = 0; i < 16; i++)
             {
-                AgentManager.SendEvent(AgentId.Lobby, 0, 9, 0, i);
+                AddonManager.Callback(addon, true, 9, 0, i);
 
                 if (agent->WorldId == ConfigSelectedWorld.WorldID)
                 {
-                    AgentManager.SendEvent(AgentId.Lobby, 0, 10, 0, i);
+                    AddonManager.Callback(addon, true, 10, 0, i);
 
                     TaskManager.DelayNext(200);
                     TaskManager.Enqueue(SelectCharacter);
