@@ -23,7 +23,9 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
     }
 
     private static readonly string[] TextInputWindows = ["LookingForGroupCondition", "ChatLog", "AOZNotebookFilterSettings",
-        "MountNoteBook", "MinionNoteBook"];
+        "MountNoteBook", "MinionNoteBook", "ItemSearch", "PcSearchDetail", "Macro", "Emote", "LookingForGroupNameSearch", "InputString", "RecipeNote", "GatheringNote", "FishGuide2"];
+
+    private static readonly Dictionary<string, uint[]> TextInputWindowsNodes = [];
 
     private static readonly Dictionary<string, TextNodeInfo> TextWindows = new()
     {
@@ -75,7 +77,10 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
 
             if (!TryScanTextInputComponent(addon, out var nodeID)) continue;
 
-            ModifyTextInputComponent(addon, nodeID, true);
+            foreach (var id in nodeID)
+            {
+                ModifyTextInputComponent(addon, id, true);
+            }
         }
     }
 
@@ -119,14 +124,22 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
         }
     }
 
-    private static bool TryScanTextInputComponent(AtkUnitBase* addon, out uint nodeID)
+    private static bool TryScanTextInputComponent(AtkUnitBase* addon, out uint[] nodeID)
     {
-        nodeID = 0;
+        var addonName = Marshal.PtrToStringUTF8((nint)addon->Name);
+        if (TextInputWindowsNodes.TryGetValue(addonName, out var nodes))
+        {
+            nodeID = nodes;
+            return true;
+        }
+
+        nodeID = [];
 
         if (addon == null) return false;
 
         var nodeList = addon->UldManager.NodeList;
 
+        var nodeIDList = new List<uint>();
         for (var i = 0; i < addon->UldManager.NodeListCount; i++)
         {
             var node = nodeList[i];
@@ -140,12 +153,13 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
 
             if (objectInfo->ComponentType == ComponentType.TextInput)
             {
-                nodeID = node->NodeID;
-                return true;
+                nodeIDList.Add(node->NodeID);
             }
         }
+        nodeID = [.. nodeIDList];
+        TextInputWindowsNodes[addonName] = nodeID;
 
-        return false;
+        return nodeIDList.Count > 0;
     }
 
     public override void Uninit()
@@ -167,7 +181,10 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
             if (addon == null) continue;
             if (!TryScanTextInputComponent(addon, out var nodeID)) continue;
 
-            ModifyTextInputComponent(addon, nodeID, false);
+            foreach (var id in nodeID)
+            {
+                ModifyTextInputComponent(addon, id, false);
+            }
         }
 
         base.Uninit();
