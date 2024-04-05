@@ -623,6 +623,12 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRetainerCollectTitle" xml:space="preserve">
     <value>自动收取雇员</value>
   </data>
+  <data name="AutoRetainerPriceAdjust-AdjustForListItems" xml:space="preserve">
+    <value>改价 (出售列表)</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-AdjustForRetainers" xml:space="preserve">
+    <value>改价 (所有雇员)</value>
+  </data>
   <data name="AutoRetainerPriceAdjust-LowestAcceptablePrice" xml:space="preserve">
     <value>最低可接受价格</value>
   </data>
