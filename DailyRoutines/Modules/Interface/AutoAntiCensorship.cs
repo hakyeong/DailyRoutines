@@ -80,12 +80,12 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
     public override void ConfigUI()
     {
         PreviewImageWithHelpText(Service.Lang.GetText("AutoAntiCensorship-Preview"),
-                                 "https://raw.gitmirror.com/AtmoOmen/DailyRoutines/main/imgs/AutoAntiCensorship-1.png",
+                                 "https://mirror.ghproxy.com/https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoAntiCensorship-1.png",
                                  new Vector2(386, 105));
 
         ImGui.SameLine();
         PreviewImageWithHelpText(Service.Lang.GetText("AutoAntiCensorship-Preview1"),
-                                 "https://raw.gitmirror.com/AtmoOmen/DailyRoutines/main/imgs/AutoAntiCensorship-2.png",
+                                 "https://mirror.ghproxy.com/https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoAntiCensorship-2.png",
                                  new Vector2(383, 36));
 
         ImGui.Separator();

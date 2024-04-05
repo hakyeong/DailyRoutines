@@ -18,7 +18,7 @@ public class AutoRetainersDispatch : DailyModuleBase
     public override void ConfigUI()
     {
         PreviewImageWithHelpText(Service.Lang.GetText("AutoRetainersDispatch-WhatIsTheList"), 
-                                 "https://raw.gitmirror.com/AtmoOmen/DailyRoutines/main/imgs/AutoRetainersDispatch-1.png", new(582, 325));
+                                 "https://mirror.ghproxy.com/https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoRetainersDispatch-1.png", new(582, 325));
 
         if (ImGui.Button(Service.Lang.GetText("Start"))) EnqueueDispatch();
 

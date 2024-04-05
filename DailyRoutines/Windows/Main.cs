@@ -405,7 +405,7 @@ public class Main : Window, IDisposable
 
     private static async Task<int> GetTotalDownloadsAsync()
     {
-        const string url = "https://raw.gitmirror.com/AtmoOmen/DailyRoutines/main/downloads.txt";
+        const string url = "https://mirror.ghproxy.com/https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/downloads.txt";
         var response = await client.GetStringAsync(url);
         return int.TryParse(response, out var totalDownloads) ? totalDownloads : 0;
     }
