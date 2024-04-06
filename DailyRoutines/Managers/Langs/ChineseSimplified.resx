@@ -1058,4 +1058,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="TotalDL" xml:space="preserve">
     <value>历史总计下载</value>
   </data>
+  <data name="Author" xml:space="preserve">
+    <value>作者</value>
+  </data>
 </root>
