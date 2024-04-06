@@ -19,10 +19,10 @@ public class AutoNotifyReadyCheck : DailyModuleBase
         if (uintType != 57 && uintType != 313 && uintType != 569) return;
 
         var content = message.ExtractText();
-        if (!content.Contains("发起了准备确认")) return;
+        if (!content.Contains("发起了准备确认") && !content.Contains(" a ready check") && !content.Contains("レディチェックを開始しました")) return;
 
         content = content.Trim('。');
-
+        content = content.Trim('.');
         Service.Notice.Notify(content, content);
     }
 
