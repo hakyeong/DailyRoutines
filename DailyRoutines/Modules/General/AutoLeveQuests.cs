@@ -12,6 +12,7 @@ using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -198,15 +199,11 @@ public class AutoLeveQuests : DailyModuleBase
 
     private static unsafe bool? AcceptLeveQuest()
     {
-        if (TryGetAddonByName<AtkUnitBase>("JournalDetail", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
-        {
-            var handler = new ClickJournalDetailDR();
-            handler.Accept((int)SelectedLeve.RowId);
+        if (!TryGetAddonByName<AtkUnitBase>("GuildLeve", out var addon) || HelpersOm.IsAddonAndNodesReady(addon)) return false;
 
-            return QuestManager.Instance()->GetLeveQuestById((ushort)SelectedLeve.RowId) != null;
-        }
+        AgentManager.SendEvent(AgentId.LeveQuest, 0, 3, SelectedLeve.RowId);
 
-        return false;
+        return true;
     }
 
     private static unsafe bool? ExitLeveInterface()
