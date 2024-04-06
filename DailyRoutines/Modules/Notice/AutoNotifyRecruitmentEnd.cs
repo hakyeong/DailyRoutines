@@ -21,15 +21,39 @@ public class AutoNotifyRecruitmentEnd : DailyModuleBase
         if (Service.Condition[ConditionFlag.BoundByDuty] || Service.Condition[ConditionFlag.BoundByDuty56] || Service.Condition[ConditionFlag.BoundByDuty95] || Service.Condition[ConditionFlag.BoundToDuty97]) return;
 
         var content = message.ExtractText();
-        if (!content.StartsWith("招募队员结束")) return;
-        var parts = content.Split(["，"], StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length > 1)
+
+        if (!content.StartsWith("招募队员结束") && !content.Contains("Party recruitment ended") && !content.Contains("パーティ募集の人数を満たしたため終了します。")) return;
+
+        var title = "";
+        if (content.StartsWith("招募队员结束"))
         {
-            Service.Notice.Notify(parts[0], parts[1].Trim('。'));
-            return;
+            var parts = content.Split(["，"], StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length > 1)
+            {
+                Service.Notice.Notify(parts[0], parts[1].Trim('。'));
+                return;
+            }
+
+            title = parts[0].Trim('。');
         }
 
-        var title = parts[0].Trim('。');
+        if (content.Contains("Party recruitment ended"))
+        {
+            var parts = content.Split(["."], StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length > 1)
+            {
+                Service.Notice.Notify(parts[1], parts[0]);
+                return;
+            }
+
+            title = parts[0];
+        }
+
+        if (content.Contains("パーティ募集の人数を満たしたため終了します。"))
+        {
+            title = content;
+        }
+
         Service.Notice.Notify(title, title);
     }
 
