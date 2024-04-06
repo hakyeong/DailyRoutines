@@ -11,8 +11,11 @@ using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
 using ECommons.Automation;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -21,7 +24,11 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoExpertDeliveryTitle", "AutoExpertDeliveryDescription", ModuleCategories.InterfaceExpand)]
 public unsafe class AutoExpertDelivery : DailyModuleBase
 {
-    private static bool IsOnProcess;
+    private delegate byte AtkUnitBaseCloseDelegate(AtkUnitBase* unitBase, byte a2);
+    private static AtkUnitBaseCloseDelegate? AtkUnitBaseClose;
+
+    private static AtkUnitBase* AddonGrandCompanySupplyList => (AtkUnitBase*)Service.Gui.GetAddonByName("GrandCompanySupplyList");
+
     private static HashSet<uint> HQItems = [];
 
     private static bool ConfigSkipWhenHQ;
@@ -40,10 +47,12 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         AddConfig(this, "SkipWhenHQ", ConfigSkipWhenHQ);
         ConfigSkipWhenHQ = GetConfig<bool>(this, "SkipWhenHQ");
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        AtkUnitBaseClose ??= Marshal.GetDelegateForFunctionPointer<AtkUnitBaseCloseDelegate>(Service.SigScanner.ScanText("40 53 48 83 EC 50 81 A1"));
+
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = true };
         Overlay ??= new Overlay(this);
 
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", AlwaysYes);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectYesno", AlwaysYes);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "GrandCompanySupplyList", OnAddonSupplyList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "GrandCompanySupplyList", OnAddonSupplyList);
     }
@@ -60,21 +69,15 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
         ImGui.Separator();
 
-        ImGui.BeginDisabled(IsOnProcess);
+        ImGui.BeginDisabled(TaskManager.IsBusy);
         if (ImGui.Checkbox(Service.Lang.GetText("AutoExpertDelivery-SkipHQ"), ref ConfigSkipWhenHQ))
             UpdateConfig(this, "SkipWhenHQ", ConfigSkipWhenHQ);
 
-        if (ImGui.Button(Service.Lang.GetText("Start"))) StartHandOver();
+        if (ImGui.Button(Service.Lang.GetText("Start"))) EnqueueAllItems();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"))) EndHandOver();
-    }
-
-    private void AlwaysYes(AddonEvent type, AddonArgs args)
-    {
-        if (!TaskManager.IsBusy) return;
-        Click.SendClick("select_yes");
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
     }
 
     private void OnAddonSupplyList(AddonEvent type, AddonArgs args)
@@ -87,102 +90,111 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         };
     }
 
-    private static void OnAddonSupplyReward(AddonEvent type, AddonArgs args)
+    private void AlwaysYes(AddonEvent type, AddonArgs args)
     {
-        if (TryGetAddonByName<AtkUnitBase>("GrandCompanySupplyReward", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(addon))
-        {
-            var handler = new ClickGrandCompanySupplyReward();
-            handler.Deliver();
-        }
+        if (!TaskManager.IsBusy) return;
+        Click.SendClick("select_yes");
     }
 
-    private bool? StartHandOver()
+    private void EnqueueAllItems()
     {
-        if (Service.Gui.GetAddonByName("GrandCompanySupplyReward") != nint.Zero) return false;
+        if (AddonGrandCompanySupplyList == null) return;
 
         var handler = new ClickGrandCompanySupplyListDR();
         handler.ExpertDelivery();
 
-        if (IsSealsReachTheCap())
+        var listCount = ((AddonGrandCompanySupplyList*)AddonGrandCompanySupplyList)->ExpertDeliveryList->ListLength;
+        if (listCount == 0) return;
+
+        if (ConfigSkipWhenHQ)
         {
-            EndHandOver();
+            HQItems.Clear();
+            HQItems = InventoryScanner(ValidInventoryTypes);
+        }
+
+        for (var i = 0; i < listCount; i++)
+        {
+            var index = i;
+            TaskManager.Enqueue(CheckIfReachTheCap);
+            TaskManager.Enqueue(ClickItem);
+            TaskManager.Enqueue(ClickHandIn);
+            TaskManager.Enqueue(() => Service.Log.Debug($"第 {index} 轮已结束"));
+        }
+    }
+
+    private bool? CheckIfReachTheCap()
+    {
+        if (AddonGrandCompanySupplyList == null || !HelpersOm.IsAddonAndNodesReady(AddonGrandCompanySupplyList)) return false;
+
+        var parts = Marshal.PtrToStringUTF8((nint)AtkStage.GetSingleton()->GetStringArrayData()[32]->StringArray[2])
+                           .Split('/');
+        var capAmount = int.Parse(parts[1].Replace(",", ""));
+
+        var grandCompany = UIState.Instance()->PlayerState.GrandCompany;
+        if ((GrandCompany)grandCompany == GrandCompany.None)
+        {
+            Service.Log.Debug("玩家当前不属于任一大国防联军, 已停止");
+            TaskManager.Abort();
             return true;
         }
 
-        if (!IsOnProcess)
+        var companySeals = InventoryManager.Instance()->GetCompanySeals(grandCompany);
+
+        var firstItemAmount = AddonGrandCompanySupplyList->AtkValues[265].UInt;
+        if (firstItemAmount + companySeals > capAmount)
         {
-            if (ConfigSkipWhenHQ)
-            {
-                HQItems.Clear();
-                HQItems = InventoryScanner(ValidInventoryTypes);
-            }
-
-            Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "GrandCompanySupplyReward",
-                                                    OnAddonSupplyReward);
-        }
-
-        TaskManager.Enqueue(ClickItem);
-        IsOnProcess = true;
-
-        return true;
-    }
-
-    private void EndHandOver()
-    {
-        Service.AddonLifecycle.UnregisterListener(OnAddonSupplyReward);
-        TaskManager?.Abort();
-        IsOnProcess = false;
-    }
-
-    // (即将)达到限额 - true
-    private static bool IsSealsReachTheCap()
-    {
-        if (TryGetAddonByName<AddonGrandCompanySupplyList>("GrandCompanySupplyList", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
-        {
-            if (addon->ExpertDeliveryList->ListLength == 0) return true;
-
-            var parts = Marshal.PtrToStringUTF8((nint)AtkStage.GetSingleton()->GetStringArrayData()[32]->StringArray[2])
-                               .Split('/');
-            var currentAmount = int.Parse(parts[0].Replace(",", ""));
-            var capAmount = int.Parse(parts[1].Replace(",", ""));
-
-            var firstItemAmount = addon->AtkUnitBase.AtkValues[265].UInt;
-            return firstItemAmount + currentAmount > capAmount;
+            Service.Log.Debug("军票即将超限, 已停止");
+            TaskManager.Abort();
         }
 
         return true;
     }
 
-    private bool? ClickItem()
+    private static bool? ClickItem()
     {
+        if (!EzThrottler.Throttle("AutoExpertDelivery", 250)) return false;
+
+        if (Service.Gui.GetAddonByName("GrandCompanySupplyReward") != nint.Zero) return false;
+        if (Service.Gui.GetAddonByName("SelectYesno") != nint.Zero) return false;
+
         if (TryGetAddonByName<AddonGrandCompanySupplyList>("GrandCompanySupplyList", out var addon) &&
             HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
             var handler = new ClickGrandCompanySupplyListDR();
             if (ConfigSkipWhenHQ)
             {
-                var isOnlyHaveHQItems = true;
                 for (var i = 0; i < addon->ExpertDeliveryList->ListLength; i++)
                 {
-                    var isHQItem = HQItems.Contains(addon->AtkUnitBase.AtkValues[i + 425].UInt);
+                    var itemID = addon->AtkUnitBase.AtkValues[i + 425].UInt;
+                    var isHQItem = HQItems.Contains(itemID);
                     if (isHQItem) continue;
 
                     handler.ItemEntry(i);
-                    isOnlyHaveHQItems = false;
-                }
-
-                if (isOnlyHaveHQItems)
-                {
-                    EndHandOver();
-                    return true;
                 }
             }
             else
                 handler.ItemEntry(0);
 
-            TaskManager.Enqueue(StartHandOver);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool? ClickHandIn()
+    {
+        if (!EzThrottler.Throttle("AutoExpertDelivery", 250)) return false;
+
+        if (AddonGrandCompanySupplyList != null && HelpersOm.IsAddonAndNodesReady(AddonGrandCompanySupplyList))
+        {
+            CloseAddon(AddonGrandCompanySupplyList);
+        }
+
+        if (TryGetAddonByName<AtkUnitBase>("GrandCompanySupplyReward", out var addon) &&
+            HelpersOm.IsAddonAndNodesReady(addon))
+        {
+            ClickGrandCompanySupplyReward.Using((nint)addon).Deliver();
+
             return true;
         }
 
@@ -218,9 +230,13 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         return list;
     }
 
+    public static void CloseAddon(AtkUnitBase* atkUnitBase, bool unknownBool = false)
+    {
+        AtkUnitBaseClose(atkUnitBase, (byte)(unknownBool ? 1 : 0));
+    }
+
     public override void Uninit()
     {
-        EndHandOver();
         Service.AddonLifecycle.UnregisterListener(AlwaysYes);
         Service.AddonLifecycle.UnregisterListener(OnAddonSupplyList);
 
