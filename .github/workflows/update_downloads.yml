@@ -6,47 +6,47 @@ on:
   workflow_dispatch:
 
 jobs:
-  check-repository:
+  check-repository-and-update:
     runs-on: ubuntu-latest
-    outputs:
-      is_dailyroutines: ${{ steps.check_repo.outputs.is_dailyroutines }}
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Check Repository Info
-      id: check_repo
+    - name: Get repository details
+      id: repo_info
       run: |
-        repo_info=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }})
-        owner=$(echo "$repo_info" | jq -r '.owner.login')
-        name=$(echo "$repo_info" | jq -r '.name')
-        if [[ "$owner" == "AtmoOmen1" && "$name" == "DailyRoutines" ]]; then
-          echo "::set-output name=is_dailyroutines::true"
-        else
-          echo "::set-output name=is_dailyroutines::false"
-        fi
+        REPO_NAME=$(echo $GITHUB_REPOSITORY | awk -F'/' '{print $1"/"$2}')
+        echo "::set-output name=repo_name::$REPO_NAME"
 
-  update-downloads:
-    needs: check-repository
-    if: needs.check-repository.outputs.is_dailyroutines == 'true'
-    runs-on: ubuntu-latest
-    steps:
+    - name: Check if DailyRoutines
+      if: ${{ steps.repo_info.outputs.repo_name != 'AtmoOmen/DailyRoutines' }}
+      run: |
+        echo "This is not the AtmoOmen's DailyRoutines repository. Exiting."
+        exit 0
+
+    - name: Checkout code
+      if: ${{ steps.repo_info.outputs.repo_name == 'AtmoOmen/DailyRoutines' }}
+      uses: actions/checkout@v2
+
     - name: Set up Python
+      if: ${{ steps.repo_info.outputs.repo_name == 'AtmoOmen/DailyRoutines' }}
       uses: actions/setup-python@v2
       with:
         python-version: '3.x'
+
     - name: Install dependencies
+      if: ${{ steps.repo_info.outputs.repo_name == 'AtmoOmen/DailyRoutines' }}
       run: |
         python -m pip install --upgrade pip
         pip install requests
+
     - name: Update total downloads
+      if: ${{ steps.repo_info.outputs.repo_name == 'AtmoOmen/DailyRoutines' }}
       run: |
         python update_downloads.py > downloads.txt
+
     - name: Commit and push if changed
-      env:
-        MY_PAT: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      if: ${{ steps.repo_info.outputs.repo_name == 'AtmoOmen/DailyRoutines' }}
       run: |
         git config --global user.email "actions@github.com"
         git config --global user.name "GitHub Actions"
         git add downloads.txt
         git commit -m "Update Total Downloads" -a || echo "No changes to commit"
-        git push --set-upstream https://${{ MY_PAT }}@github.com/${{ github.repository }} HEAD:main
+        git push --set-upstream https://${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/${{ github.repository }} HEAD:main
