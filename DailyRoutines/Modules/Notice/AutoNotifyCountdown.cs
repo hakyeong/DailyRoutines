@@ -40,8 +40,9 @@ namespace DailyRoutines.Modules
             if (uintType != 185) return;
             
             var content = message.ExtractText();
-            if (!content.StartsWith("距离战斗开始还有")) return;
-            if (!content.EndsWith('）')) return;
+            if (!content.StartsWith("距离战斗开始还有") && !content.StartsWith("Battle commencing in ") && !content.StartsWith("戦闘開始まで")) return;
+            
+            if (!content.EndsWith('）') && !content.EndsWith(')')) return;
             
             Service.Notice.Notify(Service.Lang.GetText("AutoNotifyCountdownTitle-NotificationTitle"), content);
         }
