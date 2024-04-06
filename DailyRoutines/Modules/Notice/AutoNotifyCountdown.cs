@@ -23,7 +23,7 @@ namespace DailyRoutines.Modules
         
         public override void ConfigUI()
         {
-            PreviewImageWithHelpText(Service.Lang.GetText("AutoNotifyCutSceneEnd-NotificationMessageHelp"),
+            PreviewImageWithHelpText(Service.Lang.GetText("AutoNotifyCountdown-NotificationMessageHelp"),
                                      "https://mirror.ghproxy.com/https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoNotifyCountdown.png-1.png",
                                      new Vector2(378, 113));
 

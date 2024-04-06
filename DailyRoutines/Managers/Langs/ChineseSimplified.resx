@@ -482,6 +482,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <data name="AutoNotifyCountdownDescription" xml:space="preserve">
     <value>在有人发起倒计时的时候, 自动发送一条 Windows 系统通知</value>
   </data>
+    <data name="AutoNotifyCountdown-NotificationMessageHelp" xml:space="preserve">
+    <value>提示信息外观 (Windows 10+)</value>
+  </data>
   <data name="AutoNotifyRecruitmentEndDescription" xml:space="preserve">
     <value>在发布的队员招募因各种原因结束时, 自动发送一条 Windows 系统通知</value>
   </data>
