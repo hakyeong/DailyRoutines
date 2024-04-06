@@ -16,34 +16,34 @@ jobs:
         echo "::set-output name=repo_name::$REPO_NAME"
 
     - name: Check if DailyRoutines
-      if: ${{ steps.repo_info.outputs.repo_name != 'AtmoOmen/DailyRoutines' }}
+      if: ${{ steps.repo_info.outputs.repo_name != 'AtmoOmen1/DailyRoutines' }}
       run: |
         echo "This is not the AtmoOmen's DailyRoutines repository. Exiting."
         exit 0
 
     - name: Checkout code
-      if: ${{ steps.repo_info.outputs.repo_name == 'AtmoOmen/DailyRoutines' }}
+      if: ${{ steps.repo_info.outputs.repo_name == 'AtmoOmen1/DailyRoutines' }}
       uses: actions/checkout@v2
 
     - name: Set up Python
-      if: ${{ steps.repo_info.outputs.repo_name == 'AtmoOmen/DailyRoutines' }}
+      if: ${{ steps.repo_info.outputs.repo_name == 'AtmoOmen1/DailyRoutines' }}
       uses: actions/setup-python@v2
       with:
         python-version: '3.x'
 
     - name: Install dependencies
-      if: ${{ steps.repo_info.outputs.repo_name == 'AtmoOmen/DailyRoutines' }}
+      if: ${{ steps.repo_info.outputs.repo_name == 'AtmoOmen1/DailyRoutines' }}
       run: |
         python -m pip install --upgrade pip
         pip install requests
 
     - name: Update total downloads
-      if: ${{ steps.repo_info.outputs.repo_name == 'AtmoOmen/DailyRoutines' }}
+      if: ${{ steps.repo_info.outputs.repo_name == 'AtmoOmen1/DailyRoutines' }}
       run: |
         python update_downloads.py > downloads.txt
 
     - name: Commit and push if changed
-      if: ${{ steps.repo_info.outputs.repo_name == 'AtmoOmen/DailyRoutines' }}
+      if: ${{ steps.repo_info.outputs.repo_name == 'AtmoOmen1/DailyRoutines' }}
       run: |
         git config --global user.email "actions@github.com"
         git config --global user.name "GitHub Actions"
