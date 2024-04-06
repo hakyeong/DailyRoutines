@@ -476,7 +476,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <data name="AutoNotifyCountdownTitle" xml:space="preserve">
     <value>自动通知倒计时开始</value>
   </data>
-    <data name="AutoNotifyCountdownTitle-NotificationTitle" xml:space="preserve">
+    <data name="AutoNotifyCountdown-NotificationTitle" xml:space="preserve">
     <value>开始倒计时</value>
   </data>
     <data name="AutoNotifyCountdownDescription" xml:space="preserve">

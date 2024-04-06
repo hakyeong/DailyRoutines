@@ -44,7 +44,7 @@ namespace DailyRoutines.Modules
             
             if (!content.EndsWith('）') && !content.EndsWith(')')) return;
             
-            Service.Notice.Notify(Service.Lang.GetText("AutoNotifyCountdownTitle-NotificationTitle"), content);
+            Service.Notice.Notify(Service.Lang.GetText("AutoNotifyCountdown-NotificationTitle"), content);
         }
 
         public override void Uninit()
