@@ -16,6 +16,7 @@ namespace DailyRoutines.Modules;
 public abstract class DailyModuleBase
 {
     public bool Initialized { get; internal set; }
+    public virtual string? Author { get; set; }
     protected TaskManager? TaskManager { get; set; }
     protected Overlay? Overlay { get; set; }
 
