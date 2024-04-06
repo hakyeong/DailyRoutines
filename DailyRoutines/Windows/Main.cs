@@ -173,11 +173,11 @@ public class Main : Window, IDisposable
                 "ConfigUI", BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
         var isWithUI = methodInfo != null && methodInfo.DeclaringType != typeof(ModuleBase);
 
+        var component = ModuleManager.Modules[moduleInfo.Module];
         if (ImGuiOm.CheckboxColored("", ref tempModuleBool))
         {
             Service.Config.ModuleEnabled[moduleName] ^= true;
 
-            var component = ModuleManager.Modules[moduleInfo.Module];
             if (tempModuleBool) ModuleManager.Load(component);
             else ModuleManager.Unload(component);
 
@@ -186,15 +186,24 @@ public class Main : Window, IDisposable
 
         var moduleText = $"[{moduleName}]";
         ImGui.SameLine();
-        var origCursorPos = ImGui.GetCursorPosX();
-        ImGui.SetCursorPosX(ImGui.GetWindowWidth() - (ImGui.CalcTextSize(moduleText).X * 0.8f) -
-                            (4 * ImGui.GetStyle().FramePadding.X));
+        var origCursorPosX = ImGui.GetCursorPosX();
+        ImGui.SetCursorPosX(ImGui.GetWindowWidth() - (ImGui.CalcTextSize(moduleText).X * 0.8f) - (4 * ImGui.GetStyle().FramePadding.X));
         ImGui.SetWindowFontScale(0.8f);
         ImGui.TextDisabled(moduleText);
         ImGui.SetWindowFontScale(1f);
 
+        var author = component.Author;
+        var isWithAuthor = !string.IsNullOrEmpty(author);
+
+        if (isWithAuthor)
+        {
+            ImGui.SameLine();
+            ImGui.SetCursorPosX(origCursorPosX + ImGui.CalcTextSize(moduleInfo.Title).X + ImGui.GetStyle().FramePadding.X * 8 + (tempModuleBool && isWithUI ? 20f : -15f));
+            ImGui.TextColored(ImGuiColors.DalamudGrey3, $"{Service.Lang.GetText("Author")}: {author}");
+        }
+
         ImGui.SameLine();
-        ImGui.SetCursorPosX(origCursorPos);
+        ImGui.SetCursorPosX(origCursorPosX);
 
         if (tempModuleBool)
         {
@@ -202,7 +211,7 @@ public class Main : Window, IDisposable
             {
                 if (CollapsingHeader())
                 {
-                    ImGui.SetCursorPosX(origCursorPos);
+                    ImGui.SetCursorPosX(origCursorPosX);
                     ImGui.BeginGroup();
                     DrawModuleUI(moduleInfo);
                     ImGui.EndGroup();
@@ -214,7 +223,7 @@ public class Main : Window, IDisposable
         else
             ImGui.Text(moduleInfo.Title);
 
-        ImGui.SetCursorPosX(origCursorPos);
+        ImGui.SetCursorPosX(origCursorPosX);
         ImGuiOm.TextDisabledWrapped(moduleInfo.Description);
         if (index < modulesCount - 1) ImGui.Separator();
 
@@ -341,6 +350,13 @@ public class Main : Window, IDisposable
             if (ImGui.Button("QQ 群")) Util.OpenLink("https://qm.qq.com/q/QlImB8pn2");
             ImGui.PopStyleColor();
             ImGuiOm.TooltipHover("951926472");
+
+            ImGui.SameLine(0f, 16f);
+            ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedPurple);
+            if (ImGui.Button("爱发电")) Util.OpenLink("https://afdian.net/a/AtmoOmen");
+            ImGui.PopStyleColor();
+            ImGuiOm.TooltipHover("如果你认可我的工作, 可以给我买杯 HQ 柠檬水\n\n" +
+                "注: 捐赠均为 无偿 性质, 我无法因为捐赠给出任何承诺或回报, 请三思而后行");
 
             ImGui.Separator();
 
