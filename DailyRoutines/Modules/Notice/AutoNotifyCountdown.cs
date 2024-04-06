@@ -11,6 +11,7 @@ namespace DailyRoutines.Modules
     [ModuleDescription("AutoNotifyCountdownTitle", "AutoNotifyCountdownDescription", ModuleCategories.Notice)]
     public class AutoNotifyCountdown: DailyModuleBase
     {
+        public override string? Author { get; set; } = "HSS";
         private static bool ConfigOnlyNotifyWhenBackground;
         
         public override void Init()
