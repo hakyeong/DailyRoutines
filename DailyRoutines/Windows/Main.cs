@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Numerics;
 using System.Reflection;
+using System.Security.Policy;
 using System.Threading.Tasks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -31,28 +32,21 @@ public class Main : Window, IDisposable
         public ModuleCategories Category { get; set; }
     }
 
-    public class Release
-    {
-        public int id { get; set; }
-        public string tag_name { get; set; } = null!;
-        public string name { get; set; } = null!;
-        public string body { get; set; } = null!;
-        public DateTime published_at { get; set; }
-        public List<Asset> assets { get; set; } = null!;
-    }
-
-    public class Asset
-    {
-        public string name { get; set; } = null!;
-        public int download_count { get; set; }
-    }
-
     public class VersionInfo
     {
         public Version Version { get; set; } = new();
         public DateTime PublishTime { get; set; } = DateTime.MinValue;
         public string Changelog { get; set; } = string.Empty;
         public int DownloadCount { get; set; }
+    }
+
+    public class GameEvent
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Url { get; set; } = string.Empty;
+        public DateTime BeginTime { get; set; } = DateTime.MinValue;
+        public DateTime EndTime { get; set; } = DateTime.MaxValue;
+        public Vector4 Color { get; set; }
     }
     #endregion
 
@@ -66,6 +60,8 @@ public class Main : Window, IDisposable
     private static int TotalDownloadCounts;
     private static Version CurrentVersion = new();
     private static VersionInfo LatestVersionInfo = new();
+    private static readonly List<GameEvent> GameCalendars = [];
+
 
     public Main(Plugin plugin) : base("Daily Routines - Main")
     {
@@ -83,19 +79,12 @@ public class Main : Window, IDisposable
                                  }).ToList();
         
         Modules.AddRange(allModules);
-
         allModules.GroupBy(m => m.Category).ToList().ForEach(group =>
         {
             categorizedModules[group.Key] = [.. group.OrderBy(m => m.Title)];
         });
 
-        Task.Run(async () =>
-        {
-            TotalDownloadCounts = await GetTotalDownloadsAsync();
-            LatestVersionInfo = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
-        });
-
-        CurrentVersion = GetCurrentVersion();
+        ObtainNecessityInfo();
     }
 
     public override void Draw()
@@ -110,17 +99,17 @@ public class Main : Window, IDisposable
             if (string.IsNullOrEmpty(SearchString))
             {
                 foreach (var category in Enum.GetValues(typeof(ModuleCategories)))
-                    DrawTabItemModules((ModuleCategories)category);
+                    DrawModules((ModuleCategories)category);
                 DrawTabSettings();
             }
             else
-                DrawTabItemModulesSearchResult(Modules);
+                DrawModulesSearchResult(Modules);
 
             ImGui.EndTabBar();
         }
     }
 
-    private static void DrawTabItemModules(ModuleCategories category)
+    private static void DrawModules(ModuleCategories category)
     {
         if (!categorizedModules.TryGetValue(category, out var modules)) return;
         var modulesInCategory = modules.ToArray();
@@ -134,7 +123,7 @@ public class Main : Window, IDisposable
                     var module = modulesInCategory[i];
 
                     ImGui.PushID($"{module.Module.Name}-{module.Category}-{module.Title}-{module.Description}");
-                    DrawModuleCheckbox(module, modulesInCategory.Length, i);
+                    DrawModuleUI(module, modulesInCategory.Length, i);
                     ImGui.PopID();
                 }
                 ImGui.EndChild();
@@ -143,7 +132,7 @@ public class Main : Window, IDisposable
         }
     }
 
-    private static void DrawTabItemModulesSearchResult(IReadOnlyList<ModuleInfo> modules)
+    private static void DrawModulesSearchResult(IReadOnlyList<ModuleInfo> modules)
     {
         if (ImGui.BeginTabItem(Service.Lang.GetText("SearchResult")))
         {
@@ -154,7 +143,7 @@ public class Main : Window, IDisposable
                     !module.Description.Contains(SearchString, StringComparison.OrdinalIgnoreCase)) continue;
 
                 ImGui.PushID($"{module.Category}-{module.Description}-{module.Title}-{module.Module}");
-                DrawModuleCheckbox(module, modules.Count, i);
+                DrawModuleUI(module, modules.Count, i);
                 ImGui.PopID();
             }
 
@@ -162,7 +151,7 @@ public class Main : Window, IDisposable
         }
     }
 
-    private static void DrawModuleCheckbox(ModuleInfo moduleInfo, int modulesCount, int index)
+    private static void DrawModuleUI(ModuleInfo moduleInfo, int modulesCount, int index)
     {
         var moduleName = moduleInfo.Module.Name;
         if (!Service.Config.ModuleEnabled.TryGetValue(moduleName, out var tempModuleBool))
@@ -213,7 +202,7 @@ public class Main : Window, IDisposable
                 {
                     ImGui.SetCursorPosX(origCursorPosX);
                     ImGui.BeginGroup();
-                    DrawModuleUI(moduleInfo);
+                    component.ConfigUI();
                     ImGui.EndGroup();
                 }
             }
@@ -238,13 +227,6 @@ public class Main : Window, IDisposable
 
             return collapsingHeader;
         }
-    }
-
-    private static void DrawModuleUI(ModuleInfo moduleInfo)
-    {
-        var moduleInstance = ModuleManager.Modules[moduleInfo.Module];
-
-        moduleInstance.ConfigUI();
     }
 
     private static void DrawTabSettings()
@@ -355,8 +337,7 @@ public class Main : Window, IDisposable
             ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedPurple);
             if (ImGui.Button("爱发电")) Util.OpenLink("https://afdian.net/a/AtmoOmen");
             ImGui.PopStyleColor();
-            ImGuiOm.TooltipHover("如果你认可我的工作, 可以给我买杯 HQ 柠檬水\n\n" +
-                "注: 捐赠均为 无偿 性质, 我无法因为捐赠给出任何承诺或回报, 请三思而后行");
+            ImGuiOm.TooltipHover(Service.Lang.GetText("DonateHelp"));
 
             ImGui.Separator();
 
@@ -364,13 +345,7 @@ public class Main : Window, IDisposable
 
             ImGui.SameLine();
             if (ImGui.SmallButton(Service.Lang.GetText("Refresh")))
-            {
-                Task.Run(async () =>
-                {
-                    TotalDownloadCounts = await GetTotalDownloadsAsync();
-                    LatestVersionInfo = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
-                });
-            }
+                ObtainNecessityInfo();
 
             ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("TotalDL")}:");
 
@@ -403,9 +378,65 @@ public class Main : Window, IDisposable
 
             ImGui.Separator();
 
+            ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("GameCalendar")}:");
+
+            if (GameCalendars is { Count: > 0 })
+            {
+                var longestText = string.Empty;
+                foreach (var activity in GameCalendars)
+                {
+                    if (activity.Name.Length > longestText.Length) longestText = activity.Name;
+                }
+
+                var buttonSize = ImGui.CalcTextSize($"前缀得五字{longestText}后缀也五字");
+                var framePadding = ImGui.GetStyle().FramePadding;
+                foreach (var activity in GameCalendars)
+                {
+                    ImGui.PushStyleColor(ImGuiCol.Button, activity.Color);
+                    if (ImGui.Button($"{activity.Name}###{activity.Url}", buttonSize with { Y = 2 * framePadding.Y + buttonSize.Y }))
+                    {
+                        Util.OpenLink($"{activity.Url}");
+                    }
+                    ImGui.PopStyleColor();
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.BeginTooltip();
+                        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("StartTime")}: ");
+
+                        ImGui.SameLine();
+                        ImGui.Text($"{activity.BeginTime}");
+
+                        ImGui.SameLine();
+                        ImGui.TextColored(activity.BeginTime > DateTime.Now ? ImGuiColors.DPSRed : ImGuiColors.HealerGreen, activity.BeginTime > DateTime.Now ? Service.Lang.GetText("GameCalendar-EventNotStarted") : Service.Lang.GetText("GameCalendar-EventStarted"));
+
+                        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("EndTime")}: ");
+
+                        ImGui.SameLine();
+                        ImGui.Text($"{activity.EndTime}");
+
+                        ImGui.SameLine();
+                        ImGui.TextColored(activity.EndTime < DateTime.Now ? ImGuiColors.DPSRed : ImGuiColors.HealerGreen, activity.EndTime > DateTime.Now ? Service.Lang.GetText("GameCalendar-EventNotEnded") : Service.Lang.GetText("GameCalendar-EventEnded"));
+
+                        ImGui.EndTooltip();
+                    }
+                }
+            }
+
+            ImGui.Separator();
+
             ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("Settings-TipMessage0")}:");
             ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage1"));
             ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage2"));
+
+            ImGui.EndTabItem();
+        }
+    }
+
+    private static void DrawTabGameInfo()
+    {
+        if (ImGui.BeginTabItem("游戏信息"))
+        {
 
             ImGui.EndTabItem();
         }
@@ -418,6 +449,18 @@ public class Main : Window, IDisposable
         Service.Config.Save();
 
         P.CommandHandler();
+    }
+
+    private static void ObtainNecessityInfo()
+    {
+        Task.Run(async () =>
+        {
+            await GetGameCalendar();
+            TotalDownloadCounts = await GetTotalDownloadsAsync();
+            LatestVersionInfo = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
+        });
+
+        CurrentVersion = GetCurrentVersion();
     }
 
     private static async Task<int> GetTotalDownloadsAsync()
@@ -433,7 +476,7 @@ public class Main : Window, IDisposable
         var url = $"https://api.github.com/repos/{userName}/{repoName}/releases/latest";
         client.DefaultRequestHeaders.UserAgent.TryParseAdd("request");
         var response = await client.GetStringAsync(url);
-        var latestRelease = JsonConvert.DeserializeObject<Release>(response);
+        var latestRelease = JsonConvert.DeserializeObject<FileFormat.GitHubRelease>(response);
 
         var totalDownloads = 0;
         var version = new VersionInfo();
@@ -445,6 +488,27 @@ public class Main : Window, IDisposable
         version.DownloadCount = totalDownloads;
 
         return version;
+    }
+
+    private static async Task GetGameCalendar()
+    {
+        const string url = "https://apiff14risingstones.web.sdo.com/api/home/active/calendar/getActiveCalendarMonth";
+        var response = await client.GetStringAsync(url);
+        var result = JsonConvert.DeserializeObject<FileFormat.RSActivityCalendar>(response);
+
+        if (result.data.Count > 0)
+            foreach (var activity in result.data)
+            {
+                var gameEvent = new GameEvent
+                {
+                    Name = activity.name,
+                    Url = activity.url,
+                    BeginTime = HelpersOm.UnixSecondToDateTime(activity.begin_time),
+                    EndTime = HelpersOm.UnixSecondToDateTime(activity.end_time),
+                    Color = HelpersOm.DarkenColor(HelpersOm.HexToVector4(activity.color), 0.3f)
+                };
+                GameCalendars.Add(gameEvent);
+            }
     }
 
     private static Version GetCurrentVersion() => Assembly.GetExecutingAssembly().GetName().Version;

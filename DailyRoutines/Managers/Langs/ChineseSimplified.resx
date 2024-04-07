@@ -1088,4 +1088,30 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Author" xml:space="preserve">
     <value>作者</value>
   </data>
+  <data name="DonateHelp" xml:space="preserve">
+    <value>如果你认可我的工作, 可以给我买杯 HQ 柠檬水
+
+注: 捐赠均为 无偿 性质, 我无法因为捐赠给出任何承诺或回报, 请务必三思而后行</value>
+  </data>
+  <data name="EndTime" xml:space="preserve">
+    <value>结束时间</value>
+  </data>
+  <data name="GameCalendar" xml:space="preserve">
+    <value>游戏日历</value>
+  </data>
+  <data name="GameCalendar-EventEnded" xml:space="preserve">
+    <value>(已结束)</value>
+  </data>
+  <data name="GameCalendar-EventNotEnded" xml:space="preserve">
+    <value>(未结束)</value>
+  </data>
+  <data name="GameCalendar-EventNotStarted" xml:space="preserve">
+    <value>(未开始)</value>
+  </data>
+  <data name="GameCalendar-EventStarted" xml:space="preserve">
+    <value>(已开始)</value>
+  </data>
+  <data name="StartTime" xml:space="preserve">
+    <value>开始时间</value>
+  </data>
 </root>
