@@ -1,6 +1,5 @@
 using System;
 using System.Globalization;
-using System.Numerics;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Plugin.Services;
@@ -100,12 +99,6 @@ public class AutoNotifyLeveUpdate : DailyModuleBase
         }
     }
 
-    public override void Uninit()
-    {
-        Service.Framework.Update -= OnFrameworkLeve;
-        base.Uninit();
-    }
-
     private static unsafe int Leves(IntPtr address)
     {
         if (address != IntPtr.Zero)
@@ -113,7 +106,6 @@ public class AutoNotifyLeveUpdate : DailyModuleBase
 
         return -1;
     }
-
 
     private static int DaysToReachHundred(int currentCount, TimeSpan currentTime)
     {
@@ -144,5 +136,11 @@ public class AutoNotifyLeveUpdate : DailyModuleBase
         var daysNeeded = (int)Math.Ceiling((double)remaining / dailyIncrement);
 
         return daysNeeded;
+    }
+
+    public override void Uninit()
+    {
+        Service.Framework.Update -= OnFrameworkLeve;
+        base.Uninit();
     }
 }
