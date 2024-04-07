@@ -1,10 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 using DailyRoutines.Managers;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface;
-using Dalamud.Memory;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
