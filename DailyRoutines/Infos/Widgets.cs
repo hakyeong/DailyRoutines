@@ -13,9 +13,9 @@ namespace DailyRoutines.Infos;
 public static class Widgets
 {
     public static void PreviewImageWithHelpText(
-        string helpText, string imageUrl, Vector2 imageSize, FontAwesomeIcon imageIcon = FontAwesomeIcon.InfoCircle)
+        string helpText, string imageUrl, Vector2 imageSize = default, FontAwesomeIcon imageIcon = FontAwesomeIcon.InfoCircle)
     {
-        var imageState = ThreadLoadImageHandler.TryGetTextureWrap(imageUrl, out var imageHandler);
+        var imageState = ThreadLoadImageHandler.TryGetTextureWrap(imageUrl, out var imageHandle);
 
         ImGui.TextColored(ImGuiColors.DalamudOrange, helpText);
 
@@ -28,7 +28,7 @@ public static class Widgets
         {
             ImGui.BeginTooltip();
             if (imageState)
-                ImGui.Image(imageHandler.ImGuiHandle, imageSize);
+                ImGui.Image(imageHandle.ImGuiHandle, imageSize == default ? imageHandle.Size : imageSize);
             else
                 ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
             ImGui.EndTooltip();

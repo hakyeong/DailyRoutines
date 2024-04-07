@@ -482,32 +482,32 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoNotifyCountdownDescription" xml:space="preserve">
     <value>在发起倒计时时, 自动发送一条 Windows 系统通知</value>
   </data>
-    <data name="AutoNotifyLeveUpdateTitle" xml:space="preserve">
-    <value>自动通知理符刷新</value>
+  <data name="AutoNotifyLeveUpdateTitle" xml:space="preserve">
+    <value>自动通知理符限额刷新</value>
   </data>
-    <data name="AutoNotifyLeveUpdateDescription" xml:space="preserve">
-    <value>在理符刷新时, 检查你的理符数量并自动发送一条 Windows 系统通知, 并提醒你什么日期将满</value>
+  <data name="AutoNotifyLeveUpdateDescription" xml:space="preserve">
+    <value>在理符刷新时检查当前限额, 自动发送一条 Windows 系统通知, 提醒预计限额达限的日期</value>
   </data>
-    <data name="AutoNotifyLeveUpdate-NotificationTitle" xml:space="preserve">
-    <value>理符刷新, 当前数量: </value>
+  <data name="AutoNotifyLeveUpdate-NotificationTitle" xml:space="preserve">
+    <value>理符限额刷新, 当前数量: </value>
   </data>
-    <data name="AutoNotifyLeveUpdate-NotificationFullText" xml:space="preserve">
-    <value>你的理符已经达到100个了</value>
+  <data name="AutoNotifyLeveUpdate-NotificationFullText" xml:space="preserve">
+    <value>理符限额已达上限</value>
   </data>
-    <data name="AutoNotifyLeveUpdate-NotificationText" xml:space="preserve">
-    <value>你的理符将在如下时间刷满: </value>
+  <data name="AutoNotifyLeveUpdate-NotificationText" xml:space="preserve">
+    <value>预计达限时间: </value>
   </data>
-    <data name="AutoNotifyLeveUpdate-LeveUpdateTimeText" xml:space="preserve">
-    <value>下一次刷新时间: </value>
+  <data name="AutoNotifyLeveUpdate-LeveUpdateTimeText" xml:space="preserve">
+    <value>下次刷新时间: </value>
   </data>
-    <data name="AutoNotifyLeveUpdate-NotificationMessageHelp" xml:space="preserve">
+  <data name="AutoNotifyLeveUpdate-NotificationMessageHelp" xml:space="preserve">
     <value>提示信息外观 (Windows 10+)</value>
   </data>
-    <data name="AutoNotifyLeveUpdate-OnChatMessageConfig" xml:space="preserve">
-    <value>同时发送至聊天框</value>
+  <data name="AutoNotifyLeveUpdate-OnChatMessageConfig" xml:space="preserve">
+    <value>同时发送至聊天栏</value>
   </data>
-    <data name="AutoNotifyLeveUpdate-JustFullConfig" xml:space="preserve">
-    <value>仅在达到100个理符时提醒</value>
+  <data name="AutoNotifyLeveUpdate-JustFullConfig" xml:space="preserve">
+    <value>仅当理符限额已满时提醒</value>
   </data>
   <data name="AutoNotifyCountdown-NotificationMessageHelp" xml:space="preserve">
     <value>提示信息外观 (Windows 10+)</value>

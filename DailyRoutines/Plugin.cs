@@ -1,6 +1,7 @@
 global using static DailyRoutines.Plugin;
 global using static ECommons.GenericHelpers;
 global using static DailyRoutines.Infos.Widgets;
+global using static OmenTools.Helpers.HelpersOm;
 global using OmenTools.ImGuiOm;
 global using OmenTools.Helpers;
 using DailyRoutines.Managers;
