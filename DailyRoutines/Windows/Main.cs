@@ -60,7 +60,7 @@ public class Main : Window, IDisposable
     private static int TotalDownloadCounts;
     private static Version CurrentVersion = new();
     private static VersionInfo LatestVersionInfo = new();
-    private static List<GameEvent> GameCalendars = new();
+    private static readonly List<GameEvent> GameCalendars = [];
 
 
     public Main(Plugin plugin) : base("Daily Routines - Main")
@@ -388,12 +388,12 @@ public class Main : Window, IDisposable
                     if (activity.Name.Length > longestText.Length) longestText = activity.Name;
                 }
 
-                var buttonSize = ImGui.CalcTextSize($"前缀俩字{longestText}后缀俩字");
+                var buttonSize = ImGui.CalcTextSize($"前缀得五字{longestText}后缀也五字");
                 var framePadding = ImGui.GetStyle().FramePadding;
                 foreach (var activity in GameCalendars)
                 {
                     ImGui.PushStyleColor(ImGuiCol.Button, activity.Color);
-                    if (ImGui.Button($"{activity.Name}###{activity.Url}", new(8 * framePadding.X + buttonSize.X, 2 * framePadding.Y + buttonSize.Y)))
+                    if (ImGui.Button($"{activity.Name}###{activity.Url}", buttonSize with { Y = 2 * framePadding.Y + buttonSize.Y }))
                     {
                         Util.OpenLink($"{activity.Url}");
                     }
