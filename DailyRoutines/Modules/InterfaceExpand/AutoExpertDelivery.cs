@@ -152,7 +152,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
     private static bool? ClickItem()
     {
-        if (!EzThrottler.Throttle("AutoExpertDelivery", 250)) return false;
+        if (!EzThrottler.Throttle("AutoExpertDelivery", 100)) return false;
 
         if (Service.Gui.GetAddonByName("GrandCompanySupplyReward") != nint.Zero) return false;
         if (Service.Gui.GetAddonByName("SelectYesno") != nint.Zero) return false;
@@ -183,7 +183,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
     private static bool? ClickHandIn()
     {
-        if (!EzThrottler.Throttle("AutoExpertDelivery", 250)) return false;
+        if (!EzThrottler.Throttle("AutoExpertDelivery", 100)) return false;
 
         if (AddonGrandCompanySupplyList != null && HelpersOm.IsAddonAndNodesReady(AddonGrandCompanySupplyList))
         {
