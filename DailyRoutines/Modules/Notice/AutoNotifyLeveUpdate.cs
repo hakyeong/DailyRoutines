@@ -1,6 +1,7 @@
 ﻿using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Plugin.Services;
+using ECommons.Throttlers;
 using ImGuiNET;
 using System;
 using System.Globalization;
@@ -12,18 +13,11 @@ namespace DailyRoutines.Modules
     {
         public override string? Author { get; set; } = "HSS";
         private const string LeveSigScanner = "88 05 ?? ?? ?? ?? 0F B7 41 06";
-        private readonly IntPtr address;
-        private DateTime nextLeveCheck = DateTime.MinValue;
-        private DateTime finishTime = DateTime.Now;
-        private int lastLeve;
+        private static DateTime nextLeveCheck = DateTime.MinValue;
+        private static DateTime finishTime = DateTime.Now;
+        private static int lastLeve;
         private static bool OnChatMessage;
         private static bool JustFull;
-
-
-        public AutoNotifyLeveUpdate()
-        {
-            address = Service.SigScanner.GetStaticAddressFromSig(LeveSigScanner);
-        }
 
         public override void Init()
         {
@@ -58,19 +52,20 @@ namespace DailyRoutines.Modules
                 UpdateConfig(this, "JustFull", JustFull);
         }
 
-        private void OnFrameworkLeve(IFramework _)
+        private static void OnFrameworkLeve(IFramework _)
         {
+            if (!EzThrottler.Throttle("AutoNotifyLeveUpdate", 5000)) return;
             var firstFlag = nextLeveCheck == DateTime.MinValue;
+            var tempLastLeve = lastLeve;
             var now = DateTime.Now;
-            if (nextLeveCheck.AddSeconds(5) > now)
-                return;
             if (Service.ClientState.LocalPlayer == null)
                 return;
-
-            var leves = Leves(address);
+            var leves = Leves(Service.SigScanner.GetStaticAddressFromSig(LeveSigScanner));
             leves = leves < 0 ? 0 : leves > 100 ? 100 : leves;
             lastLeve = leves;
+            if (leves == tempLastLeve && tempLastLeve != 100) return;
             var needDay = DaysToReachHundred(leves, now.TimeOfDay);
+
             finishTime = now.AddDays(needDay);
             if (finishTime.TimeOfDay >= TimeSpan.FromHours(20))
             {
@@ -80,28 +75,30 @@ namespace DailyRoutines.Modules
             {
                 finishTime = new DateTime(finishTime.Year, finishTime.Month, finishTime.Day, 8, 0, 0);
             }
-
-            if (leves == 100)
+            if (tempLastLeve <= leves)
             {
+                if (leves == 100)
+                {
+                    if (OnChatMessage)
+                    {
+                        Service.Chat.Print($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}{leves}" +
+                                           $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationFullText")}" +
+                                           $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-LeveUpdateTimeText")}{nextLeveCheck.ToString(CultureInfo.CurrentCulture)}");
+                    }
+                    finishTime = now;
+                    Service.Notice.Notify($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}{leves}", Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationFullText"));
+                    return;
+                }
+
+                if (JustFull) return;
                 if (OnChatMessage)
                 {
-                    Service.Chat.Print($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}{leves}" +
-                                       $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationFullText")}" +
+                    Service.Chat.Print($"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationText")}{finishTime.ToString(CultureInfo.CurrentCulture)}" +
                                        $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-LeveUpdateTimeText")}{nextLeveCheck.ToString(CultureInfo.CurrentCulture)}");
                 }
-                finishTime = now;
-                Service.Notice.Notify($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}{leves}", Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationFullText"));
-                return;
+                if (firstFlag) return;
+                Service.Notice.Notify($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}{leves}", $"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationText")}\n{finishTime.ToString(CultureInfo.CurrentCulture)}");
             }
-
-            if (JustFull) return;
-            if (OnChatMessage)
-            {
-                Service.Chat.Print($"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationText")}{finishTime.ToString(CultureInfo.CurrentCulture)}" +
-                                   $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-LeveUpdateTimeText")}{nextLeveCheck.ToString(CultureInfo.CurrentCulture)}");
-            }
-            if (firstFlag) return;
-            Service.Notice.Notify($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}{leves}", $"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationText")}\n{finishTime.ToString(CultureInfo.CurrentCulture)}");
         }
 
         public override void Uninit()
@@ -110,7 +107,7 @@ namespace DailyRoutines.Modules
             base.Uninit();
         }
 
-        private unsafe int Leves(IntPtr address)
+        private static unsafe int Leves(IntPtr address)
         {
             if (address != IntPtr.Zero)
                 return *(byte*)address;
@@ -119,7 +116,7 @@ namespace DailyRoutines.Modules
         }
 
 
-        private int DaysToReachHundred(int currentCount, TimeSpan currentTime)
+        private static int DaysToReachHundred(int currentCount, TimeSpan currentTime)
         {
             var now = DateTime.Now;
             const int dailyIncrement = 6;
