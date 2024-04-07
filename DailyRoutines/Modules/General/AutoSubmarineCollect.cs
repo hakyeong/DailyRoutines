@@ -26,8 +26,9 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoSubmarineCollectTitle", "AutoSubmarineCollectDescription", ModuleCategories.General)]
 public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 {
-    private static readonly HashSet<uint> CompanyWorkshopZones = [423, 425, 425, 653, 984];
+    private static AtkUnitBase* AddonSelectString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
 
+    private static readonly HashSet<uint> CompanyWorkshopZones = [423, 425, 425, 653, 984];
     private static string RequisiteMaterialsName = string.Empty;
     private static int? RequisiteMaterials;
 
@@ -48,14 +49,13 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
     public override void OverlayUI()
     {
-        var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
-        if (addon == null)
+        if (AddonSelectString == null)
         {
             Overlay.IsOpen = false;
             return;
         }
 
-        var pos = new Vector2(addon->GetX() + 6, addon->GetY() - ImGui.GetWindowSize().Y + 6);
+        var pos = new Vector2(AddonSelectString->GetX() + 6, AddonSelectString->GetY() - ImGui.GetWindowSize().Y + 6);
         ImGui.SetWindowPos(pos);
 
         ImGui.AlignTextToFramePadding();
@@ -76,7 +76,8 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         ImGui.Text($"{RequisiteMaterialsName}:");
 
         ImGui.SameLine();
-        ImGui.TextColored(RequisiteMaterials < 20 ? ImGuiColors.DPSRed : ImGuiColors.HealerGreen, RequisiteMaterials.ToString());
+        ImGui.TextColored(RequisiteMaterials < 20 ? ImGuiColors.DPSRed : ImGuiColors.HealerGreen,
+                          RequisiteMaterials.ToString());
 
         if (EzThrottler.Throttle("AutoSubmarineCollectOverlay-RequestItemAmount", 1000))
         {
@@ -87,17 +88,15 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
     private void OnAddonSelectString(AddonEvent type, AddonArgs args)
     {
-        if (EzThrottler.Throttle("AutoSubmarineCollectOverlay"))
-        {
-            Overlay.IsOpen = false;
-            if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
-            {
-                var title = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[2].String);
-                if (string.IsNullOrWhiteSpace(title) || !title.Contains("请选择潜水艇")) return;
+        if (!EzThrottler.Throttle("AutoSubmarineCollectOverlay")) return;
+        if (!CompanyWorkshopZones.Contains(Service.ClientState.TerritoryType)) return;
 
-                Overlay.IsOpen = true;
-            }
-        }
+        Overlay.IsOpen = false;
+
+        if (AddonSelectString == null) return;
+        var title = MemoryHelper.ReadStringNullTerminated((nint)AddonSelectString->AtkValues[2].String);
+        if (string.IsNullOrWhiteSpace(title) || !title.Contains("请选择潜水艇")) return;
+        Overlay.IsOpen = true;
     }
 
     private void AlwaysYes(AddonEvent type, AddonArgs args)
@@ -127,7 +126,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
     private void OnExplorationResult(AddonEvent type, AddonArgs args)
     {
         if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationResult", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(addon))
+            IsAddonAndNodesReady(addon))
         {
             AddonManager.Callback(addon, true, 1);
 
@@ -142,18 +141,27 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
         // 魔导机械修理材料/桶装青磷水不足
         var inventoryManager = InventoryManager.Instance();
-        if (inventoryManager->GetInventoryItemCount(10373) < 20 || inventoryManager->GetInventoryItemCount(10155) < 15)
+        if (inventoryManager->GetInventoryItemCount(10373) < 20)
         {
-            Service.Chat.Print(Service.Lang.GetSeString("AutoSubmarineCollect-LackCeruleumTanks",
+            Service.Chat.Print(Service.Lang.GetSeString("AutoSubmarineCollect-LackSpecificItems",
+                                                        SeString.CreateItemLink(
+                                                            10373)));
+            TaskManager.Abort();
+            return true;
+        }
+
+        if (inventoryManager->GetInventoryItemCount(10155) < 15)
+        {
+            Service.Chat.Print(Service.Lang.GetSeString("AutoSubmarineCollect-LackSpecificItems",
                                                         SeString.CreateItemLink(
                                                             10155)));
             TaskManager.Abort();
             return true;
         }
 
-        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonAndNodesReady(addon))
         {
-            if (!HelpersOm.TryScanSelectStringText(addon, "探索完成", out var index))
+            if (!TryScanSelectStringText(addon, "探索完成", out var index))
             {
                 TaskManager.Abort();
                 return true;
@@ -174,7 +182,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
     private bool? CommenceSubmarineVoyage()
     {
         if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(addon))
+            IsAddonAndNodesReady(addon))
         {
             AddonManager.Callback(addon, true, 0);
             addon->Close(true);
@@ -193,32 +201,26 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
     private bool? ReadyToRepairSubmarines()
     {
         if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(addon))
+            IsAddonAndNodesReady(addon))
         {
             AddonManager.Callback(addon, true, -1);
             addon->Close(true);
         }
 
-        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var selectStringAddon) &&
-            HelpersOm.IsAddonAndNodesReady(selectStringAddon))
-        {
-            if (!HelpersOm.TryScanSelectStringText(selectStringAddon, "修理", out var index)) return false;
+        if (AddonSelectString == null || !IsAddonAndNodesReady(AddonSelectString)) return false;
+        if (!ClickManager.SelectString("修理")) return false;
 
-            TaskManager.Enqueue(() => Click.TrySendClick($"select_string{index + 1}"));
-            TaskManager.Enqueue(() => selectStringAddon->Close(true));
-            TaskManager.Enqueue(RepairSubmarines);
+        TaskManager.Enqueue(() => AddonSelectString->Close(true));
+        TaskManager.Enqueue(RepairSubmarines);
 
-            return true;
-        }
-
-        return false;
+        return true;
     }
 
     private bool? RepairSubmarines()
     {
         if (Service.Gui.GetAddonByName("SelectYesno") != nint.Zero) return false;
         if (TryGetAddonByName<AtkUnitBase>("CompanyCraftSupply", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(addon))
+            IsAddonAndNodesReady(addon))
         {
             var handler = new ClickCompanyCraftSupplyDR();
 
@@ -248,7 +250,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
     private bool? ClickPreviousVoyageLog()
     {
         if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var detailAddon) &&
-            HelpersOm.IsAddonAndNodesReady(detailAddon))
+            IsAddonAndNodesReady(detailAddon))
         {
             TaskManager.Abort();
             TaskManager.Enqueue(CommenceSubmarineVoyage);
@@ -256,23 +258,14 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
             return true;
         }
 
-        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
-        {
-            if (!HelpersOm.TryScanSelectStringText(addon, "上次的远航报告", out var index))
-            {
-                TaskManager.Abort();
-                return true;
-            }
+        if (AddonSelectString == null || !IsAddonAndNodesReady(AddonSelectString)) return false;
 
-            if (!Click.TrySendClick($"select_string{index + 1}")) return false;
+        if (!ClickManager.SelectString("上次的远航报告")) return false;
+        AddonSelectString->Close(true);
 
-            addon->Close(true);
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(CommenceSubmarineVoyage);
-            return true;
-        }
-
-        return false;
+        TaskManager.DelayNext(100);
+        TaskManager.Enqueue(CommenceSubmarineVoyage);
+        return true;
     }
 
     public override void Uninit()

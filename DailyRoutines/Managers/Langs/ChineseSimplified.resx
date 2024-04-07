@@ -751,7 +751,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoSubmarineCollect-FailGettingSubmarineInfo" xml:space="preserve">
     <value>获取潜水艇信息失败, 请重试</value>
   </data>
-  <data name="AutoSubmarineCollect-LackCeruleumTanks" xml:space="preserve">
+  <data name="AutoSubmarineCollect-LackSpecificItems" xml:space="preserve">
     <value>{0} 不足, 已停止潜水艇自动收取</value>
   </data>
   <data name="AutoSubmarineCollect-WhatIsTheList" xml:space="preserve">
