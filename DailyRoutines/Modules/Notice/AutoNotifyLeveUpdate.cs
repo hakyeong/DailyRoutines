@@ -81,11 +81,8 @@ namespace DailyRoutines.Modules
                 finishTime = new DateTime(finishTime.Year, finishTime.Month, finishTime.Day, 8, 0, 0);
             }
 
-            if (firstFlag) return;
-
             if (leves == 100)
             {
-                Service.Notice.Notify($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}{leves}", Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationFullText"));
                 if (OnChatMessage)
                 {
                     Service.Chat.Print($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}{leves}" +
@@ -93,17 +90,18 @@ namespace DailyRoutines.Modules
                                        $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-LeveUpdateTimeText")}{nextLeveCheck.ToString(CultureInfo.CurrentCulture)}");
                 }
                 finishTime = now;
+                Service.Notice.Notify($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}{leves}", Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationFullText"));
                 return;
             }
 
             if (JustFull) return;
-            Service.Notice.Notify($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}{leves}", $"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationText")}\n{finishTime.ToString(CultureInfo.CurrentCulture)}");
             if (OnChatMessage)
             {
-                Service.Chat.Print($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}{leves}" +
-                                   $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationText")}{finishTime.ToString(CultureInfo.CurrentCulture)}" +
+                Service.Chat.Print($"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationText")}{finishTime.ToString(CultureInfo.CurrentCulture)}" +
                                    $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-LeveUpdateTimeText")}{nextLeveCheck.ToString(CultureInfo.CurrentCulture)}");
             }
+            if (firstFlag) return;
+            Service.Notice.Notify($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}{leves}", $"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationText")}\n{finishTime.ToString(CultureInfo.CurrentCulture)}");
         }
 
         public override void Uninit()
