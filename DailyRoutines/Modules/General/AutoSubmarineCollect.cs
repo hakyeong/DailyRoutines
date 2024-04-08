@@ -28,7 +28,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 {
     private static AtkUnitBase* AddonSelectString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
 
-    private static readonly HashSet<uint> CompanyWorkshopZones = [423, 425, 425, 653, 984];
+    private static readonly HashSet<uint> CompanyWorkshopZones = [423, 424, 425, 653, 984];
     private static string RequisiteMaterialsName = string.Empty;
     private static int? RequisiteMaterials;
 
