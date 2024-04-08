@@ -42,6 +42,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     private static int ConfigLowestPrice;
     private static int ConfigMaxPriceReduction;
     private static bool ConfigSeparateNQAndHQ;
+    private static Dictionary<(uint Id, bool HQ), int> PriceCache = new Dictionary<(uint Id, bool HQ), int>();
 
     private static bool IsCurrentItemHQ;
 
@@ -51,6 +52,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
     public override void Init()
     {
+
         #region Config
 
         AddConfig(this, "PriceReduction", 1);
@@ -171,6 +173,12 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         ConfigUI();
     }
 
+
+    private void DisposePriceCache()
+    {
+        PriceCache = new Dictionary<(uint Id, bool HQ), int>();
+    }
+
     // 出售品列表 (悬浮窗控制)
     private void OnRetainerSellList(AddonEvent type, AddonArgs args)
     {
@@ -192,20 +200,28 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             _ => Overlay.IsOpen
         };
 
-        if (type == AddonEvent.PostSetup)
+        switch (type)
         {
-            var retainerManager = RetainerManager.Instance();
-            if (retainerManager == null) return;
+            case AddonEvent.PostSetup:
+                var retainerManager = RetainerManager.Instance();
+                if (retainerManager == null) return;
+                Service.Chat.Print("初始化缓存");
+                DisposePriceCache();
+                PlayerRetainers.Clear();
 
-            PlayerRetainers.Clear();
+                for (var i = 0U; i < retainerManager->GetRetainerCount(); i++)
+                {
+                    var retainer = retainerManager->GetRetainerBySortedIndex(i);
+                    if (retainer == null) break;
 
-            for (var i = 0U; i < retainerManager->GetRetainerCount(); i++)
-            {
-                var retainer = retainerManager->GetRetainerBySortedIndex(i);
-                if (retainer == null) break;
+                    PlayerRetainers.Add(retainer->RetainerID);
+                }
 
-                PlayerRetainers.Add(retainer->RetainerID);
-            }
+                break;
+            case AddonEvent.PreFinalize:
+                //Service.Chat.Print("销毁缓存");
+                //DisposePriceCache();
+                break;
         }
     }
 
@@ -364,7 +380,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         {
             if (!HelpersOm.TryScanContextMenuText(addon, "修改价格", out var index)) return true;
             AgentManager.SendEvent(AgentId.Context, 0, 0, index, 0U, 0, 0);
-
+            
             TaskManager.EnqueueImmediate(ClickComparePrice);
             return true;
         }
@@ -396,8 +412,22 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     {
         if (!EzThrottler.Throttle("AutoRetainerPriceAdjust-ObtainMarketData")) return false;
         if (AddonItemSearchResult == null || !HelpersOm.IsAddonAndNodesReady(AddonItemSearchResult)) return false;
+        if (InfoItemSearch->SearchItemId != 0 && PriceCache.Count != 0)
+        {
+            Service.Chat.Print($"尝试获取缓存");
+            if (PriceCache.TryGetValue((InfoItemSearch->SearchItemId, IsCurrentItemHQ), out var cachePrice) && cachePrice != 0)
+            {
+                Service.Chat.Print($"发现缓存价格:{cachePrice}");
+                AddonItemSearchResult->Close(true);
+                TaskManager.EnqueueImmediate(() => FillLowestPrice(cachePrice));
+                return true;
+            }
+        }
+        
         if (AddonItemHistory == null) AddonManager.Callback(AddonItemSearchResult, true, 0);
         if (!HelpersOm.IsAddonAndNodesReady(AddonItemHistory)) return false;
+
+        
 
         var errorMessage = AddonItemSearchResult->GetTextNodeById(5);
         var messages = errorMessage->NodeText.ExtractText();
@@ -463,6 +493,14 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         void SetMarkPriceValueAndReturn(uint price)
         {
             CurrentItemSearchItemID = InfoItemSearch->SearchItemId;
+            if ((int)price != 0)
+            {
+                Service.Chat.Print($"缓存到商品{CurrentItemSearchItemID}-价格{(int)price}");
+                if (!PriceCache.TryAdd((CurrentItemSearchItemID, IsCurrentItemHQ), (int)price))
+                {
+                    PriceCache[(CurrentItemSearchItemID, IsCurrentItemHQ)] = (int)price;
+                }
+            }
             AddonItemHistory->Close(true);
             AddonItemSearchResult->Close(true);
 
@@ -525,7 +563,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             OperateAndReturn(false);
             return true;
         }
-        
+
         OperateAndReturn(true, modifiedPrice);
         return true;
 
@@ -551,7 +589,8 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         {
             for (var i = 0; i < 20; i++)
                 if (InventoryManager.Instance()->GetInventoryContainer(InventoryType.RetainerMarket)
-                        ->GetInventorySlot(i)->ItemID != 0)
+                        ->GetInventorySlot(i)->ItemID !=
+                    0)
                     availableItems++;
         }
 
@@ -566,7 +605,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         for (var i = 0; i < list->ListLength; i++)
         {
             var listing = list->ItemRendererList[i].AtkComponentListItemRenderer->AtkComponentButton.AtkComponentBase
-                .UldManager.NodeList;
+                                                                                                    .UldManager.NodeList;
             var isHQ = listing[8]->IsVisible;
             if (!uint.TryParse(
                     SanitizeManager.Sanitize(listing[6]->GetAsAtkTextNode()->NodeText.ExtractText()).Replace(",", ""),
