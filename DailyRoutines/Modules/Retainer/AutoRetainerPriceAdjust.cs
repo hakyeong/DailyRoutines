@@ -173,12 +173,6 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         ConfigUI();
     }
 
-
-    private void DisposePriceCache()
-    {
-        PriceCache = new Dictionary<(uint Id, bool HQ), int>();
-    }
-
     // 出售品列表 (悬浮窗控制)
     private void OnRetainerSellList(AddonEvent type, AddonArgs args)
     {
@@ -205,8 +199,8 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             case AddonEvent.PostSetup:
                 var retainerManager = RetainerManager.Instance();
                 if (retainerManager == null) return;
-                Service.Chat.Print("初始化缓存");
-                DisposePriceCache();
+                //初始化缓存
+                PriceCache = new Dictionary<(uint Id, bool HQ), int>();
                 PlayerRetainers.Clear();
 
                 for (var i = 0U; i < retainerManager->GetRetainerCount(); i++)
@@ -219,8 +213,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
                 break;
             case AddonEvent.PreFinalize:
-                //Service.Chat.Print("销毁缓存");
-                //DisposePriceCache();
+                
                 break;
         }
     }
@@ -414,10 +407,8 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         if (AddonItemSearchResult == null || !HelpersOm.IsAddonAndNodesReady(AddonItemSearchResult)) return false;
         if (InfoItemSearch->SearchItemId != 0 && PriceCache.Count != 0)
         {
-            Service.Chat.Print($"尝试获取缓存");
             if (PriceCache.TryGetValue((InfoItemSearch->SearchItemId, IsCurrentItemHQ), out var cachePrice) && cachePrice != 0)
             {
-                Service.Chat.Print($"发现缓存价格:{cachePrice}");
                 AddonItemSearchResult->Close(true);
                 TaskManager.EnqueueImmediate(() => FillLowestPrice(cachePrice));
                 return true;
@@ -495,7 +486,6 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             CurrentItemSearchItemID = InfoItemSearch->SearchItemId;
             if ((int)price != 0)
             {
-                Service.Chat.Print($"缓存到商品{CurrentItemSearchItemID}-价格{(int)price}");
                 if (!PriceCache.TryAdd((CurrentItemSearchItemID, IsCurrentItemHQ), (int)price))
                 {
                     PriceCache[(CurrentItemSearchItemID, IsCurrentItemHQ)] = (int)price;
