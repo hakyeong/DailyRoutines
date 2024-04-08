@@ -109,9 +109,10 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
     private void OnErrorText(
         XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
+        if (type != XivChatType.ErrorMessage) return;
         if (!TaskManager.IsBusy) return;
 
-        var content = message.ExtractText();
+        var content = message.TextValue;
         if (content.Contains("需要修理配件"))
         {
             TaskManager.Abort();
@@ -218,6 +219,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
     private bool? RepairSubmarines()
     {
+        if (!EzThrottler.Throttle("AutoSubmarineCollect-RepairSubmarines", 100)) return false;
         if (Service.Gui.GetAddonByName("SelectYesno") != nint.Zero) return false;
         if (TryGetAddonByName<AtkUnitBase>("CompanyCraftSupply", out var addon) &&
             IsAddonAndNodesReady(addon))

@@ -480,13 +480,13 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>开始倒计时</value>
   </data>
   <data name="AutoNotifyCountdownDescription" xml:space="preserve">
-    <value>在发起倒计时时, 自动发送一条 Windows 系统通知</value>
+    <value>在开始倒计时时, 自动发送一条 Windows 系统通知</value>
   </data>
   <data name="AutoNotifyLeveUpdateTitle" xml:space="preserve">
     <value>自动通知理符限额刷新</value>
   </data>
   <data name="AutoNotifyLeveUpdateDescription" xml:space="preserve">
-    <value>在理符刷新时检查当前限额, 自动发送一条 Windows 系统通知, 提醒预计限额达限的日期</value>
+    <value>在理符刷新时检查当前限额, 自动发送一条 Windows 系统通知, 提醒预计达限的日期</value>
   </data>
   <data name="AutoNotifyLeveUpdate-NotificationTitle" xml:space="preserve">
     <value>理符限额刷新, 当前数量: </value>
