@@ -194,27 +194,21 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             _ => Overlay.IsOpen
         };
 
-        switch (type)
+        if (type == AddonEvent.PostSetup)
         {
-            case AddonEvent.PostSetup:
-                var retainerManager = RetainerManager.Instance();
-                if (retainerManager == null) return;
-                //初始化缓存
-                PriceCache = new Dictionary<(uint Id, bool HQ), int>();
-                PlayerRetainers.Clear();
+            var retainerManager = RetainerManager.Instance();
+            if (retainerManager == null) return;
+            PriceCache = new Dictionary<(uint Id, bool HQ), int>();
+            PlayerRetainers.Clear();
 
-                for (var i = 0U; i < retainerManager->GetRetainerCount(); i++)
-                {
-                    var retainer = retainerManager->GetRetainerBySortedIndex(i);
-                    if (retainer == null) break;
+            for (var i = 0U; i < retainerManager->GetRetainerCount(); i++)
+            {
+                var retainer = retainerManager->GetRetainerBySortedIndex(i);
+                if (retainer == null) break;
 
-                    PlayerRetainers.Add(retainer->RetainerID);
-                }
+                PlayerRetainers.Add(retainer->RetainerID);
+            }
 
-                break;
-            case AddonEvent.PreFinalize:
-                
-                break;
         }
     }
 
@@ -373,7 +367,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         {
             if (!HelpersOm.TryScanContextMenuText(addon, "修改价格", out var index)) return true;
             AgentManager.SendEvent(AgentId.Context, 0, 0, index, 0U, 0, 0);
-            
+
             TaskManager.EnqueueImmediate(ClickComparePrice);
             return true;
         }
@@ -414,11 +408,11 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
                 return true;
             }
         }
-        
+
         if (AddonItemHistory == null) AddonManager.Callback(AddonItemSearchResult, true, 0);
         if (!HelpersOm.IsAddonAndNodesReady(AddonItemHistory)) return false;
 
-        
+
 
         var errorMessage = AddonItemSearchResult->GetTextNodeById(5);
         var messages = errorMessage->NodeText.ExtractText();
