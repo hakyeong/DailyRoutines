@@ -1114,4 +1114,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="StartTime" xml:space="preserve">
     <value>开始时间</value>
   </data>
+  <data name="AutoLogin-WorldSelectHelp" xml:space="preserve">
+    <value>可能存在多个同名服务器, 一般来说后缀为 2 的为当前正在使用的服务器, 请注意辨别</value>
+  </data>
 </root>

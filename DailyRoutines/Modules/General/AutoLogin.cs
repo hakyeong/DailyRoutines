@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -6,11 +8,11 @@ using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using ECommons.Automation;
-using ECommons.ExcelServices;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
@@ -28,14 +30,18 @@ public class AutoLogin : DailyModuleBase
     private static string WorldInput = string.Empty;
     private static SavedWorld? ConfigSelectedWorld;
     private static int ConfigSelectedCharaIndex = -1;
+    private static Dictionary<uint, World>? Worlds;
 
     public override void Init()
     {
         AddConfig(this, "SelectedWorld", null);
         AddConfig(this, "SelectedCharaIndex", 0);
 
+        Worlds ??= Service.Data.GetExcelSheet<World>()
+                          .Where(x => !string.IsNullOrWhiteSpace(x.Name.RawString) && !string.IsNullOrWhiteSpace(x.InternalName.RawString) && IsChineseString(x.Name.RawString))
+                          .ToDictionary(x => x.RowId, x => x);
+
         ConfigSelectedWorld = GetConfig<SavedWorld?>(this, "SelectedWorld");
-        WorldInput = ConfigSelectedWorld == null ? string.Empty : ConfigSelectedWorld.Name;
         ConfigSelectedCharaIndex = GetConfig<int>(this, "SelectedCharaIndex");
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = false };
@@ -50,32 +56,36 @@ public class AutoLogin : DailyModuleBase
         ImGui.Text($"{Service.Lang.GetText("AutoLogin-ServerName")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputText("##AutoLogin-EnterServerName", ref WorldInput, 16,
-                            ImGuiInputTextFlags.EnterReturnsTrue))
+        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+
+        if (ImGui.BeginCombo("###AutoLoginWorldSelectCombo", ConfigSelectedWorld == null ? "" : ConfigSelectedWorld.Name, ImGuiComboFlags.HeightLarge))
         {
-            if (ExcelWorldHelper.TryGet(WorldInput, out var world))
+            ImGui.InputTextWithHint("###SearchInput", Service.Lang.GetText("PleaseSearch"), ref WorldInput, 32);
+            ImGuiOm.TooltipHover(Service.Lang.GetText("AutoLogin-WorldSelectHelp"));
+
+            ImGui.Separator();
+            foreach (var world in Worlds)
             {
-                WorldInput = world.Name.RawString;
-                ConfigSelectedWorld = new(world.Name.RawString, world.RowId);
-                UpdateConfig(this, "SelectedWorld", ConfigSelectedWorld);
+                var worldName = world.Value.Name.RawString;
+                if (!string.IsNullOrWhiteSpace(WorldInput) && !worldName.Contains(WorldInput)) continue;
+
+                if (ImGui.Selectable($"{worldName} ({world.Value.InternalName})", ConfigSelectedWorld != null && ConfigSelectedWorld.WorldID == world.Key))
+                {
+                    ConfigSelectedWorld = new(worldName, world.Key);
+                    UpdateConfig(this, "SelectedWorld", ConfigSelectedWorld);
+                }
+
+                ImGui.Separator();
             }
-            else
-            {
-                Service.Chat.PrintError(
-                    Service.Lang.GetText("AutoLogin-ServerNotFoundErrorMessage", WorldInput));
-                WorldInput = string.Empty;
-                ConfigSelectedWorld = null;
-                UpdateConfig(this, "SelectedWorld", ConfigSelectedWorld);
-            }
+
+            ImGui.EndCombo();
         }
 
         ImGui.SameLine();
         if (ImGui.SmallButton(Service.Lang.GetText("AutoLogin-CurrentWorld")))
         {
-            if (ExcelWorldHelper.TryGet(AgentLobby.Instance()->LobbyData.CurrentWorldName.ExtractText(), out var world))
+            if (Worlds.TryGetValue(AgentLobby.Instance()->LobbyData.CurrentWorldId, out var world))
             {
-                WorldInput = world.Name.RawString;
                 ConfigSelectedWorld = new(world.Name.RawString, world.RowId);
                 UpdateConfig(this, "SelectedWorld", ConfigSelectedWorld);
             }
@@ -190,6 +200,16 @@ public class AutoLogin : DailyModuleBase
         }
 
         return false;
+    }
+
+    public static bool IsChineseString(string text)
+    {
+        const int commonMin = 0x4e00;
+        const int commonMax = 0x9fa5;
+        const int extAMin = 0x3400;
+        const int extAMax = 0x4db5;
+
+        return text.All(c => (c >= commonMin && c <= commonMax) || (c >= extAMin && c <= extAMax));
     }
 
     public override void Uninit()
