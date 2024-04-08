@@ -497,18 +497,21 @@ public class Main : Window, IDisposable
         var result = JsonConvert.DeserializeObject<FileFormat.RSActivityCalendar>(response);
 
         if (result.data.Count > 0)
+        {
+            GameCalendars.Clear();
             foreach (var activity in result.data)
             {
                 var gameEvent = new GameEvent
                 {
                     Name = activity.name,
                     Url = activity.url,
-                    BeginTime = HelpersOm.UnixSecondToDateTime(activity.begin_time),
-                    EndTime = HelpersOm.UnixSecondToDateTime(activity.end_time),
-                    Color = HelpersOm.DarkenColor(HelpersOm.HexToVector4(activity.color), 0.3f)
+                    BeginTime = UnixSecondToDateTime(activity.begin_time),
+                    EndTime = UnixSecondToDateTime(activity.end_time),
+                    Color = DarkenColor(HexToVector4(activity.color), 0.3f)
                 };
                 GameCalendars.Add(gameEvent);
             }
+        }
     }
 
     private static Version GetCurrentVersion() => Assembly.GetExecutingAssembly().GetName().Version;
