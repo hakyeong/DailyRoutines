@@ -1,3 +1,4 @@
+import os
 import requests
 
 def get_total_downloads(user_name, repo_name):
@@ -6,7 +7,10 @@ def get_total_downloads(user_name, repo_name):
     per_page = 100
     while True:
         url = f"https://api.github.com/repos/{user_name}/{repo_name}/releases?per_page={per_page}&page={page}"
-        headers = {'User-Agent': 'request'}
+        headers = {
+            'User-Agent': 'request',
+            'Authorization': f'token {os.environ["GITHUB_TOKEN"]}'
+        }
         response = requests.get(url, headers=headers)
         if response.status_code != 200:
             break

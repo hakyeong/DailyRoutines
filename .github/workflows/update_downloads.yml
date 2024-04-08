@@ -8,6 +8,9 @@ on:
 jobs:
   check-repository-and-update:
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     steps:
     - name: Get repository details
       id: repo_info
@@ -49,4 +52,4 @@ jobs:
         git config --global user.name "GitHub Actions"
         git add downloads.txt
         git commit -m "Update Total Downloads" -a || echo "No changes to commit"
-        git push --set-upstream https://${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/${{ github.repository }} HEAD:main
+        git push --set-upstream https://github.com/${{ github.repository }} HEAD:main
