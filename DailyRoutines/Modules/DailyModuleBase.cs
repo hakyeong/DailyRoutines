@@ -201,7 +201,14 @@ public abstract class DailyModuleBase
             if (field.FieldType.IsGenericType && field.FieldType.GetGenericTypeDefinition() == typeof(Hook<>))
             {
                 var hookInstance = field.GetValue(this);
-                hookInstance?.GetType().GetMethod("Dispose")?.Invoke(hookInstance, null);
+
+                if (hookInstance != null)
+                {
+                    var disposeMethod = hookInstance.GetType().GetMethod("Dispose");
+                    disposeMethod?.Invoke(hookInstance, null);
+
+                    field.SetValue(this, null);
+                }
             }
         }
     }
