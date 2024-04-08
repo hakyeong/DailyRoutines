@@ -52,22 +52,23 @@ public class AutoNotifyLeveUpdate : DailyModuleBase
     private static void OnFrameworkLeve(IFramework _)
     {
         if (!EzThrottler.Throttle("AutoNotifyLeveUpdate", 5000)) return;
+        if (Service.ClientState.LocalPlayer == null)
+            return;
         var firstFlag = nextLeveCheck == DateTime.MinValue;
         var tempLastLeve = lastLeve;
         var now = DateTime.Now;
-        if (Service.ClientState.LocalPlayer == null)
-            return;
         var leves = Leves(Service.SigScanner.GetStaticAddressFromSig(LeveSigScanner));
         leves = leves < 0 ? 0 : leves > 100 ? 100 : leves;
         lastLeve = leves;
         if (leves == tempLastLeve && tempLastLeve != 100) return;
         var needDay = DaysToReachHundred(leves, now.TimeOfDay);
-
         finishTime = now.AddDays(needDay);
         if (finishTime.TimeOfDay >= TimeSpan.FromHours(20))
             finishTime = new DateTime(finishTime.Year, finishTime.Month, finishTime.Day, 20, 0, 0);
         else if (finishTime.TimeOfDay >= TimeSpan.FromHours(8))
             finishTime = new DateTime(finishTime.Year, finishTime.Month, finishTime.Day, 8, 0, 0);
+        else
+            finishTime = new DateTime(finishTime.Year, finishTime.Month, finishTime.Day - 1, 20, 0, 0);
         if (tempLastLeve <= leves)
         {
             if (leves == 100)
@@ -119,12 +120,14 @@ public class AutoNotifyLeveUpdate : DailyModuleBase
             nextLeveCheck = new DateTime(now.Year, now.Month, now.Day, 20, 0, 0);
             incrementToday += 3;
         }
-
-
-        if (currentTime >= TimeSpan.FromHours(20))
+        else if (currentTime >= TimeSpan.FromHours(20))
         {
             nextLeveCheck = new DateTime(now.Year, now.Month, now.Day + 1, 8, 0, 0);
             incrementToday += 3;
+        }
+        else
+        {
+            nextLeveCheck = new DateTime(now.Year, now.Month, now.Day, 8, 0, 0);
         }
 
 
