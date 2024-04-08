@@ -411,9 +411,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
         if (AddonItemHistory == null) AddonManager.Callback(AddonItemSearchResult, true, 0);
         if (!HelpersOm.IsAddonAndNodesReady(AddonItemHistory)) return false;
-
-
-
+        
         var errorMessage = AddonItemSearchResult->GetTextNodeById(5);
         var messages = errorMessage->NodeText.ExtractText();
         if (messages.Contains("没有搜索到任何结果"))
@@ -547,7 +545,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             OperateAndReturn(false);
             return true;
         }
-
+        
         OperateAndReturn(true, modifiedPrice);
         return true;
 
@@ -573,8 +571,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         {
             for (var i = 0; i < 20; i++)
                 if (InventoryManager.Instance()->GetInventoryContainer(InventoryType.RetainerMarket)
-                        ->GetInventorySlot(i)->ItemID !=
-                    0)
+                        ->GetInventorySlot(i)->ItemID != 0)
                     availableItems++;
         }
 
@@ -588,8 +585,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
         for (var i = 0; i < list->ListLength; i++)
         {
-            var listing = list->ItemRendererList[i].AtkComponentListItemRenderer->AtkComponentButton.AtkComponentBase
-                                                                                                    .UldManager.NodeList;
+            var listing = list->ItemRendererList[i].AtkComponentListItemRenderer->AtkComponentButton.AtkComponentBase.UldManager.NodeList;
             var isHQ = listing[8]->IsVisible;
             if (!uint.TryParse(
                     SanitizeManager.Sanitize(listing[6]->GetAsAtkTextNode()->NodeText.ExtractText()).Replace(",", ""),
