@@ -71,19 +71,23 @@ public class AutoNotifyLeveUpdate : DailyModuleBase
             finishTime = new DateTime(finishTime.Year, finishTime.Month, finishTime.Day - 1, 20, 0, 0);
         if (tempLastLeve <= leves)
         {
-            if (leves == 100)
+            if (leves >= 97)
             {
-                if (OnChatMessage)
+                //理符要溢出或满的时候,只在刚上线和刷新五分钟前提醒
+                if (nextLeveCheck <= now.AddMinutes(5) || firstFlag)
                 {
-                    Service.Chat.Print($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}{leves}" +
-                                       $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationFullText")}" +
-                                       $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-LeveUpdateTimeText")}{nextLeveCheck.ToString(CultureInfo.CurrentCulture)}");
-                }
+                    if (OnChatMessage)
+                    {
+                        Service.Chat.Print($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}{leves}" +
+                                           $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationFullText")}" +
+                                           $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-LeveUpdateTimeText")}{nextLeveCheck.ToString(CultureInfo.CurrentCulture)}");
+                    }
 
-                finishTime = now;
-                Service.Notice.Notify($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}{leves}",
-                                      Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationFullText"));
-                return;
+                    finishTime = now;
+                    Service.Notice.Notify($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}{leves}",
+                                          Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationFullText"));
+                    return;
+                }
             }
 
             if (JustFull) return;
@@ -115,14 +119,14 @@ public class AutoNotifyLeveUpdate : DailyModuleBase
 
         var incrementToday = 0;
 
-        if (currentTime >= TimeSpan.FromHours(8))
-        {
-            nextLeveCheck = new DateTime(now.Year, now.Month, now.Day, 20, 0, 0);
-            incrementToday += 3;
-        }
-        else if (currentTime >= TimeSpan.FromHours(20))
+        if (currentTime >= TimeSpan.FromHours(20))
         {
             nextLeveCheck = new DateTime(now.Year, now.Month, now.Day + 1, 8, 0, 0);
+            incrementToday += 6;
+        }
+        else if (currentTime >= TimeSpan.FromHours(8))
+        {
+            nextLeveCheck = new DateTime(now.Year, now.Month, now.Day, 20, 0, 0);
             incrementToday += 3;
         }
         else
