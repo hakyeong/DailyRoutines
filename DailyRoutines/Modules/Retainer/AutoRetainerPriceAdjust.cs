@@ -42,7 +42,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     private static int ConfigLowestPrice;
     private static int ConfigMaxPriceReduction;
     private static bool ConfigSeparateNQAndHQ;
-    private static Dictionary<(uint Id, bool HQ), int> PriceCache = new Dictionary<(uint Id, bool HQ), int>();
+    private static Dictionary<(uint Id, bool HQ), int> PriceCache = [];
 
     private static bool IsCurrentItemHQ;
 
@@ -52,7 +52,6 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
     public override void Init()
     {
-
         #region Config
 
         AddConfig(this, "PriceReduction", 1);
@@ -198,7 +197,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         {
             var retainerManager = RetainerManager.Instance();
             if (retainerManager == null) return;
-            PriceCache = new Dictionary<(uint Id, bool HQ), int>();
+            PriceCache = [];
             PlayerRetainers.Clear();
 
             for (var i = 0U; i < retainerManager->GetRetainerCount(); i++)
@@ -505,7 +504,6 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
         var originalPrice = ui->AtkValues[5].Int;
         var modifiedPrice = currentMarketLowestPrice - ConfigPriceReduction;
-        Service.Log.Debug($"原价: {originalPrice} | 改后价: {modifiedPrice}");
 
         // 价格不变
         if (modifiedPrice == originalPrice)
