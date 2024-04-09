@@ -42,12 +42,13 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
                            ref OnChatMessage))
             UpdateConfig(this, "OnChatMessage", OnChatMessage);
 
+        ImGui.PushItemWidth(300f);
         if (ImGui.SliderInt(Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationThreshold"), ref NotificationThreshold, 1, 100))
         {
             lastLeve = 0;
             UpdateConfig(this, "NotificationThreshold", NotificationThreshold);
         }
-
+        ImGui.PopItemWidth();
 
     }
 
