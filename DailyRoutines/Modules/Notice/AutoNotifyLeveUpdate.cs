@@ -43,13 +43,14 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
             UpdateConfig(this, "OnChatMessage", OnChatMessage);
 
         ImGui.PushItemWidth(300f);
-        if (ImGui.SliderInt(Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationThreshold"), ref NotificationThreshold, 1, 100))
+        ImGui.SliderInt(Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationThreshold"), ref NotificationThreshold, 1, 100);
+        ImGui.PopItemWidth();
+        if (ImGui.IsItemDeactivatedAfterEdit())
         {
             lastLeve = 0;
             UpdateConfig(this, "NotificationThreshold", NotificationThreshold);
         }
-        ImGui.PopItemWidth();
-
+        
     }
 
     private static void OnFrameworkLeve(IFramework _)
@@ -65,7 +66,7 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
             lastLeve = QuestManager.Instance()->NumLeveAllowances;
             nextLeveCheck = MathNextTime(NowUtc);
             finishTime = MathFinishTime(leveAllowances, NowUtc);
-
+            
             if (leveAllowances >= NotificationThreshold && decreasing)
             {
                 if (OnChatMessage)
