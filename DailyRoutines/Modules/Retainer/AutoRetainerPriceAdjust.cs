@@ -329,6 +329,12 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     {
         if (InterruptByConflictKey()) return true;
 
+        if (TryGetAddonByName<AddonRetainerList>("RetainerList", out var Laddon) &&
+            HelpersOm.IsAddonAndNodesReady(&Laddon->AtkUnitBase))
+        {
+            return true;
+        }
+
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
         {
             if (!HelpersOm.TryScanSelectStringText(addon, "返回", out var index))
@@ -410,7 +416,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
         if (AddonItemHistory == null) AddonManager.Callback(AddonItemSearchResult, true, 0);
         if (!HelpersOm.IsAddonAndNodesReady(AddonItemHistory)) return false;
-        
+
         var errorMessage = AddonItemSearchResult->GetTextNodeById(5);
         var messages = errorMessage->NodeText.ExtractText();
         if (messages.Contains("没有搜索到任何结果"))
@@ -543,7 +549,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             OperateAndReturn(false);
             return true;
         }
-        
+
         OperateAndReturn(true, modifiedPrice);
         return true;
 
@@ -569,7 +575,8 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         {
             for (var i = 0; i < 20; i++)
                 if (InventoryManager.Instance()->GetInventoryContainer(InventoryType.RetainerMarket)
-                        ->GetInventorySlot(i)->ItemID != 0)
+                        ->GetInventorySlot(i)->ItemID !=
+                    0)
                     availableItems++;
         }
 
