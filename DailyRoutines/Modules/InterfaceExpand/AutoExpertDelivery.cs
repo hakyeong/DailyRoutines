@@ -185,13 +185,12 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
     {
         if (!EzThrottler.Throttle("AutoExpertDelivery", 100)) return false;
 
-        if (AddonGrandCompanySupplyList != null && HelpersOm.IsAddonAndNodesReady(AddonGrandCompanySupplyList))
-        {
+        if (Service.Gui.GetAddonByName("SelectYesno") != nint.Zero) return false;
+        if (AddonGrandCompanySupplyList != null && IsAddonAndNodesReady(AddonGrandCompanySupplyList))
             CloseAddon(AddonGrandCompanySupplyList);
-        }
 
         if (TryGetAddonByName<AtkUnitBase>("GrandCompanySupplyReward", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(addon))
+            IsAddonAndNodesReady(addon))
         {
             ClickGrandCompanySupplyReward.Using((nint)addon).Deliver();
 
