@@ -4,6 +4,7 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -18,6 +19,7 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
     public override void Init()
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerList", OnRetainerList);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostUpdate, "RetainerList", OnRetainerList);
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
 
@@ -27,16 +29,36 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
     {
         if (InterruptByConflictKey()) return;
 
-        var retainerManager = RetainerManager.Instance();
-        var serverTime = Framework.GetServerTime();
-        for (var i = 0; i < 10; i++)
+        switch (type)
         {
-            var retainerState = retainerManager->GetRetainerBySortedIndex((uint)i)->VentureComplete;
-            if (retainerState == 0) continue;
-            if (retainerState - serverTime <= 0)
-            {
-                EnqueueSingleRetainer(i);
+            case AddonEvent.PostSetup:
+                CheckAndEnqueueCollects();
                 break;
+            case AddonEvent.PostUpdate:
+                if (EzThrottler.Throttle("AutoRetainerCollect-AFK", 5000))
+                {
+                    if (TaskManager.IsBusy) return;
+                    CheckAndEnqueueCollects();
+                    Service.Log.Debug("测试");
+                }
+                break;
+        }
+
+        return;
+
+        void CheckAndEnqueueCollects()
+        {
+            var retainerManager = RetainerManager.Instance();
+            var serverTime = Framework.GetServerTime();
+            for (var i = 0; i < 10; i++)
+            {
+                var retainerState = retainerManager->GetRetainerBySortedIndex((uint)i)->VentureComplete;
+                if (retainerState == 0) continue;
+                if (retainerState - serverTime <= 0)
+                {
+                    EnqueueSingleRetainer(i);
+                    break;
+                }
             }
         }
     }
