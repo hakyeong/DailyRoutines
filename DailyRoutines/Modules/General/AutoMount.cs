@@ -3,6 +3,7 @@ using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Text.SeStringHandling;
 using ECommons.Automation;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -71,11 +72,10 @@ public class AutoMount : DailyModuleBase
 
     private unsafe bool? UseMountWhenZoneChanged()
     {
+        if (!EzThrottler.Throttle("AutoMount")) return false;
         if (Service.Condition[ConditionFlag.BetweenAreas]) return false;
         var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("NowLoading");
         if (addon->IsVisible) return false;
-        var addon2 = (AtkUnitBase*)Service.Gui.GetAddonByName("FadeMiddle");
-        if (addon2->IsVisible) return false;
         if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 9) != 0) return true;
         if (AgentMap.Instance()->IsPlayerMoving == 1) return true;
         if (Service.Condition[ConditionFlag.Casting] | Service.Condition[ConditionFlag.Casting87]) return true;
