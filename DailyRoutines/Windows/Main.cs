@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Numerics;
 using System.Reflection;
-using System.Security.Policy;
 using System.Threading.Tasks;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -15,7 +14,6 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility;
-using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using ImGuiNET;
 using Newtonsoft.Json;
 
@@ -29,6 +27,8 @@ public class Main : Window, IDisposable
         public Type Module { get; set; } = null!;
         public string Title { get; set; } = null!;
         public string Description { get; set; } = null!;
+        public string? Author { get; set; }
+        public bool WithConfigUI { get; set; }
         public ModuleCategories Category { get; set; }
     }
 
@@ -75,8 +75,11 @@ public class Main : Window, IDisposable
                                      Module = type,
                                      Title = Service.Lang.GetText(type.GetCustomAttribute<ModuleDescriptionAttribute>()?.TitleKey ?? "DevModuleTitle"),
                                      Description = Service.Lang.GetText(type.GetCustomAttribute<ModuleDescriptionAttribute>()?.DescriptionKey ?? "DevModuleDescription"),
-                                     Category = type.GetCustomAttribute<ModuleDescriptionAttribute>()?.Category ?? ModuleCategories.Base
-                                 }).ToList();
+                                     Category = type.GetCustomAttribute<ModuleDescriptionAttribute>()?.Category ?? ModuleCategories.Base,
+                                     Author = ((DailyModuleBase)Activator.CreateInstance(type)!).Author,
+                                     WithConfigUI = type.GetMethod("ConfigUI", BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)?.DeclaringType != typeof(DailyModuleBase)
+                                 })
+                                 .ToList();
         
         Modules.AddRange(allModules);
         allModules.GroupBy(m => m.Category).ToList().ForEach(group =>
@@ -154,20 +157,14 @@ public class Main : Window, IDisposable
     private static void DrawModuleUI(ModuleInfo moduleInfo, int modulesCount, int index)
     {
         var moduleName = moduleInfo.Module.Name;
-        if (!Service.Config.ModuleEnabled.TryGetValue(moduleName, out var tempModuleBool))
-            return;
+        if (!Service.Config.ModuleEnabled.TryGetValue(moduleName, out var isModuleEnabled)) return;
 
-        var methodInfo =
-            moduleInfo.Module.GetMethod(
-                "ConfigUI", BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
-        var isWithUI = methodInfo != null && methodInfo.DeclaringType != typeof(ModuleBase);
-
-        var component = ModuleManager.Modules[moduleInfo.Module];
-        if (ImGuiOm.CheckboxColored("", ref tempModuleBool))
+        if (ImGuiOm.CheckboxColored("", ref isModuleEnabled))
         {
             Service.Config.ModuleEnabled[moduleName] ^= true;
 
-            if (tempModuleBool) ModuleManager.Load(component);
+            var component = ModuleManager.Modules[moduleInfo.Module];
+            if (isModuleEnabled) ModuleManager.Load(component);
             else ModuleManager.Unload(component);
 
             Service.Config.Save();
@@ -181,28 +178,26 @@ public class Main : Window, IDisposable
         ImGui.TextDisabled(moduleText);
         ImGui.SetWindowFontScale(1f);
 
-        var author = component.Author;
-        var isWithAuthor = !string.IsNullOrEmpty(author);
-
+        var isWithAuthor = !string.IsNullOrEmpty(moduleInfo.Author);
         if (isWithAuthor)
         {
             ImGui.SameLine();
-            ImGui.SetCursorPosX(origCursorPosX + ImGui.CalcTextSize(moduleInfo.Title).X + ImGui.GetStyle().FramePadding.X * 8 + (tempModuleBool && isWithUI ? 20f : -15f));
-            ImGui.TextColored(ImGuiColors.DalamudGrey3, $"{Service.Lang.GetText("Author")}: {author}");
+            ImGui.SetCursorPosX(origCursorPosX + ImGui.CalcTextSize(moduleInfo.Title).X + (ImGui.GetStyle().FramePadding.X * 8) + (isModuleEnabled && moduleInfo.WithConfigUI ? 20f : -15f));
+            ImGui.TextColored(ImGuiColors.DalamudGrey3, $"{Service.Lang.GetText("Author")}: {moduleInfo.Author}");
         }
 
         ImGui.SameLine();
         ImGui.SetCursorPosX(origCursorPosX);
 
-        if (tempModuleBool)
+        if (isModuleEnabled)
         {
-            if (isWithUI)
+            if (moduleInfo.WithConfigUI)
             {
                 if (CollapsingHeader())
                 {
                     ImGui.SetCursorPosX(origCursorPosX);
                     ImGui.BeginGroup();
-                    component.ConfigUI();
+                    ModuleManager.Modules[moduleInfo.Module].ConfigUI();
                     ImGui.EndGroup();
                 }
             }
@@ -220,7 +215,7 @@ public class Main : Window, IDisposable
 
         bool CollapsingHeader()
         {
-            ImGui.PushStyleColor(ImGuiCol.Text, tempModuleBool ? ImGuiColors.DalamudYellow : ImGuiColors.DalamudWhite);
+            ImGui.PushStyleColor(ImGuiCol.Text, isModuleEnabled ? ImGuiColors.DalamudYellow : ImGuiColors.DalamudWhite);
             ImGui.PushStyleColor(ImGuiCol.Header, ImGui.ColorConvertFloat4ToU32(new Vector4(0)));
             var collapsingHeader = ImGui.CollapsingHeader(moduleInfo.Title);
             ImGui.PopStyleColor(2);

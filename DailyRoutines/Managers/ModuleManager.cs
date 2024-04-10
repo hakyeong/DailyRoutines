@@ -9,7 +9,7 @@ namespace DailyRoutines.Managers;
 
 public class ModuleManager
 {
-    public static Dictionary<Type, DailyModuleBase> Modules = new();
+    public static Dictionary<Type, DailyModuleBase> Modules { get; private set; } = [];
 
     public ModuleManager()
     {
@@ -22,8 +22,8 @@ public class ModuleManager
 
         foreach (var type in types)
         {
-            var instance = Activator.CreateInstance(type); // 创建实例
-            if (instance is DailyModuleBase component)         // 这个类型检查依然有效，但现在更直接地与 DailyModuleBase 关联
+            var instance = Activator.CreateInstance(type);
+            if (instance is DailyModuleBase component)
                 Modules.Add(type, component);
         }
     }
