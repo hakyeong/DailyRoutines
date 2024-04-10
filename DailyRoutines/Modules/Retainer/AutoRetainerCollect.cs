@@ -27,16 +27,16 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
 
     private void OnRetainerList(AddonEvent type, AddonArgs args)
     {
-        if (InterruptByConflictKey()) return;
-
         switch (type)
         {
             case AddonEvent.PostSetup:
+                if (InterruptByConflictKey()) return;
                 CheckAndEnqueueCollects();
                 break;
             case AddonEvent.PostUpdate:
                 if (EzThrottler.Throttle("AutoRetainerCollect-AFK", 5000))
                 {
+                    if (InterruptByConflictKey()) return;
                     if (TaskManager.IsBusy && TaskManager.NumQueuedTasks >= 2) return;
                     CheckAndEnqueueCollects();
                 }
