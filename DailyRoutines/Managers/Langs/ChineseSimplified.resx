@@ -1117,4 +1117,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoLogin-WorldSelectHelp" xml:space="preserve">
     <value>可能存在多个同名服务器, 一般来说后缀为 2 的为当前正在使用的服务器, 请注意辨别</value>
   </data>
+  <data name="AutoEnableAttackDescription" xml:space="preserve">
+    <value>进入战斗时, 自动为所有职业开启自动攻击</value>
+  </data>
+  <data name="AutoEnableAttackTitle" xml:space="preserve">
+    <value>自动开启自动攻击</value>
+  </data>
 </root>
