@@ -315,8 +315,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     {
         if (EzThrottler.Throttle("FastSelectObjects", 250))
         {
-            if (Service.ClientState.LocalPlayer == null) return;
-            if (Service.Condition[ConditionFlag.BetweenAreas])
+            if (Service.ClientState.LocalPlayer == null || Service.Condition[ConditionFlag.BetweenAreas])
             {
                 ObjectsWaitSelected.Clear();
                 WindowWidth = 0f;
