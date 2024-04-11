@@ -71,6 +71,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
     private static IAddonEventHandle? MouseClickHandle;
     private static string MessageInput = string.Empty;
     private static int _dropMacroIndex = -1;
+    private static float? OriginalChatLogWidth;
 
     private static List<string> ConfigSavedMessages = [];
     private static List<SavedMacro> ConfigSavedMacros = [];
@@ -625,6 +626,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
         ButtonPos = new Vector2(textInputNode->X + textInputNode->Width, textInputNode->Y - 3) + ConfigButtonOffset;
 
+        OriginalChatLogWidth ??= AddonChatLog->RootNode->GetWidth();
         AddonChatLog->RootNode->SetWidth(
             (ushort)Math.Max(AddonChatLog->X,
                              textInputNode->X + textInputNode->Width + ConfigButtonOffset.X + ConfigButtonSize));
@@ -747,6 +749,11 @@ public unsafe class QuickChatPanel : DailyModuleBase
     public override void Uninit()
     {
         FreeNode();
+        if (AddonChatLog != null && OriginalChatLogWidth != null)
+        {
+            AddonChatLog->RootNode->SetWidth((ushort)OriginalChatLogWidth);
+            OriginalChatLogWidth = null;
+        }
         Service.AddonLifecycle.UnregisterListener(OnAddon);
 
         base.Uninit();
