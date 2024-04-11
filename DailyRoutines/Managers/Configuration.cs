@@ -15,6 +15,7 @@ public class Configuration : IPluginConfiguration
     public int Version { get; set; } = 0;
     public string SelectedLanguage { get; set; } = string.Empty;
     public VirtualKey ConflictKey { get; set; } = VirtualKey.SHIFT;
+    public bool SendCalendarToChatWhenLogin { get; set; } = false;
     public Dictionary<string, bool> ModuleEnabled { get; set; } = [];
 
     [NonSerialized]

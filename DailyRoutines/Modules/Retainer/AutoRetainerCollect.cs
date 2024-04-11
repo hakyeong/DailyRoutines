@@ -1,3 +1,5 @@
+using System;
+using System.Threading;
 using ClickLib;
 using ClickLib.Clicks;
 using DailyRoutines.Infos;
@@ -16,6 +18,10 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoRetainerCollectTitle", "AutoRetainerCollectDescription", ModuleCategories.Retainer)]
 public unsafe class AutoRetainerCollect : DailyModuleBase
 {
+    private static bool IsOnSetupCollectProcess;
+    private CancellationTokenSource? cancelSource;
+
+
     public override void Init()
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerList", OnRetainerList);
@@ -31,14 +37,21 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
         {
             case AddonEvent.PostSetup:
                 if (InterruptByConflictKey()) return;
+
+                IsOnSetupCollectProcess = true;
+                cancelSource?.Cancel();
+                cancelSource?.Dispose();
+                cancelSource = new CancellationTokenSource();
+
                 CheckAndEnqueueCollects();
+
+                Service.Framework.RunOnTick(RefreshState, TimeSpan.FromSeconds(5), 0, cancelSource.Token);
                 break;
             case AddonEvent.PostUpdate:
                 if (EzThrottler.Throttle("AutoRetainerCollect-AFK", 5000))
                 {
-                    if (InterruptByConflictKey()) return;
-                    if (TaskManager.IsBusy && TaskManager.NumQueuedTasks >= 2) return;
-                    CheckAndEnqueueCollects();
+                    if (InterruptByConflictKey() || TaskManager.IsBusy || IsOnSetupCollectProcess) return;
+                    Service.Framework.RunOnTick(CheckAndEnqueueCollects, TimeSpan.FromSeconds(1));
                 }
                 break;
         }
@@ -59,6 +72,11 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
                     break;
                 }
             }
+        }
+
+        void RefreshState()
+        {
+            IsOnSetupCollectProcess = false;
         }
     }
 
@@ -130,6 +148,11 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
     public override void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnRetainerList);
+
+        cancelSource?.Cancel();
+        cancelSource?.Dispose();
+        cancelSource = null;
+        IsOnSetupCollectProcess = false;
 
         base.Uninit();
     }
