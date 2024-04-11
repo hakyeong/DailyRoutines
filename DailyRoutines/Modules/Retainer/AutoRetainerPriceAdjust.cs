@@ -207,7 +207,6 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
                 PlayerRetainers.Add(retainer->RetainerID);
             }
-
         }
     }
 
@@ -233,26 +232,22 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     // 为所有雇员改价
     private void EnqueueAllRetainersInList()
     {
+        var retainerManager = RetainerManager.Instance();
+
         for (var i = 0; i < PlayerRetainers.Count; i++)
         {
             var index = i;
+            var marketItemCount = retainerManager->GetRetainerBySortedIndex((uint)i)->MarkerItemCount;
+            if (marketItemCount <= 0) continue;
+
             TaskManager.Enqueue(() => ClickSpecificRetainer(index));
             TaskManager.Enqueue(ClickToEnterSellList);
             TaskManager.DelayNext(1000);
             TaskManager.Enqueue(() =>
             {
                 if (AddonRetainerSellList == null) return false;
-                var itemAmount = GetSellListItemAmount();
-                if (itemAmount == 0)
-                {
-                    AddonRetainerSellList->FireCloseCallback();
-                    AddonRetainerSellList->Close(true);
 
-                    TaskManager.Insert(ReturnToRetainerList);
-                    return true;
-                }
-
-                for (var i = 0; i < itemAmount; i++)
+                for (var i = 0; i < marketItemCount; i++)
                 {
                     var index = i;
                     TaskManager.Insert(() => ClickSellingItem(index));
@@ -271,14 +266,16 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     // 为当前列表下所有出售品改价
     private void EnqueueAllItemsInSellList()
     {
-        var itemAmount = GetSellListItemAmount();
-        if (itemAmount == 0)
+        var retainerManager = RetainerManager.Instance();
+        var marketItemCount = retainerManager->GetActiveRetainer()->MarkerItemCount;
+
+        if (marketItemCount == 0)
         {
             TaskManager.Abort();
             return;
         }
 
-        for (var i = 0; i < itemAmount; i++)
+        for (var i = 0; i < marketItemCount; i++)
         {
             var index = i;
             TaskManager.Enqueue(() => ClickSellingItem(index));
@@ -565,22 +562,6 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             ui->Close(true);
             ResetCurrentItemStats();
         }
-    }
-
-    private static int GetSellListItemAmount()
-    {
-        var availableItems = 0;
-
-        if (TryGetAddonByName<AtkUnitBase>("RetainerSellList", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
-        {
-            for (var i = 0; i < 20; i++)
-                if (InventoryManager.Instance()->GetInventoryContainer(InventoryType.RetainerMarket)
-                        ->GetInventorySlot(i)->ItemID !=
-                    0)
-                    availableItems++;
-        }
-
-        return availableItems;
     }
 
     public static List<(bool HQ, uint Price, int Amount)> ScanItemHistory(AtkUnitBase* addon)
