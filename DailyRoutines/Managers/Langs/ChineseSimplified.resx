@@ -642,14 +642,23 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRefreshPartyFinderTitle" xml:space="preserve">
     <value>自动刷新招募板</value>
   </data>
-    <data name="AddSearchFFXIVscTitle" xml:space="preserve">
-    <value>光之收藏家按钮</value>
+    <data name="ExpandItemMenuSearchTitle" xml:space="preserve">
+    <value>物品右键菜单搜索扩展</value>
   </data>
-    <data name="AddSearchFFXIVscDescription" xml:space="preserve">
-    <value>在装备的右键菜单里添加一个到光之收藏家搜索该装备的按钮</value>
+    <data name="ExpandItemMenuSearchDescription" xml:space="preserve">
+    <value>在道具的右键菜单里添加一些搜索相关的功能</value>
   </data>
-    <data name="AddSearchFFXIVsc-contextMenuText" xml:space="preserve">
+    <data name="ExpandItemMenuSearch-contextMenuCollectorText" xml:space="preserve">
     <value>在光之收藏家中搜索</value>
+  </data>
+    <data name="ExpandItemMenuSearch-contextWikiMenuText" xml:space="preserve">
+    <value>在Wiki中搜索</value>
+  </data>
+    <data name="ExpandItemMenuSearch-SearchCollectorConfig" xml:space="preserve">
+    <value>添加在光之搜藏家中搜索(仅装备)</value>
+  </data>
+    <data name="ExpandItemMenuSearch-SearchWikiConfig" xml:space="preserve">
+    <value>添加在Wiki中搜索</value>
   </data>
     <data name="AutoRemoveArmoireItemsFromDresserDescription" xml:space="preserve">
     <value>打开投影台界面, 并点击开始后, 自动取出投影台中所有可放入收藏柜的装备
