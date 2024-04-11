@@ -37,7 +37,7 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
     public override void Init()
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, TextInputWindows, OnTextInputAddon);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, TextWindows.Keys, OnTextAddon);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, TextWindows.Keys, OnTextAddon);
 
         AddConfig(this, "FontScale", FontScale);
         FontScale = GetConfig<float>(this, "FontScale");
