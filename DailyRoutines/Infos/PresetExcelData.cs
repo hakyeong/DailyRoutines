@@ -1,6 +1,7 @@
 using DailyRoutines.Managers;
 using System.Collections.Generic;
 using System.Linq;
+using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
 using Status = Lumina.Excel.GeneratedSheets.Status;
 
@@ -11,6 +12,7 @@ public class PresetExcelData
     public Dictionary<uint, Action>? PlayerActions { get; private set; }
     public Dictionary<uint, Status>? Statuses { get; private set; }
     public Dictionary<uint, ContentFinderCondition>? Contents { get; private set; }
+    public Dictionary<uint, Item>? EquipmentItems { get; private set; }
 
     public PresetExcelData()
     {
@@ -27,5 +29,10 @@ public class PresetExcelData
                             .Where(x => !x.Name.ToString().IsNullOrEmpty())
                             .DistinctBy(x => x.TerritoryType.Row)
                             .ToDictionary(x => x.TerritoryType.Row, x => x);
+
+        EquipmentItems ??= Service.Data.GetExcelSheet<Item>()
+                                  .Where(x => x.EquipSlotCategory.Value.RowId != 0)
+                                  .DistinctBy(x => x.RowId)
+                                  .ToDictionary(x => x.RowId, x => x);
     }
 }
