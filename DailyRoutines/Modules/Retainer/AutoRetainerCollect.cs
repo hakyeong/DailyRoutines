@@ -36,8 +36,7 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
             case AddonEvent.PostUpdate:
                 if (EzThrottler.Throttle("AutoRetainerCollect-AFK", 5000))
                 {
-                    if (InterruptByConflictKey()) return;
-                    if (TaskManager.IsBusy && TaskManager.NumQueuedTasks >= 2) return;
+                    if (InterruptByConflictKey() || TaskManager.IsBusy) return;
                     CheckAndEnqueueCollects();
                 }
                 break;
