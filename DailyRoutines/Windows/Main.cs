@@ -58,12 +58,9 @@ public class Main : Window, IDisposable
                                      Category = type.GetCustomAttribute<ModuleDescriptionAttribute>()?.Category ??
                                                 ModuleCategories.Base,
                                      Author = ((DailyModuleBase)Activator.CreateInstance(type)!).Author,
-                                     WithConfigUI =
-                                         type.GetMethod(
-                                                 "ConfigUI",
-                                                 BindingFlags.Instance | BindingFlags.Public |
-                                                 BindingFlags.DeclaredOnly)
-                                             ?.DeclaringType != typeof(DailyModuleBase)
+                                     WithConfigUI = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
+                                                        .Any(m => m.Name == "ConfigUI" && 
+                                                                  m.DeclaringType != typeof(DailyModuleBase))
                                  })
                                  .ToList();
 
