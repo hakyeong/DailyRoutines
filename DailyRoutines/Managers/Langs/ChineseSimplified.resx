@@ -358,8 +358,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>自动精制魔晶石</value>
   </data>
   <data name="AutoMiniCactpotDescription" xml:space="preserve">
-    <value>进入仙人微彩界面后, 自动完成当日所有的仙人微彩
-(安装并启用了 ezMiniCactpot 则按照其推荐来点选, 未安装则随机点选)</value>
+    <value>进入仙人微彩界面后, 自动完成当日所有的仙人微彩</value>
   </data>
   <data name="AutoMiniCactpotTitle" xml:space="preserve">
     <value>自动完成仙人微彩</value>
@@ -492,7 +491,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>理符限额已达设定值或将要溢出 </value>
   </data>
   <data name="AutoNotifyLeveUpdate-NumText" xml:space="preserve">
-    <value>当前理符数量: </value>
+    <value>当前限额数量: </value>
   </data>
   <data name="AutoNotifyLeveUpdate-FullTimeText" xml:space="preserve">
     <value>预计达限时间: </value>
