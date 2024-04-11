@@ -1097,7 +1097,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>结束时间</value>
   </data>
   <data name="GameCalendar" xml:space="preserve">
-    <value>游戏日历</value>
+    <value>游戏活动日历</value>
   </data>
   <data name="GameCalendar-EventEnded" xml:space="preserve">
     <value>(已结束)</value>
@@ -1122,5 +1122,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoEnableAttackTitle" xml:space="preserve">
     <value>自动开启自动攻击</value>
+  </data>
+  <data name="Settings-SendCalendarToCharWhenLogin" xml:space="preserve">
+    <value>登录时发送日历至聊天栏</value>
   </data>
 </root>
