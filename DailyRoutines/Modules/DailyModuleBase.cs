@@ -180,8 +180,11 @@ public abstract class DailyModuleBase
         if (Service.KeyState[Service.Config.ConflictKey])
         {
             TaskManager?.Abort();
-            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"),
-                                                        "Daily Routines", NotificationType.Success);
+            Service.DalamudNotice.AddNotification(new()
+            {
+                Content = Service.Lang.GetText("ConflictKey-InterruptMessage"), Title = "Daily Routines",
+                Type = NotificationType.Success
+            });
             return true;
         }
 

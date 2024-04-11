@@ -19,14 +19,9 @@ public class AutoConstantlyInspect : DailyModuleBase
 
     public override void ConfigUI() => ConflictKeyText();
 
-    private static unsafe void OnAddon(AddonEvent type, AddonArgs args)
+    private unsafe void OnAddon(AddonEvent type, AddonArgs args)
     {
-        if (Service.KeyState[Service.Config.ConflictKey])
-        {
-            P.PluginInterface.UiBuilder.AddNotification(Service.Lang.GetText("ConflictKey-InterruptMessage"),
-                                                        "Daily Routines", NotificationType.Success);
-            return;
-        }
+        InterruptByConflictKey();
 
         var addon = (AtkUnitBase*)args.Addon;
         if (addon == null) return;
