@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 using ClickLib;
 using ClickLib.Clicks;
 using DailyRoutines.Infos;
@@ -18,13 +17,10 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoRetainerCollectTitle", "AutoRetainerCollectDescription", ModuleCategories.Retainer)]
 public unsafe class AutoRetainerCollect : DailyModuleBase
 {
-    private static bool IsOnSetupCollectProcess;
-    private CancellationTokenSource? cancelSource;
-
-
     public override void Init()
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerList", OnRetainerList);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "RetainerList", OnRetainerList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostUpdate, "RetainerList", OnRetainerList);
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
@@ -37,22 +33,19 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
         {
             case AddonEvent.PostSetup:
                 if (InterruptByConflictKey()) return;
-
-                IsOnSetupCollectProcess = true;
-                cancelSource?.Cancel();
-                cancelSource?.Dispose();
-                cancelSource = new CancellationTokenSource();
-
                 CheckAndEnqueueCollects();
 
-                Service.Framework.RunOnTick(RefreshState, TimeSpan.FromSeconds(5), 0, cancelSource.Token);
+                Service.AddonLifecycle.RegisterListener(AddonEvent.PostUpdate, "RetainerList", OnRetainerList);
                 break;
             case AddonEvent.PostUpdate:
                 if (EzThrottler.Throttle("AutoRetainerCollect-AFK", 5000))
                 {
-                    if (InterruptByConflictKey() || TaskManager.IsBusy || IsOnSetupCollectProcess) return;
+                    if (InterruptByConflictKey() || TaskManager.IsBusy || !IsAddonAndNodesReady((AtkUnitBase*)args.Addon)) return;
                     Service.Framework.RunOnTick(CheckAndEnqueueCollects, TimeSpan.FromSeconds(1));
                 }
+                break;
+            case AddonEvent.PreFinalize:
+                Service.AddonLifecycle.UnregisterListener(AddonEvent.PostUpdate, "RetainerList", OnRetainerList);
                 break;
         }
 
@@ -73,11 +66,6 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
                 }
             }
         }
-
-        void RefreshState()
-        {
-            IsOnSetupCollectProcess = false;
-        }
     }
 
     private void EnqueueSingleRetainer(int index)
@@ -95,8 +83,7 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
     {
         if (InterruptByConflictKey()) return true;
 
-        if (TryGetAddonByName<AddonRetainerList>("RetainerList", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
+        if (TryGetAddonByName<AddonRetainerList>("RetainerList", out var addon) && IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
             var handler = new ClickRetainerList();
             handler.Retainer(index);
@@ -112,8 +99,7 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
 
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
         {
-            if (!HelpersOm.TryScanSelectStringText(addon, "返回", out var returnIndex) ||
-                !HelpersOm.TryScanSelectStringText(addon, "结束", out var index))
+            if (!TryScanSelectStringText(addon, "返回", out var returnIndex) || !TryScanSelectStringText(addon, "结束", out var index))
             {
                 TaskManager.Abort();
                 if (returnIndex != -1) TaskManager.Enqueue(() => Click.TrySendClick($"select_string{returnIndex + 1}"));
@@ -133,7 +119,7 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
 
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
         {
-            if (!HelpersOm.TryScanSelectStringText(addon, "返回", out var index))
+            if (!TryScanSelectStringText(addon, "返回", out var index))
             {
                 TaskManager.Abort();
                 return true;
@@ -148,11 +134,6 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
     public override void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnRetainerList);
-
-        cancelSource?.Cancel();
-        cancelSource?.Dispose();
-        cancelSource = null;
-        IsOnSetupCollectProcess = false;
 
         base.Uninit();
     }
