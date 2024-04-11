@@ -1,6 +1,3 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Gui.ContextMenu;
@@ -16,34 +13,13 @@ public class ExpandItemMenuSearch : DailyModuleBase
 {
     public override string? Author { get; set; } = "HSS";
 
-    private static Item? _lastItem;
+    private static Item? _LastItem;
     private static bool SearchCollector;
     private static bool SearchWiki;
     private const int ChatLogContextItemId = 0x948;
+
     private const string CollectorUrl = "https://www.ffxivsc.cn/#/search?text={0}&type=armor";
     private const string WikiUrl = "https://ff14.huijiwiki.com/index.php?search={0}&profile=default&fulltext=1";
-
-    private static readonly MenuItem _inventoryCollectorItem = new MenuItem
-    {
-        IsEnabled = true,
-        IsReturn = false,
-        PrefixChar = 'D',
-        Name = Service.Lang.GetText("ExpandItemMenuSearch-contextMenuCollectorText"),
-        OnClicked = OnClick,
-        IsSubmenu = false,
-        PrefixColor = 541,
-    };
-
-    private static readonly MenuItem _inventoryWikiItem = new MenuItem
-    {
-        IsEnabled = true,
-        IsReturn = false,
-        PrefixChar = 'D',
-        Name = Service.Lang.GetText("ExpandItemMenuSearch-contextWikiMenuText"),
-        OnClicked = OnWikiClick,
-        IsSubmenu = false,
-        PrefixColor = 541,
-    };
 
     public override void Init()
     {
@@ -56,11 +32,9 @@ public class ExpandItemMenuSearch : DailyModuleBase
 
     public override void ConfigUI()
     {
-        if (ImGui.Checkbox(Service.Lang.GetText("ExpandItemMenuSearch-SearchCollectorConfig"),
-                           ref SearchCollector))
+        if (ImGui.Checkbox(Service.Lang.GetText("ExpandItemMenuSearch-CollectorSearch"), ref SearchCollector))
             UpdateConfig(this, "SearchCollector", SearchCollector);
-        if (ImGui.Checkbox(Service.Lang.GetText("ExpandItemMenuSearch-SearchWikiConfig"),
-                           ref SearchWiki))
+        if (ImGui.Checkbox(Service.Lang.GetText("ExpandItemMenuSearch-WikiSearch"), ref SearchWiki))
             UpdateConfig(this, "SearchWiki", SearchWiki);
     }
 
@@ -71,15 +45,12 @@ public class ExpandItemMenuSearch : DailyModuleBase
             var arg = (MenuTargetInventory)args.Target;
             if (arg.TargetItem.HasValue)
             {
-                if (HandleItem(arg.TargetItem.Value.ItemId) && SearchCollector)
-                {
-                    args.AddMenuItem(_inventoryCollectorItem);
-                }
+                if (TryGetItemByID(arg.TargetItem.Value.ItemId) && SearchCollector) args.AddMenuItem(CollectorItem);
 
                 if (SearchWiki)
                 {
-                    _lastItem = Service.Data.GetExcelSheet<Item>().GetRow(arg.TargetItem.Value.ItemId);
-                    args.AddMenuItem(_inventoryWikiItem);
+                    _LastItem = Service.Data.GetExcelSheet<Item>().GetRow(arg.TargetItem.Value.ItemId);
+                    args.AddMenuItem(WikiItem);
                 }
             }
         }
@@ -90,15 +61,12 @@ public class ExpandItemMenuSearch : DailyModuleBase
                 case "ItemSearch" when args.AgentPtr != nint.Zero:
                 {
                     var itemId = (uint)AgentContext.Instance()->UpdateCheckerParam;
-                    if (HandleItem(itemId) && SearchCollector)
-                    {
-                        args.AddMenuItem(_inventoryCollectorItem);
-                    }
+                    if (TryGetItemByID(itemId) && SearchCollector) args.AddMenuItem(CollectorItem);
 
                     if (SearchWiki)
                     {
-                        _lastItem = Service.Data.GetExcelSheet<Item>().GetRow(itemId);
-                        args.AddMenuItem(_inventoryWikiItem);
+                        _LastItem = Service.Data.GetExcelSheet<Item>().GetRow(itemId);
+                        args.AddMenuItem(WikiItem);
                     }
 
                     break;
@@ -106,48 +74,64 @@ public class ExpandItemMenuSearch : DailyModuleBase
                 case "ChatLog":
                 {
                     var agent = Service.Gui.FindAgentInterface("ChatLog");
-                    if (agent == nint.Zero || !ValidateChatLogContext(agent))
+                    if (agent == nint.Zero || !IsValidChatLogContext(agent))
                         return;
                     var itemId = *(uint*)(agent + ChatLogContextItemId);
-                    if (HandleItem(itemId) && SearchCollector)
-                    {
-                        args.AddMenuItem(_inventoryCollectorItem);
-                    }
-                    
+                    if (TryGetItemByID(itemId) && SearchCollector) args.AddMenuItem(CollectorItem);
+
                     if (SearchWiki)
                     {
-                        _lastItem = Service.Data.GetExcelSheet<Item>().GetRow(itemId);
-                        args.AddMenuItem(_inventoryWikiItem);
+                        _LastItem = Service.Data.GetExcelSheet<Item>().GetRow(itemId);
+                        args.AddMenuItem(WikiItem);
                     }
+
                     break;
                 }
             }
         }
     }
 
-    private static void OnClick(MenuItemClickedArgs _)
+    private static readonly MenuItem CollectorItem = new()
     {
-        if (_lastItem != null)
-        {
-            Util.OpenLink(string.Format(CollectorUrl, _lastItem.Name));
-        }
+        IsEnabled = true,
+        IsReturn = false,
+        PrefixChar = 'D',
+        Name = RPrefix(Service.Lang.GetText("ExpandItemMenuSearch-CollectorSearch")),
+        OnClicked = OnCollector,
+        IsSubmenu = false,
+        PrefixColor = 34
+    };
+
+    private static readonly MenuItem WikiItem = new()
+    {
+        IsEnabled = true,
+        IsReturn = false,
+        PrefixChar = 'D',
+        Name = RPrefix(Service.Lang.GetText("ExpandItemMenuSearch-WikiSearch")),
+        OnClicked = OnWiki,
+        IsSubmenu = false,
+        PrefixColor = 34
+    };
+
+    private static void OnCollector(MenuItemClickedArgs _)
+    {
+        if (_LastItem != null) Util.OpenLink(string.Format(CollectorUrl, _LastItem.Name));
     }
 
-    private static void OnWikiClick(MenuItemClickedArgs _)
+    private static void OnWiki(MenuItemClickedArgs _)
     {
-        if (_lastItem != null)
-        {
-            Util.OpenLink(string.Format(WikiUrl, _lastItem.Name));
-        }
+        if (_LastItem != null) Util.OpenLink(string.Format(WikiUrl, _LastItem.Name));
     }
 
-    private static bool HandleItem(uint id)
+    private static bool TryGetItemByID(uint id)
     {
-        return Service.PresetData.EquipmentItems.TryGetValue(id, out _lastItem);
+        return Service.PresetData.EquipmentItems.TryGetValue(id, out _LastItem);
     }
 
-    private static unsafe bool ValidateChatLogContext(nint agent)
-        => *(uint*)(agent + ChatLogContextItemId + 8) == 3;
+    private static unsafe bool IsValidChatLogContext(nint agent)
+    {
+        return *(uint*)(agent + ChatLogContextItemId + 8) == 3;
+    }
 
     public override void Uninit()
     {
