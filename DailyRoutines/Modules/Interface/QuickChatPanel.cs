@@ -9,6 +9,7 @@ using Dalamud.Game.Addon.Events;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Text;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Internal;
@@ -19,6 +20,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Shell;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using FFXIVClientStructs.Interop;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
@@ -72,6 +74,9 @@ public unsafe class QuickChatPanel : DailyModuleBase
     private static string MessageInput = string.Empty;
     private static int _dropMacroIndex = -1;
     private static float? OriginalChatLogWidth;
+    private static string ItemSearchInput = string.Empty;
+    private static Dictionary<string, Item>? ItemNames;
+    private static Dictionary<string, Item> _ItemNames = [];
 
     private static List<string> ConfigSavedMessages = [];
     private static List<SavedMacro> ConfigSavedMacros = [];
@@ -118,6 +123,12 @@ public unsafe class QuickChatPanel : DailyModuleBase
         foreach (SeIconChar seIconChar in Enum.GetValues(typeof(SeIconChar)))
             tempSeIconList.Add((char)seIconChar);
         SeIconChars = [.. tempSeIconList];
+        ItemNames ??= Service.Data.GetExcelSheet<Item>()
+                             .Where(x => !string.IsNullOrEmpty(x.Name.RawString))
+                             .GroupBy(x => x.Name.RawString)
+                             .ToDictionary(x => x.Key, x => x.First());
+
+        _ItemNames = ItemNames.Take(10).ToDictionary(x => x.Key, x => x.Value);
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "ChatLog", OnAddon);
 
@@ -555,6 +566,53 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
                 ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
                                         ConfigOverlayHeight * ImGuiHelpers.GlobalScale));
+                ImGui.EndTabItem();
+            }
+
+            if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-GameItems")))
+            {
+                var maxTextWidth = 200f;
+                if (ImGui.BeginChild("GameItemChild", ImGui.GetContentRegionAvail(), false))
+                {
+                    Service.Font.Axis14.Push();
+                    ImGui.SetWindowFontScale(ConfigFontScale);
+
+                    ImGui.SetNextItemWidth(-1f);
+                    ImGui.InputTextWithHint("###GameItemSearchInput", Service.Lang.GetText("PleaseSearch"), ref ItemSearchInput, 100);
+
+                    if (ImGui.IsItemDeactivatedAfterEdit())
+                    {
+                        if (!string.IsNullOrWhiteSpace(ItemSearchInput) && ItemSearchInput.Length > 1)
+                        {
+                            _ItemNames = ItemNames
+                                         .Where(x => x.Key.Contains(ItemSearchInput, StringComparison.OrdinalIgnoreCase))
+                                         .ToDictionary(x => x.Key, x => x.Value);
+                        }
+                    }
+
+                    ImGui.Separator();
+
+                    var longestText = string.Empty;
+                    foreach (var (itemName, item) in _ItemNames)
+                    {
+                        if (itemName.Length > longestText.Length) longestText = itemName;
+                        if (ImGuiOm.SelectableImageWithText(IconManager.GetIcon(item.Icon).ImGuiHandle,
+                                                            new(24),
+                                                            itemName, false))
+                        {
+                            Service.Chat.Print(new SeStringBuilder().AddItemLink(item.RowId).Build());
+                        }
+                    }
+                    maxTextWidth = ImGui.CalcTextSize(longestText).X + 100f;
+                    
+                    ImGui.SetWindowFontScale(1f);
+                    Service.Font.Axis14.Pop();
+                    ImGui.EndChild();
+                }
+
+                ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
+                                        ConfigOverlayHeight * ImGuiHelpers.GlobalScale));
+
                 ImGui.EndTabItem();
             }
 
