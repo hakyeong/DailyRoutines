@@ -3,6 +3,7 @@ using DailyRoutines.Managers;
 using DailyRoutines.Modules;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Network.Structures.InfoProxy;
+using Dalamud.Game.Text.SeStringHandling;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.GeneratedSheets;
 
@@ -48,5 +49,11 @@ public static class Extensions
             World = chara.HomeWorld.GameData.Name.RawString
         };
         return info;
+    }
+
+    public static BitmapFontIcon ToBitmapFontIcon(this ClassJob? job)
+    {
+        if (job == null || job.RowId == 0) return BitmapFontIcon.NewAdventurer;
+        return (BitmapFontIcon)job.RowId + 127;
     }
 }

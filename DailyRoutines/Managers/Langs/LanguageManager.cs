@@ -86,13 +86,18 @@ public partial class LanguageManager
 
             if (int.TryParse(match.Groups[1].Value, out var argIndex) && argIndex >= 0 && argIndex < args.Length)
             {
-                if (args[argIndex] is SeString @seString)
+                var arg = args[argIndex];
+                switch (arg)
                 {
-                    ssb.Append(@seString);
-                }
-                else
-                {
-                    ssb.AddUiForeground(args[argIndex].ToString(), 2);
+                    case SeString seString:
+                        ssb.Append(seString);
+                        break;
+                    case BitmapFontIcon icon:
+                        ssb.AddIcon(icon);
+                        break;
+                    default:
+                        ssb.AddUiForeground(arg.ToString(), 2);
+                        break;
                 }
             }
         }
