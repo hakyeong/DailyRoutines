@@ -653,6 +653,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <data name="ExpandItemMenuSearch-CollectorSearchGlamourId" xml:space="preserve">
     <value> 搜索幻化而不是原本的装备</value>
   </data>
+    <data name="ExpandItemMenuSearch-WikiSearchGlamourId" xml:space="preserve">
+    <value> 搜索幻化而不是原本的装备</value>
+  </data>
   <data name="ExpandItemMenuSearch-WikiSearch" xml:space="preserve">
     <value> 搜索: Wiki</value>
   </data>
