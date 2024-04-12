@@ -4,7 +4,10 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Gui.ContextMenu;
+using Dalamud.Interface.ImGuiNotification;
+using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Utility;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
 using Newtonsoft.Json;
 namespace DailyRoutines.Modules;
@@ -20,7 +23,7 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
 
     private static readonly HttpClient client = new();
 
-    private const string RisingStoneSearchAPI = "https://apiff14risingstones.web.sdo.com/api/common/search?type=6&keywords={0}";
+    private const string RisingStoneSearchAPI = "https://apiff14risingstones.web.sdo.com/api/common/search?type=6&keywords={0}&page={1}&limit=50";
     private const string RisingStonePlayerInfo = "https://ff14risingstones.web.sdo.com/pc/index.html#/me/info?uuid={0}";
     private const string FFLogsSearch = "https://cn.fflogs.com/character/CN/{0}/{1}";
     private const string TiebaSearch = "https://tieba.baidu.com/f/search/res?ie=utf-8&kw=ff14&qw={0}";
@@ -103,27 +106,42 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
         Task.Run(async () =>
         {
             if (_TargetChara == null) return;
-            var response = await client.GetStringAsync(string.Format(RisingStoneSearchAPI, _TargetChara.Name));
-            var result = JsonConvert.DeserializeObject<FileFormat.RSPlayerSearchResult>(response);
 
-            if (result.data.Count > 0)
+            var page = 1;
+            var isFound = false;
+            const int delayBetweenRequests = 1000;
+
+            while (!isFound)
             {
-                var isFound = false;
-                foreach (var player in result.data)
+                var url = string.Format(RisingStoneSearchAPI, _TargetChara.Name, page);
+                var response = await client.GetStringAsync(url);
+                var result = JsonConvert.DeserializeObject<FileFormat.RSPlayerSearchResult>(response);
+
+                if (result.data.Count == 0)
                 {
-                    if (player.character_name != _TargetChara.Name) continue;
-                    if (player.group_name != _TargetChara.World) continue;
-                    var uuid = player.uuid;
-                    Util.OpenLink(string.Format(RisingStonePlayerInfo, uuid));
-                    isFound = true;
+                    Service.DalamudNotice.AddNotification(new Notification { Content = Service.Lang.GetText("ExpandPlayerMenuSearch-RisingStoneInfoNotFound"), Type = NotificationType.Error });
+                    break;
                 }
 
-                if (!isFound) Service.Chat.PrintError(Service.Lang.GetText("ExpandPlayerMenuSearch-RisingStoneInfoNotFound"), "Daily Routines");
+                foreach (var player in result.data)
+                {
+                    if (player.character_name == _TargetChara.Name && player.group_name == _TargetChara.World)
+                    {
+                        var uuid = player.uuid;
+                        Util.OpenLink(string.Format(RisingStonePlayerInfo, uuid));
+                        isFound = true;
+                        break;
+                    }
+                }
 
-                return;
+                if (!isFound)
+                {
+                    Service.DalamudNotice.AddNotification(new Notification { Content = Service.Lang.GetText("ExpandPlayerMenuSearch-NextPageMessage", 0), Type = NotificationType.Info});
+                    await Task.Delay(delayBetweenRequests);
+                    page++;
+                }
+                else break;
             }
-
-            Service.Chat.PrintError(Service.Lang.GetText("ExpandPlayerMenuSearch-RisingStoneInfoNotFound"), "Daily Routines");
         });
     }
 
@@ -147,9 +165,28 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
         var agent = Service.Gui.FindAgentInterface("ChatLog");
         if (agent != nint.Zero && *(uint*)(agent + 0x948 + 8) == 3) return false;
 
+        var judgeCriteria0 = menuTarget.TargetCharacter != null;
+        var judgeCriteria1 = menuTarget.TargetObject is Character &&
+                             !string.IsNullOrWhiteSpace(menuTarget.TargetName) &&
+                             menuTarget.TargetHomeWorld.GameData != null;
+        var judgeCriteria2 = !string.IsNullOrWhiteSpace(menuTarget.TargetName) &&
+                             menuTarget.TargetHomeWorld.GameData != null;
+
         switch (args.AddonName)
         {
             default:
+                return false;
+            case "BlackList":
+                var agentBlackList = (AgentBlacklist*)AgentModule.Instance()->GetAgentByInternalId(AgentId.SocialBlacklist);
+                if ((nint)agentBlackList != nint.Zero && agentBlackList->AgentInterface.IsAgentActive())
+                {
+                    var playerName = agentBlackList->SelectedPlayerName.ExtractText();
+                    var serverName = agentBlackList->SelectedPlayerFullName.ExtractText()
+                                                                           .TrimStart(playerName.ToCharArray());
+                    _TargetChara = new() { Name = playerName, World = serverName };
+                    return true;
+                }
+
                 return false;
             case null:
             case "LookingForGroup":
@@ -163,14 +200,13 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
             case "LinkShell":
             case "CrossWorldLinkshell":
             case "ContentMemberList":
-            case "BlackList":
-                if (menuTarget.TargetCharacter != null)
+                if (judgeCriteria0)
                     _TargetChara = menuTarget.TargetCharacter.ToCharacterSearchInfo();
-                else if (menuTarget.TargetObject is Character chara)
+                else if (menuTarget.TargetObject is Character chara && judgeCriteria2)
                     _TargetChara = chara.ToCharacterSearchInfo();
-                else if (!string.IsNullOrWhiteSpace(menuTarget.TargetName) && menuTarget.TargetHomeWorld.GameData != null)
+                else if (judgeCriteria2)
                     _TargetChara = new() { Name = menuTarget.TargetName, World = menuTarget.TargetHomeWorld.GameData.Name.RawString };
-                return menuTarget.TargetCharacter != null || menuTarget.TargetObject is Character || (!string.IsNullOrWhiteSpace(menuTarget.TargetName) && menuTarget.TargetHomeWorld.GameData != null);
+                return judgeCriteria0 || judgeCriteria1 || judgeCriteria2;
         }
     }
 
