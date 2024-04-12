@@ -650,10 +650,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="ExpandItemMenuSearch-CollectorSearch" xml:space="preserve">
     <value> 搜索: 光之收藏家</value>
   </data>
-  <data name="ExpandItemMenuSearch-CollectorSearchGlamourId" xml:space="preserve">
-    <value> 搜索幻化而不是原本的装备</value>
-  </data>
-    <data name="ExpandItemMenuSearch-WikiSearchGlamourId" xml:space="preserve">
+  <data name="ExpandItemMenuSearch-SearchGlamourId" xml:space="preserve">
     <value> 搜索幻化而不是原本的装备</value>
   </data>
   <data name="ExpandItemMenuSearch-WikiSearch" xml:space="preserve">
