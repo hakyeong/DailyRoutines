@@ -100,7 +100,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
                 $"{Service.Lang.GetText("AutoRetainerPriceAdjust-SinglePriceReductionValue")}##AutoRetainerPriceAdjust-SinglePriceReductionValue",
                 ref PriceReduction, 100))
         {
-            PriceReduction = Math.Max(1, PriceReduction);
+            PriceReduction = Math.Max(0, PriceReduction);
             UpdateConfig(this, "SinglePriceReductionValue", PriceReduction);
         }
 
