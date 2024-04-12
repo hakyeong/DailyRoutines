@@ -72,7 +72,7 @@ public class ExpandItemMenuSearch : DailyModuleBase
         {
             ImGui.Indent();
             ImGui.PushID("ExpandItemMenuSearch-CollectorSearchGlamourId");
-            if (ImGui.Checkbox(Service.Lang.GetText("ExpandItemMenuSearch-SearchGlamourId"),
+            if (ImGui.Checkbox(Service.Lang.GetText("ExpandItemMenuSearch-CollectorSearchGlamourId"),
                                ref SearchCollectorByGlamour))
                 UpdateConfig(this, "SearchCollectorByGlamour", SearchCollectorByGlamour);
             ImGui.PopID();
@@ -85,7 +85,7 @@ public class ExpandItemMenuSearch : DailyModuleBase
         {
             ImGui.Indent();
             ImGui.PushID("ExpandItemMenuSearch-WikiSearchGlamourId");
-            if (ImGui.Checkbox(Service.Lang.GetText("ExpandItemMenuSearch-SearchGlamourId"),
+            if (ImGui.Checkbox(Service.Lang.GetText("ExpandItemMenuSearch-WikiSearchGlamourId"),
                                ref SearchWikiByGlamour))
                 UpdateConfig(this, "SearchWikiByGlamour", SearchWikiByGlamour);
             ImGui.PopID();
