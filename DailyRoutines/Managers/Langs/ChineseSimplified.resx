@@ -546,7 +546,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>近战</value>
   </data>
   <data name="AutoPlayCards-Message" xml:space="preserve">
-    <value>将 {0}卡 发给了 {1} {2}</value>
+    <value>将 {0}卡 发给了 {1}{2} {3}</value>
   </data>
   <data name="AutoPlayCards-Range" xml:space="preserve">
     <value>远程</value>

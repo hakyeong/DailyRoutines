@@ -1,7 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using Dalamud.Game.ClientState.Party;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Hooking;
 using ECommons.GameFunctions;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -42,51 +45,61 @@ public unsafe class AutoPlayCards : DailyModuleBase
             UpdateConfig(this, "SendMessage", ConfigSendMessage);
     }
 
-    private bool UseActionSelf(
-        ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6,
-        void* a7)
+    private bool UseActionSelf(ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6, void* a7)
     {
         if (actionType != 1 || actionID != 17055)
             return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
 
         var localPlayer = Service.ClientState.LocalPlayer;
+        var battlePlayer = localPlayer.BattleChara();
 
-        bool isMeleeCardDrawn = MeleeCardStatuses.Any(
-                 x => localPlayer.BattleChara()->GetStatusManager->HasStatus(x)),
-             isRangeCardDrawn = RangeCardStatuses.Any(
-                 x => localPlayer.BattleChara()->GetStatusManager->HasStatus(x));
+        bool isMeleeCardDrawn = MeleeCardStatuses.Any(x => battlePlayer->GetStatusManager->HasStatus(x)),
+             isRangeCardDrawn = RangeCardStatuses.Any(x => battlePlayer->GetStatusManager->HasStatus(x));
         if (!isMeleeCardDrawn && !isRangeCardDrawn)
             return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
 
-        var member = Service.PartyList
-                            .Where(x => x.GameObject != null && x.GameObject.IsValid() && 
-                                        x.GameObject.IsTargetable && !x.GameObject.IsDead)
-                            .Select(x => new
-                            {
-                                Member = x,
-                                Distance = HelpersOm.GetGameDistanceFromObject(
-                                    (GameObject*)localPlayer.Address,
-                                    (GameObject*)x.GameObject.Address)
-                            })
-                            .Where(x => !x.Member.Statuses.Any(s => CardStatuses.Contains(s.StatusId))
-                                        && x.Distance <= 30)
-                            .OrderByDescending(x => x.Member.ClassJob.GameData.Role is 2 or 3 ? 1 : 0)
-                            .ThenByDescending(x => x.Member.ClassJob.GameData.Role is 1 or 2 ? isMeleeCardDrawn ? 1 : 0 :
-                                                   isMeleeCardDrawn ? 0 : 1)
-                            .Select(x => x.Member)
-                            .FirstOrDefault();
+        var indices = Enumerable.Range(0, Service.PartyList.Count)
+                                .Where(i => Service.PartyList[i].GameObject != null && 
+                                            Service.PartyList[i].GameObject.IsValid() && 
+                                            Service.PartyList[i].GameObject.IsTargetable && 
+                                            !Service.PartyList[i].GameObject.IsDead &&
+                                            !Service.PartyList[i].Statuses.Any(s => CardStatuses.Contains(s.StatusId)) && 
+                                            GetGameDistanceFromObject((GameObject*)localPlayer.Address, (GameObject*)Service.PartyList[i].GameObject.Address) <= 30)
+                                .ToList();
+
+        PartyMember? member = null;
+        if (indices.Count > 0)
+        {
+            var rng = new Random();
+            for (var i = indices.Count - 1; i >= 0; i--)
+            {
+                var j = rng.Next(i + 1);
+                (indices[i], indices[j]) = (indices[j], indices[i]);
+            }
+
+            var firstSortedIndex = 
+                indices.OrderByDescending(index => Service.PartyList[index].ClassJob.GameData.Role is 2 or 3 ? 1 : 0)
+                       .ThenByDescending(index =>
+                         Service.PartyList[index].ClassJob.GameData.Role is 1 or 2 ? 
+                            isMeleeCardDrawn ? 1 : 0 :
+                            isMeleeCardDrawn ? 0 : 1
+            ).First();
+
+            member = Service.PartyList[firstSortedIndex];
+        }
+
         if (member == null)
             return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
 
         var state = useActionSelfHook.Original(actionManager, actionType, actionID, member.ObjectId, a4, a5, a6, a7);
         if (ConfigSendMessage && state)
         {
-            string cardTypeText =
-                       Service.Lang.GetText(isMeleeCardDrawn ? "AutoPlayCards-Melee" : "AutoPlayCards-Range"),
+            string cardTypeText = Service.Lang.GetText(isMeleeCardDrawn ? "AutoPlayCards-Melee" : "AutoPlayCards-Range"),
                    jobNameText = member.ClassJob.GameData.Name.ExtractText(),
                    memberNameText = member.Name.ExtractText();
-            Service.Chat.Print(Service.Lang.GetText("AutoPlayCards-Message", cardTypeText, jobNameText,
-                                                    memberNameText));
+
+            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoPlayCards-Message", cardTypeText, member.ClassJob.GameData.ToBitmapFontIcon(), jobNameText, memberNameText)).Build();
+            Service.Chat.Print(message);
         }
 
         return state;
