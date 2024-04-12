@@ -11,11 +11,37 @@ namespace DailyRoutines.Infos;
 
 public static class Widgets
 {
+    private static SeString? rPrefix;
+    private static SeString? drPrefix;
+    private static SeString? dailyRoutinesPrefix;
+
+    public static SeString DRPrefix()
+    {
+        return drPrefix ??= new SeStringBuilder()
+                           .AddUiForeground(SeIconChar.BoxedLetterD.ToIconString(), 34)
+                           .AddUiForeground(SeIconChar.BoxedLetterR.ToIconString(), 34)
+                           .AddUiForegroundOff().Build();
+    }
+
+    public static SeString DailyRoutinesPrefix()
+    {
+        return dailyRoutinesPrefix ??= new SeStringBuilder()
+                            .AddUiForeground("[Daily Routines]", 34)
+                            .AddUiForegroundOff().Build();
+    }
+
+    public static SeString RPrefix()
+    {
+        return rPrefix ??= new SeStringBuilder()
+                           .AddUiForeground(SeIconChar.BoxedLetterR.ToIconString(), 34)
+                           .AddUiForegroundOff().Build();
+    }
+
     public static SeString RPrefix(string text)
     {
-        return new SeStringBuilder()
-               .AddUiForeground(SeIconChar.BoxedLetterR.ToIconString(), 34)
-               .AddUiForegroundOff().Append(text).Build();
+        if (rPrefix == null) RPrefix();
+
+        return new SeStringBuilder().Append(text).Build();
     }
 
     public static void PreviewImageWithHelpText(

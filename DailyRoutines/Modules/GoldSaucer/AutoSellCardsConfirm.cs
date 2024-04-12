@@ -5,6 +5,7 @@ using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Colors;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -76,8 +77,7 @@ public class AutoSellCardsConfirm : DailyModuleBase
     private unsafe bool? StartHandOver()
     {
         if (Service.Gui.GetAddonByName("ShopCardDialog") != nint.Zero) return false;
-        if (TryGetAddonByName<AtkUnitBase>("TripleTriadCoinExchange", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("TripleTriadCoinExchange", out var addon) && IsAddonAndNodesReady(addon))
         {
             var cardsAmount = addon->AtkValues[1].Int;
             if (cardsAmount is 0)
@@ -89,7 +89,9 @@ public class AutoSellCardsConfirm : DailyModuleBase
             var isCardInDeck = Convert.ToBoolean(addon->AtkValues[204].Byte);
             if (!isCardInDeck)
             {
-                Service.Chat.Print(Service.Lang.GetSeString("AutoSellCardsConfirm-CurrentCardNotInDeckMessage"));
+                var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoSellCardsConfirm-CurrentCardNotInDeckMessage")).Build();
+                Service.Chat.Print(message);
+
                 TaskManager?.Abort();
                 return true;
             }

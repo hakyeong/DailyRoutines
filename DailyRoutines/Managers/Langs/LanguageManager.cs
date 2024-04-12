@@ -73,15 +73,12 @@ public partial class LanguageManager
         return string.Format(format, args);
     }
 
-    public string GetOriginalText(string key) => resourceData.TryGetValue(key, out var value) ? value : string.Empty;
-
     public SeString GetSeString(string key, params object[] args)
     {
         resourceData.TryGetValue(key, out var format);
         var ssb = new SeStringBuilder();
         var lastIndex = 0;
 
-        ssb.AddUiForeground("[Daily Routines]", 34);
         foreach (var match in SeStringRegex().Matches(format).Cast<Match>())
         {
             ssb.AddUiForeground(format[lastIndex..match.Index], 2);

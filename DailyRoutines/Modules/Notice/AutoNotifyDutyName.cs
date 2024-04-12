@@ -1,5 +1,6 @@
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using Dalamud.Game.Text.SeStringHandling;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
@@ -27,7 +28,10 @@ public class AutoNotifyDutyName : DailyModuleBase
     {
         if (!Service.PresetData.Contents.TryGetValue(territory, out var content)) return;
         var contentName = content.Name.RawString;
-        Service.Chat.Print(Service.Lang.GetSeString("AutoNotifyDutyName-NoticeMessage", contentName));
+
+        var message = new SeStringBuilder().Append(DRPrefix()).Append(" ")
+                                           .Append(Service.Lang.GetSeString("AutoNotifyDutyName-NoticeMessage", contentName)).Build();
+        Service.Chat.Print(message);
         if (ConfigSendWindowsToast) Service.Notice.Notify(contentName, contentName);
     }
 

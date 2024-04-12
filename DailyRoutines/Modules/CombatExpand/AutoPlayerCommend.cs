@@ -4,6 +4,7 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Memory;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -102,9 +103,9 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
                         if (playerNameInAddon == player.PlayerName)
                         {
                             AddonManager.Callback(addon, true, callbackIndex, i);
-                            Service.Chat.Print(
-                                Service.Lang.GetSeString("AutoPlayerCommend-NoticeMessage", player.Job,
-                                                         player.PlayerName));
+
+                            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoPlayerCommend-NoticeMessage", player.Job, player.PlayerName)).Build();
+                            Service.Chat.Print(message);
                             return;
                         }
                     }

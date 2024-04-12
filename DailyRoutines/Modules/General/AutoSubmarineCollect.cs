@@ -144,18 +144,18 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         var inventoryManager = InventoryManager.Instance();
         if (inventoryManager->GetInventoryItemCount(10373) < 20)
         {
-            Service.Chat.Print(Service.Lang.GetSeString("AutoSubmarineCollect-LackSpecificItems",
-                                                        SeString.CreateItemLink(
-                                                            10373)));
+            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoSubmarineCollect-LackSpecificItems", SeString.CreateItemLink(10373))).Build();
+            Service.Chat.Print(message);
+
             TaskManager.Abort();
             return true;
         }
 
         if (inventoryManager->GetInventoryItemCount(10155) < 15)
         {
-            Service.Chat.Print(Service.Lang.GetSeString("AutoSubmarineCollect-LackSpecificItems",
-                                                        SeString.CreateItemLink(
-                                                            10155)));
+            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoSubmarineCollect-LackSpecificItems", SeString.CreateItemLink(10155))).Build();
+            Service.Chat.Print(message);
+
             TaskManager.Abort();
             return true;
         }

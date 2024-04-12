@@ -17,10 +17,6 @@ public sealed class Plugin : IDalamudPlugin
 {
     public string Name => "Daily Routines";
     public const string CommandName = "/pdr";
-    public const string SourceRepoUrl = 
-        "https://raw.githubusercontent.com/AtmoOmen/DalamudPlugins/main/pluginmaster.json";
-    public const string SourceRepoUrl1 = 
-        "https://mirror.ghproxy.com/https://raw.githubusercontent.com/AtmoOmen/DalamudPlugins/main/pluginmaster-cn.json";
 
     internal DalamudPluginInterface PluginInterface { get; init; }
     public Main? Main { get; private set; }
