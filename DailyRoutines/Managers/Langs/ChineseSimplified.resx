@@ -691,21 +691,15 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRetainerPriceAdjust-MaxPriceReductionInputHelp" xml:space="preserve">
     <value>设置为 0 以禁用</value>
   </data>
-  <data name="AutoRetainerPriceAdjust-MaxPriceReductionMessage" xml:space="preserve">
-    <value>物品: {0} (市场价: {1} / 原价: {2}) 已超过最大可接受降价值: {3}, 跳过改价</value>
-  </data>
   <data name="AutoRetainerPriceAdjust-SeparateNQAndHQ" xml:space="preserve">
     <value>区分 HQ 和 NQ 物品</value>
   </data>
   <data name="AutoRetainerPriceAdjust-SeparateNQAndHQHelp" xml:space="preserve">
     <value>勾选则代表, 若出售物品为 HQ, 则只获取市场上 HQ 物品的价格
-如若市场上前十位出售物品中无 HQ, 则取 NQ 商品价格</value>
+如若出售物品中无 HQ, 则取 NQ 商品价格</value>
   </data>
   <data name="AutoRetainerPriceAdjust-SinglePriceReductionValue" xml:space="preserve">
     <value>单次压价值</value>
-  </data>
-  <data name="AutoRetainerPriceAdjust-WarnMessageReachLowestPrice" xml:space="preserve">
-    <value>物品: {0} (当前市场价: {1} / 原价: {2}) 已低于设定最低价: {3}, 跳过改价</value>
   </data>
   <data name="AutoRetainerPriceAdjustDescription" xml:space="preserve">
     <value>打开雇员出售列表后, 自动将所有出售商品价格改为当前市场最低价格减去指定值
@@ -1170,5 +1164,11 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoHolmgangSelfTitle" xml:space="preserve">
     <value>自动死斗自身</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-ProhibitLowerThanSellPrice" xml:space="preserve">
+    <value>禁止低于收购价格</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-SkipAdjustMessage" xml:space="preserve">
+    <value>物品:{0} (市场价: {1} / 原价:{2}) 已超过{3}: {4}, 跳过改价</value>
   </data>
 </root>

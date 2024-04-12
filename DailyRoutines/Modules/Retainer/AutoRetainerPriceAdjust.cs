@@ -24,6 +24,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
@@ -38,35 +39,43 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     private static InfoProxyItemSearch* InfoItemSearch =>
         (InfoProxyItemSearch*)InfoModule.Instance()->GetInfoProxyById(InfoProxyId.ItemSearch);
 
-    private static int ConfigPriceReduction;
-    private static int ConfigLowestPrice;
-    private static int ConfigMaxPriceReduction;
-    private static bool ConfigSeparateNQAndHQ;
+    private static int PriceReduction;
+    private static int LowestPrice;
+    private static int MaxPriceReduction;
+    private static bool SeparateNQAndHQ;
+    private static bool ProhibitLowerThanSellPrice;
+    
     private static Dictionary<(uint Id, bool HQ), int> PriceCache = [];
-
     private static bool IsCurrentItemHQ;
-
     private static uint CurrentItemSearchItemID;
-
     private static readonly HashSet<ulong> PlayerRetainers = [];
+
+    private static Dictionary<uint, uint>? ItemsSellPrice;
 
     public override void Init()
     {
         #region Config
 
         AddConfig(this, "PriceReduction", 1);
-        ConfigPriceReduction = GetConfig<int>(this, "PriceReduction");
+        PriceReduction = GetConfig<int>(this, "PriceReduction");
 
         AddConfig(this, "LowestAcceptablePrice", 100);
-        ConfigLowestPrice = GetConfig<int>(this, "LowestAcceptablePrice");
+        LowestPrice = GetConfig<int>(this, "LowestAcceptablePrice");
 
         AddConfig(this, "SeparateNQAndHQ", false);
-        ConfigSeparateNQAndHQ = GetConfig<bool>(this, "SeparateNQAndHQ");
+        SeparateNQAndHQ = GetConfig<bool>(this, "SeparateNQAndHQ");
 
         AddConfig(this, "MaxPriceReduction", 0);
-        ConfigMaxPriceReduction = GetConfig<int>(this, "MaxPriceReduction");
+        MaxPriceReduction = GetConfig<int>(this, "MaxPriceReduction");
+
+        AddConfig(this, "ProhibitLowerThanSellPrice", true);
+        ProhibitLowerThanSellPrice = GetConfig<bool>(this, "ProhibitLowerThanSellPrice");
 
         #endregion
+
+        ItemsSellPrice ??= Service.Data.GetExcelSheet<Item>()
+                                  .Where(x => !string.IsNullOrEmpty(x.Name.RawString) && x.PriceLow != 0)
+                                  .ToDictionary(x => x.RowId, x => x.PriceLow);
 
         // 出售品列表
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSellList", OnRetainerSellList);
@@ -89,40 +98,40 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
         if (ImGui.InputInt(
                 $"{Service.Lang.GetText("AutoRetainerPriceAdjust-SinglePriceReductionValue")}##AutoRetainerPriceAdjust-SinglePriceReductionValue",
-                ref ConfigPriceReduction, 100))
+                ref PriceReduction, 100))
         {
-            ConfigPriceReduction = Math.Max(1, ConfigPriceReduction);
-            UpdateConfig(this, "SinglePriceReductionValue", ConfigPriceReduction);
+            PriceReduction = Math.Max(1, PriceReduction);
+            UpdateConfig(this, "SinglePriceReductionValue", PriceReduction);
         }
 
 
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
         if (ImGui.InputInt(
                 $"{Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice")}##AutoRetainerPriceAdjust-LowestAcceptablePrice",
-                ref ConfigLowestPrice, 100))
+                ref LowestPrice, 100))
         {
-            ConfigLowestPrice = Math.Max(1, ConfigLowestPrice);
-            UpdateConfig(this, "LowestAcceptablePrice", ConfigLowestPrice);
+            LowestPrice = Math.Max(1, LowestPrice);
+            UpdateConfig(this, "LowestAcceptablePrice", LowestPrice);
         }
 
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
         if (ImGui.InputInt(
                 $"{Service.Lang.GetText("AutoRetainerPriceAdjust-MaxPriceReduction")}##AutoRetainerPriceAdjust-MaxPriceReduction",
-                ref ConfigMaxPriceReduction, 100))
+                ref MaxPriceReduction, 100))
         {
-            ConfigMaxPriceReduction = Math.Max(0, ConfigMaxPriceReduction);
-            UpdateConfig(this, "MaxPriceReduction", ConfigMaxPriceReduction);
+            MaxPriceReduction = Math.Max(0, MaxPriceReduction);
+            UpdateConfig(this, "MaxPriceReduction", MaxPriceReduction);
         }
 
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(Service.Lang.GetText("AutoRetainerPriceAdjust-MaxPriceReductionInputHelp"));
 
-        if (ImGui.Checkbox(
-                $"{Service.Lang.GetText("AutoRetainerPriceAdjust-SeparateNQAndHQ")}##AutoRetainerPriceAdjust-SeparateNQAndHQ",
-                ref ConfigSeparateNQAndHQ))
-            UpdateConfig(this, "SeparateNQAndHQ", ConfigSeparateNQAndHQ);
-
+        if (ImGui.Checkbox($"{Service.Lang.GetText("AutoRetainerPriceAdjust-SeparateNQAndHQ")}", ref SeparateNQAndHQ))
+            UpdateConfig(this, "SeparateNQAndHQ", SeparateNQAndHQ);
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoRetainerPriceAdjust-SeparateNQAndHQHelp"));
+
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoRetainerPriceAdjust-ProhibitLowerThanSellPrice"), ref ProhibitLowerThanSellPrice))
+            UpdateConfig(this, "ProhibitLowerThanSellPrice", ProhibitLowerThanSellPrice);
     }
 
     public override void OverlayUI()
@@ -431,7 +440,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             if (result.Count != 0)
             {
                 uint finalPrice;
-                if (ConfigSeparateNQAndHQ && IsCurrentItemHQ)
+                if (SeparateNQAndHQ && IsCurrentItemHQ)
                 {
                     finalPrice = result.Where(x => x.HQ).OrderByDescending(x => x.Price)
                                        .FirstOrDefault().Price;
@@ -465,7 +474,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             foreach (var item in listings)
             {
                 if (PlayerRetainers.Contains(item.SellingRetainerContentId)) continue;
-                if (ConfigSeparateNQAndHQ && IsCurrentItemHQ && !item.IsHqItem) continue;
+                if (SeparateNQAndHQ && IsCurrentItemHQ && !item.IsHqItem) continue;
                 if (item.UnitPrice <= 0) continue;
                 if (item.UnitPrice < currentMaxPrice) break;
                 currentMaxPrice = item.UnitPrice;
@@ -506,7 +515,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         var handler = new ClickRetainerSellDR((nint)addon);
 
         var originalPrice = ui->AtkValues[5].Int;
-        var modifiedPrice = currentMarketLowestPrice - ConfigPriceReduction;
+        var modifiedPrice = currentMarketLowestPrice - PriceReduction;
 
         // 价格不变
         if (modifiedPrice == originalPrice)
@@ -516,15 +525,9 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         }
 
         // 低于最低价
-        if (modifiedPrice < ConfigLowestPrice)
+        if (modifiedPrice < LowestPrice)
         {
-            var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-WarnMessageReachLowestPrice",
-                                                   SeString.CreateItemLink(
-                                                       CurrentItemSearchItemID,
-                                                       IsCurrentItemHQ
-                                                           ? ItemPayload.ItemKind.Hq
-                                                           : ItemPayload.ItemKind.Normal), currentMarketLowestPrice,
-                                                   originalPrice, ConfigLowestPrice);
+            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoRetainerPriceAdjust-SkipAdjustMessage", SeString.CreateItemLink(CurrentItemSearchItemID, IsCurrentItemHQ ? ItemPayload.ItemKind.Hq : ItemPayload.ItemKind.Normal), currentMarketLowestPrice, originalPrice, Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice"), LowestPrice)).Build();
             Service.Chat.Print(message);
 
             OperateAndReturn(false);
@@ -532,15 +535,19 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         }
 
         // 超过可接受的降价值
-        if (ConfigMaxPriceReduction != 0 && originalPrice - currentMarketLowestPrice > ConfigMaxPriceReduction)
+        if (MaxPriceReduction != 0 && originalPrice - currentMarketLowestPrice > MaxPriceReduction)
         {
-            var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-MaxPriceReductionMessage",
-                                                   SeString.CreateItemLink(
-                                                       CurrentItemSearchItemID,
-                                                       IsCurrentItemHQ
-                                                           ? ItemPayload.ItemKind.Hq
-                                                           : ItemPayload.ItemKind.Normal), currentMarketLowestPrice,
-                                                   originalPrice, ConfigMaxPriceReduction);
+            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoRetainerPriceAdjust-SkipAdjustMessage", SeString.CreateItemLink(CurrentItemSearchItemID, IsCurrentItemHQ ? ItemPayload.ItemKind.Hq : ItemPayload.ItemKind.Normal), currentMarketLowestPrice, originalPrice, Service.Lang.GetText("AutoRetainerPriceAdjust-MaxPriceReduction"), MaxPriceReduction)).Build();
+            Service.Chat.Print(message);
+
+            OperateAndReturn(false);
+            return true;
+        }
+
+        // 低于收购价格
+        if (ProhibitLowerThanSellPrice && ItemsSellPrice.TryGetValue(CurrentItemSearchItemID, out var npcSellPrice) && modifiedPrice < npcSellPrice)
+        {
+            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoRetainerPriceAdjust-SkipAdjustMessage", SeString.CreateItemLink(CurrentItemSearchItemID, IsCurrentItemHQ ? ItemPayload.ItemKind.Hq : ItemPayload.ItemKind.Normal), currentMarketLowestPrice, originalPrice, Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice"), npcSellPrice)).Build();
             Service.Chat.Print(message);
 
             OperateAndReturn(false);
