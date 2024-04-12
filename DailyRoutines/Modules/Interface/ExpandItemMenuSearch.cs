@@ -123,6 +123,7 @@ public class ExpandItemMenuSearch : DailyModuleBase
                 }
                 case "CharacterInspect":
                 {
+                    
                     Service.Gui.HoveredItemChanged -= OnHoveredItemChanged;
                     if (SearchWiki)
                     {
@@ -154,8 +155,6 @@ public class ExpandItemMenuSearch : DailyModuleBase
 
     private static unsafe void OnHoveredItemChanged(object? sender, ulong id)
     {
-
-        Service.Chat.Print($"{((GameInventoryItem)sender).ItemId}");
         if (id < 2000000) id %= 500000;
         if (id != 0 && _LastHoveredItemId != id)
         {
