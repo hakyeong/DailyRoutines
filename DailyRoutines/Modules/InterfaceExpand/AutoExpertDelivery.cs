@@ -150,7 +150,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         return true;
     }
 
-    private static bool? ClickItem()
+    private bool? ClickItem()
     {
         if (!EzThrottler.Throttle("AutoExpertDelivery", 100)) return false;
 
@@ -158,11 +158,12 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         if (Service.Gui.GetAddonByName("SelectYesno") != nint.Zero) return false;
 
         if (TryGetAddonByName<AddonGrandCompanySupplyList>("GrandCompanySupplyList", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
+            IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
             var handler = new ClickGrandCompanySupplyListDR();
             if (ConfigSkipWhenHQ)
             {
+                var onlyHQLeft = true;
                 for (var i = 0; i < addon->ExpertDeliveryList->ListLength; i++)
                 {
                     var itemID = addon->AtkUnitBase.AtkValues[i + 425].UInt;
@@ -170,7 +171,11 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
                     if (isHQItem) continue;
 
                     handler.ItemEntry(i);
+                    onlyHQLeft = false;
+                    break;
                 }
+
+                if (onlyHQLeft) TaskManager.Abort();
             }
             else
                 handler.ItemEntry(0);
