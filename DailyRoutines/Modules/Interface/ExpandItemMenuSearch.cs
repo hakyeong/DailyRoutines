@@ -253,7 +253,7 @@ public class ExpandItemMenuSearch : DailyModuleBase
     }
 
     private static bool TryGetItemByID(uint id, out Item item) =>
-        Service.PresetData.EquipmentItems.TryGetValue(id, out item);
+        Service.PresetData.Gears.TryGetValue(id, out item);
 
     private static unsafe bool IsValidChatLogContext(nint agent) => *(uint*)(agent + ChatLogContextItemId + 8) == 3;
 
