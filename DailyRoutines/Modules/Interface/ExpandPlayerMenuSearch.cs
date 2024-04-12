@@ -188,6 +188,9 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
                 }
 
                 return false;
+            case "LinkShell":
+            case "CrossWorldLinkshell":
+                return menuTarget.TargetContentId != 0 && GeneralJudge();
             case null:
             case "LookingForGroup":
             case "PartyMemberList":
@@ -197,16 +200,19 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
             case "ContactList":
             case "ChatLog":
             case "_PartyList":
-            case "LinkShell":
-            case "CrossWorldLinkshell":
             case "ContentMemberList":
-                if (judgeCriteria0)
-                    _TargetChara = menuTarget.TargetCharacter.ToCharacterSearchInfo();
-                else if (menuTarget.TargetObject is Character chara && judgeCriteria2)
-                    _TargetChara = chara.ToCharacterSearchInfo();
-                else if (judgeCriteria2)
-                    _TargetChara = new() { Name = menuTarget.TargetName, World = menuTarget.TargetHomeWorld.GameData.Name.RawString };
-                return judgeCriteria0 || judgeCriteria1 || judgeCriteria2;
+                return GeneralJudge();
+        }
+
+        bool GeneralJudge()
+        {
+            if (judgeCriteria0)
+                _TargetChara = menuTarget.TargetCharacter.ToCharacterSearchInfo();
+            else if (menuTarget.TargetObject is Character chara && judgeCriteria2)
+                _TargetChara = chara.ToCharacterSearchInfo();
+            else if (judgeCriteria2)
+                _TargetChara = new() { Name = menuTarget.TargetName, World = menuTarget.TargetHomeWorld.GameData.Name.RawString };
+            return judgeCriteria0 || judgeCriteria1 || judgeCriteria2;
         }
     }
 
