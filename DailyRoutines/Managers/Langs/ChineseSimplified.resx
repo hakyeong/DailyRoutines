@@ -651,7 +651,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value> 搜索: 光之收藏家</value>
   </data>
   <data name="ExpandItemMenuSearch-CollectorSearchGlamourId" xml:space="preserve">
-    <value> 搜索幻化而不是原本的装备</value>
+    <value>搜索投影装备 (如果存在)</value>
   </data>
     <data name="ExpandItemMenuSearch-WikiSearchGlamourId" xml:space="preserve">
     <value> 搜索幻化而不是原本的装备</value>
@@ -1167,5 +1167,11 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="ExpandPlayerMenuSearch-NextPageMessage" xml:space="preserve">
     <value>已完成对第 {0} 页的查询, 正在查询下一页</value>
+  </data>
+  <data name="AutoHolmgangSelfDescription" xml:space="preserve">
+    <value>使用战士技能死斗时, 强制令自身为技能目标</value>
+  </data>
+  <data name="AutoHolmgangSelfTitle" xml:space="preserve">
+    <value>自动死斗自身</value>
   </data>
 </root>
