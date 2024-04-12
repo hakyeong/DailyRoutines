@@ -449,7 +449,8 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
                             if (ImGui.BeginDragDropTarget())
                             {
-                                if (_dropMacroIndex >= 0 || ImGui.AcceptDragDropPayload("MessageReorder").NativePtr != null)
+                                if (_dropMacroIndex >= 0 ||
+                                    ImGui.AcceptDragDropPayload("MessageReorder").NativePtr != null)
                                 {
                                     SwapMessages(_dropMacroIndex, i);
                                     _dropMacroIndex = -1;
@@ -528,7 +529,8 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
                             if (ImGui.BeginDragDropTarget())
                             {
-                                if (_dropMacroIndex >= 0 || ImGui.AcceptDragDropPayload("MacroReorder").NativePtr != null)
+                                if (_dropMacroIndex >= 0 ||
+                                    ImGui.AcceptDragDropPayload("MacroReorder").NativePtr != null)
                                 {
                                     SwapMacros(_dropMacroIndex, i);
                                     _dropMacroIndex = -1;
@@ -578,14 +580,16 @@ public unsafe class QuickChatPanel : DailyModuleBase
                     ImGui.SetWindowFontScale(ConfigFontScale);
 
                     ImGui.SetNextItemWidth(-1f);
-                    ImGui.InputTextWithHint("###GameItemSearchInput", Service.Lang.GetText("PleaseSearch"), ref ItemSearchInput, 100);
+                    ImGui.InputTextWithHint("###GameItemSearchInput", Service.Lang.GetText("PleaseSearch"),
+                                            ref ItemSearchInput, 100);
 
                     if (ImGui.IsItemDeactivatedAfterEdit())
                     {
                         if (!string.IsNullOrWhiteSpace(ItemSearchInput) && ItemSearchInput.Length > 1)
                         {
                             _ItemNames = ItemNames
-                                         .Where(x => x.Key.Contains(ItemSearchInput, StringComparison.OrdinalIgnoreCase))
+                                         .Where(
+                                             x => x.Key.Contains(ItemSearchInput, StringComparison.OrdinalIgnoreCase))
                                          .ToDictionary(x => x.Key, x => x.Value);
                         }
                     }
@@ -599,12 +603,11 @@ public unsafe class QuickChatPanel : DailyModuleBase
                         if (ImGuiOm.SelectableImageWithText(IconManager.GetIcon(item.Icon).ImGuiHandle,
                                                             new(24),
                                                             itemName, false))
-                        {
                             Service.Chat.Print(new SeStringBuilder().AddItemLink(item.RowId).Build());
-                        }
                     }
+
                     maxTextWidth = ImGui.CalcTextSize(longestText).X + 100f;
-                    
+
                     ImGui.SetWindowFontScale(1f);
                     Service.Font.Axis14.Pop();
                     ImGui.EndChild();
@@ -796,7 +799,8 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
     private void SwapMessages(int index1, int index2)
     {
-        (ConfigSavedMessages[index1], ConfigSavedMessages[index2]) = (ConfigSavedMessages[index2], ConfigSavedMessages[index1]);
+        (ConfigSavedMessages[index1], ConfigSavedMessages[index2]) =
+            (ConfigSavedMessages[index2], ConfigSavedMessages[index1]);
 
         TaskManager.Abort();
 
@@ -812,6 +816,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             AddonChatLog->RootNode->SetWidth((ushort)OriginalChatLogWidth);
             OriginalChatLogWidth = null;
         }
+
         Service.AddonLifecycle.UnregisterListener(OnAddon);
 
         base.Uninit();
