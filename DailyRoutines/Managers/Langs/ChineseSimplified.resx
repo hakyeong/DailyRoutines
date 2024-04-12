@@ -645,12 +645,12 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>物品右键菜单搜索扩展</value>
   </data>
   <data name="ExpandItemMenuSearchDescription" xml:space="preserve">
-    <value>启用后, 为物品右键菜单中新增一些搜索功能</value>
+    <value>启用后, 为物品右键菜单中新增一些额外的搜索功能</value>
   </data>
   <data name="ExpandItemMenuSearch-CollectorSearch" xml:space="preserve">
     <value> 搜索: 光之收藏家</value>
   </data>
-    <data name="ExpandItemMenuSearch-CollectorSearchGlamourId" xml:space="preserve">
+  <data name="ExpandItemMenuSearch-CollectorSearchGlamourId" xml:space="preserve">
     <value> 搜索幻化而不是原本的装备</value>
   </data>
     <data name="ExpandItemMenuSearch-WikiSearchGlamourId" xml:space="preserve">
@@ -1164,5 +1164,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="QuickChatPanel-GameItems" xml:space="preserve">
     <value>游戏物品</value>
+  </data>
+  <data name="ExpandPlayerMenuSearch-NextPageMessage" xml:space="preserve">
+    <value>已完成对第 {0} 页的查询, 正在查询下一页</value>
   </data>
 </root>
