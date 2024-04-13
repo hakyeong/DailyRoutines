@@ -53,9 +53,9 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
         if (ImGui.Checkbox(Service.Lang.GetText("ExpandPlayerMenuSearch-RisingStoneSearch"), ref RisingStoneEnabled))
             UpdateConfig(this, "RisingStoneEnabled", RisingStoneEnabled);
         if (ImGui.Checkbox(Service.Lang.GetText("ExpandPlayerMenuSearch-FFLogsSearch"), ref FFLogsEnabled))
-            UpdateConfig(this, "RisingStoneEnabled", FFLogsEnabled);
+            UpdateConfig(this, "FFLogsEnabled", FFLogsEnabled);
         if (ImGui.Checkbox(Service.Lang.GetText("ExpandPlayerMenuSearch-TiebaSearch"), ref TiebaEnabled))
-            UpdateConfig(this, "RisingStoneEnabled", TiebaEnabled);
+            UpdateConfig(this, "TiebaEnabled", TiebaEnabled);
     }
 
     private static void OnMenuOpen(MenuOpenedArgs args)
