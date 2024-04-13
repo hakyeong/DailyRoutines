@@ -38,15 +38,19 @@ public unsafe class AutoRefreshInvalidPortraits : DailyModuleBase
         ImGui.AlignTextToFramePadding();
         ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("AutoRefreshInvalidPortraitsTitle"));
 
+        ImGui.BeginDisabled(TaskManager.IsBusy);
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("Start"))) EnqueueARound();
+        ImGui.EndDisabled();
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
     }
 
-    private static void OnAddonEditor(AddonEvent type, AddonArgs args)
+    private void OnAddonEditor(AddonEvent type, AddonArgs args)
     {
+        if (!TaskManager.IsBusy) return;
+
         var addon = (AddonBannerEditor*)args.Addon;
         if (addon == null) return;
 
