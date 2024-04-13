@@ -8,6 +8,7 @@ using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using ECommons.Automation;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.UI;
 
 namespace DailyRoutines.Modules;
@@ -68,8 +69,6 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
                 break;
             case AddonEvent.PostRefresh:
                 TaskManager.Enqueue(() => GameUpdater(args.Addon));
-                TaskManager.DelayNext(250);
-                TaskManager.Enqueue(() => GameUpdater(args.Addon));
                 break;
             case AddonEvent.PreFinalize:
                 Service.AddonLifecycle.UnregisterListener(AddonEvent.PostRefresh, "LotteryDaily", OnAddon);
@@ -81,11 +80,19 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
 
     private void GameUpdater(nint addonPtr)
     {
+        if (!EzThrottler.Throttle("AutoMiniCactpot", 50)) return;
+
         var addon = (AddonLotteryDaily*)addonPtr;
         gameState = GetGameState(addon);
 
         // 游戏结束
-        if (!gameState.Contains(0)) { }
+        if (!gameState.Contains(0))
+        {
+            TaskManager.Abort();
+
+            TaskManager.DelayNext(100);
+            TaskManager.Enqueue(ClickExit);
+        }
         else
         {
             var solution = perfectCactpot.Solve(gameState);
@@ -109,7 +116,8 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
                 {
                     if (solution[i])
                     {
-                        ClickLaneNode(addon, i);
+                        var index = i;
+                        TaskManager.Enqueue(() => ClickLaneNode(addon, index));
                     }
                 }
             }
@@ -120,7 +128,7 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
                 {
                     if (solution[i])
                     {
-                        ClickGameNode(addon, i);
+                        TaskManager.Enqueue(() => ClickGameNode(addon, i));
                         break;
                     }
                 }
@@ -135,6 +143,7 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
 
     private static bool? ClickGameNode(AddonLotteryDaily* addon, int i)
     {
+        if (!EzThrottler.Throttle("AutoMiniCactpot", 50)) return false;
         var nodeID = addon->GameBoard[i]->AtkComponentButton.AtkComponentBase.OwnerNode->AtkResNode.NodeID;
 
         var handler = new ClickLotteryDailyDR();
@@ -145,6 +154,9 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
 
     private bool? ClickLaneNode(AddonLotteryDaily* addon, int i)
     {
+        if (!EzThrottler.Throttle("AutoMiniCactpot", 50)) return false;
+        if (i is < 0 or > 8) return false;
+
         var nodeID = addon->LaneSelector[i]->AtkComponentBase.OwnerNode->AtkResNode.NodeID;
 
         SelectedLineNumber3D4 = LineToUnkNumber3D4[nodeID];
@@ -154,16 +166,15 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
         return true;
     }
 
-    private bool? ClickConfirm()
+    private static bool? ClickConfirm()
     {
+        if (!EzThrottler.Throttle("AutoMiniCactpot", 50)) return false;
         if (TryGetAddonByName<AddonLotteryDaily>("LotteryDaily", out var addon) &&
             IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
             var handler = new ClickLotteryDailyDR();
             handler.Confirm(SelectedLineNumber3D4);
 
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(ClickExit);
             return true;
         }
 
