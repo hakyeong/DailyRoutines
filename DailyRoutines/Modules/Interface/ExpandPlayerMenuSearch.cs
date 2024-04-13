@@ -161,7 +161,6 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
     {
         if (args.Target is MenuTargetInventory) return false;
         var menuTarget = (MenuTargetDefault)args.Target;
-
         var agent = Service.Gui.FindAgentInterface("ChatLog");
         if (agent != nint.Zero && *(uint*)(agent + 0x948 + 8) == 3) return false;
 
@@ -188,6 +187,11 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
                 }
 
                 return false;
+            case "FreeCompany":
+                if (menuTarget.TargetContentId == 0) return false;
+
+                _TargetChara = new() { Name = menuTarget.TargetName, World = menuTarget.TargetHomeWorld.GameData.Name };
+                return true;
             case "LinkShell":
             case "CrossWorldLinkshell":
                 return menuTarget.TargetContentId != 0 && GeneralJudge();
@@ -195,7 +199,6 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
             case "LookingForGroup":
             case "PartyMemberList":
             case "FriendList":
-            case "FreeCompany":
             case "SocialList":
             case "ContactList":
             case "ChatLog":
