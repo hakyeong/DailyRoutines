@@ -8,6 +8,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Memory;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
@@ -22,11 +23,11 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
         None
     }
 
-    private class PlayerInfo(string name, PlayerRole role, string job)
+    private class PlayerInfo(string name, PlayerRole role, ClassJob job)
     {
         public string PlayerName { get; set; } = name;
         public PlayerRole Role { get; set; } = role;
-        public string Job { get; set; } = job;
+        public ClassJob Job { get; set; } = job;
     }
 
     public override void Init()
@@ -67,7 +68,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
                             .ToDictionary(ally => ally.Address,
                                           ally => new PlayerInfo(ally.Name.ExtractText(),
                                                                  GetCharacterJobRole(ally.ClassJob.GameData.Role),
-                                                                 ally.ClassJob.GameData.Name.ExtractText()));
+                                                                 ally.ClassJob.GameData));
 
         if (allies.Count == 0) return;
 
@@ -104,7 +105,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
                         {
                             AddonManager.Callback(addon, true, callbackIndex, i);
 
-                            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoPlayerCommend-NoticeMessage", player.Job, player.PlayerName)).Build();
+                            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoPlayerCommend-NoticeMessage", player.Job.ToBitmapFontIcon(), player.Job.Name.RawString, player.PlayerName)).Build();
                             Service.Chat.Print(message);
                             return;
                         }

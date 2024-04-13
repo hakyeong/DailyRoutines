@@ -561,7 +561,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>自动出卡</value>
   </data>
   <data name="AutoPlayerCommend-NoticeMessage" xml:space="preserve">
-    <value>已给予 {0} {1} 最优队员推荐</value>
+    <value>已给予 {0}{1} {2} 最优队员推荐</value>
   </data>
   <data name="AutoPlayerCommendDescription" xml:space="preserve">
     <value>副本完成时, 自动给予对位队友最优队员推荐</value>
