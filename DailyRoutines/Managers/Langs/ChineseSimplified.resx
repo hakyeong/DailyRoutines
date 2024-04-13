@@ -1171,4 +1171,13 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRetainerPriceAdjust-SkipAdjustMessage" xml:space="preserve">
     <value>物品:{0} (市场价: {1} / 原价:{2}) 已超过{3}: {4}, 跳过改价</value>
   </data>
+  <data name="NoAttackWrongMandragoras-OnlyInTreasureHunt" xml:space="preserve">
+    <value>仅在宝物库中启用</value>
+  </data>
+  <data name="NoAttackWrongMandragorasDescription" xml:space="preserve">
+    <value>启用后, 若场上存在蔓德拉战队, 则会尝试阻止攻击错误的蔓德拉</value>
+  </data>
+  <data name="NoAttackWrongMandragorasTitle" xml:space="preserve">
+    <value>强制按顺序击杀蔓德拉战队</value>
+  </data>
 </root>
