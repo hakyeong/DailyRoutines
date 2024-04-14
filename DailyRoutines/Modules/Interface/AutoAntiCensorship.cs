@@ -168,7 +168,6 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
     private nint ChatLogTextInputDetour(
         AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData)
     {
-        Service.Log.Debug($"{eventType}");
         if (eventType == AtkEventType.InputReceived)
         {
             var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("ChatLog");

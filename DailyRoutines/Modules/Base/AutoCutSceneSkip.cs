@@ -2,10 +2,9 @@ using ClickLib;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud;
-using Dalamud.Game.Addon.Lifecycle;
-using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
+using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace DailyRoutines.Modules;
@@ -16,7 +15,7 @@ public class AutoCutSceneSkip : DailyModuleBase
     private delegate void CutsceneHandleInputDelegate(nint a1);
 
     [Signature("40 53 48 83 EC 20 80 79 29 00 48 8B D9 0F 85", DetourName = nameof(CutsceneHandleInputDetour))]
-    private Hook<CutsceneHandleInputDelegate>? CutsceneHandleInputHook;
+    private readonly Hook<CutsceneHandleInputDelegate>? CutsceneHandleInputHook;
 
     private const string ConditionSig = "75 11 BA ?? ?? ?? ?? 48 8B CF E8 ?? ?? ?? ?? 84 C0 74 52";
     private static int ConditionOriginalValuesLen => ConditionSig.Split(" ").Length;
@@ -28,16 +27,7 @@ public class AutoCutSceneSkip : DailyModuleBase
         ConditionAddress = Service.SigScanner.ScanText(ConditionSig);
         CutsceneHandleInputHook?.Enable();
 
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectString", OnAddon);
-    }
-
-    private static unsafe void OnAddon(AddonEvent type, AddonArgs args)
-    {
-        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
-        {
-            if (addon->GetTextNodeById(2)->NodeText.ExtractText().Contains("要跳过这段过场动画吗"))
-                Click.SendClick("select_string1");
-        }
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
 
     private unsafe void CutsceneHandleInputDetour(nint a1)
@@ -49,16 +39,20 @@ public class AutoCutSceneSkip : DailyModuleBase
             CutsceneHandleInputHook.Original(a1);
             SafeMemory.WriteBytes(ConditionAddress, [0x75]);
 
+            TaskManager.Enqueue(() =>
+            {
+                if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonAndNodesReady(addon))
+                {
+                    if (addon->GetTextNodeById(2)->NodeText.ExtractText().Contains("要跳过这段过场动画吗"))
+                        return Click.TrySendClick("select_string1");
+                }
+
+                return false;
+            });
+
             return;
         }
 
         CutsceneHandleInputHook.Original(a1);
-    }
-
-    public override void Uninit()
-    {
-        Service.AddonLifecycle.UnregisterListener(OnAddon);
-
-        base.Uninit();
     }
 }
