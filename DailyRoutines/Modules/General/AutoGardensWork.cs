@@ -76,27 +76,6 @@ public unsafe class AutoGardensWork : DailyModuleBase
         ImGui.BeginDisabled(TaskManager.IsBusy);
         ImGui.BeginGroup();
 
-
-        // 自动收获
-        ImGui.PushID("AutoGather");
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoGardensWork-AutoGather")}:");
-
-        ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Start")))
-            StartGather();
-        ImGui.PopID();
-
-        // 自动护理
-        ImGui.PushID("AutoTend");
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoGardensWork-AutoTend")}:");
-
-        ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Start")))
-            StartTend();
-        ImGui.PopID();
-
         // 自动种植
         ImGui.PushID("AutoPlant");
         ImGui.AlignTextToFramePadding();
@@ -158,6 +137,16 @@ public unsafe class AutoGardensWork : DailyModuleBase
         }
         ImGui.PopID();
 
+        // 自动收获
+        ImGui.PushID("AutoGather");
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoGardensWork-AutoGather")}:");
+
+        ImGui.SameLine();
+        if (ImGui.Button(Service.Lang.GetText("Start")))
+            StartGather();
+        ImGui.PopID();
+
         // 自动施肥
         ImGui.PushID("AutoFertilize");
         ImGui.AlignTextToFramePadding();
@@ -188,6 +177,16 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
             ImGui.EndCombo();
         }
+
+        // 自动护理
+        ImGui.PushID("AutoTend");
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoGardensWork-AutoTend")}:");
+
+        ImGui.SameLine();
+        if (ImGui.Button(Service.Lang.GetText("Start")))
+            StartTend();
+        ImGui.PopID();
 
         ImGui.EndGroup();
         ImGui.EndDisabled();
