@@ -29,6 +29,7 @@ public sealed class Plugin : IDalamudPlugin
     {
         P = this;
         PluginInterface = pluginInterface;
+        PluginInterface.UiBuilder.DisableCutsceneUiHide = true;
 
         ECommonsMain.Init(pluginInterface, this, Module.DalamudReflector);
         Service.Initialize(pluginInterface);
