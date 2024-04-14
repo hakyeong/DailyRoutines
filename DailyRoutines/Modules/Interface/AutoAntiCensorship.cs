@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -33,13 +35,11 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
     public readonly delegate* unmanaged <long, long, long> PartyFinderMessageDisplayHandler;
 
     public delegate long PartyFinderMessageDisplayDelegate(long a1, long a2);
-
     [Signature("48 89 5C 24 ?? 57 48 83 EC ?? 48 8D 99 ?? ?? ?? ?? 48 8B F9 48 8B CB E8",
                DetourName = nameof(PartyFinderMessageDisplayDetour))]
     public Hook<PartyFinderMessageDisplayDelegate>? PartyFinderMessageDisplayHook;
 
     public delegate long LocalMessageDelegate(long a1, long a2);
-
     [Signature("40 53 48 83 EC ?? 48 8D 99 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 48 8B 0D",
                DetourName = nameof(LocalMessageDetour))]
     public Hook<LocalMessageDelegate>? LocalMessageDisplayHook;
@@ -52,6 +52,11 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
 
     private const string AutoTranslateLeft = "\u0002\u0012\u00027\u0003";
     private const string AutoTranslateRight = "\u0002\u0012\u00028\u0003";
+    private static readonly char[] SpecialChars =
+        ['*', '%', '+', '-', '^', '=', '|', '&', '!', '~', ',', '.', ';', ':', '?', '@', '#'];
+
+    private static Dictionary<char, char>? SpecialCharTranslateDictionary;
+    private static Dictionary<char, char>? SpecialCharTranslateDictionaryRe;
 
     private string PreviewInput = string.Empty;
     private string PreviewCensorship = string.Empty;
@@ -59,6 +64,19 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
 
     public override void Init()
     {
+        if (SpecialCharTranslateDictionary == null)
+        {
+            SpecialCharTranslateDictionary = [];
+            for (var i = 0; i < SpecialChars.Length; i++)
+            {
+                var specialChar = SpecialChars[i];
+
+                SpecialCharTranslateDictionary[specialChar] = (char)i;
+            }
+
+            SpecialCharTranslateDictionaryRe = SpecialCharTranslateDictionary.ToDictionary(x => x.Value, x => x.Key);
+        }
+
         Service.Hook.InitializeFromAttributes(this);
 
         PartyFinderMessageDisplayHook?.Enable();
@@ -150,6 +168,7 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
     private nint ChatLogTextInputDetour(
         AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData)
     {
+        Service.Log.Debug($"{eventType}");
         if (eventType == AtkEventType.InputReceived)
         {
             var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("ChatLog");
@@ -218,10 +237,10 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
         return (*utf8String).ToString();
     }
 
+
     private string BypassCensorship(string text)
     {
-        const string placeholder = "\u0001";
-        text = text.Replace("*", placeholder);
+        text = ReplaceSpecialChars(text, false);
 
         StringBuilder tempResult = new(text.Length);
         bool isCensored;
@@ -272,9 +291,28 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
             }
 
             text = tempResult.ToString();
-        } while (isCensored);
+        } 
+        while (isCensored);
 
-        return text.Replace(placeholder, "*");
+        return ReplaceSpecialChars(text, true);
+    }
+
+    public static string ReplaceSpecialChars(string input, bool IsReversed)
+    {
+        if (string.IsNullOrEmpty(input)) return input;
+
+        var dic = IsReversed ? SpecialCharTranslateDictionaryRe : SpecialCharTranslateDictionary;
+
+        var sb = new StringBuilder(input.Length);
+        foreach (var c in input)
+        {
+            if (dic.TryGetValue(c, out var replacement))
+                sb.Append(replacement);
+            else
+                sb.Append(c);
+        }
+
+        return sb.ToString();
     }
 
     private static string InsertDots(string input)
