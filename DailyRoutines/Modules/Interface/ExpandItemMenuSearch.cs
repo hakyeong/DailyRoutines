@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using DailyRoutines.Infos;
@@ -6,6 +5,7 @@ using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Gui.ContextMenu;
+using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -17,14 +17,17 @@ using Lumina.Excel.GeneratedSheets;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("ExpandItemMenuSearchTitle", "ExpandItemMenuSearchDescription", ModuleCategories.Interface)]
-public class ExpandItemMenuSearch : DailyModuleBase
+public unsafe class ExpandItemMenuSearch : DailyModuleBase
 {
     public override string? Author { get; set; } = "HSS";
 
     private static Item? _LastItem;
     private static Item? _LastGlamourItem;
-    private static ulong _LastHoveredItemId;
-    private static bool _CharacterInspectStatus;
+    private static ulong _LastHoveredItemID;
+    private static ulong _LastDetailItemID;
+
+    private static bool _IsOnCharacterInspect;
+    private static bool _IsOnCabinetWithdraw;
     private static readonly HashSet<InventoryItem> _CharacterInspectItems = [];
 
     private static bool SearchCollector;
@@ -54,14 +57,13 @@ public class ExpandItemMenuSearch : DailyModuleBase
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
 
         Service.ContextMenu.OnMenuOpened += OnMenuOpened;
-
-
         Service.Gui.HoveredItemChanged += OnHoveredItemChanged;
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "CharacterInspect", OnCharacterInspect);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "CharacterInspect", OnCharacterInspect);
+        Service.Framework.Update += OnUpdate;
+
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "CharacterInspect", OnAddon);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, ["CabinetWithdraw", "CharacterInspect"], OnAddon);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "CabinetWithdraw", OnAddon);
         _CharacterInspectItems.Clear();
-        if (Service.Gui.GetAddonByName("CharacterInspect") != nint.Zero)
-            OnCharacterInspect(AddonEvent.PostRefresh, null);
     }
 
     public override void ConfigUI()
@@ -93,43 +95,88 @@ public class ExpandItemMenuSearch : DailyModuleBase
         }
     }
 
-    private unsafe void OnCharacterInspect(AddonEvent type, AddonArgs? args)
+    private void OnAddon(AddonEvent type, AddonArgs? args)
     {
         switch (type)
         {
-            case AddonEvent.PostRefresh:
-                TaskManager.Enqueue(() =>
+            case AddonEvent.PostSetup:
+                switch (args.AddonName)
                 {
-                    if (_CharacterInspectItems.Count != 0) return;
-                    var container = InventoryManager.Instance()->GetInventoryContainer(InventoryType.Examine);
-                    for (var i = 0; i < container->Size; i++)
-                    {
-                        var item = container->GetInventorySlot(i);
-                        if (item == null || item->ItemID == 0) continue;
+                    case "CabinetWithdraw":
+                        _IsOnCabinetWithdraw = true;
+                        break;
+                }
+                break;
+            case AddonEvent.PostRefresh:
+                switch (args.AddonName)
+                {
+                    case "CharacterInspect":
+                        TaskManager.Enqueue(() =>
+                        {
+                            if (_CharacterInspectItems.Count != 0) return;
+                            var container = InventoryManager.Instance()->GetInventoryContainer(InventoryType.Examine);
+                            for (var i = 0; i < container->Size; i++)
+                            {
+                                var item = container->GetInventorySlot(i);
+                                if (item == null || item->ItemID == 0) continue;
 
-                        _CharacterInspectItems.Add(*item);
-                    }
+                                _CharacterInspectItems.Add(*item);
+                            }
 
-                    _CharacterInspectStatus = true;
-                });
+                            _IsOnCharacterInspect = true;
+                        });
+                        break;
+                }
                 break;
             case AddonEvent.PreFinalize:
-                TaskManager.Enqueue(() =>
+                switch (args.AddonName)
                 {
-                    _CharacterInspectStatus = false;
-                    _LastHoveredItemId = 0;
-                    _CharacterInspectItems.Clear();
-                });
+                    case "CabinetWithdraw":
+                        _IsOnCabinetWithdraw = false;
+                        break;
+                    case "CharacterInspect":
+                        TaskManager.Enqueue(() =>
+                        {
+                            _IsOnCharacterInspect = false;
+                            _LastHoveredItemID = 0;
+                            _CharacterInspectItems.Clear();
+                        });
+                        break;
+                }
                 break;
         }
     }
 
-    private static unsafe void OnMenuOpened(MenuOpenedArgs args)
+    private static void OnHoveredItemChanged(object? sender, ulong id)
+    {
+        if (!_IsOnCharacterInspect) return;
+        var contextMenu = (AtkUnitBase*)Service.Gui.GetAddonByName("ContextMenu");
+        if (contextMenu is null || !contextMenu->IsVisible)
+        {
+            if (id < 2000000) id %= 500000;
+            if (id != 0 && _LastHoveredItemID != id)
+                _LastHoveredItemID = id;
+        }
+    }
+
+    private static void OnUpdate(IFramework framework)
+    {
+        if (!_IsOnCabinetWithdraw) return;
+        var agent = AgentItemDetail.Instance();
+        if (agent == null) return;
+
+        var id = agent->ItemId;
+        if (id != 0 && _LastDetailItemID != id)
+            _LastDetailItemID = id;
+    }
+
+    private static void OnMenuOpened(MenuOpenedArgs args)
     {
         if (args.Target is MenuTargetInventory { TargetItem: not null } inventoryTarget)
         {
             var itemId = inventoryTarget.TargetItem.Value.ItemId;
             var glamourId = inventoryTarget.TargetItem.Value.GlamourId;
+
             if (SearchCollector)
             {
                 if (SearchCollectorByGlamour)
@@ -141,7 +188,7 @@ public class ExpandItemMenuSearch : DailyModuleBase
             if (SearchWiki)
             {
                 if (SearchWikiByGlamour && glamourId != 0) TryGetItemByID(glamourId, out _LastGlamourItem);
-                _LastItem = Service.Data.GetExcelSheet<Item>().GetRow(itemId);
+                TryGetItemByID(itemId, out _LastItem);
                 args.AddMenuItem(WikiItem);
             }
 
@@ -182,35 +229,48 @@ public class ExpandItemMenuSearch : DailyModuleBase
 
                 break;
             }
+            case "MiragePrismMiragePlate":
+                var agentDetail = AgentMiragePrismPrismItemDetail.Instance();
+                if (agentDetail == null) return;
+
+                if (!TryGetItemByID(agentDetail->ItemId, out _LastItem)) return;
+                _LastGlamourItem = _LastItem;
+
+                if (SearchCollector) args.AddMenuItem(CollectorItem);
+                if (SearchWiki) args.AddMenuItem(WikiItem);
+                break;
+            case "ColorantColoring":
+                var agentColoring = AgentColorant.Instance();
+                if (agentColoring == null) return;
+
+                if (!Service.PresetData.Dyes.TryGetValue(agentColoring->CharaView.SelectedStain, out var stainItemID))
+                    return;
+                if (!TryGetItemByID(stainItemID, out _LastItem)) return;
+
+                if (SearchWiki) args.AddMenuItem(WikiItem);
+                break;
+            case "CabinetWithdraw":
+                if (!TryGetItemByID((uint)_LastDetailItemID, out _LastGlamourItem)) return;
+                _LastItem = _LastGlamourItem;
+
+                if (SearchCollector) args.AddMenuItem(CollectorItem);
+                if (SearchWiki) args.AddMenuItem(WikiItem);
+                break;
             case "CharacterInspect":
             {
-                if (!SearchWiki && !SearchCollector) return;
-
                 var glamourID = _CharacterInspectItems
-                                .FirstOrDefault(x => x.ItemID == _LastHoveredItemId).GlamourID;
+                                .FirstOrDefault(x => x.ItemID == _LastHoveredItemID).GlamourID;
                 if (glamourID == 0)
-                    TryGetItemByID((uint)_LastHoveredItemId, out _LastGlamourItem);
+                    TryGetItemByID((uint)_LastHoveredItemID, out _LastGlamourItem);
                 else
                     TryGetItemByID(glamourID, out _LastGlamourItem);
-                TryGetItemByID((uint)_LastHoveredItemId, out _LastItem);
+                TryGetItemByID((uint)_LastHoveredItemID, out _LastItem);
 
                 if (SearchCollector) args.AddMenuItem(CollectorItem);
                 if (SearchWiki) args.AddMenuItem(WikiItem);
 
                 break;
             }
-        }
-    }
-
-    private static unsafe void OnHoveredItemChanged(object? sender, ulong id)
-    {
-        if (!_CharacterInspectStatus) return;
-        var contextMenu = (AtkUnitBase*)Service.Gui.GetAddonByName("ContextMenu");
-        if (contextMenu is null || !contextMenu->IsVisible)
-        {
-            if (id < 2000000) id %= 500000;
-            if (id != 0 && _LastHoveredItemId != id)
-                _LastHoveredItemId = id;
         }
     }
 
@@ -252,20 +312,28 @@ public class ExpandItemMenuSearch : DailyModuleBase
             Util.OpenLink(string.Format(WikiUrl, _LastItem.Name));
     }
 
-    private static bool TryGetItemByID(uint id, out Item item) =>
-        Service.PresetData.Gears.TryGetValue(id, out item);
+    private static bool TryGetItemByID(uint id, out Item? item)
+    {
+        item = Service.Data.GetExcelSheet<Item>().GetRow(id);
+        return item != null;
+    }
 
-    private static unsafe bool IsValidChatLogContext(nint agent) => *(uint*)(agent + ChatLogContextItemId + 8) == 3;
+    private static bool IsValidChatLogContext(nint agent)
+    {
+        return *(uint*)(agent + ChatLogContextItemId + 8) == 3;
+    }
 
     public override void Uninit()
     {
         _CharacterInspectItems.Clear();
         _LastGlamourItem = null;
         _LastItem = null;
-        TaskManager.Abort();
+
+        Service.AddonLifecycle.UnregisterListener(OnAddon);
         Service.Gui.HoveredItemChanged -= OnHoveredItemChanged;
-        Service.AddonLifecycle.UnregisterListener(OnCharacterInspect);
+        Service.Framework.Update -= OnUpdate;
         Service.ContextMenu.OnMenuOpened -= OnMenuOpened;
+
         base.Uninit();
     }
 }
