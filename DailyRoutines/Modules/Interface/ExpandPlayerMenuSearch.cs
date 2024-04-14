@@ -201,6 +201,7 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
             case "SocialList":
             case "ContactList":
             case "_PartyList":
+            case "BeginnerChatList":
             case "ContentMemberList":
                 return GeneralJudge();
         }
