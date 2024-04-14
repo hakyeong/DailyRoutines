@@ -7,6 +7,7 @@ using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using ECommons.Automation;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -53,6 +54,7 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
 
     private bool? TryRemoveItem()
     {
+        if (!EzThrottler.Throttle("AutoRemoveArmoireItemsFromDresser", 100)) return false;
         if (Service.Gui.GetAddonByName("SelectYesno") != nint.Zero) return false;
 
         if (AddonMiragePrismPrismBox == null) return false;
@@ -75,8 +77,7 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
             if (ArmoireAvailableItems.Contains(currentItemID))
             {
                 AddonManager.Callback(AddonMiragePrismPrismBox, true, 3U, i);
-
-                TaskManager.DelayNext(200);
+                
                 TaskManager.Enqueue(ClickRestoreItem);
                 return true;
             }
@@ -88,7 +89,6 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
         {
             AddonManager.Callback(AddonMiragePrismPrismBox, true, 1U, 1U);
 
-            TaskManager.DelayNext(200);
             TaskManager.Enqueue(TryRemoveItem);
             return true;
         }
@@ -100,22 +100,16 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
 
     private bool? ClickRestoreItem()
     {
-        if (TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
-        {
-            if (!HelpersOm.TryScanContextMenuText(addon, "将幻影变回道具", out var index)) return false;
+        if (!EzThrottler.Throttle("AutoRemoveArmoireItemsFromDresser", 100)) return false;
+        if (!ClickManager.ContextMenu("将幻影变回道具")) return false;
 
-            AddonManager.Callback(addon, true, 0, index, 0, 0, 0);
-
-            TaskManager.DelayNext(200);
-            TaskManager.Enqueue(TryRemoveItem);
-            return true;
-        }
-
-        return false;
+        TaskManager.Enqueue(TryRemoveItem);
+        return true;
     }
 
     private bool? ClickNextCategory()
     {
+        if (!EzThrottler.Throttle("AutoRemoveArmoireItemsFromDresser", 100)) return false;
         var agent = AgentMiragePrismPrismBox.Instance();
         if (agent == null) return false;
         if (AddonMiragePrismPrismBox == null) return false;
@@ -125,7 +119,6 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
         {
             AddonManager.Callback(AddonMiragePrismPrismBox, true, 0U, (uint)(currentTabIndex + 1));
 
-            TaskManager.DelayNext(200);
             TaskManager.Enqueue(TryRemoveItem);
         }
         else
