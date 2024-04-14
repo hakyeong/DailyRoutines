@@ -1180,4 +1180,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="NoAttackWrongMandragorasTitle" xml:space="preserve">
     <value>强制按顺序击杀蔓德拉战队</value>
   </data>
+  <data name="ClipboardMultiLineToOneLineDescription" xml:space="preserve">
+    <value>在聊天栏输入框复制文本时, 强制将多行文本转成单行, 用空格隔开, 以方便游戏内编辑发送</value>
+  </data>
+  <data name="ClipboardMultiLineToOneLineTitle" xml:space="preserve">
+    <value>强制消息复制多行转单行</value>
+  </data>
 </root>
