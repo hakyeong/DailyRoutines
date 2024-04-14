@@ -44,6 +44,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     private static int MaxPriceReduction;
     private static bool SeparateNQAndHQ;
     private static bool ProhibitLowerThanSellPrice;
+    private static bool AdjustToLowestPriceWhenLower;
     
     private static Dictionary<(uint Id, bool HQ), int> PriceCache = [];
     private static bool IsCurrentItemHQ;
@@ -70,6 +71,9 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
         AddConfig(this, "ProhibitLowerThanSellPrice", true);
         ProhibitLowerThanSellPrice = GetConfig<bool>(this, "ProhibitLowerThanSellPrice");
+
+        AddConfig(this, "AdjustToLowestPriceWhenLower", true);
+        AdjustToLowestPriceWhenLower = GetConfig<bool>(this, "AdjustToLowestPriceWhenLower");
 
         #endregion
 
@@ -132,6 +136,9 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoRetainerPriceAdjust-ProhibitLowerThanSellPrice"), ref ProhibitLowerThanSellPrice))
             UpdateConfig(this, "ProhibitLowerThanSellPrice", ProhibitLowerThanSellPrice);
+
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoRetainerPriceAdjust-AdjustToLowestPriceWhenLower"), ref AdjustToLowestPriceWhenLower))
+            UpdateConfig(this, "AdjustToLowestPriceWhenLower", AdjustToLowestPriceWhenLower);
     }
 
     public override void OverlayUI()
@@ -524,16 +531,6 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             return true;
         }
 
-        // 低于最低价
-        if (modifiedPrice < LowestPrice)
-        {
-            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoRetainerPriceAdjust-SkipAdjustMessage", SeString.CreateItemLink(CurrentItemSearchItemID, IsCurrentItemHQ ? ItemPayload.ItemKind.Hq : ItemPayload.ItemKind.Normal), currentMarketLowestPrice, originalPrice, Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice"), LowestPrice)).Build();
-            Service.Chat.Print(message);
-
-            OperateAndReturn(false);
-            return true;
-        }
-
         // 超过可接受的降价值
         if (MaxPriceReduction != 0 && originalPrice - currentMarketLowestPrice > MaxPriceReduction)
         {
@@ -548,6 +545,23 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         if (ProhibitLowerThanSellPrice && ItemsSellPrice.TryGetValue(CurrentItemSearchItemID, out var npcSellPrice) && modifiedPrice < npcSellPrice)
         {
             var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoRetainerPriceAdjust-SkipAdjustMessage", SeString.CreateItemLink(CurrentItemSearchItemID, IsCurrentItemHQ ? ItemPayload.ItemKind.Hq : ItemPayload.ItemKind.Normal), currentMarketLowestPrice, originalPrice, Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice"), npcSellPrice)).Build();
+            Service.Chat.Print(message);
+
+            OperateAndReturn(false);
+            return true;
+        }
+
+        // 低于最低价时改成最低价
+        if (AdjustToLowestPriceWhenLower && modifiedPrice < LowestPrice)
+        {
+            OperateAndReturn(true, LowestPrice);
+            return true;
+        }
+
+        // 低于最低价
+        if (modifiedPrice < LowestPrice)
+        {
+            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoRetainerPriceAdjust-SkipAdjustMessage", SeString.CreateItemLink(CurrentItemSearchItemID, IsCurrentItemHQ ? ItemPayload.ItemKind.Hq : ItemPayload.ItemKind.Normal), currentMarketLowestPrice, originalPrice, Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice"), LowestPrice)).Build();
             Service.Chat.Print(message);
 
             OperateAndReturn(false);
