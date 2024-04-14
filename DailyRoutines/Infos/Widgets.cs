@@ -41,7 +41,7 @@ public static class Widgets
     {
         if (rPrefix == null) RPrefix();
 
-        return new SeStringBuilder().Append(text).Build();
+        return new SeStringBuilder().Append(rPrefix).Append(text).Build();
     }
 
     public static void PreviewImageWithHelpText(
