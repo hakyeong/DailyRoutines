@@ -165,11 +165,9 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
         if (agent != nint.Zero && *(uint*)(agent + 0x948 + 8) == 3) return false;
 
         var judgeCriteria0 = menuTarget.TargetCharacter != null;
-        var judgeCriteria1 = menuTarget.TargetObject is Character &&
-                             !string.IsNullOrWhiteSpace(menuTarget.TargetName) &&
-                             menuTarget.TargetHomeWorld.GameData != null;
-        var judgeCriteria2 = !string.IsNullOrWhiteSpace(menuTarget.TargetName) &&
-                             menuTarget.TargetHomeWorld.GameData != null;
+        var judgeCriteria1 = !string.IsNullOrWhiteSpace(menuTarget.TargetName) &&
+                             menuTarget.TargetHomeWorld.GameData != null && menuTarget.TargetHomeWorld.GameData.RowId != 0;
+        var judgeCriteria2 = menuTarget.TargetObject is Character && judgeCriteria1;
 
         switch (args.AddonName)
         {
@@ -196,12 +194,12 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
             case "CrossWorldLinkshell":
                 return menuTarget.TargetContentId != 0 && GeneralJudge();
             case null:
+            case "ChatLog":
             case "LookingForGroup":
             case "PartyMemberList":
             case "FriendList":
             case "SocialList":
             case "ContactList":
-            case "ChatLog":
             case "_PartyList":
             case "ContentMemberList":
                 return GeneralJudge();
@@ -211,11 +209,11 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
         {
             if (judgeCriteria0)
                 _TargetChara = menuTarget.TargetCharacter.ToCharacterSearchInfo();
-            else if (menuTarget.TargetObject is Character chara && judgeCriteria2)
+            else if (menuTarget.TargetObject is Character chara && judgeCriteria1)
                 _TargetChara = chara.ToCharacterSearchInfo();
-            else if (judgeCriteria2)
+            else if (judgeCriteria1)
                 _TargetChara = new() { Name = menuTarget.TargetName, World = menuTarget.TargetHomeWorld.GameData.Name.RawString };
-            return judgeCriteria0 || judgeCriteria1 || judgeCriteria2;
+            return judgeCriteria0 || judgeCriteria2 || judgeCriteria1;
         }
     }
 
