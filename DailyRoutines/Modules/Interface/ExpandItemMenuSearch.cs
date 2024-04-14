@@ -243,9 +243,9 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
                 var agentColoring = AgentColorant.Instance();
                 if (agentColoring == null) return;
 
-                if (!Service.PresetData.Dyes.TryGetValue(agentColoring->CharaView.SelectedStain, out var stainItemID))
+                if (!Service.PresetData.Dyes.TryGetValue(agentColoring->CharaView.SelectedStain, out var stainItem))
                     return;
-                if (!TryGetItemByID(stainItemID, out _LastItem)) return;
+                _LastItem = stainItem;
 
                 if (SearchWiki) args.AddMenuItem(WikiItem);
                 break;
