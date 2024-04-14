@@ -420,7 +420,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
         ImGui.SetWindowPos(buttonPos with { Y = buttonPos.Y - ImGui.GetWindowSize().Y - 5 });
 
-        if (ImGui.BeginTabBar("###QuickChatPanel"))
+        if (ImGui.BeginTabBar("###QuickChatPanel", ImGuiTabBarFlags.Reorderable))
         {
             if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-Messages")))
             {
