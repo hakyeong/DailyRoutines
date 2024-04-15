@@ -16,16 +16,7 @@ public unsafe class AutoDance : DailyModuleBase
     private delegate bool UseActionSelfDelegate(
         ActionManager* actionManager, uint actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
         uint a5 = 0, uint a6 = 0, void* a7 = null);
-
     private Hook<UseActionSelfDelegate>? useActionSelfHook;
-
-    private static readonly Dictionary<int, uint> StepActions = new()
-    {
-        { 1, 15989 },
-        { 2, 15990 },
-        { 3, 15991 },
-        { 4, 15992 }
-    };
 
     private static bool IsAutoFinish;
 
