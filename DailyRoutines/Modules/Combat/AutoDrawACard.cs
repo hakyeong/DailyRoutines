@@ -14,6 +14,13 @@ public class AutoDrawACard : DailyModuleBase
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
 
         Service.ClientState.TerritoryChanged += OnZoneChanged;
+        Service.DutyState.DutyRecommenced += OnDutyRecommenced;
+    }
+
+    private void OnDutyRecommenced(object? sender, ushort e)
+    {
+        TaskManager.Abort();
+        TaskManager.Enqueue(CheckCurrentJob);
     }
 
     private void OnZoneChanged(ushort zone)
@@ -40,6 +47,7 @@ public class AutoDrawACard : DailyModuleBase
     public override void Uninit()
     {
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
+        Service.DutyState.DutyRecommenced -= OnDutyRecommenced;
 
         base.Uninit();
     }

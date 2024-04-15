@@ -45,6 +45,7 @@ public class AutoTankStance : DailyModuleBase
                                        .ToHashSet();
 
         Service.ClientState.TerritoryChanged += OnZoneChanged;
+        Service.DutyState.DutyRecommenced += OnDutyRecommenced;
     }
 
     public override void ConfigUI()
@@ -65,6 +66,12 @@ public class AutoTankStance : DailyModuleBase
             TaskManager.Abort();
             TaskManager.Enqueue(CheckCurrentJob);
         }
+    }
+
+    private void OnDutyRecommenced(object? sender, ushort e)
+    {
+        TaskManager.Abort();
+        TaskManager.Enqueue(CheckCurrentJob);
     }
 
     private static unsafe bool? CheckCurrentJob()
@@ -88,6 +95,7 @@ public class AutoTankStance : DailyModuleBase
     public override void Uninit()
     {
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
+        Service.DutyState.DutyRecommenced -= OnDutyRecommenced;
 
         base.Uninit();
     }
