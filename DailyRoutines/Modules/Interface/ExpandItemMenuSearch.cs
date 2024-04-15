@@ -5,6 +5,7 @@ using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Gui.ContextMenu;
+using Dalamud.Game.Text;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using ECommons.Automation;
@@ -70,6 +71,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
     {
         if (ImGui.Checkbox(Service.Lang.GetText("ExpandItemMenuSearch-CollectorSearch"), ref SearchCollector))
             UpdateConfig(this, "SearchCollector", SearchCollector);
+
         if (SearchCollector)
         {
             ImGui.Indent();
@@ -83,6 +85,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
 
         if (ImGui.Checkbox(Service.Lang.GetText("ExpandItemMenuSearch-WikiSearch"), ref SearchWiki))
             UpdateConfig(this, "SearchWiki", SearchWiki);
+
         if (SearchWiki)
         {
             ImGui.Indent();
@@ -177,18 +180,21 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
             var itemId = inventoryTarget.TargetItem.Value.ItemId;
             var glamourId = inventoryTarget.TargetItem.Value.GlamourId;
 
-            if (SearchCollector)
+            if (SearchCollector && Service.PresetData.TryGetGear(itemId, out var itemCollector))
             {
+                _LastItem = itemCollector;
                 if (SearchCollectorByGlamour)
-                    TryGetItemByID(glamourId, out _LastGlamourItem);
-                if (TryGetItemByID(itemId, out _LastItem))
-                    args.AddMenuItem(CollectorItem);
+                    _LastGlamourItem = Service.PresetData.TryGetGear(glamourId, out var glamourItem) ? glamourItem : _LastItem;
+                
+                args.AddMenuItem(CollectorItem);
             }
 
-            if (SearchWiki)
+            if (SearchWiki && LuminaCache.TryGetRow<Item>(itemId, out var itemWiki))
             {
-                if (SearchWikiByGlamour && glamourId != 0) TryGetItemByID(glamourId, out _LastGlamourItem);
-                TryGetItemByID(itemId, out _LastItem);
+                _LastItem = itemWiki;
+                if (SearchWikiByGlamour)
+                    _LastGlamourItem = Service.PresetData.TryGetGear(glamourId, out var glamourItem) ? glamourItem : _LastItem;
+
                 args.AddMenuItem(WikiItem);
             }
 
@@ -200,13 +206,17 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
             case "ItemSearch" when args.AgentPtr != nint.Zero:
             {
                 _LastGlamourItem = null;
-                var itemID = (uint)AgentContext.Instance()->UpdateCheckerParam;
-                if (TryGetItemByID(itemID, out _LastItem) && SearchCollector)
-                    args.AddMenuItem(CollectorItem);
 
-                if (SearchWiki)
+                var itemID = (uint)AgentContext.Instance()->UpdateCheckerParam;
+                if (SearchCollector && Service.PresetData.Gears.TryGetValue(itemID, out var searchCollectorItem))
                 {
-                    _LastItem = Service.Data.GetExcelSheet<Item>().GetRow(itemID);
+                    _LastItem = searchCollectorItem;
+                    args.AddMenuItem(CollectorItem);
+                }
+
+                if (SearchWiki && LuminaCache.TryGetRow<Item>(itemID, out var searchWikiItem))
+                {
+                    _LastItem = searchWikiItem;
                     args.AddMenuItem(WikiItem);
                 }
 
@@ -215,56 +225,64 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
             case "ChatLog":
             {
                 _LastGlamourItem = null;
+
                 var agent = Service.Gui.FindAgentInterface("ChatLog");
                 if (agent == nint.Zero || !IsValidChatLogContext(agent)) return;
 
                 var itemID = *(uint*)(agent + ChatLogContextItemId);
-                if (TryGetItemByID(itemID, out _LastItem) && SearchCollector) args.AddMenuItem(CollectorItem);
-
-                if (SearchWiki)
+                if (SearchCollector && Service.PresetData.Gears.TryGetValue(itemID, out var collectorItem))
                 {
-                    _LastItem = Service.Data.GetExcelSheet<Item>().GetRow(itemID);
+                    _LastItem = collectorItem;
+                    args.AddMenuItem(CollectorItem);
+                }
+
+                if (SearchWiki && LuminaCache.TryGetRow<Item>(itemID, out var wikiItem))
+                {
+                    _LastItem = wikiItem;
                     args.AddMenuItem(WikiItem);
                 }
 
                 break;
             }
             case "MiragePrismMiragePlate":
+                _LastGlamourItem = null;
+
                 var agentDetail = AgentMiragePrismPrismItemDetail.Instance();
                 if (agentDetail == null) return;
 
-                if (!TryGetItemByID(agentDetail->ItemId, out _LastItem)) return;
-                _LastGlamourItem = _LastItem;
+                if (!Service.PresetData.Gears.TryGetValue(agentDetail->ItemId, out var mirageItem)) return;
+                _LastItem = mirageItem;
 
                 if (SearchCollector) args.AddMenuItem(CollectorItem);
                 if (SearchWiki) args.AddMenuItem(WikiItem);
                 break;
             case "ColorantColoring":
+                _LastGlamourItem = null;
+
                 var agentColoring = AgentColorant.Instance();
                 if (agentColoring == null) return;
 
-                if (!Service.PresetData.Dyes.TryGetValue(agentColoring->CharaView.SelectedStain, out var stainItem))
-                    return;
+                if (!Service.PresetData.Dyes.TryGetValue(agentColoring->CharaView.SelectedStain, out var stainItem)) return;
                 _LastItem = stainItem;
 
                 if (SearchWiki) args.AddMenuItem(WikiItem);
                 break;
             case "CabinetWithdraw":
-                if (!TryGetItemByID((uint)_LastDetailItemID, out _LastGlamourItem)) return;
-                _LastItem = _LastGlamourItem;
+                _LastGlamourItem = null;
+
+                if (!Service.PresetData.Gears.TryGetValue((uint)_LastDetailItemID, out var cabinetItem)) return;
+                _LastItem = cabinetItem;
 
                 if (SearchCollector) args.AddMenuItem(CollectorItem);
                 if (SearchWiki) args.AddMenuItem(WikiItem);
                 break;
             case "CharacterInspect":
             {
-                var glamourID = _CharacterInspectItems
-                                .FirstOrDefault(x => x.ItemID == _LastHoveredItemID).GlamourID;
-                if (glamourID == 0)
-                    TryGetItemByID((uint)_LastHoveredItemID, out _LastGlamourItem);
-                else
-                    TryGetItemByID(glamourID, out _LastGlamourItem);
-                TryGetItemByID((uint)_LastHoveredItemID, out _LastItem);
+                var glamourID = _CharacterInspectItems.FirstOrDefault(x => x.ItemID == _LastHoveredItemID).GlamourID;
+
+                if (!Service.PresetData.Gears.TryGetValue((uint)_LastHoveredItemID, out var inspectItem)) return;
+                _LastItem = inspectItem;
+                _LastGlamourItem = Service.PresetData.Gears.GetValueOrDefault(glamourID, _LastItem);
 
                 if (SearchCollector) args.AddMenuItem(CollectorItem);
                 if (SearchWiki) args.AddMenuItem(WikiItem);
@@ -274,11 +292,12 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
         }
     }
 
+
     private static readonly MenuItem CollectorItem = new()
     {
         IsEnabled = true,
         IsReturn = false,
-        PrefixChar = 'D',
+        Prefix = SeIconChar.BoxedLetterD,
         Name = RPrefix(Service.Lang.GetText("ExpandItemMenuSearch-CollectorSearch")),
         OnClicked = OnCollector,
         IsSubmenu = false,
@@ -296,6 +315,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
         PrefixColor = 34
     };
 
+
     private static void OnCollector(MenuItemClickedArgs _)
     {
         if (SearchCollectorByGlamour && _LastGlamourItem != null && _LastGlamourItem.Name.ToString().Length != 0)
@@ -310,12 +330,6 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
             Util.OpenLink(string.Format(WikiUrl, _LastGlamourItem.Name));
         else if (_LastItem != null)
             Util.OpenLink(string.Format(WikiUrl, _LastItem.Name));
-    }
-
-    private static bool TryGetItemByID(uint id, out Item? item)
-    {
-        item = Service.Data.GetExcelSheet<Item>().GetRow(id);
-        return item != null;
     }
 
     private static bool IsValidChatLogContext(nint agent)
