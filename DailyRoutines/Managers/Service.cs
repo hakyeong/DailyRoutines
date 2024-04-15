@@ -59,6 +59,7 @@ public class Service
         Waymarks.Uninit();
         Config.Uninit();
         Notice.Dispose();
+        LuminaCache.ClearCache();
     }
 
     [PluginService] public static IClientState ClientState { get; private set; } = null!;
@@ -66,6 +67,10 @@ public class Service
     [PluginService] public static IKeyState KeyState { get; private set; } = null!;
     [PluginService] public static IObjectTable ObjectTable { get; private set; } = null!;
     [PluginService] public static ICondition Condition { get; private set; } = null!;
+    /// <summary>
+    /// 如非必要请使用 LuminaCache, 而不是直接使用 IDataManager 来获取数据
+    /// Please use LuminaCache instead of obtaining data from IDataManager directly
+    /// </summary>
     [PluginService] public static IDataManager Data { get; private set; } = null!;
     [PluginService] public static IChatGui Chat { get; private set; } = null!;
     [PluginService] public static ICommandManager Command { get; set; } = null!;
@@ -84,7 +89,7 @@ public class Service
     [PluginService] public static INotificationManager DalamudNotice { get; private set; } = null!;
     public static SigScanner SigScanner { get; private set; } = new();
     public static FontManager Font { get; private set; } = null!;
-    public static PresetExcelData PresetData { get; set; } = null!;
+    public static PresetData PresetData { get; set; } = null!;
     public static FieldMarkerManager Waymarks { get; set; } = null!;
     public static NotificationManager Notice { get; private set; } = null!;
     public static LanguageManager Lang { get; set; } = null!;
