@@ -86,6 +86,7 @@ public class Service
     [PluginService] public static IDutyState DutyState { get; private set; } = null!;
     [PluginService] public static IGameInteropProvider Hook { get; private set; } = null!;
     [PluginService] public static IContextMenu ContextMenu { get; private set; } = null!;
+    [PluginService] public static IJobGauges JobGauges { get; private set; } = null!;
     [PluginService] public static INotificationManager DalamudNotice { get; private set; } = null!;
     public static SigScanner SigScanner { get; private set; } = new();
     public static FontManager Font { get; private set; } = null!;

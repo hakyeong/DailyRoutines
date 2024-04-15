@@ -542,14 +542,14 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoNoviceNetworkTitle" xml:space="preserve">
     <value>自动加入新人频道</value>
   </data>
-  <data name="AutoPlayCards-Melee" xml:space="preserve">
-    <value>近战</value>
+  <data name="AutoPlayCards-MeleeCard" xml:space="preserve">
+    <value>近战卡</value>
   </data>
   <data name="AutoPlayCards-Message" xml:space="preserve">
-    <value>将 {0}卡 发给了 {1}{2} {3}</value>
+    <value>将 {0} 发给了 {1}{2} {3}</value>
   </data>
-  <data name="AutoPlayCards-Range" xml:space="preserve">
-    <value>远程</value>
+  <data name="AutoPlayCards-RangeCard" xml:space="preserve">
+    <value>远程卡</value>
   </data>
   <data name="AutoPlayCards-SendMessage" xml:space="preserve">
     <value>发送奥秘卡去向消息</value>
@@ -1188,5 +1188,11 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="ClipboardMultiLineToOneLineTitle" xml:space="preserve">
     <value>强制消息复制多行转单行</value>
+  </data>
+  <data name="AutoPlayCards-UseAantonomasia" xml:space="preserve">
+    <value>使用卡牌代称</value>
+  </data>
+  <data name="AutoPlayCards-UseAantonomasiaHelp" xml:space="preserve">
+    <value>使用 近战卡/远程卡 来代替消息中各卡牌原名</value>
   </data>
 </root>
