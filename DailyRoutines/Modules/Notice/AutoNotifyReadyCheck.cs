@@ -23,7 +23,7 @@ public class AutoNotifyReadyCheck : DailyModuleBase
 
         content = content.Trim('。');
         content = content.Trim('.');
-        Service.Notice.Notify(content, content);
+        WinToast.Notify(content, content);
     }
 
     public override void Uninit()

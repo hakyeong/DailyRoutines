@@ -21,7 +21,7 @@ public class Service
         CheckConflictKeyValidation();
         AddonManager.Init();
         PresetData = new();
-        Notice = new();
+        WinToast.Init();
         Waymarks = new();
         Font = new();
     }
@@ -58,7 +58,7 @@ public class Service
         AddonManager.Uninit();
         Waymarks.Uninit();
         Config.Uninit();
-        Notice.Dispose();
+        WinToast.Dispose();
         LuminaCache.ClearCache();
     }
 
@@ -105,7 +105,6 @@ public class Service
     public static FontManager Font { get; private set; } = null!;
     public static PresetData PresetData { get; set; } = null!;
     public static FieldMarkerManager Waymarks { get; set; } = null!;
-    public static NotificationManager Notice { get; private set; } = null!;
     public static LanguageManager Lang { get; set; } = null!;
     public static Configuration Config { get; set; } = null!;
 }

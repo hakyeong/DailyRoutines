@@ -45,7 +45,7 @@ namespace DailyRoutines.Modules
 
             var content = message.ExtractText();
             if (!content.StartsWith(startFlag) && !content.EndsWith('）') && !content.EndsWith(')')) return;
-            Service.Notice.Notify(Service.Lang.GetText("AutoNotifyCountdown-NotificationTitle"), content);
+            WinToast.Notify(Service.Lang.GetText("AutoNotifyCountdown-NotificationTitle"), content);
         }
 
         public override void Uninit()

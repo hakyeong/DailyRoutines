@@ -26,6 +26,6 @@ public class AutoNotifyDutyStart : DailyModuleBase
     private static void OnDutyStart(object? sender, ushort e)
     {
         if (!ConfigOnlyNotifyWhenBackground || (ConfigOnlyNotifyWhenBackground && !HelpersOm.IsGameForeground()))
-            Service.Notice.Notify("", Service.Lang.GetText("AutoNotifyDutyStart-NotificationMessage"));
+            WinToast.Notify("", Service.Lang.GetText("AutoNotifyDutyStart-NotificationMessage"));
     }
 }
