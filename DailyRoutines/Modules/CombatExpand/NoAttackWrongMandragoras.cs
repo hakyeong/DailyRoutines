@@ -12,7 +12,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("NoAttackWrongMandragorasTitle", "NoAttackWrongMandragorasDescription", ModuleCategories.Combat)]
+[ModuleDescription("NoAttackWrongMandragorasTitle", "NoAttackWrongMandragorasDescription", ModuleCategories.CombatExpand)]
 public unsafe class NoAttackWrongMandragoras : DailyModuleBase
 {
     [Signature("48 83 EC 38 33 D2 C7 44 24 20 00 00 00 00 45 33 C9")]
