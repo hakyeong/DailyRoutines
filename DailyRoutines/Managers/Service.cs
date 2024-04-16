@@ -24,6 +24,7 @@ public class Service
         WinToast.Init();
         Waymarks = new();
         Font = new();
+        CommandManager.Init();
     }
 
     private static void InitLanguage()
@@ -60,6 +61,7 @@ public class Service
         Config.Uninit();
         WinToast.Dispose();
         LuminaCache.ClearCache();
+        CommandManager.Uninit();
     }
 
     [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;

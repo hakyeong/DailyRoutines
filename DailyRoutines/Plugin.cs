@@ -6,7 +6,6 @@ global using OmenTools.ImGuiOm;
 global using OmenTools.Helpers;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
-using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using ECommons;
@@ -16,7 +15,6 @@ namespace DailyRoutines;
 public sealed class Plugin : IDalamudPlugin
 {
     public string Name => "Daily Routines";
-    public const string CommandName = "/pdr";
 
     internal DalamudPluginInterface PluginInterface { get; init; }
     public Main? Main { get; private set; }
@@ -34,21 +32,12 @@ public sealed class Plugin : IDalamudPlugin
         ECommonsMain.Init(pluginInterface, this, Module.DalamudReflector);
         Service.Initialize(pluginInterface);
 
-        CommandHandler();
         WindowHandler();
 
         ModuleManager ??= new ModuleManager();
         ModuleManager.Init();
 
         WinToast.Init();
-    }
-
-    internal void CommandHandler()
-    {
-        var helpMessage = Service.Lang.GetText("CommandHelp");
-
-        Service.Command.RemoveHandler(CommandName);
-        Service.Command.AddHandler(CommandName, new CommandInfo(OnCommand) { HelpMessage = helpMessage });
     }
 
     private void WindowHandler()
@@ -58,22 +47,6 @@ public sealed class Plugin : IDalamudPlugin
 
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
-    }
-
-    private void OnCommand(string command, string args)
-    {
-        if (!string.IsNullOrEmpty(args) && args != Main.SearchString)
-        {
-            Main.SearchString = args;
-            Main.IsOpen = true;
-        }
-        else
-        {
-            if (string.IsNullOrEmpty(args))
-                Main.SearchString = string.Empty;
-
-            Main.IsOpen ^= true;
-        }
     }
 
     private void DrawUI()
