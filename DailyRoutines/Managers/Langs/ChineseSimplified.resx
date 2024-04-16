@@ -1199,7 +1199,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>更好的自动跟随</value>
   </data>
     <data name="BetterFollowDescription" xml:space="preserve">
-    <value>自动重新建立跟随和强制跟随任何目标</value>
+    <value>自动重新建立跟随和强制跟随任何目标
+(前置模块: 自动上坐骑)</value>
   </data>
     <data name="BetterFollow-AutoReFollowConfig" xml:space="preserve">
     <value>自动重新建立跟随</value>
