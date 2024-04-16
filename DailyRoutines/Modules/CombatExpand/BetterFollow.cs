@@ -229,7 +229,6 @@ public unsafe class BetterFollow : DailyModuleBase
         }
 
         if (*(int*)(a2 + 8) == 1) _FollowStatus = false;
-        Service.Chat.Print($"{a1}-{a2}- {*(int*)(a2 + 8)}");
         FollowHook.Original(a1, a2);
     }
 
