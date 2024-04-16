@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Text;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud;
@@ -25,6 +26,8 @@ public unsafe class BetterFollow : DailyModuleBase
     //状态
     private static bool _FollowStatus = false;
     private static bool _enableReFollow = false;
+    private static string _LastFollowObjectName = "无";
+    private static bool _LastFollowObjectStatus = false;
 
     //数据
     private static ulong _FollowStartA1 = 0;
@@ -106,6 +109,8 @@ public unsafe class BetterFollow : DailyModuleBase
         if (AutoReFollow)
         {
             ImGui.Indent();
+            ImGui.Text($"跟踪状态:{_enableReFollow}-跟踪目标:{_LastFollowObjectName}-目标是否在周围:{_LastFollowObjectStatus}");
+
             ConflictKeyText();
             if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-OnCombatOverConfig"),
                                ref OnCombatOver))
@@ -146,7 +151,13 @@ public unsafe class BetterFollow : DailyModuleBase
 
         if (Service.ClientState.LocalPlayer == null) return;
         //按键打断
-        if (!_enableReFollow) return;
+        if (!_enableReFollow)
+        {
+            _LastFollowObjectName = "无";
+            _LastFollowObjectStatus = false;
+            return;
+        }
+
         //在战斗
         if (OnCombatOver && Service.Condition[ConditionFlag.InCombat]) return;
         //在副本里
@@ -161,7 +172,12 @@ public unsafe class BetterFollow : DailyModuleBase
         if (Service.ClientState.LocalPlayer.IsDead) return;
         //跟随目标无了
         if (Service.ObjectTable.SearchById(_LastFollowObjectId) == null ||
-            !Service.ObjectTable.SearchById(_LastFollowObjectId).IsTargetable) return;
+            !Service.ObjectTable.SearchById(_LastFollowObjectId).IsTargetable)
+        {
+            _LastFollowObjectStatus = false;
+            return;
+        }
+
         //跟随目标换图了
         if (Service.ObjectTable.SearchById(_LastFollowObjectId).Address != _LastFollowObjectAddress)
         {
@@ -220,6 +236,8 @@ public unsafe class BetterFollow : DailyModuleBase
     {
         _LastFollowObjectAddress = a2;
         _LastFollowObjectId = (*(GameObject*)a2).ObjectID;
+        _LastFollowObjectName = Service.ObjectTable.SearchById((*(GameObject*)a2).ObjectID).Name.ToString();
+        _LastFollowObjectStatus = true;
         _enableReFollow = true;
         FollowDataHook.Original(a1, a2);
     }
