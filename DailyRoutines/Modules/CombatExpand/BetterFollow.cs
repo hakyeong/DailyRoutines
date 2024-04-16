@@ -141,12 +141,14 @@ public unsafe class BetterFollow : DailyModuleBase
         if (!AutoReFollow) return;
         if (_FollowStatus) return;
         //在过图
-        if (Service.Condition[ConditionFlag.BetweenAreas]) return;
+        if (Flags.BetweenAreas()) return;
         if (Service.ClientState.LocalPlayer == null) return;
         //按键打断
         if (!_enableReFollow) return;
         //在战斗
         if (OnCombatOver && Service.Condition[ConditionFlag.InCombat]) return;
+        //在副本里
+        if (!OnDuty && Flags.BoundByDuty()) return;
         //在读条
         if (Service.ClientState.LocalPlayer.IsCasting) return;
         //在看剧情
@@ -158,13 +160,16 @@ public unsafe class BetterFollow : DailyModuleBase
         //跟随目标无了
         if (Service.ObjectTable.SearchById(_LastFollowObjectId) == null ||
             !Service.ObjectTable.SearchById(_LastFollowObjectId).IsTargetable) return;
-
+        //跟随目标换图了
         if (Service.ObjectTable.SearchById(_LastFollowObjectId).Address != _LastFollowObjectAddress)
         {
             _LastFollowObjectAddress = Service.ObjectTable.SearchById(_LastFollowObjectId).Address;
+            NewFollow(_LastFollowObjectAddress);
         }
-
-        ReFollow();
+        else
+        {
+            ReFollow();
+        }
     }
 
     private void OnCommand(string command, string args)

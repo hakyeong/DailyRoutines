@@ -56,6 +56,7 @@ public static class Flags
     {
         return Service.Condition[ConditionFlag.BoundByDuty] ||
                Service.Condition[ConditionFlag.BoundByDuty56] ||
-               Service.Condition[ConditionFlag.BoundByDuty95];
+               Service.Condition[ConditionFlag.BoundByDuty95] ||
+               Service.Condition[ConditionFlag.BoundToDuty97];
     }
 }
