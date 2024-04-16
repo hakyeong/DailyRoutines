@@ -258,6 +258,12 @@
   <data name="AutoGardensWorkTitle" xml:space="preserve">
     <value>自动园圃作业</value>
   </data>
+  <data name="AutoJoinDutyTitle" xml:space="preserve">
+    <value>自动参加任务</value>
+  </data>
+    <data name="AutoJoinDutyDescription" xml:space="preserve">
+    <value>当跳出进本窗口时，自动进本</value>
+  </data>
   <data name="AutoInDutySelectYesDescription" xml:space="preserve">
     <value>进入副本后, 自动确认副本内交互物体时出现的对话框</value>
   </data>
