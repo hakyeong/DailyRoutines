@@ -1,3 +1,4 @@
+using System.Linq;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Text;
@@ -37,15 +38,12 @@ namespace DailyRoutines.Modules
             if (ConfigOnlyNotifyWhenBackground && HelpersOm.IsGameForeground()) return;
             var uintType = (uint)type;
             if (uintType != 185) return;
-
-            var result = Service.Data.GetExcelSheet<LogMessage>().GetRow(5255).Text;
-            if (result == null) return;
-            if (result.Payloads[0].PayloadType != PayloadType.Text) return;
-            var startFlag = result.Payloads[0].RawString;
-
-            var content = message.ExtractText();
-            if (!content.StartsWith(startFlag) && !content.EndsWith('）') && !content.EndsWith(')')) return;
-            Service.Notice.Notify(Service.Lang.GetText("AutoNotifyCountdown-NotificationTitle"), content);
+            
+            var msg = message.TextValue;
+            if (Service.PayloadText.Countdown.All(s => msg.Contains(msg)))
+            {
+                Service.Notice.Notify(Service.Lang.GetText("AutoNotifyCountdown-NotificationTitle"), message.ExtractText());
+            }
         }
 
         public override void Uninit()

@@ -1195,4 +1195,25 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoPlayCards-UseAantonomasiaHelp" xml:space="preserve">
     <value>使用 近战卡/远程卡 来代替消息中各卡牌原名</value>
   </data>
+    <data name="BetterFollowTitle" xml:space="preserve">
+    <value>更好的自动跟随</value>
+  </data>
+    <data name="BetterFollowDescription" xml:space="preserve">
+    <value>自动重新建立跟随和强制跟随任何目标</value>
+  </data>
+    <data name="BetterFollow-AutoReFollowConfig" xml:space="preserve">
+    <value>自动重新建立跟随</value>
+  </data>
+    <data name="BetterFollow-OnCombatOverConfig" xml:space="preserve">
+    <value>在战斗结束后</value>
+  </data>
+    <data name="BetterFollow-DelayConfig" xml:space="preserve">
+    <value>检查周期(延迟)</value>
+  </data>
+    <data name="BetterFollow-OnDutyConfig" xml:space="preserve">
+    <value>在副本中生效</value>
+  </data>
+    <data name="BetterFollow-ForcedFollowConfig" xml:space="preserve">
+    <value>添加强制跟随命令</value>
+  </data>
 </root>
