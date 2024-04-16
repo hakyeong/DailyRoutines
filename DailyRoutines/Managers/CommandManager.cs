@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using DailyRoutines.Windows;
 using Dalamud.Game.Command;
@@ -7,6 +8,7 @@ namespace DailyRoutines.Managers;
 public static class CommandManager
 {
     public const string CommandPDR = "/pdr";
+    private static readonly HashSet<string> addedCommands = [];
 
     public static void Init()
     {
@@ -28,6 +30,7 @@ public static class CommandManager
                 break;
         }
 
+        addedCommands.Add(command);
         Service.Command.AddHandler(command, commandInfo);
         return true;
     }
@@ -60,9 +63,9 @@ public static class CommandManager
         }
     }
 
-
     public static void Uninit()
     {
-        RemoveCommand(CommandPDR);
+        foreach (var command in addedCommands)
+            RemoveCommand(command);
     }
 }

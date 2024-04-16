@@ -71,12 +71,14 @@ public class Service
     [PluginService] public static IBuddyList BuddyList { get; private set; } = null!;
     [PluginService] public static IChatGui Chat { get; private set; } = null!;
     [PluginService] public static IClientState ClientState { get; private set; } = null!;
+    /// <summary>
+    /// 如非必要请使用 CommandManager, 而不是 ICommandManager 来添加命令
+    /// </summary>
     [PluginService] public static ICommandManager Command { get; set; } = null!;
     [PluginService] public static ICondition Condition { get; private set; } = null!;
     [PluginService] public static IContextMenu ContextMenu { get; private set; } = null!;
     /// <summary>
-    /// 如非必要请使用 LuminaCache, 而不是直接使用 IDataManager 来获取数据
-    /// Please use LuminaCache instead of obtaining data from IDataManager directly
+    /// 如非必要请使用 LuminaCache, 而不是 IDataManager 来获取游戏表格数据
     /// </summary>
     [PluginService] public static IDataManager Data { get; private set; } = null!;
     [PluginService] public static IDtrBar DtrBar { get; private set; } = null!;
