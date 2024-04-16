@@ -40,7 +40,7 @@ public sealed class Plugin : IDalamudPlugin
         ModuleManager ??= new ModuleManager();
         ModuleManager.Init();
 
-        Service.Notice.Init();
+        WinToast.Init();
     }
 
     internal void CommandHandler()

@@ -77,7 +77,7 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
                                        $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-UpdateTimeText")}{nextLeveCheck.ToLocalTime().ToString(CultureInfo.CurrentCulture)}");
                 }
 
-                Service.Notice.Notify($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}",
+                WinToast.Notify($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}",
                                       $"{Service.Lang.GetText("AutoNotifyLeveUpdate-NumText")}{leveAllowances}" +
                                       $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-FullTimeText")}{finishTime.ToLocalTime().ToString(CultureInfo.CurrentCulture)}" +
                                       $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-UpdateTimeText")}{nextLeveCheck.ToLocalTime().ToString(CultureInfo.CurrentCulture)}");

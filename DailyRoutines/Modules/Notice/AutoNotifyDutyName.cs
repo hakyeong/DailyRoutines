@@ -32,7 +32,7 @@ public class AutoNotifyDutyName : DailyModuleBase
         var message = new SeStringBuilder().Append(DRPrefix()).Append(" ")
                                            .Append(Service.Lang.GetSeString("AutoNotifyDutyName-NoticeMessage", contentName)).Build();
         Service.Chat.Print(message);
-        if (ConfigSendWindowsToast) Service.Notice.Notify(contentName, contentName);
+        if (ConfigSendWindowsToast) WinToast.Notify(contentName, contentName);
     }
 
     public override void Uninit()

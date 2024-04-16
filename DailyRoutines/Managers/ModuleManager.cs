@@ -30,61 +30,61 @@ public class ModuleManager
 
     public static void Init()
     {
-        foreach (var component in Modules.Values)
+        foreach (var module in Modules.Values)
         {
-            if (Service.Config.ModuleEnabled.TryGetValue(component.GetType().Name, out var enabled))
+            var moduleName = module.GetType().Name;
+            if (Service.Config.ModuleEnabled.TryGetValue(moduleName, out var enabled))
             {
-                if (!enabled)
-                    continue;
+                if (!enabled) continue;
             }
             else
             {
-                Service.Log.Warning($"Fail to get moduleBase {component.GetType().Name} configurations, skip loading");
+                Service.Log.Warning($"Fail to get module {moduleName} configurations, skip loading");
                 continue;
             }
 
             try
             {
-                if (!component.Initialized)
+                if (!module.Initialized)
                 {
-                    component.Init();
-                    component.Initialized = true;
-                    Service.Log.Debug($"Loaded {component.GetType().Name} moduleBase");
+                    module.Init();
+                    module.Initialized = true;
                 }
                 else
-                    Service.Log.Debug($"{component.GetType().Name} has been loaded, skip.");
+                    Service.Log.Debug($"{moduleName} has been loaded, skip.");
             }
             catch (Exception ex)
             {
-                Service.Log.Error($"Failed to load moduleBase {component.GetType().Name} due to error: {ex.Message}");
+                Service.Log.Error($"Failed to load module {module} due to error: {ex.Message}");
                 Service.Log.Error(ex.StackTrace ?? "Unknown");
             }
         }
     }
 
-    public static void Load(DailyModuleBase component)
+    public static void Load(DailyModuleBase module)
     {
-        if (Modules.ContainsValue(component))
+        if (Modules.ContainsValue(module))
         {
+            var moduleName = module.GetType().Name;
             try
             {
-                if (!component.Initialized)
+                if (!module.Initialized)
                 {
-                    component.Init();
-                    component.Initialized = true;
-                    Service.Log.Debug($"Loaded {component.GetType().Name} moduleBase");
+                    module.Init();
+                    module.Initialized = true;
+                    Service.Log.Debug($"Loaded {moduleName}");
                 }
                 else
-                    Service.Log.Debug($"{component.GetType().Name} has been loaded, skip.");
+                    Service.Log.Debug($"{moduleName} has been loaded, skip.");
             }
             catch (Exception ex)
             {
-                Service.Log.Error($"Failed to load component {component.GetType().Name} due to error: {ex.Message}");
+                Service.Log.Error($"Failed to load {moduleName} due to error: {ex.Message}");
                 Service.Log.Error(ex.StackTrace ?? "Unknown");
             }
         }
         else
-            Service.Log.Error($"Fail to fetch component {component}");
+            Service.Log.Error($"Fail to fetch {module}");
     }
 
     public static void Unload(DailyModuleBase component)
@@ -107,20 +107,17 @@ public class ModuleManager
     public static void Uninit()
     {
         foreach (var component in Modules.Values)
-        {
             try
             {
                 if (component.Initialized)
                 {
                     component.Uninit();
                     component.Initialized = false;
-                    Service.Log.Debug($"Unloaded {component.GetType().Name} moduleBase");
                 }
             }
             catch (Exception ex)
             {
                 Service.Log.Error(ex, $"Fail to unload {component.GetType().Name} moduleBase");
             }
-        }
     }
 }

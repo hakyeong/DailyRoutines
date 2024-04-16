@@ -30,7 +30,7 @@ public class AutoNotifyRecruitmentEnd : DailyModuleBase
             var parts = content.Split(["，"], StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length > 1)
             {
-                Service.Notice.Notify(parts[0], parts[1].Trim('。'));
+                WinToast.Notify(parts[0], parts[1].Trim('。'));
                 return;
             }
 
@@ -42,7 +42,7 @@ public class AutoNotifyRecruitmentEnd : DailyModuleBase
             var parts = content.Split(["."], StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length > 1)
             {
-                Service.Notice.Notify(parts[1], parts[0]);
+                WinToast.Notify(parts[1], parts[0]);
                 return;
             }
 
@@ -54,7 +54,7 @@ public class AutoNotifyRecruitmentEnd : DailyModuleBase
             title = content;
         }
 
-        Service.Notice.Notify(title, title);
+        WinToast.Notify(title, title);
     }
 
     public override void Uninit()

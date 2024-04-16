@@ -6,7 +6,7 @@ using ECommons.Automation;
 
 namespace DailyRoutines.Managers;
 
-public class NotificationManager
+public class WinToast
 {
     private class ToastMessage(string? title, string message, ToolTipIcon icon = ToolTipIcon.Info)
     {
@@ -20,12 +20,12 @@ public class NotificationManager
     private static NotifyIcon? icon;
     private static readonly Queue<ToastMessage> messagesQueue = new();
 
-    public void Init()
+    public static void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
     }
 
-    public void Notify(string title, string content, ToolTipIcon toolTipIcon = ToolTipIcon.Info)
+    public static void Notify(string title, string content, ToolTipIcon toolTipIcon = ToolTipIcon.Info)
     {
         if (icon == null || icon.Visible == false) CreateIcon();
         messagesQueue.Enqueue(new ToastMessage(title, content, toolTipIcon));
@@ -85,7 +85,7 @@ public class NotificationManager
         }
     }
 
-    public void Dispose()
+    public static void Dispose()
     {
         DestroyIcon();
         TaskManager?.Abort();

@@ -24,7 +24,7 @@ public class AutoNotifyDutyConfirm : DailyModuleBase
         if (string.IsNullOrWhiteSpace(dutyName)) return;
 
         var loc = Service.Lang.GetText("AutoNotifyDutyConfirm-NoticeMessage", dutyName);
-        Service.Notice.Notify(loc, loc);
+        WinToast.Notify(loc, loc);
     }
 
     public override void Uninit()
