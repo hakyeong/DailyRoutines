@@ -1,67 +1,84 @@
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Game.Text.SeStringHandling;
 using ECommons.Automation;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoMountTitle", "AutoMountDescription", ModuleCategories.General)]
-public class AutoMount : DailyModuleBase
+public unsafe class AutoMount : DailyModuleBase
 {
+    private static AtkUnitBase* NowLoading => (AtkUnitBase*)Service.Gui.GetAddonByName("NowLoading");
+    private static AtkUnitBase* FadeMiddle => (AtkUnitBase*)Service.Gui.GetAddonByName("FadeMiddle");
+
+    private static bool MountWhenZoneChange;
+    private static bool MountWhenGatherEnd;
+    private static bool MountWhenCombatEnd;
+
     public override void Init()
     {
+        #region Config
+        AddConfig(this, "MountWhenZoneChange", true);
+        MountWhenZoneChange = GetConfig<bool>(this, "MountWhenZoneChange");
+
+        AddConfig(this, "MountWhenGatherEnd", true);
+        MountWhenGatherEnd = GetConfig<bool>(this, "MountWhenGatherEnd");
+
+        AddConfig(this, "MountWhenCombatEnd", true);
+        MountWhenCombatEnd = GetConfig<bool>(this, "MountWhenCombatEnd");
+        #endregion
+
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = false };
 
         Service.Condition.ConditionChange += OnConditionChanged;
         Service.ClientState.TerritoryChanged += OnZoneChanged;
-        Service.Toast.ErrorToast += OnErrorToast;
     }
-    
+
+    public override void ConfigUI()
+    {
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoMount-MountWhenZoneChange"), ref MountWhenZoneChange))
+            UpdateConfig(this, "MountWhenZoneChange", MountWhenZoneChange);
+
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoMount-MountWhenGatherEnd"), ref MountWhenGatherEnd))
+            UpdateConfig(this, "MountWhenGatherEnd", MountWhenGatherEnd);
+
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoMount-MountWhenCombatEnd"), ref MountWhenCombatEnd))
+            UpdateConfig(this, "MountWhenCombatEnd", MountWhenCombatEnd);
+    }
+
     private void OnZoneChanged(ushort zone)
     {
-        if (Service.PresetData.Contents.ContainsKey(zone)) return;
+        if (!MountWhenZoneChange) return;
 
         TaskManager.Abort();
-        TaskManager.Enqueue(UseMountWhenZoneChanged);
+        TaskManager.Enqueue(UseMountBetweenMap);
     }
 
     private void OnConditionChanged(ConditionFlag flag, bool value)
     {
-        if (flag is ConditionFlag.Gathering && !value)
+        switch (flag)
         {
-            TaskManager.Abort();
-            TaskManager.Enqueue(UseMountAfterGathering);
+            case ConditionFlag.Gathering when !value && MountWhenGatherEnd:
+            case ConditionFlag.InCombat when !value && MountWhenCombatEnd && 
+                                             (FateManager.Instance()->CurrentFate == null || FateManager.Instance()->CurrentFate->Progress == 100):
+                TaskManager.Abort();
+
+                TaskManager.DelayNext(500);
+                TaskManager.Enqueue(UseMountInMap);
+                break;
         }
     }
 
-    private void OnErrorToast(ref SeString message, ref bool isHandled)
-    {
-        if (!TaskManager.IsBusy) return;
-        var content = message.ExtractText();
-
-        if (content.Contains("无法指定目标"))
-        {
-            message = SeString.Empty;
-            return;
-        }
-
-        if (content.Contains("这里无法呼叫出坐骑"))
-        {
-            message = SeString.Empty;
-            TaskManager.Abort();
-        }
-    }
-
-    private unsafe bool? UseMountAfterGathering()
+    private bool? UseMountInMap()
     {
         if (AgentMap.Instance()->IsPlayerMoving == 1) return true;
-        if (Service.Condition[ConditionFlag.Casting] | Service.Condition[ConditionFlag.Casting87]) return true;
-        if (Service.Condition[ConditionFlag.Mounted] || Service.Condition[ConditionFlag.Mounted2]) return true;
+        if (Flags.IsCasting || Flags.IsOnMount) return true;
         if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 9) != 0) return false;
 
         TaskManager.DelayNext(100);
@@ -70,16 +87,15 @@ public class AutoMount : DailyModuleBase
         return true;
     }
 
-    private unsafe bool? UseMountWhenZoneChanged()
+    private bool? UseMountBetweenMap()
     {
         if (!EzThrottler.Throttle("AutoMount")) return false;
         if (Service.Condition[ConditionFlag.BetweenAreas]) return false;
-        var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("NowLoading");
-        if (addon->IsVisible) return false;
-        if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 9) != 0) return true;
+        if (NowLoading->IsVisible) return false;
+
         if (AgentMap.Instance()->IsPlayerMoving == 1) return true;
-        if (Service.Condition[ConditionFlag.Casting] | Service.Condition[ConditionFlag.Casting87]) return true;
-        if (Service.Condition[ConditionFlag.Mounted] || Service.Condition[ConditionFlag.Mounted2]) return true;
+        if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 9) != 0) return !FadeMiddle->IsVisible;
+        if (Flags.IsCasting || Flags.IsOnMount) return true;
 
         TaskManager.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.GeneralAction, 9));
 
@@ -90,7 +106,6 @@ public class AutoMount : DailyModuleBase
     {
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
         Service.Condition.ConditionChange -= OnConditionChanged;
-        Service.Toast.ErrorToast -= OnErrorToast;
 
         base.Uninit();
     }
