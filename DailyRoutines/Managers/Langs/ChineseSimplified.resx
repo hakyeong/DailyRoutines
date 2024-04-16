@@ -1199,7 +1199,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>更好的自动跟随</value>
   </data>
   <data name="BetterFollowDescription" xml:space="preserve">
-    <value>自动重新建立跟随和强制跟随任何目标
+    <value>启用并配置完毕后, 为游戏原生的自动跟随添加了自动重新跟随功能, 并解除了跟踪对象的限制
 (前置模块: 自动上坐骑)</value>
   </data>
   <data name="BetterFollow-AutoReFollowConfig" xml:space="preserve">
@@ -1209,19 +1209,19 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>在战斗结束后</value>
   </data>
   <data name="BetterFollow-DelayConfig" xml:space="preserve">
-    <value>检查周期(延迟)</value>
+    <value>检查周期 (单位: 秒)</value>
   </data>
   <data name="BetterFollow-OnDutyConfig" xml:space="preserve">
     <value>在副本中生效</value>
   </data>
   <data name="BetterFollow-ForcedFollowConfig" xml:space="preserve">
-    <value>添加强制跟随命令</value>
+    <value>添加强制跟随命令 ({0})</value>
   </data>
   <data name="BetterFollow-Status" xml:space="preserve">
-    <value>跟踪状态:{0}-跟踪目标:{1}-目标是否在周围:{2}</value>
+    <value>跟踪状态: {0} / 跟踪目标: {1} / 目标是否在周围: {2}</value>
   </data>
   <data name="BetterFollow-CommandDesc" xml:space="preserve">
-    <value>添加 {0} 命令,该命令会尝试对你选择的任何目标进行自动跟随</value>
+    <value>使用该命令后, 会尝试对你当前选择的任意目标进行自动跟随</value>
   </data>
   <data name="AutoMount-MountWhenCombatEnd" xml:space="preserve">
     <value>当结束战斗时</value>

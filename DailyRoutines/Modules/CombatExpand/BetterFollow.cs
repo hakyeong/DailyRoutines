@@ -1,4 +1,3 @@
-﻿using System;
 using System.Diagnostics;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -20,62 +19,73 @@ public unsafe class BetterFollow : DailyModuleBase
 {
     public override string? Author { get; set; } = "HSS";
 
-    //状态
-    private static bool _FollowStatus = false;
-    private static bool _enableReFollow = false;
+    // 状态
+    private static bool _FollowStatus;
+    private static bool _enableReFollow;
     private static string _LastFollowObjectName = "无";
-    private static bool _LastFollowObjectStatus = false;
+    private static bool _LastFollowObjectStatus;
 
-    //数据
-    private static ulong _FollowStartA1 = 0;
-    private static IntPtr _LastFollowObjectAddress = 0;
-    private static uint _LastFollowObjectId = 0;
-    private static nint _BassAddress = 0;
-    private static IntPtr _a1 = 0;
-    private static IntPtr _a1_data = 0;
-    private static IntPtr _v5 = 0;
-    private static IntPtr _d1 = 0;
-    private static IntPtr _a2 = 0;
+    // 数据
+    private static ulong _FollowStartA1;
+    private static nint _LastFollowObjectAddress;
+    private static uint _LastFollowObjectId;
+    private static nint _BassAddress;
+    private static nint _a1;
+    private static nint _a1_data;
+    private static nint _v5;
+    private static nint _d1;
+    private static nint _a2;
 
-    //Hook
-    delegate void FollowA1Delegate(ulong a1, ulong a2);
+    // Hook
+    private delegate void FollowA1Delegate(ulong a1, ulong a2);
 
     [Signature("E8 ?? ?? ?? ?? C6 03 ?? 48 81 C6", DetourName = nameof(UpdateFollowA1))]
-    private Hook<FollowA1Delegate>? FollowA1Hook;
+    private readonly Hook<FollowA1Delegate>? FollowA1Hook;
 
-    delegate void FollowDataDelegate(ulong a1, nint a2);
+    private delegate void FollowDataDelegate(ulong a1, nint a2);
 
     [Signature("E8 ?? ?? ?? ?? EB ?? 48 81 C1 ?? ?? ?? ?? E8 ?? ?? ?? ?? EB", DetourName = nameof(FollowData))]
-    private Hook<FollowDataDelegate>? FollowDataHook;
+    private readonly Hook<FollowDataDelegate>? FollowDataHook;
 
     [Signature(
         "40 53 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 8B D9 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 48 8B D0 48 8D 8B ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 48 8B 4C 24 ?? BA ?? ?? ?? ?? 41 B8 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B 8C 24 ?? ?? ?? ?? 48 33 CC E8 ?? ?? ?? ?? 48 81 C4 ?? ?? ?? ?? 5B C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 89 5C 24")]
-    private delegate* unmanaged<ulong, uint, ulong, nint, ulong> FollowStart;
+    private readonly delegate* unmanaged<ulong, uint, ulong, nint, ulong> FollowStart;
 
     [Signature("48 89 5C 24 ?? 57 48 83 EC ?? 48 8B F9 48 8B DA 48 8B CA E8 ?? ?? ?? ?? 44 8B 00")]
-    private delegate* unmanaged<nint, nint, ulong> FollowDataPush;
+    private readonly delegate* unmanaged<nint, nint, ulong> FollowDataPush;
 
-    //配置
+    // 配置
     private static bool AutoReFollow = true;
-    private static bool OnCombatOver = false;
-    private static bool OnDuty = false;
-    private static bool ForcedFollow = false;
+    private static bool OnCombatOver;
+    private static bool OnDuty;
+    private static bool ForcedFollow;
     private static float Delay = 0.5f;
-    private const string CommandStr = "/drfollow";
 
+    private const string CommandStr = "/pdrfollow";
 
     public override void Init()
     {
+        #region Config
         AddConfig(this, "AutoReFollow", AutoReFollow);
-        AddConfig(this, "OnCombatOver", OnCombatOver);
-        AddConfig(this, "Delay", Delay);
-        AddConfig(this, "OnDuty", OnDuty);
-        AddConfig(this, "ForcedFollow", ForcedFollow);
         AutoReFollow = GetConfig<bool>(this, "AutoReFollow");
+
+        AddConfig(this, "OnCombatOver", OnCombatOver);
         OnCombatOver = GetConfig<bool>(this, "OnCombatOver");
+
+        AddConfig(this, "Delay", Delay);
         Delay = GetConfig<float>(this, "Delay");
+
+        AddConfig(this, "OnDuty", OnDuty);
         OnDuty = GetConfig<bool>(this, "OnDuty");
+
+        AddConfig(this, "ForcedFollow", ForcedFollow);
         ForcedFollow = GetConfig<bool>(this, "ForcedFollow");
+        #endregion
+        
+        _a1_data = 0;
+        _v5 = 0;
+        _d1 = 0;
+
         _BassAddress = Process.GetCurrentProcess().MainModule.BaseAddress;
         _a1 = _BassAddress + 0x21CF590;
         _a2 = _BassAddress + 0x21CF9C0;
@@ -83,78 +93,84 @@ public unsafe class BetterFollow : DailyModuleBase
         _a1_data = _a1 + 0x450;
         _d1 = _a1 + 1369;
         _FollowStatus = *(int*)_d1 == 4;
-        Service.Hook.InitializeFromAttributes(this);
-        FollowA1Hook.Enable();
-        FollowDataHook.Enable();
-        Service.Framework.Update += OnFramework;
-    }
 
+        Service.Hook.InitializeFromAttributes(this);
+        FollowA1Hook?.Enable();
+        FollowDataHook?.Enable();
+
+        Service.Framework.Update += OnFramework;
+
+        if (ForcedFollow)
+            CommandManager.AddCommand(CommandStr, 
+                                      new CommandInfo(OnCommand) { HelpMessage = Service.Lang.GetText("BetterFollow-CommandDesc", CommandStr) });
+    }
 
     public override void ConfigUI()
     {
-        if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-AutoReFollowConfig"),
-                           ref AutoReFollow))
+        ConflictKeyText();
+
+        ImGui.Spacing();
+
+        if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-AutoReFollowConfig"), ref AutoReFollow))
             UpdateConfig(this, "AutoReFollow", AutoReFollow);
         if (AutoReFollow)
         {
             ImGui.Indent();
+            ImGui.Text(Service.Lang.GetText("BetterFollow-Status", _enableReFollow, _LastFollowObjectName, _LastFollowObjectStatus));
 
-            ImGui.Text(Service.Lang.GetText("BetterFollow-Status", _enableReFollow, _LastFollowObjectName,
-                                            _LastFollowObjectStatus));
-
-            ConflictKeyText();
-            if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-OnCombatOverConfig"),
-                               ref OnCombatOver))
+            if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-OnCombatOverConfig"), ref OnCombatOver))
                 UpdateConfig(this, "OnCombatOver", OnCombatOver);
-            if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-OnDutyConfig"),
-                               ref OnDuty))
+            
+            if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-OnDutyConfig"), ref OnDuty))
                 UpdateConfig(this, "OnCombatOver", OnDuty);
-            ImGui.PushItemWidth(300f);
+
+            ImGui.SetNextItemWidth(300f);
             ImGui.SliderFloat(Service.Lang.GetText("BetterFollow-DelayConfig"), ref Delay, 0.5f, 5f, "%.1f");
-            ImGui.PopItemWidth();
             if (ImGui.IsItemDeactivatedAfterEdit())
-            {
                 UpdateConfig(this, "Delay", Delay);
-            }
 
             ImGui.Unindent();
         }
 
-        if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-ForcedFollowConfig"),
-                           ref ForcedFollow))
+        if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-ForcedFollowConfig", CommandStr), ref ForcedFollow))
+        {
             UpdateConfig(this, "ForcedFollow", ForcedFollow);
+            if (ForcedFollow)
+                CommandManager.AddCommand(CommandStr, 
+                                          new CommandInfo(OnCommand) 
+                                              { HelpMessage = Service.Lang.GetText("BetterFollow-CommandDesc", CommandStr) });
+            else
+                CommandManager.RemoveCommand(CommandStr);
+        }
+
         if (ForcedFollow)
         {
             ImGui.Indent();
-            ImGui.Text(Service.Lang.GetText("BetterFollow-CommandDesc",CommandStr));
-            CommandManager.AddCommand(CommandStr, new CommandInfo(OnCommand) { HelpMessage = Service.Lang.GetText("BetterFollow-CommandDesc",CommandStr) });
+            ImGui.Text(Service.Lang.GetText("BetterFollow-CommandDesc"));
             ImGui.Unindent();
-        }
-        else
-        {
-            CommandManager.RemoveCommand(CommandStr);
         }
     }
 
 
     private void OnFramework(IFramework _)
     {
-        //打断
+        if (!EzThrottler.Throttle("BetterFollow", (int)Delay * 1000)) return;
+
+        // 打断
         if (_enableReFollow && InterruptByConflictKey())
         {
             _enableReFollow = false;
             return;
         }
 
-        if (!EzThrottler.Throttle("BetterFollow", (int)Delay * 1000)) return;
         _FollowStatus = *(int*)_d1 == 4;
         if (!AutoReFollow) return;
         if (_FollowStatus) return;
-        //在过图
+        // 在过图
         if (Flags.BetweenAreas()) return;
 
         if (Service.ClientState.LocalPlayer == null) return;
-        //按键打断
+        // 按键打断
         if (!_enableReFollow)
         {
             _LastFollowObjectName = "无";
@@ -162,19 +178,19 @@ public unsafe class BetterFollow : DailyModuleBase
             return;
         }
 
-        //在战斗
+        // 在战斗
         if (OnCombatOver && Service.Condition[ConditionFlag.InCombat]) return;
-        //在副本里
+        // 在副本里
         if (!OnDuty && Flags.BoundByDuty()) return;
-        //在读条
+        // 在读条
         if (Service.ClientState.LocalPlayer.IsCasting) return;
-        //在看剧情
+        // 在看剧情
         if (Service.ClientState.LocalPlayer.OnlineStatus.GameData.RowId == 15) return;
-        //在移动
+        // 在移动
         if (AgentMap.Instance()->IsPlayerMoving == 1) return;
-        //死了
+        // 死了
         if (Service.ClientState.LocalPlayer.IsDead) return;
-        //跟随目标无了
+        // 跟随目标无了
         if (Service.ObjectTable.SearchById(_LastFollowObjectId) == null ||
             !Service.ObjectTable.SearchById(_LastFollowObjectId).IsTargetable)
         {
@@ -182,38 +198,38 @@ public unsafe class BetterFollow : DailyModuleBase
             return;
         }
 
-        //跟随目标换图了
+        // 跟随目标换图了
         if (Service.ObjectTable.SearchById(_LastFollowObjectId).Address != _LastFollowObjectAddress)
         {
             _LastFollowObjectAddress = Service.ObjectTable.SearchById(_LastFollowObjectId).Address;
             NewFollow(_LastFollowObjectAddress);
         }
         else
-        {
             ReFollow();
-        }
     }
 
     private void OnCommand(string command, string args)
     {
-        if (Service.ClientState.LocalPlayer == null) return;
-        if (Service.ClientState.LocalPlayer.TargetObject == null) return;
+        var localPlayer = Service.ClientState.LocalPlayer;
+        if (localPlayer == null || localPlayer.TargetObject == null) return;
+
         NewFollow(Service.ClientState.LocalPlayer.TargetObject.Address);
     }
-
 
     private void ReFollow()
     {
         if (_FollowStatus) return;
         if (_LastFollowObjectAddress == 0 && _FollowStartA1 == 0) return;
+
         FollowDataPush(_a1_data, _LastFollowObjectAddress);
         SafeMemory.Write(_d1, 4);
         _FollowStatus = true;
     }
 
-    private void StopFollow()
+    private static void StopFollow()
     {
         if (!_FollowStatus) return;
+
         SafeMemory.Write(_d1, 1);
         _FollowStatus = false;
     }
@@ -222,6 +238,7 @@ public unsafe class BetterFollow : DailyModuleBase
     {
         if (_FollowStatus) return;
         if (objectAddress == 0 && _FollowStartA1 == 0) return;
+
         FollowStart(_FollowStartA1, 52, *(ulong*)_v5, objectAddress);
         FollowDataPush(_a1_data, objectAddress);
         SafeMemory.Write(_d1, 4);
@@ -252,6 +269,7 @@ public unsafe class BetterFollow : DailyModuleBase
         Service.Framework.Update -= OnFramework;
         _enableReFollow = false;
         _FollowStatus = false;
+
         base.Uninit();
     }
 }
