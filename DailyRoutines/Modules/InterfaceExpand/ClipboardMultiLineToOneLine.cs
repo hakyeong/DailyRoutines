@@ -40,8 +40,7 @@ public unsafe class ClipboardMultiLineToOneLine : DailyModuleBase
         ChatLogTextInputHook?.Enable();
     }
 
-    private nint ChatLogTextInputDetour(
-        AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData)
+    private nint ChatLogTextInputDetour(AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData)
     {
         IsOnChatLog = eventType switch
         {
@@ -57,20 +56,20 @@ public unsafe class ClipboardMultiLineToOneLine : DailyModuleBase
     {
         if (!IsOnChatLog) return;
         if (!EzThrottler.Throttle("ClipboardMultiLineToOneLine", 100)) return;
-
         if (Framework.Instance()->WindowInactive) return;
 
         var copyModule = Framework.Instance()->GetUIClipboard();
         if (copyModule == null) return;
 
         var originalText = Clipboard.GetText();
-        if (string.IsNullOrEmpty(originalText)) return;
+        if (string.IsNullOrWhiteSpace(originalText)) return;
 
-        var modifiedText = originalText.Replace("\r\n", " ").Replace("\n", " ");
+        var modifiedText = originalText.Replace("\r\n", " ").Replace("\n", " ").Replace("\u000D", " ").Replace("\u000D\u000A", " ");
         if (modifiedText == originalText) return;
 
         Clipboard.SetText(modifiedText);
     }
+
 
     public override void Uninit()
     {
