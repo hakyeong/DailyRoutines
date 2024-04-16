@@ -92,10 +92,10 @@ public unsafe class AutoPlayCards : DailyModuleBase
         PartyMember? member = null;
         if (indices.Count > 0)
         {
-            var rng = new Random();
+            var rnd = new Random();
             for (var i = indices.Count - 1; i >= 0; i--)
             {
-                var j = rng.Next(i + 1);
+                var j = rnd.Next(i + 1);
                 (indices[i], indices[j]) = (indices[j], indices[i]);
             }
 

@@ -23,7 +23,6 @@ public static class CommandManager
         switch (isDuplicate)
         {
             case true when !isForceToAdd:
-                Service.Log.Debug($"Fail to add command {command} due to the error: Duplicate command");
                 return false;
             case true when isForceToAdd:
                 Service.Command.RemoveHandler(command);
@@ -43,7 +42,6 @@ public static class CommandManager
             return true;
         }
 
-        Service.Log.Debug($"Fail to remove command {command} due to the error: No command found");
         return false;
     }
 
