@@ -5,9 +5,7 @@ namespace DailyRoutines.Infos;
 
 public static class Flags
 {
-    public static bool OccupiedInEvent()
-    {
-        return Service.Condition[ConditionFlag.Occupied]
+    public static bool OccupiedInEvent() => Service.Condition[ConditionFlag.Occupied]
                || Service.Condition[ConditionFlag.Occupied30]
                || Service.Condition[ConditionFlag.Occupied33]
                || Service.Condition[ConditionFlag.Occupied38]
@@ -45,18 +43,16 @@ public static class Flags
                || Service.Condition[ConditionFlag.Transformed]
                || Service.Condition[ConditionFlag.UsingHousingFunctions]
                || Service.ClientState.LocalPlayer?.IsTargetable != true;
-    }
 
-    public static bool BetweenAreas()
-    {
-        return Service.Condition[ConditionFlag.BetweenAreas] || Service.Condition[ConditionFlag.BetweenAreas51];
-    }
+    public static bool BetweenAreas() => Service.Condition[ConditionFlag.BetweenAreas] || Service.Condition[ConditionFlag.BetweenAreas51];
 
-    public static bool BoundByDuty()
-    {
-        return Service.Condition[ConditionFlag.BoundByDuty] ||
-               Service.Condition[ConditionFlag.BoundByDuty56] ||
-               Service.Condition[ConditionFlag.BoundByDuty95] ||
-               Service.Condition[ConditionFlag.BoundToDuty97];
-    }
+
+    public static bool BoundByDuty() => Service.Condition[ConditionFlag.BoundByDuty] ||
+                                        Service.Condition[ConditionFlag.BoundByDuty56] ||
+                                        Service.Condition[ConditionFlag.BoundByDuty95] ||
+                                        Service.Condition[ConditionFlag.BoundToDuty97];
+
+    public static bool IsCasting => Service.Condition[ConditionFlag.Casting] || Service.Condition[ConditionFlag.Casting87];
+    public static bool IsOnMount => Service.Condition[ConditionFlag.Mounted] || Service.Condition[ConditionFlag.Mounted2];
+
 }
