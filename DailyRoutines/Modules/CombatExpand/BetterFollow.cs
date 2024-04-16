@@ -50,14 +50,7 @@ public unsafe class BetterFollow : DailyModuleBase
 
     [Signature("E8 ?? ?? ?? ?? EB ?? 48 81 C1 ?? ?? ?? ?? E8 ?? ?? ?? ?? EB", DetourName = nameof(FollowData))]
     private Hook<FollowDataDelegate>? FollowDataHook;
-
-    //delegate void FollowDelegate(ulong a1, ulong a2);
-
-    // [Signature("E8 ?? ?? ?? ?? EB ?? 48 8D 15 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 84 DB",
-    //            DetourName = nameof(FollowChanged))]
-    // private Hook<FollowDelegate>? FollowHook;
-
-
+    
     [Signature(
         "40 53 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 8B D9 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 48 8B D0 48 8D 8B ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 48 8B 4C 24 ?? BA ?? ?? ?? ?? 41 B8 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B 8C 24 ?? ?? ?? ?? 48 33 CC E8 ?? ?? ?? ?? 48 81 C4 ?? ?? ?? ?? 5B C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 89 5C 24")]
     private delegate* unmanaged<ulong, uint, ulong, nint, ulong> FollowStart;
@@ -94,10 +87,9 @@ public unsafe class BetterFollow : DailyModuleBase
         _FollowStatus = *(int*)_d1 == 4;
         Service.Hook.InitializeFromAttributes(this);
         FollowA1Hook.Enable();
-        //FollowHook.Enable();
         FollowDataHook.Enable();
         Service.Framework.Update += OnFramework;
-        Service.Command.AddHandler("/pdrf", new CommandInfo(OnCommand) { HelpMessage = "helpMessage" });
+        //Service.Command.AddHandler("/pdrf", new CommandInfo(OnCommand) { HelpMessage = "helpMessage" });
     }
 
 
@@ -118,7 +110,9 @@ public unsafe class BetterFollow : DailyModuleBase
             if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-OnDutyConfig"),
                                ref OnDuty))
                 UpdateConfig(this, "OnCombatOver", OnDuty);
+            ImGui.PushItemWidth(300f);
             ImGui.SliderFloat(Service.Lang.GetText("BetterFollow-DelayConfig"), ref Delay, 0.5f, 5f, "%.1f");
+            ImGui.PopItemWidth();
             if (ImGui.IsItemDeactivatedAfterEdit())
             {
                 UpdateConfig(this, "Delay", Delay);
