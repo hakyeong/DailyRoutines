@@ -43,9 +43,11 @@ public unsafe class AutoDance : DailyModuleBase
         ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6,
         void* a7)
     {
-        if ((ActionType)actionType is ActionType.Action && actionID is 15997 or 15998 && !TaskManager.IsBusy)
+        var gauge = Service.JobGauges.Get<DNCGauge>();
+        if ((ActionType)actionType is ActionType.Action && actionID is 15997 or 15998 && 
+            ActionManager.Instance()->GetActionStatus(ActionType.Action, actionID) == 0 && !gauge.IsDancing)
         {
-            TaskManager.DelayNext(250);
+            TaskManager.Enqueue(() => gauge.IsDancing);
             TaskManager.Enqueue(actionID == 15997 ? DanceStandardStep : DanceTechnicalStep);
         }
 
@@ -66,10 +68,8 @@ public unsafe class AutoDance : DailyModuleBase
             return true;
         }
 
-        var completedSteps = gauge.CompletedSteps;
         var nextStep = gauge.NextStep;
-
-        if (completedSteps < (isTechnicalStep ? 4 : 2))
+        if (gauge.CompletedSteps < (isTechnicalStep ? 4 : 2))
         {
             if (ActionManager.Instance()->UseAction(ActionType.Action, nextStep))
             {
@@ -77,10 +77,10 @@ public unsafe class AutoDance : DailyModuleBase
                 return true;
             }
         }
-        else
+
+        if (IsAutoFinish)
         {
-            if (IsAutoFinish)
-                TaskManager.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.Action, isTechnicalStep ? 15998U : 15997U));
+            TaskManager.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.Action, isTechnicalStep ? 15998U : 15997U));
             return true;
         }
 
