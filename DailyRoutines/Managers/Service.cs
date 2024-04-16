@@ -24,6 +24,7 @@ public class Service
         WinToast.Init();
         Waymarks = new();
         Font = new();
+        PayloadText = new();
     }
 
     private static void InitLanguage()
@@ -107,4 +108,5 @@ public class Service
     public static FieldMarkerManager Waymarks { get; set; } = null!;
     public static LanguageManager Lang { get; set; } = null!;
     public static Configuration Config { get; set; } = null!;
+    public static PayloadText PayloadText { get; set; } = null!;
 }

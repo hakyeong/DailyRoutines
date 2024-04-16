@@ -42,7 +42,7 @@ namespace DailyRoutines.Modules
             var msg = message.TextValue;
             if (Service.PayloadText.Countdown.All(s => msg.Contains(msg)))
             {
-                Service.Notice.Notify(Service.Lang.GetText("AutoNotifyCountdown-NotificationTitle"), message.ExtractText());
+                WinToast.Notify(Service.Lang.GetText("AutoNotifyCountdown-NotificationTitle"), message.ExtractText());
             }
         }
 
