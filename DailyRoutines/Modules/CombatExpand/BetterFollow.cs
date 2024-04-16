@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Text;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
-using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using ECommons.Throttlers;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
@@ -50,7 +47,7 @@ public unsafe class BetterFollow : DailyModuleBase
 
     [Signature("E8 ?? ?? ?? ?? EB ?? 48 81 C1 ?? ?? ?? ?? E8 ?? ?? ?? ?? EB", DetourName = nameof(FollowData))]
     private Hook<FollowDataDelegate>? FollowDataHook;
-    
+
     [Signature(
         "40 53 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 8B D9 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 48 8B D0 48 8D 8B ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 48 8B 4C 24 ?? BA ?? ?? ?? ?? 41 B8 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B 8C 24 ?? ?? ?? ?? 48 33 CC E8 ?? ?? ?? ?? 48 81 C4 ?? ?? ?? ?? 5B C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 89 5C 24")]
     private delegate* unmanaged<ulong, uint, ulong, nint, ulong> FollowStart;
@@ -64,6 +61,7 @@ public unsafe class BetterFollow : DailyModuleBase
     private static bool OnDuty = false;
     private static bool ForcedFollow = false;
     private static float Delay = 0.5f;
+    private const string CommandStr = "/drfollow";
 
 
     public override void Init()
@@ -89,7 +87,6 @@ public unsafe class BetterFollow : DailyModuleBase
         FollowA1Hook.Enable();
         FollowDataHook.Enable();
         Service.Framework.Update += OnFramework;
-        //Service.Command.AddHandler("/pdrf", new CommandInfo(OnCommand) { HelpMessage = "helpMessage" });
     }
 
 
@@ -101,7 +98,9 @@ public unsafe class BetterFollow : DailyModuleBase
         if (AutoReFollow)
         {
             ImGui.Indent();
-            ImGui.Text($"跟踪状态:{_enableReFollow}-跟踪目标:{_LastFollowObjectName}-目标是否在周围:{_LastFollowObjectStatus}");
+
+            ImGui.Text(Service.Lang.GetText("BetterFollow-Status", _enableReFollow, _LastFollowObjectName,
+                                            _LastFollowObjectStatus));
 
             ConflictKeyText();
             if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-OnCombatOverConfig"),
@@ -124,6 +123,17 @@ public unsafe class BetterFollow : DailyModuleBase
         if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-ForcedFollowConfig"),
                            ref ForcedFollow))
             UpdateConfig(this, "ForcedFollow", ForcedFollow);
+        if (ForcedFollow)
+        {
+            ImGui.Indent();
+            ImGui.Text(Service.Lang.GetText("BetterFollow-CommandDesc",CommandStr));
+            CommandManager.AddCommand(CommandStr, new CommandInfo(OnCommand) { HelpMessage = Service.Lang.GetText("BetterFollow-CommandDesc",CommandStr) });
+            ImGui.Unindent();
+        }
+        else
+        {
+            CommandManager.RemoveCommand(CommandStr);
+        }
     }
 
 
@@ -238,6 +248,7 @@ public unsafe class BetterFollow : DailyModuleBase
 
     public override void Uninit()
     {
+        CommandManager.RemoveCommand(CommandStr);
         Service.Framework.Update -= OnFramework;
         _enableReFollow = false;
         _FollowStatus = false;

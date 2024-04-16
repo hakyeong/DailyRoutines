@@ -1217,4 +1217,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <data name="BetterFollow-ForcedFollowConfig" xml:space="preserve">
     <value>添加强制跟随命令</value>
   </data>
+    <data name="BetterFollow-Status" xml:space="preserve">
+    <value>跟踪状态:{0}-跟踪目标:{1}-目标是否在周围:{2}</value>
+  </data>
+    <data name="BetterFollow-CommandDesc" xml:space="preserve">
+    <value>添加 {0} 命令,该命令会尝试对你选择的任何目标进行自动跟随</value>
+  </data>
 </root>
