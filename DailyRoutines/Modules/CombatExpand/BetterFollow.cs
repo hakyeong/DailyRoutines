@@ -48,11 +48,11 @@ public unsafe class BetterFollow : DailyModuleBase
     [Signature("E8 ?? ?? ?? ?? EB ?? 48 81 C1 ?? ?? ?? ?? E8 ?? ?? ?? ?? EB", DetourName = nameof(FollowData))]
     private Hook<FollowDataDelegate>? FollowDataHook;
 
-    delegate void FollowDelegate(ulong a1, ulong a2);
+    //delegate void FollowDelegate(ulong a1, ulong a2);
 
-    [Signature("E8 ?? ?? ?? ?? EB ?? 48 8D 15 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 84 DB",
-               DetourName = nameof(FollowChanged))]
-    private Hook<FollowDelegate>? FollowHook;
+    // [Signature("E8 ?? ?? ?? ?? EB ?? 48 8D 15 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 84 DB",
+    //            DetourName = nameof(FollowChanged))]
+    // private Hook<FollowDelegate>? FollowHook;
 
 
     [Signature(
@@ -88,10 +88,10 @@ public unsafe class BetterFollow : DailyModuleBase
         _v5 = _BassAddress + 0x21CFB60;
         _a1_data = _a1 + 0x450;
         _d1 = _a1 + 1369;
-        if (*(int*)(_a2 + 8) == 4) _FollowStatus = true;
+        _FollowStatus = *(int*)_d1 == 4;
         Service.Hook.InitializeFromAttributes(this);
         FollowA1Hook.Enable();
-        FollowHook.Enable();
+        //FollowHook.Enable();
         FollowDataHook.Enable();
         Service.Framework.Update += OnFramework;
         Service.Command.AddHandler("/pdrf", new CommandInfo(OnCommand) { HelpMessage = "helpMessage" });
@@ -138,10 +138,12 @@ public unsafe class BetterFollow : DailyModuleBase
         }
 
         if (!EzThrottler.Throttle("BetterFollow", (int)Delay * 1000)) return;
+        _FollowStatus = *(int*)_d1 == 4;
         if (!AutoReFollow) return;
         if (_FollowStatus) return;
         //在过图
         if (Flags.BetweenAreas()) return;
+
         if (Service.ClientState.LocalPlayer == null) return;
         //按键打断
         if (!_enableReFollow) return;
@@ -184,6 +186,7 @@ public unsafe class BetterFollow : DailyModuleBase
     {
         if (_FollowStatus) return;
         if (_LastFollowObjectAddress == 0 && _FollowStartA1 == 0) return;
+        FollowDataPush(_a1_data, _LastFollowObjectAddress);
         SafeMemory.Write(_d1, 4);
         _FollowStatus = true;
     }
@@ -217,19 +220,8 @@ public unsafe class BetterFollow : DailyModuleBase
     {
         _LastFollowObjectAddress = a2;
         _LastFollowObjectId = (*(GameObject*)a2).ObjectID;
+        _enableReFollow = true;
         FollowDataHook.Original(a1, a2);
-    }
-
-    private void FollowChanged(ulong a1, ulong a2)
-    {
-        if (*(int*)(a2 + 8) == 4)
-        {
-            _enableReFollow = true;
-            _FollowStatus = true;
-        }
-
-        if (*(int*)(a2 + 8) == 1) _FollowStatus = false;
-        FollowHook.Original(a1, a2);
     }
 
     public override void Uninit()
