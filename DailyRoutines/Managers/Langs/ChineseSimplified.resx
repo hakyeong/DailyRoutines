@@ -847,8 +847,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>战斗扩展</value>
   </data>
   <data name="CommandHelp" xml:space="preserve">
-    <value>打开主界面
-/pdr &lt;关键词&gt; → 打开主界面, 并搜索指定关键词</value>
+    <value>打开主界面</value>
   </data>
   <data name="ConflictKey" xml:space="preserve">
     <value>打断热键</value>
@@ -1229,7 +1228,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>跟踪状态: {0} / 跟踪目标: {1} / 目标是否在周围: {2}</value>
   </data>
   <data name="BetterFollow-CommandDesc" xml:space="preserve">
-    <value>使用该命令后, 会尝试对你当前选择的任意目标进行自动跟随</value>
+    <value>对当前选择目标进行强制自动跟随</value>
   </data>
   <data name="AutoMount-MountWhenCombatEnd" xml:space="preserve">
     <value>当结束战斗时</value>
@@ -1239,5 +1238,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoMount-MountWhenZoneChange" xml:space="preserve">
     <value>当切换区域时</value>
+  </data>
+  <data name="CommandHelp-Search" xml:space="preserve">
+    <value>打开主界面, 并搜索指定关键词</value>
   </data>
 </root>
