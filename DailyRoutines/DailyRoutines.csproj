@@ -43,27 +43,27 @@
         <Compile Remove="bin\**" />
         <EmbeddedResource Remove="bin\**" />
         <None Remove="bin\**" />
+        <None Include="Managers\Langs\ChineseSimplified.resx">
+            <Generator></Generator>
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Assets\FFXIVICON.ico">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Remove="DailyRoutines.csproj.DotSettings" />
+        <EmbeddedResource Remove="Managers\Langs\ChineseSimplified.resx" />
     </ItemGroup>
 
     <ItemGroup>
-      <EmbeddedResource Remove="Managers\Langs\ChineseSimplified.resx" />
+        <PackageReference Include="DalamudPackager" Version="2.1.12" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
+        <PackageReference Include="TinyPinyin" Version="1.1.0" />
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="DailyRoutines.csproj.DotSettings" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Include="Managers\Langs\ChineseSimplified.resx">
-        <Generator></Generator>
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="DalamudPackager" Version="2.1.12" />
-      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
-      <PackageReference Include="TinyPinyin" Version="1.1.0" />
+        <ProjectReference Include="..\ClickLib\ClickLib\ClickLib.csproj" />
+        <ProjectReference Include="..\ECommons\ECommons\ECommons.csproj" />
+        <ProjectReference Include="..\OmenTools\OmenTools.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -95,18 +95,6 @@
             <HintPath>$(DalamudLibPath)Lumina.Excel.dll</HintPath>
             <Private>false</Private>
         </Reference>
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\ClickLib\ClickLib\ClickLib.csproj" />
-      <ProjectReference Include="..\ECommons\ECommons\ECommons.csproj" />
-      <ProjectReference Include="..\OmenTools\OmenTools.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Update="Assets\FFXIVICON.ico">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
     </ItemGroup>
 
 </Project>
