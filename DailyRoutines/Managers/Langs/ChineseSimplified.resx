@@ -1239,6 +1239,24 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoMount-MountWhenZoneChange" xml:space="preserve">
     <value>当切换区域时</value>
   </data>
+  <data name="AutoJumboCactpot-Fixed" xml:space="preserve">
+    <value>固定</value>
+  </data>
+  <data name="AutoJumboCactpot-FixedNumber" xml:space="preserve">
+    <value>固定数字</value>
+  </data>
+  <data name="AutoJumboCactpot-NumberMode" xml:space="preserve">
+    <value>数字选取模式</value>
+  </data>
+  <data name="AutoJumboCactpot-Random" xml:space="preserve">
+    <value>随机</value>
+  </data>
+  <data name="AutoJumboCactpotDescription" xml:space="preserve">
+    <value>进入仙人仙彩界面后, 自动购买本周所有的仙人彩</value>
+  </data>
+  <data name="AutoJumboCactpotTitle" xml:space="preserve">
+    <value>自动完成仙人仙彩</value>
+  </data>
   <data name="CommandHelp-Search" xml:space="preserve">
     <value>打开主界面, 并搜索指定关键词</value>
   </data>
