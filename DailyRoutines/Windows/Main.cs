@@ -129,7 +129,8 @@ public class Main : Window, IDisposable
             {
                 var module = modules[i];
                 if (!module.Title.Contains(SearchString, StringComparison.OrdinalIgnoreCase) &&
-                    !module.Description.Contains(SearchString, StringComparison.OrdinalIgnoreCase)) continue;
+                    !module.Description.Contains(SearchString, StringComparison.OrdinalIgnoreCase) &&
+                    !module.Module.Name.Contains(SearchString, StringComparison.OrdinalIgnoreCase)) continue;
 
                 ImGui.PushID($"{module.Category}-{module.Description}-{module.Title}-{module.Module}");
                 ImGui.BeginGroup();
