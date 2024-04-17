@@ -304,12 +304,6 @@
   <data name="AutoLogin-CurrentWorld" xml:space="preserve">
     <value>当前服务器</value>
   </data>
-  <data name="AutoLogin-HaveNotLogin" xml:space="preserve">
-    <value>未登录过</value>
-  </data>
-  <data name="AutoLogin-LoginOnce" xml:space="preserve">
-    <value>已登录过</value>
-  </data>
   <data name="AutoLogin-LoginState" xml:space="preserve">
     <value>登录状态</value>
   </data>
@@ -1128,9 +1122,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="StartTime" xml:space="preserve">
     <value>开始时间</value>
   </data>
-  <data name="AutoLogin-WorldSelectHelp" xml:space="preserve">
-    <value>可能存在多个同名服务器, 一般来说后缀为 2 的为当前正在使用的服务器, 请注意辨别</value>
-  </data>
   <data name="AutoEnableAttackDescription" xml:space="preserve">
     <value>进入战斗时, 自动为所有职业开启自动攻击</value>
   </data>
@@ -1239,6 +1230,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoMount-MountWhenZoneChange" xml:space="preserve">
     <value>当切换区域时</value>
   </data>
+  <data name="Add" xml:space="preserve">
+    <value>添加</value>
+  </data>
   <data name="AutoJumboCactpot-Fixed" xml:space="preserve">
     <value>固定</value>
   </data>
@@ -1256,6 +1250,33 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoJumboCactpotTitle" xml:space="preserve">
     <value>自动完成仙人仙彩</value>
+  </data>
+  <data name="AutoLogin-BehaviourMode" xml:space="preserve">
+    <value>行为模式</value>
+  </data>
+  <data name="AutoLogin-HaveNotLogin" xml:space="preserve">
+    <value>未登录过</value>
+  </data>
+  <data name="AutoLogin-LoginInfoDisplayText" xml:space="preserve">
+    <value>服务器: {0} ({1}) / 角色索引: {2}</value>
+  </data>
+  <data name="AutoLogin-LoginInfoOrderHelp" xml:space="preserve">
+    <value>所有已存储数据会在登录时会按照下方列表所展示的顺序, 按照从上至下的优先级依次尝试登录</value>
+  </data>
+  <data name="AutoLogin-LoginInfos" xml:space="preserve">
+    <value>登录信息</value>
+  </data>
+  <data name="AutoLogin-LoginOnce" xml:space="preserve">
+    <value>已登录过</value>
+  </data>
+  <data name="AutoLogin-Once" xml:space="preserve">
+    <value>登录一次</value>
+  </data>
+  <data name="AutoLogin-Repeat" xml:space="preserve">
+    <value>重复登录</value>
+  </data>
+  <data name="AutoLogin-SavedLoginInfosAmount" xml:space="preserve">
+    <value>已存储 {0} 条登录数据</value>
   </data>
   <data name="CommandHelp-Search" xml:space="preserve">
     <value>打开主界面, 并搜索指定关键词</value>
