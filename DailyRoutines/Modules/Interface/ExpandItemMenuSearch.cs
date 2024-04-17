@@ -9,6 +9,7 @@ using Dalamud.Game.Text;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using ECommons.Automation;
+using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -23,12 +24,14 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
     public override string? Author { get; set; } = "HSS";
 
     private static Item? _LastItem;
+    private static Item? _LastPrismBoxItem;
     private static Item? _LastGlamourItem;
     private static ulong _LastHoveredItemID;
     private static ulong _LastDetailItemID;
 
     private static bool _IsOnCharacterInspect;
     private static bool _IsOnCabinetWithdraw;
+    private static bool _IsOnMiragePrismPrismBoxCrystallize;
     private static readonly HashSet<InventoryItem> _CharacterInspectItems = [];
 
     private static bool SearchCollector;
@@ -62,8 +65,11 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
         Service.Framework.Update += OnUpdate;
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "CharacterInspect", OnAddon);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, ["CabinetWithdraw", "CharacterInspect"], OnAddon);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "CabinetWithdraw", OnAddon);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize,
+                                                ["CabinetWithdraw", "CharacterInspect,MiragePrismPrismBoxCrystallize"],
+                                                OnAddon);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup,
+                                                ["CabinetWithdraw", "MiragePrismPrismBoxCrystallize"], OnAddon);
         _CharacterInspectItems.Clear();
     }
 
@@ -108,7 +114,11 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
                     case "CabinetWithdraw":
                         _IsOnCabinetWithdraw = true;
                         break;
+                    case "MiragePrismPrismBoxCrystallize":
+                        _IsOnMiragePrismPrismBoxCrystallize = true;
+                        break;
                 }
+
                 break;
             case AddonEvent.PostRefresh:
                 switch (args.AddonName)
@@ -130,6 +140,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
                         });
                         break;
                 }
+
                 break;
             case AddonEvent.PreFinalize:
                 switch (args.AddonName)
@@ -145,14 +156,18 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
                             _CharacterInspectItems.Clear();
                         });
                         break;
+                    case "MiragePrismPrismBoxCrystallize":
+                        _IsOnMiragePrismPrismBoxCrystallize = false;
+                        break;
                 }
+
                 break;
         }
     }
 
     private static void OnHoveredItemChanged(object? sender, ulong id)
     {
-        if (!_IsOnCharacterInspect) return;
+        if (!_IsOnCharacterInspect && !_IsOnMiragePrismPrismBoxCrystallize) return;
         var contextMenu = (AtkUnitBase*)Service.Gui.GetAddonByName("ContextMenu");
         if (contextMenu is null || !contextMenu->IsVisible)
         {
@@ -289,6 +304,20 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
 
                 break;
             }
+            case "MiragePrismPrismBoxCrystallize":
+            {
+                var itemId = AgentMiragePrismPrismItemDetail.Instance()->ItemId;
+                Service.PresetData.Gears.TryGetValue(itemId, out var miragePrismPrismBoxCrystallizeItem);
+                Service.PresetData.Gears.TryGetValue((uint)_LastHoveredItemID, out var miragePrismPrismBoxItem);
+                if (miragePrismPrismBoxCrystallizeItem == null && miragePrismPrismBoxItem == null) return;
+
+                _LastItem = miragePrismPrismBoxItem;
+                _LastPrismBoxItem = miragePrismPrismBoxCrystallizeItem;
+                _LastGlamourItem = null;
+                if (SearchCollector) args.AddMenuItem(CollectorItem);
+                if (SearchWiki) args.AddMenuItem(WikiItem);
+                break;
+            }
         }
     }
 
@@ -316,16 +345,46 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
     };
 
 
-    private static void OnCollector(MenuItemClickedArgs _)
+    private static void OnCollector(MenuItemClickedArgs args)
     {
+        if (args.AddonName == "MiragePrismPrismBoxCrystallize" &&
+            TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        {
+            if (HelpersOm.TryScanContextMenuText(addon, "投影到当前装备上", out var index))
+            {
+                Util.OpenLink(string.Format(CollectorUrl, _LastPrismBoxItem.Name));
+            }
+            else
+            {
+                Util.OpenLink(string.Format(CollectorUrl, _LastItem.Name));
+            }
+
+            return;
+        }
+
         if (SearchCollectorByGlamour && _LastGlamourItem != null && _LastGlamourItem.Name.ToString().Length != 0)
             Util.OpenLink(string.Format(CollectorUrl, _LastGlamourItem.Name));
         else if (_LastItem != null)
             Util.OpenLink(string.Format(CollectorUrl, _LastItem.Name));
     }
 
-    private static void OnWiki(MenuItemClickedArgs _)
+    private static void OnWiki(MenuItemClickedArgs args)
     {
+        if (args.AddonName == "MiragePrismPrismBoxCrystallize" &&
+            TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        {
+            if (HelpersOm.TryScanContextMenuText(addon, "投影到当前装备上", out var index))
+            {
+                Util.OpenLink(string.Format(CollectorUrl, _LastPrismBoxItem.Name));
+            }
+            else
+            {
+                Util.OpenLink(string.Format(CollectorUrl, _LastItem.Name));
+            }
+
+            return;
+        }
+
         if (SearchWikiByGlamour && _LastGlamourItem != null && _LastGlamourItem.Name.ToString().Length != 0)
             Util.OpenLink(string.Format(WikiUrl, _LastGlamourItem.Name));
         else if (_LastItem != null)
