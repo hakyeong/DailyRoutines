@@ -45,13 +45,9 @@ public unsafe class AutoDismount : DailyModuleBase
         if (flag is ConditionFlag.Mounted or ConditionFlag.Mounted2)
         {
             if (value)
-            {
                 useActionSelfHook?.Enable();
-            }
             else
-            {
                 useActionSelfHook?.Disable();
-            }
         }
     }
 
@@ -62,10 +58,9 @@ public unsafe class AutoDismount : DailyModuleBase
         TaskManager.Abort();
         if (IsNeedToDismount(actionType, actionId, actionTarget))
         {
-            useActionSelfHook.Original(actionManager, 5, 23, 0);
+            useActionSelfHook.Original(actionManager, 5, 9, 0);
             TaskManager.Enqueue(
-                () => ActionManager.Instance()->UseAction((ActionType)actionType, actionId, actionTarget, a5, a6,
-                                                          a7, a8));
+                () => ActionManager.Instance()->UseAction((ActionType)actionType, actionId, actionTarget, a5, a6, a7, a8));
         }
 
         return useActionSelfHook.Original(actionManager, actionType, actionId, actionTarget, a5, a6, a7, a8);
