@@ -258,11 +258,11 @@
   <data name="AutoGardensWorkTitle" xml:space="preserve">
     <value>自动园圃作业</value>
   </data>
-  <data name="AutoJoinDutyTitle" xml:space="preserve">
-    <value>自动参加任务</value>
+  <data name="AutoCommenceDutyTitle" xml:space="preserve">
+    <value>自动任务出发确认</value>
   </data>
-    <data name="AutoJoinDutyDescription" xml:space="preserve">
-    <value>当跳出进本窗口时，自动进本</value>
+  <data name="AutoCommenceDutyDescription" xml:space="preserve">
+    <value>任务出发确认窗口出现后, 自动点击出发按钮</value>
   </data>
   <data name="AutoInDutySelectYesDescription" xml:space="preserve">
     <value>进入副本后, 自动确认副本内交互物体时出现的对话框</value>
@@ -434,7 +434,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>当排到副本时, 自动发送一条 Windows 系统通知</value>
   </data>
   <data name="AutoNotifyDutyConfirmTitle" xml:space="preserve">
-    <value>自动通知任务准备确认</value>
+    <value>自动通知任务出发确认</value>
   </data>
   <data name="AutoNotifyDutyName-NoticeMessage" xml:space="preserve">
     <value>副本: {0}</value>
