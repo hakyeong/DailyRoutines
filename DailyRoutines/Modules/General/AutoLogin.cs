@@ -37,7 +37,7 @@ public class AutoLogin : DailyModuleBase
         AddConfig(this, "SelectedWorld", null);
         AddConfig(this, "SelectedCharaIndex", 0);
 
-        Worlds ??= Service.Data.GetExcelSheet<World>()
+        Worlds ??= LuminaCache.Get<World>()
                           .Where(x => !string.IsNullOrWhiteSpace(x.Name.RawString) && !string.IsNullOrWhiteSpace(x.InternalName.RawString) && IsChineseString(x.Name.RawString))
                           .ToDictionary(x => x.RowId, x => x);
 

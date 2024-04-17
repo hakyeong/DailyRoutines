@@ -42,7 +42,7 @@ public unsafe class NoAttackWrongMandragoras : DailyModuleBase
                                                                 UseActionSelf);
         useActionSelfHook?.Enable();
 
-        Mandragoras ??= Service.Data.GetExcelSheet<BNpcName>()
+        Mandragoras ??= LuminaCache.Get<BNpcName>()
                                .Where(x => x.Singular.RawString.Contains("王后"))
                                .Select(queen => new[] { queen.RowId, queen.RowId - 1, queen.RowId - 2, queen.RowId - 3, queen.RowId - 4 })
                                .ToList();

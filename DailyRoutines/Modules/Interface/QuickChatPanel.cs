@@ -124,7 +124,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
         foreach (SeIconChar seIconChar in Enum.GetValues(typeof(SeIconChar)))
             tempSeIconList.Add((char)seIconChar);
         SeIconChars = [.. tempSeIconList];
-        ItemNames ??= Service.Data.GetExcelSheet<Item>()
+        ItemNames ??= LuminaCache.Get<Item>()
                              .Where(x => !string.IsNullOrEmpty(x.Name.RawString))
                              .GroupBy(x => x.Name.RawString)
                              .ToDictionary(x => x.Key, x => x.First());

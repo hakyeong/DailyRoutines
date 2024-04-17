@@ -77,7 +77,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
         #endregion
 
-        ItemsSellPrice ??= Service.Data.GetExcelSheet<Item>()
+        ItemsSellPrice ??= LuminaCache.Get<Item>()
                                   .Where(x => !string.IsNullOrEmpty(x.Name.RawString) && x.PriceLow != 0)
                                   .ToDictionary(x => x.RowId, x => x.PriceLow);
 

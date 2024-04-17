@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using DailyRoutines.Managers;
-using Dalamud.Game.Text.SeStringHandling;
 using Lumina.Excel.GeneratedSheets;
 using PayloadType = Lumina.Text.Payloads.PayloadType;
 
@@ -13,7 +12,6 @@ public class PayloadText
     public List<string>? EndFollow { get; private set; }
     public List<string>? Countdown { get; private set; }
 
-
     public PayloadText()
     {
         StartFollow ??= getLogMessageRowToStringList(52);
@@ -21,12 +19,11 @@ public class PayloadText
         Countdown ??= getLogMessageRowToStringList(5255);
     }
 
-
-    private List<string>? getLogMessageRowToStringList(uint row)
+    private static List<string>? getLogMessageRowToStringList(uint row)
     {
-        return Service.Data.GetExcelSheet<LogMessage>().GetRow(row).Text.Payloads
-                      .Where(x => x.PayloadType == PayloadType.Text)
-                      .Select(text => text.RawString).ToList();
+        return LuminaCache.GetRow<LogMessage>(row).Text.Payloads
+                          .Where(x => x.PayloadType == PayloadType.Text)
+                          .Select(text => text.RawString).ToList();
     }
     
 }

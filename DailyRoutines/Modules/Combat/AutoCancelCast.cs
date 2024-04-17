@@ -28,7 +28,7 @@ public unsafe class AutoCancelCast : DailyModuleBase
         Service.Condition.ConditionChange += OnConditionChanged;
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
-        TargetAreaActions ??= Service.Data.GetExcelSheet<Action>()
+        TargetAreaActions ??= LuminaCache.Get<Action>()
                                      .Where(x => x.TargetArea)
                                      .Select(x => x.RowId).ToHashSet();
     }

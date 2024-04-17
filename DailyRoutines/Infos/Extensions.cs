@@ -4,6 +4,7 @@ using DailyRoutines.Modules;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Network.Structures.InfoProxy;
 using Dalamud.Game.Text.SeStringHandling;
+using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.GeneratedSheets;
 
@@ -33,10 +34,7 @@ public static class Extensions
         var info = new ExpandPlayerMenuSearch.CharacterSearchInfo()
         {
             Name = chara.Name.ExtractText(),
-            World = Service.Data.GetExcelSheet<World>()
-                           .GetRow(
-                               ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)chara.Address)->HomeWorld)
-                           .Name.RawString
+            World = LuminaCache.GetRow<World>(((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)chara.Address)->HomeWorld).Name.RawString
         };
         return info;
     }

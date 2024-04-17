@@ -95,7 +95,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         ConfigOnlyDisplayInViewRange = GetConfig<bool>(this, "OnlyDisplayInViewRange");
         ConfigLockWindow = GetConfig<bool>(this, "LockWindow");
 
-        ENpcTitles ??= Service.Data.GetExcelSheet<ENpcResident>()
+        ENpcTitles ??= LuminaCache.Get<ENpcResident>()
                               .Where(x => x.Unknown10)
                               .ToDictionary(x => x.RowId, x => x.Title.RawString);
 

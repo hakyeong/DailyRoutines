@@ -25,7 +25,7 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
 
     public override void Init()
     {
-        ArmoireAvailableItems ??= Service.Data.GetExcelSheet<Cabinet>()
+        ArmoireAvailableItems ??= LuminaCache.Get<Cabinet>()
                                          .Where(x => x.Category.Value.RowId is >= 1 and <= 11)
                                          .Select(x => x.Item.Value.RowId)
                                          .ToHashSet();

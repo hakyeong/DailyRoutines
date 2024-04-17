@@ -47,15 +47,16 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
     public override void Init()
     {
-        Seeds = Service.Data.GetExcelSheet<Item>()
-                       .Where(x => x.FilterGroup == 20)
-                       .ToDictionary(x => x.RowId, x => x);
-        Soils = Service.Data.GetExcelSheet<Item>()
-                       .Where(x => x.FilterGroup == 21)
-                       .ToDictionary(x => x.RowId, x => x);
-        Fertilizers = Service.Data.GetExcelSheet<Item>()
-                       .Where(x => x.FilterGroup == 22)
-                       .ToDictionary(x => x.RowId, x => x);
+        var sheet = LuminaCache.Get<Item>();
+        Seeds = sheet
+                .Where(x => x.FilterGroup == 20)
+                .ToDictionary(x => x.RowId, x => x);
+        Soils = sheet
+                .Where(x => x.FilterGroup == 21)
+                .ToDictionary(x => x.RowId, x => x);
+        Fertilizers = sheet
+                      .Where(x => x.FilterGroup == 22)
+                      .ToDictionary(x => x.RowId, x => x);
 
         AddConfig(this, "SelectedSeed", SelectedSeed);
         AddConfig(this, "SelectedSoil", SelectedSoil);

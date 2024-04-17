@@ -288,19 +288,16 @@ public class AutoLeveQuests : DailyModuleBase
 
     private static void GetMapLeveQuests()
     {
-        var currentTerritoryPlaceNameId = Service.Data.GetExcelSheet<TerritoryType>()
-                                                 .GetRow(Service.ClientState.TerritoryType)?
-                                                 .PlaceName.Row;
+        var currentTerritoryPlaceNameId =
+            LuminaCache.GetRow<TerritoryType>(Service.ClientState.TerritoryType).PlaceName.Row;
 
-        if (currentTerritoryPlaceNameId != null)
-        {
-            LeveQuests = Service.Data.GetExcelSheet<Leve>()
-                                .Where(x => !string.IsNullOrEmpty(x.Name.RawString) &&
-                                            x.ClassJobCategory.Row is >= 9 and <= 16 or 19 &&
-                                            x.PlaceNameIssued.Row == currentTerritoryPlaceNameId)
+        LeveQuests = LuminaCache.Get<Leve>()
+                                .Where(x => x.PlaceNameIssued.Row == currentTerritoryPlaceNameId &&
+                                            !string.IsNullOrEmpty(x.Name.RawString) &&
+                                            x.ClassJobCategory.Row is >= 9 and <= 16 or 19)
                                 .ToDictionary(x => x.RowId, x => x);
-            Service.Log.Debug($"成功获取了 {LeveQuests.Count} 个理符任务");
-        }
+
+        Service.Log.Debug($"成功获取了 {LeveQuests.Count} 个理符任务");
     }
 
     private static uint GetCurrentTargetDataID()

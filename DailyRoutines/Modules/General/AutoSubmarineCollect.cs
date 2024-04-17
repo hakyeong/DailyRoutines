@@ -44,7 +44,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
         Service.Chat.ChatMessage += OnErrorText;
 
-        RequisiteMaterialsName = Service.Data.GetExcelSheet<Item>().GetRow(10373).Name.RawString;
+        RequisiteMaterialsName = LuminaCache.GetRow<Item>(10373).Name.RawString;
     }
 
     public override void OverlayUI()
