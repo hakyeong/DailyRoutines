@@ -65,7 +65,7 @@ public unsafe class AutoMount : DailyModuleBase
         switch (flag)
         {
             case ConditionFlag.Gathering when !value && MountWhenGatherEnd:
-            case ConditionFlag.InCombat when !value && MountWhenCombatEnd && 
+            case ConditionFlag.InCombat when !value && MountWhenCombatEnd && !Service.ClientState.IsPvP && 
                                              (FateManager.Instance()->CurrentFate == null || FateManager.Instance()->CurrentFate->Progress == 100):
                 TaskManager.Abort();
 
@@ -77,6 +77,7 @@ public unsafe class AutoMount : DailyModuleBase
 
     private bool? UseMountInMap()
     {
+        if (!EzThrottler.Throttle("AutoMount")) return false;
         if (AgentMap.Instance()->IsPlayerMoving == 1) return true;
         if (Flags.IsCasting || Flags.IsOnMount) return true;
         if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 9) != 0) return false;
