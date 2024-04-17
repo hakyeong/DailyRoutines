@@ -1169,7 +1169,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>禁止低于收购价格</value>
   </data>
   <data name="AutoRetainerPriceAdjust-SkipAdjustMessage" xml:space="preserve">
-    <value>物品:{0} (市场价: {1} / 原价:{2}) 已超过{3}: {4}, 跳过改价</value>
+    <value>物品:{0} (雇员: {1})
+(市场价: {2} / 原价:{3})
+已超过{4}: {5}, 跳过改价</value>
   </data>
   <data name="NoAttackWrongMandragoras-OnlyInTreasureHunt" xml:space="preserve">
     <value>仅在宝物库中启用</value>

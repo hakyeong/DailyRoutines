@@ -380,17 +380,10 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     private bool? ClickAdjustPrice()
     {
         if (InterruptByConflictKey()) return true;
+        if (!ClickManager.ContextMenu("修改价格")) return false;
 
-        if (TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
-        {
-            if (!HelpersOm.TryScanContextMenuText(addon, "修改价格", out var index)) return true;
-            AgentManager.SendEvent(AgentId.Context, 0, 0, index, 0U, 0, 0);
-
-            TaskManager.EnqueueImmediate(ClickComparePrice);
-            return true;
-        }
-
-        return false;
+        TaskManager.EnqueueImmediate(ClickComparePrice);
+        return true;
     }
 
     // 点击比价按钮
@@ -398,7 +391,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     {
         if (InterruptByConflictKey()) return true;
 
-        if (TryGetAddonByName<AtkUnitBase>("RetainerSell", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("RetainerSell", out var addon) && IsAddonAndNodesReady(addon))
         {
             IsCurrentItemHQ = Marshal.PtrToStringUTF8((nint)addon->AtkValues[1].String).Contains(''); // HQ 符号
 
@@ -514,8 +507,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         if (InterruptByConflictKey()) return true;
         if (AddonItemSearchResult != null) return false;
 
-        if (!TryGetAddonByName<AddonRetainerSell>("RetainerSell", out var addon) ||
-            !HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase)) return false;
+        if (!TryGetAddonByName<AddonRetainerSell>("RetainerSell", out var addon) || !IsAddonAndNodesReady(&addon->AtkUnitBase)) return false;
 
         var ui = &addon->AtkUnitBase;
         var priceComponent = addon->AskingPrice;
@@ -534,8 +526,9 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         // 超过可接受的降价值
         if (MaxPriceReduction != 0 && originalPrice - currentMarketLowestPrice > MaxPriceReduction)
         {
-            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoRetainerPriceAdjust-SkipAdjustMessage", SeString.CreateItemLink(CurrentItemSearchItemID, IsCurrentItemHQ ? ItemPayload.ItemKind.Hq : ItemPayload.ItemKind.Normal), currentMarketLowestPrice, originalPrice, Service.Lang.GetText("AutoRetainerPriceAdjust-MaxPriceReduction"), MaxPriceReduction)).Build();
-            Service.Chat.Print(message);
+            SendSkipPriceAdjustMessage(currentMarketLowestPrice, originalPrice,
+                                       Service.Lang.GetText("AutoRetainerPriceAdjust-MaxPriceReduction"),
+                                       MaxPriceReduction);
 
             OperateAndReturn(false);
             return true;
@@ -544,8 +537,9 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         // 低于收购价格
         if (ProhibitLowerThanSellPrice && ItemsSellPrice.TryGetValue(CurrentItemSearchItemID, out var npcSellPrice) && modifiedPrice < npcSellPrice)
         {
-            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoRetainerPriceAdjust-SkipAdjustMessage", SeString.CreateItemLink(CurrentItemSearchItemID, IsCurrentItemHQ ? ItemPayload.ItemKind.Hq : ItemPayload.ItemKind.Normal), currentMarketLowestPrice, originalPrice, Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice"), npcSellPrice)).Build();
-            Service.Chat.Print(message);
+            SendSkipPriceAdjustMessage(currentMarketLowestPrice, originalPrice,
+                                       Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice"),
+                                       (int)npcSellPrice);
 
             OperateAndReturn(false);
             return true;
@@ -561,8 +555,9 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         // 低于最低价
         if (modifiedPrice < LowestPrice)
         {
-            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoRetainerPriceAdjust-SkipAdjustMessage", SeString.CreateItemLink(CurrentItemSearchItemID, IsCurrentItemHQ ? ItemPayload.ItemKind.Hq : ItemPayload.ItemKind.Normal), currentMarketLowestPrice, originalPrice, Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice"), LowestPrice)).Build();
-            Service.Chat.Print(message);
+            SendSkipPriceAdjustMessage(currentMarketLowestPrice, originalPrice,
+                                       Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice"),
+                                       LowestPrice);
 
             OperateAndReturn(false);
             return true;
@@ -583,6 +578,26 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             ui->Close(true);
             ResetCurrentItemStats();
         }
+    }
+
+    private static void SendSkipPriceAdjustMessage(int currentMarketPrice, int originalPrice, string reason, int threshold)
+    {
+        var ssb = new SeStringBuilder();
+        // 前缀
+        var prefix = DRPrefix().Append(" ");
+        // 物品链接
+        var itemLink = SeString.CreateItemLink(CurrentItemSearchItemID, IsCurrentItemHQ ? ItemPayload.ItemKind.Hq : ItemPayload.ItemKind.Normal);
+        // 雇员
+        var retainerName = new SeStringBuilder()
+                           .AddUiForeground(Marshal.PtrToStringUTF8((nint)RetainerManager.Instance()->GetActiveRetainer()->Name), 62)
+                           .Build();
+        // 拒绝理由
+        var rReason = new SeStringBuilder().AddUiForeground(reason, 43).Build();
+        // 消息正文
+        var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-SkipAdjustMessage", itemLink, retainerName,
+                                               currentMarketPrice, originalPrice, rReason, threshold);
+        
+        Service.Chat.Print(ssb.Append(prefix).Append(message).Build());
     }
 
     public static List<(bool HQ, uint Price, int Amount)> ScanItemHistory(AtkUnitBase* addon)
