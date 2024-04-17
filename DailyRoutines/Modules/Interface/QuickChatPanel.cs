@@ -15,6 +15,8 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
 using ECommons.Automation;
+using ECommons.Throttlers;
+using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Client.UI.Shell;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -73,7 +75,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
     private static IAddonEventHandle? MouseClickHandle;
     private static string MessageInput = string.Empty;
     private static int _dropMacroIndex = -1;
-    private static float? OriginalChatLogWidth;
     private static string ItemSearchInput = string.Empty;
     private static Dictionary<string, Item>? ItemNames;
     private static Dictionary<string, Item> _ItemNames = [];
@@ -130,7 +131,10 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
         _ItemNames = ItemNames.Take(10).ToDictionary(x => x.Key, x => x.Value);
 
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "ChatLog", OnAddon);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "ChatLog", OnAddon);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "ChatLog", OnAddon);
+        if (AddonChatLog != null) OnAddon(AddonEvent.PostSetup, null);
 
         Overlay ??= new Overlay(this);
         Overlay.Flags |= ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize;
@@ -677,41 +681,48 @@ public unsafe class QuickChatPanel : DailyModuleBase
         }
     }
 
-    private void OnAddon(AddonEvent type, AddonArgs args)
+    private void OnAddon(AddonEvent type, AddonArgs? args)
     {
-        if (Service.ClientState.LocalPlayer == null) return;
-        if (AddonChatLog == null) return;
-
-        var textInputNode = AddonChatLog->GetNodeById(5);
-        if (textInputNode == null) return;
-
-        ButtonPos = new Vector2(textInputNode->X + textInputNode->Width, textInputNode->Y - 3) + ConfigButtonOffset;
-
-        OriginalChatLogWidth ??= AddonChatLog->RootNode->GetWidth();
-        AddonChatLog->RootNode->SetWidth(
-            (ushort)Math.Max(AddonChatLog->X,
-                             textInputNode->X + textInputNode->Width + ConfigButtonOffset.X + ConfigButtonSize));
-
-        AtkResNode* iconNode = null;
-        for (var i = 0; i < AddonChatLog->UldManager.NodeListCount; i++)
+        if (!EzThrottler.Throttle("QuickChatPanel-UIAdjust")) return;
+        switch (type)
         {
-            var node = AddonChatLog->UldManager.NodeList[i];
-            if (node->NodeID == 10001)
-            {
-                iconNode = node;
+            case AddonEvent.PostSetup:
+            case AddonEvent.PostRefresh:
+                if (Service.ClientState.LocalPlayer == null || AddonChatLog == null) return;
+                FreeNode();
+
+                var textInputNode = AddonChatLog->GetNodeById(5);
+                var collisionNode = AddonChatLog->GetNodeById(15);
+                if (textInputNode == null || collisionNode == null) return;
+
+                ButtonPos = new Vector2(textInputNode->X + textInputNode->Width - ConfigButtonSize - 6, textInputNode->Y - 3) + ConfigButtonOffset;
+
+                AtkResNode* iconNode = null;
+                for (var i = 0; i < AddonChatLog->UldManager.NodeListCount; i++)
+                {
+                    var node = AddonChatLog->UldManager.NodeList[i];
+                    if (node->NodeID == 10001)
+                    {
+                        iconNode = node;
+                        break;
+                    }
+                }
+                
+                if (iconNode is null)
+                    MakeIconNode(10001, ButtonPos, ConfigButtonIcon);
+                else
+                {
+                    iconNode->SetPositionFloat(ButtonPos.X, ButtonPos.Y);
+                    iconNode->SetHeight(ConfigButtonSize);
+                    iconNode->SetWidth(ConfigButtonSize);
+                    ((AtkImageNode*)iconNode)->LoadIconTexture(ConfigButtonIcon, 0);
+                }
                 break;
-            }
+            case AddonEvent.PreFinalize:
+                FreeNode();
+                break;
         }
-
-        if (iconNode is null)
-            MakeIconNode(10001, ButtonPos, ConfigButtonIcon);
-        else
-        {
-            iconNode->SetPositionFloat(ButtonPos.X, ButtonPos.Y);
-            iconNode->SetHeight(ConfigButtonSize);
-            iconNode->SetWidth(ConfigButtonSize);
-            ((AtkImageNode*)iconNode)->LoadIconTexture(ConfigButtonIcon, 0);
-        }
+        
     }
 
     private void MakeIconNode(uint nodeId, Vector2 position, int icon)
@@ -732,10 +743,9 @@ public unsafe class QuickChatPanel : DailyModuleBase
         AddonManager.LinkNodeAtEnd((AtkResNode*)imageNode, AddonChatLog);
 
         imageNode->AtkResNode.NodeFlags |= NodeFlags.RespondToMouse | NodeFlags.EmitsEvents | NodeFlags.HasCollision;
-        AddonChatLog->UpdateCollisionNodeList(false);
+        AddonChatLog->UpdateCollisionNodeList(true);
         MouseClickHandle ??=
-            Service.AddonEvent.AddEvent((nint)AddonChatLog, (nint)(&imageNode->AtkResNode), AddonEventType.MouseClick,
-                                        OnEvent);
+            Service.AddonEvent.AddEvent((nint)AddonChatLog, (nint)(&imageNode->AtkResNode), AddonEventType.MouseClick, OnEvent);
     }
 
     private void OnEvent(AddonEventType atkEventType, IntPtr atkUnitBase, IntPtr atkResNode)
@@ -754,6 +764,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             {
                 AddonManager.UnlinkAndFreeImageNode((AtkImageNode*)node, AddonChatLog);
                 Service.AddonEvent.RemoveEvent(MouseClickHandle);
+                MouseClickHandle = null;
             }
         }
     }
@@ -811,11 +822,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
     public override void Uninit()
     {
         FreeNode();
-        if (AddonChatLog != null && OriginalChatLogWidth != null)
-        {
-            AddonChatLog->RootNode->SetWidth((ushort)OriginalChatLogWidth);
-            OriginalChatLogWidth = null;
-        }
 
         Service.AddonLifecycle.UnregisterListener(OnAddon);
 
