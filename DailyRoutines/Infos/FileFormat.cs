@@ -65,5 +65,23 @@ public class FileFormat
         public int daoyu_sw { get; set; }
         public string? banner_url { get; set; }
     }
+    
+    public class RSGameNews
+    {
+        public int Code {get; set; }
+        public string Message { get; set; } = null!;
+        public List<RSGameNewsData> Data { get; set; } = null!;
+    }
+
+    public class RSGameNewsData
+    {
+        public uint Id { get; set; }
+        public string Title { get; set; } = null!;
+        public string Author { get; set; } = null!;
+        public string HomeImagePath { get; set; } = null!;
+        public string PublishDate { get; set; } = null!;
+        public string Summary { get; set; } = null!;
+        public int SortIndex { get; set; } 
+    }
 
 }

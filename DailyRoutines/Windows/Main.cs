@@ -17,7 +17,6 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Utility;
 using ImGuiNET;
 using Newtonsoft.Json;
-using static DailyRoutines.Windows.Main;
 
 namespace DailyRoutines.Windows;
 
@@ -244,12 +243,23 @@ public class MainSettings
         public Vector4 Color { get; set; }
     }
 
+    public class GameNews
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Url { get; set; } = string.Empty;
+        public string PublishDate { get; set; } = string.Empty;
+        public string Summary { get; set; } = string.Empty;
+        public string HomeImagePath { get; set; } = string.Empty;
+        public int SortIndex { get; set; } = 0;
+    }
+
     private static string ConflictKeySearchString = string.Empty;
     private static readonly HttpClient client = new();
     private static int TotalDownloadCounts;
     private static Version CurrentVersion = new();
     private static VersionInfo LatestVersionInfo = new();
     private static readonly List<GameEvent> GameCalendars = [];
+    private static readonly List<GameNews> GameNewsList = [];
 
     public static void Init()
     {
@@ -272,7 +282,10 @@ public class MainSettings
 
             DrawGameEventsCalendar();
             ImGui.Separator();
-
+            
+            DrawGameNews();
+            ImGui.Separator();
+            
             DrawTooltips();
 
             ImGui.EndTabItem();
@@ -426,6 +439,7 @@ public class MainSettings
                 Service.Config.SendCalendarToChatWhenLogin ^= true;
                 Service.Config.Save();
             }
+
             ImGui.EndPopup();
         }
 
@@ -440,12 +454,26 @@ public class MainSettings
 
             var buttonSize = ImGui.CalcTextSize($"前缀得五字{longestText}后缀也五字");
             var framePadding = ImGui.GetStyle().FramePadding;
-            foreach (var activity in GameCalendars)
+            var NowTime = DateTime.Now;
+            var List = GameCalendars.OrderByDescending(x => x.EndTime)
+                                    .ThenByDescending(x => x.EndTime < DateTime.Now ? x.EndTime : DateTime.MaxValue)
+                                    .ThenBy(x => x.EndTime >= DateTime.Now ? x.EndTime : DateTime.MinValue)
+                                    .ToList();
+            foreach (var activity in List)
             {
                 ImGui.PushStyleColor(ImGuiCol.Button, activity.Color);
-                if (ImGui.Button($"{activity.Name}###{activity.Url}",
-                                 buttonSize with { Y = (2 * framePadding.Y) + buttonSize.Y }))
+                var statusStr = "";
+                if (activity.EndTime < DateTime.Now)
+                {
+                    ImGui.BeginDisabled();
+                    statusStr = Service.Lang.GetText("GameCalendar-EventEnded");
+                }
+
+                if (ImGui.Button(
+                        $"{activity.Name}{statusStr}###{activity.Url}",
+                        buttonSize with { Y = (2 * framePadding.Y) + buttonSize.Y }))
                     Util.OpenLink($"{activity.Url}");
+                if (statusStr.Length > 0) ImGui.EndDisabled();
                 ImGui.PopStyleColor();
 
                 if (ImGui.IsItemHovered())
@@ -481,6 +509,35 @@ public class MainSettings
         }
     }
 
+    private static void DrawGameNews()
+    {
+        ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("GameNews")}:");
+        ImGui.Spacing();
+        if (GameNewsList is { Count: > 0 })
+        {
+            var longestText = string.Empty;
+            foreach (var activity in GameCalendars)
+                if (activity.Name.Length > longestText.Length)
+                    longestText = activity.Name;
+
+
+            foreach (var news in GameNewsList)
+            {
+                if (ImGui.Button(
+                        $"{news.Title}###{news.Url}"
+                        ))
+                    Util.OpenLink($"{news.Url}");
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.BeginTooltip();
+                    ImGui.Text($"{news.Summary}");
+                    ImGui.EndTooltip();
+                }
+            }
+        }
+    }
+
     private static void DrawTooltips()
     {
         ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("Settings-TipMessage0")}:");
@@ -493,6 +550,7 @@ public class MainSettings
         Task.Run(async () =>
         {
             await GetGameCalendar();
+            await GetGameNews();
             TotalDownloadCounts = await GetTotalDownloadsAsync();
             LatestVersionInfo = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
         });
@@ -507,7 +565,8 @@ public class MainSettings
         {
             Service.Chat.Print(new SeStringBuilder()
                                .AddUiForeground("[Daily Routines]", 34)
-                               .AddUiForeground($" {DateTime.Now.ToShortDateString()} {Service.Lang.GetText("GameCalendar")}", 2)
+                               .AddUiForeground(
+                                   $" {DateTime.Now.ToShortDateString()} {Service.Lang.GetText("GameCalendar")}", 2)
                                .Build());
             var orderNumber = 1;
             foreach (var gameEvent in GameCalendars)
@@ -515,7 +574,9 @@ public class MainSettings
                 if (gameEvent.BeginTime > DateTime.Now || DateTime.Now > gameEvent.EndTime) continue;
                 Service.Chat.Print(new SeStringBuilder().AddUiForeground($"{orderNumber}. ", 2)
                                                         .AddUiForeground($"{gameEvent.Name}", 25)
-                                                        .AddUiForeground($" ({Service.Lang.GetText("EndTime")}: {gameEvent.EndTime.ToShortDateString()})", 2)
+                                                        .AddUiForeground(
+                                                            $" ({Service.Lang.GetText("EndTime")}: {gameEvent.EndTime.ToShortDateString()})",
+                                                            2)
                                                         .Build());
                 orderNumber++;
             }
@@ -569,6 +630,32 @@ public class MainSettings
                     Color = DarkenColor(HexToVector4(activity.color), 0.3f)
                 };
                 GameCalendars.Add(gameEvent);
+            }
+        }
+    }
+
+    private static async Task GetGameNews()
+    {
+        const string url =
+            "https://cqnews.web.sdo.com/api/news/newsList?gameCode=ff&CategoryCode=5309,5310,5311,5312,5313&pageIndex=0&pageSize=5";
+        var response = await client.GetStringAsync(url);
+        var result = JsonConvert.DeserializeObject<FileFormat.RSGameNews>(response);
+
+        if (result.Data.Count > 0)
+        {
+            GameNewsList.Clear();
+            foreach (var activity in result.Data)
+            {
+                var gameNews = new GameNews()
+                {
+                    Title = activity.Title,
+                    Url = activity.Author,
+                    SortIndex = activity.SortIndex,
+                    Summary = activity.Summary,
+                    HomeImagePath = activity.HomeImagePath,
+                    PublishDate = activity.PublishDate
+                };
+                GameNewsList.Add(gameNews);
             }
         }
     }

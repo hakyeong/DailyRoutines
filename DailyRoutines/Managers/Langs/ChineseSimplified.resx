@@ -1104,6 +1104,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="EndTime" xml:space="preserve">
     <value>结束时间</value>
   </data>
+    <data name="GameNews" xml:space="preserve">
+    <value>官网新闻</value>
+  </data>
   <data name="GameCalendar" xml:space="preserve">
     <value>游戏活动日历</value>
   </data>
