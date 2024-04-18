@@ -48,7 +48,7 @@ public static class Widgets
         string helpText, string imageUrl, Vector2 imageSize = default,
         FontAwesomeIcon imageIcon = FontAwesomeIcon.InfoCircle)
     {
-        var imageState = ThreadLoadImageHandler.TryGetTextureWrap(imageUrl, out var imageHandle);
+        var imageState = ImageManager.TryGetImage(imageUrl, out var imageHandle);
 
         ImGui.TextColored(ImGuiColors.DalamudOrange, helpText);
 

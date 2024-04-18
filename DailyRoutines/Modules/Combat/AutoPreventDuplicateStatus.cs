@@ -192,7 +192,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
 
                     ImGui.SameLine();
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 2.5f);
-                    ImGui.Image(IconManager.GetIcon(result.Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(20f));
+                    ImGui.Image(ImageManager.GetIcon(result.Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(20f));
 
                     ImGui.SameLine();
                     ImGui.Text($"{result.Name.ExtractText()}");

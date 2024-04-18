@@ -240,7 +240,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                     if (macro == null) continue;
 
                     var name = macro->Name.ExtractText();
-                    var icon = IconManager.GetIcon(macro->IconId);
+                    var icon = ImageManager.GetIcon(macro->IconId);
                     if (string.IsNullOrEmpty(name) || icon == null) continue;
 
                     var currentSavedMacro = (*macro).ToSavedMacro();
@@ -302,7 +302,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                     if (macro == null) continue;
 
                     var name = macro->Name.ExtractText();
-                    var icon = IconManager.GetIcon(macro->IconId);
+                    var icon = ImageManager.GetIcon(macro->IconId);
                     if (string.IsNullOrEmpty(name) || icon == null) continue;
 
                     var currentSavedMacro = (*macro).ToSavedMacro();
@@ -497,7 +497,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                         var macro = ConfigSavedMacros[i];
 
                         var name = macro.Name;
-                        var icon = IconManager.GetIcon(macro.IconID);
+                        var icon = ImageManager.GetIcon(macro.IconID);
                         if (string.IsNullOrEmpty(name) || icon == null) continue;
 
                         switch (ConfigOverlayMacroDisplayMode)
@@ -604,7 +604,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                     foreach (var (itemName, item) in _ItemNames)
                     {
                         if (itemName.Length > longestText.Length) longestText = itemName;
-                        if (ImGuiOm.SelectableImageWithText(IconManager.GetIcon(item.Icon).ImGuiHandle,
+                        if (ImGuiOm.SelectableImageWithText(ImageManager.GetIcon(item.Icon).ImGuiHandle,
                                                             new(24),
                                                             itemName, false))
                             Service.Chat.Print(new SeStringBuilder().AddItemLink(item.RowId).Build());

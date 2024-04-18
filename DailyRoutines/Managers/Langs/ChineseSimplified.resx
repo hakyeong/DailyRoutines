@@ -1281,4 +1281,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="GameCalendar-EndTimeMessage" xml:space="preserve">
     <value>距离结束还有 {0} 天</value>
   </data>
+  <data name="PublishTime" xml:space="preserve">
+    <value>发布时间</value>
+  </data>
 </root>

@@ -26,7 +26,7 @@ namespace DailyRoutines.Modules
         public override void ConfigUI()
         {
             PreviewImageWithHelpText(Service.Lang.GetText("AutoNotifyCountdown-NotificationMessageHelp"),
-                                     "https://mirror.ghproxy.com/https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoNotifyCountdown-1.png");
+                                     "https://gh.atmoomen.top/DailyRoutines/main/imgs/AutoNotifyCountdown-1.png");
 
             if (ImGui.Checkbox(Service.Lang.GetText("OnlyNotifyWhenBackground"),
                                ref ConfigOnlyNotifyWhenBackground))

@@ -31,7 +31,7 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
     public override void ConfigUI()
     {
         PreviewImageWithHelpText(Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationMessageHelp"),
-                                 "https://mirror.ghproxy.com/https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/AutoNotifyLeveUpdate-1.png");
+                                 "https://gh.atmoomen.top/DailyRoutines/main/imgs/AutoNotifyLeveUpdate-1.png");
 
         ImGui.Spacing();
         ImGui.Text($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NumText")}{lastLeve}");

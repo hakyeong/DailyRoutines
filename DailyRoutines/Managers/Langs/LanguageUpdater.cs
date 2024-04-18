@@ -10,8 +10,8 @@ public class LanguageUpdater
     public static async Task DownloadLanguageFilesAsync()
     {
         var httpClient = new HttpClient();
-        const string baseUrl = "https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/master/DailyRoutines/Managers/Langs/";
-        const string fallbackBaseUrl = "https://raw.githubusercontents.com/AtmoOmen/DailyRoutines/master/DailyRoutines/Managers/Langs/";
+        const string baseUrl = "https://gh.atmoomen.top/DailyRoutines/master/DailyRoutines/Managers/Langs/";
+        const string fallbackBaseUrl = "https://gh.atmoomen.top//DailyRoutines/master/DailyRoutines/Managers/Langs/";
 
         if (!Directory.Exists(LanguageManager.LangsDirectory))
             Directory.CreateDirectory(LanguageManager.LangsDirectory);
