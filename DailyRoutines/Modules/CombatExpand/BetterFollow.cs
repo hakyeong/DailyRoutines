@@ -26,7 +26,6 @@ public unsafe class BetterFollow : DailyModuleBase
     private static bool _LastFollowObjectStatus;
 
     // 数据
-    private static ulong _FollowStartA1;
     private static nint _LastFollowObjectAddress;
     private static uint _LastFollowObjectId;
     private static nint _BassAddress;
@@ -34,14 +33,10 @@ public unsafe class BetterFollow : DailyModuleBase
     private static nint _a1_data;
     private static nint _v5;
     private static nint _d1;
-    private static nint _a2;
+    //private static nint _a2;
+    private static nint _v8;
 
     // Hook
-    private delegate void FollowA1Delegate(ulong a1, ulong a2);
-
-    [Signature("E8 ?? ?? ?? ?? C6 03 ?? 48 81 C6", DetourName = nameof(UpdateFollowA1))]
-    private readonly Hook<FollowA1Delegate>? FollowA1Hook;
-
     private delegate void FollowDataDelegate(ulong a1, nint a2);
 
     [Signature("E8 ?? ?? ?? ?? EB ?? 48 81 C1 ?? ?? ?? ?? E8 ?? ?? ?? ?? EB", DetourName = nameof(FollowData))]
@@ -49,7 +44,7 @@ public unsafe class BetterFollow : DailyModuleBase
 
     [Signature(
         "40 53 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 8B D9 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 48 8B D0 48 8D 8B ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 48 8B 4C 24 ?? BA ?? ?? ?? ?? 41 B8 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B 8C 24 ?? ?? ?? ?? 48 33 CC E8 ?? ?? ?? ?? 48 81 C4 ?? ?? ?? ?? 5B C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 89 5C 24")]
-    private readonly delegate* unmanaged<ulong, uint, ulong, nint, ulong> FollowStart;
+    private readonly delegate* unmanaged<nint, uint, nint, nint, ulong> FollowStart;
 
     [Signature("48 89 5C 24 ?? 57 48 83 EC ?? 48 8B F9 48 8B DA 48 8B CA E8 ?? ?? ?? ?? 44 8B 00")]
     private readonly delegate* unmanaged<nint, nint, ulong> FollowDataPush;
@@ -87,15 +82,21 @@ public unsafe class BetterFollow : DailyModuleBase
         _d1 = 0;
 
         _BassAddress = Process.GetCurrentProcess().MainModule.BaseAddress;
+        //&unk_1421CF590
         _a1 = _BassAddress + 0x21CF590;
-        _a2 = _BassAddress + 0x21CF9C0;
-        _v5 = _BassAddress + 0x21CFB60;
+        //&unk_1421CF9C0
+        //_a2 = _BassAddress + 0x21CF9C0;
+        //qword_1421CFB60
+        _v5 = *(nint*)(_BassAddress + 0x21CFB60);
+        //sub_141351D70(a1 + 1104, v6-objAddress);
         _a1_data = _a1 + 0x450;
+        //*(_BYTE *)(a1 + 1369)
         _d1 = _a1 + 1369;
+        //141A13598+58->sub_140629380->v7 + 6600
+        _v8 = *(nint*)((*(ulong*)(_BassAddress + 0x21A8D48)) + 0x2B60)+0x19c8;
+        
         _FollowStatus = *(int*)_d1 == 4;
-
         Service.Hook.InitializeFromAttributes(this);
-        FollowA1Hook?.Enable();
         FollowDataHook?.Enable();
 
         Service.Framework.Update += OnFramework;
@@ -154,21 +155,19 @@ public unsafe class BetterFollow : DailyModuleBase
 
     private void OnFramework(IFramework _)
     {
-        if (!EzThrottler.Throttle("BetterFollow", (int)Delay * 1000)) return;
-
-        // 打断
+        // 打断,要放在上面不然delay拉的太高就打断不了了
         if (_enableReFollow && InterruptByConflictKey())
         {
             _enableReFollow = false;
             return;
         }
-
         _FollowStatus = *(int*)_d1 == 4;
+        if (!EzThrottler.Throttle("BetterFollow", (int)Delay * 1000)) return;
         if (!AutoReFollow) return;
         if (_FollowStatus) return;
         // 在过图
         if (Flags.BetweenAreas()) return;
-
+        // 自己无了
         if (Service.ClientState.LocalPlayer == null) return;
         // 按键打断
         if (!_enableReFollow)
@@ -198,9 +197,10 @@ public unsafe class BetterFollow : DailyModuleBase
             return;
         }
 
-        // 跟随目标换图了
+        // 跟随目标换图了并且换了内存地址
         if (Service.ObjectTable.SearchById(_LastFollowObjectId).Address != _LastFollowObjectAddress)
         {
+            //更新目标的新地址
             _LastFollowObjectAddress = Service.ObjectTable.SearchById(_LastFollowObjectId).Address;
             NewFollow(_LastFollowObjectAddress);
         }
@@ -211,16 +211,15 @@ public unsafe class BetterFollow : DailyModuleBase
     private void OnCommand(string command, string args)
     {
         var localPlayer = Service.ClientState.LocalPlayer;
-        if (localPlayer == null || localPlayer.TargetObject == null) return;
-
-        NewFollow(Service.ClientState.LocalPlayer.TargetObject.Address);
+        if (localPlayer == null || localPlayer.TargetObject == null ) return;
+        NewFollow(localPlayer.TargetObject.Address);
     }
 
     private void ReFollow()
     {
         if (_FollowStatus) return;
-        if (_LastFollowObjectAddress == 0 && _FollowStartA1 == 0) return;
-
+        if (_LastFollowObjectAddress == 0) return;
+        //为了避免换图可能跟随目标上一个图的地点,需要重新把obj地址推进去
         FollowDataPush(_a1_data, _LastFollowObjectAddress);
         SafeMemory.Write(_d1, 4);
         _FollowStatus = true;
@@ -237,20 +236,12 @@ public unsafe class BetterFollow : DailyModuleBase
     private void NewFollow(nint objectAddress)
     {
         if (_FollowStatus) return;
-        if (objectAddress == 0 && _FollowStartA1 == 0) return;
-
-        FollowStart(_FollowStartA1, 52, *(ulong*)_v5, objectAddress);
+        if (objectAddress == 0) return;
+        FollowStart(_v8, 52, _v5, objectAddress);
         FollowDataPush(_a1_data, objectAddress);
         SafeMemory.Write(_d1, 4);
         _enableReFollow = true;
         _FollowStatus = true;
-    }
-
-
-    private void UpdateFollowA1(ulong a1, ulong a2)
-    {
-        if (_FollowStartA1 < a1) _FollowStartA1 = a1;
-        FollowA1Hook.Original(a1, a2);
     }
 
     private void FollowData(ulong a1, nint a2)
