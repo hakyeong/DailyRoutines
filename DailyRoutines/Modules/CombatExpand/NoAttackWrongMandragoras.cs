@@ -1,30 +1,25 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Hooking;
-using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
-using FFXIVClientStructs.FFXIV.Client.Game;
+using ECommons.Throttlers;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
+using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("NoAttackWrongMandragorasTitle", "NoAttackWrongMandragorasDescription", ModuleCategories.CombatExpand)]
 public unsafe class NoAttackWrongMandragoras : DailyModuleBase
 {
-    [Signature("48 83 EC 38 33 D2 C7 44 24 20 00 00 00 00 45 33 C9")]
-    private static delegate* unmanaged<void> CancelCast;
-
-    [Signature("E8 ?? ?? ?? ?? 44 0F B6 C3 48 8B D0")]
-    private static delegate* unmanaged<ulong, FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*> GetGameObjectFromObjectID;
-
-    private delegate bool UseActionSelfDelegate(
-        ActionManager* actionManager, uint actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
-        uint a5 = 0, uint a6 = 0, void* a7 = null);
-    private Hook<UseActionSelfDelegate>? useActionSelfHook;
+    private delegate byte IsTargetableDelegate(GameObject* gameObj);
+    [Signature("40 53 48 83 EC 20 F3 0F 10 89 ?? ?? ?? ?? 0F 57 C0 0F 2E C8 48 8B D9 7A 0A", DetourName = nameof(IsTargetableDetour))]
+    private readonly Hook<IsTargetableDelegate>? IsTargetableHook;
 
     private static List<uint[]>? Mandragoras;
     private static readonly List<BattleNpc> ValidBattleNPCs = [];
@@ -36,19 +31,12 @@ public unsafe class NoAttackWrongMandragoras : DailyModuleBase
     public override void Init()
     {
         Service.Hook.InitializeFromAttributes(this);
-
-        useActionSelfHook =
-            Service.Hook.HookFromAddress<UseActionSelfDelegate>((nint)ActionManager.MemberFunctionPointers.UseAction,
-                                                                UseActionSelf);
-        useActionSelfHook?.Enable();
+        IsTargetableHook?.Enable();
 
         Mandragoras ??= LuminaCache.Get<BNpcName>()
                                .Where(x => x.Singular.RawString.Contains("王后"))
-                               .Select(queen => new[] { queen.RowId, queen.RowId - 1, queen.RowId - 2, queen.RowId - 3, queen.RowId - 4 })
+                               .Select(queen => new[] { queen.RowId - 4, queen.RowId - 3, queen.RowId - 2, queen.RowId - 1, queen.RowId })
                                .ToList();
-
-        Service.Framework.Update += OnUpdate;
-
         AddConfig(this, "OnlyInTreasureHunt", true);
         OnlyInTreasureHunt = GetConfig<bool>(this, "OnlyInTreasureHunt");
     }
@@ -59,80 +47,40 @@ public unsafe class NoAttackWrongMandragoras : DailyModuleBase
             UpdateConfig(this, "OnlyInTreasureHunt", OnlyInTreasureHunt);
     }
 
-    private bool UseActionSelf(ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6, void* a7)
+    private byte IsTargetableDetour(GameObject* potentialTarget) 
     {
-        if (OnlyInTreasureHunt && !ValidZones.Contains(Service.ClientState.TerritoryType))
-            return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
+        var isTargetable = IsTargetableHook.Original(potentialTarget);
+        if (OnlyInTreasureHunt && !ValidZones.Contains(Service.ClientState.TerritoryType)) return isTargetable;
 
-        if (actionType != 1 || targetID == 0xE000_0000)
-            return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
-
-        var target = GetGameObjectFromObjectID(targetID);
-        if (target == null)
-            return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
-
-        var objID = target->GetNpcID();
-        ValidBattleNPCs.Clear();
-        foreach (var obj in Service.ObjectTable)
+        if (EzThrottler.Throttle("NoAttackWrongMandragoras-Update", 100))
         {
-            if (obj.IsValid() && obj is BattleNpc { IsDead: false } battleObj)
+            ValidBattleNPCs.Clear();
+            foreach (var obj in Service.ObjectTable)
             {
-                ValidBattleNPCs.Add(battleObj);
+                var distance = Vector3.Distance(Service.ClientState.LocalPlayer.Position, obj.Position);
+                if (distance > 45) continue;
+                if (obj.IsValid() && obj is BattleNpc { IsDead: false } battleObj)
+                    ValidBattleNPCs.Add(battleObj);
             }
         }
 
-        foreach (var mandragora in Mandragoras)
+        var objID = potentialTarget->GetNpcID();
+        foreach (var mandragoraSeries in Mandragoras)
         {
-            if (mandragora.Contains(objID))
+            var index = Array.IndexOf(mandragoraSeries, objID);
+            if (index != -1)
             {
-                if (mandragora.SkipWhile(id => id != objID).Skip(1).Take(5 - 1).Any(id => ValidBattleNPCs.Any(battleObj => battleObj.NameId == id)))
+                for (var i = index - 1; i > -1; i--)
                 {
-                    Service.Target.Target = null;
-                    CancelCast();
-                    return false;
+                    var mandragora = ValidBattleNPCs.FirstOrDefault(x => ((GameObject*)x.Address)->GetNpcID() == mandragoraSeries[i]);
+                    if (mandragora != null && !mandragora.IsDead && mandragora.IsValid())
+                        return 0;
                 }
+
+                return 1;
             }
         }
 
-        return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
-    }
-
-    private static void OnUpdate(IFramework framework)
-    {
-        if (OnlyInTreasureHunt && !ValidZones.Contains(Service.ClientState.TerritoryType)) return;
-
-        var target = Service.Target.Target as BattleNpc;
-        if (target == null) return;
-
-        var objID = target.NameId;
-    
-        ValidBattleNPCs.Clear();
-        foreach (var obj in Service.ObjectTable)
-        {
-            if (obj.IsValid() && obj is BattleNpc { IsDead: false } battleObj)
-            {
-                ValidBattleNPCs.Add(battleObj);
-            }
-        }
-
-        foreach (var mandragora in Mandragoras)
-        {
-            if (mandragora.Contains(objID))
-            {
-                if (mandragora.SkipWhile(id => id != objID).Skip(1).Take(5 - 1).Any(id => ValidBattleNPCs.Any(battleObj => battleObj.NameId == id)))
-                {
-                    Service.Target.Target = null;
-                    CancelCast();
-                    return;
-                }
-            }
-        }
-    }
-
-    public override void Uninit()
-    {
-        Service.Framework.Update -= OnUpdate;
-
-        base.Uninit();
+        return isTargetable;
     }
 }
