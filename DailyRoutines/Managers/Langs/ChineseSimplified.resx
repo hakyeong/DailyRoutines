@@ -1104,7 +1104,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="EndTime" xml:space="preserve">
     <value>结束时间</value>
   </data>
-    <data name="GameNews" xml:space="preserve">
+  <data name="GameNews" xml:space="preserve">
     <value>官网新闻</value>
   </data>
   <data name="GameCalendar" xml:space="preserve">
@@ -1112,15 +1112,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="GameCalendar-EventEnded" xml:space="preserve">
     <value>(已结束)</value>
-  </data>
-  <data name="GameCalendar-EventNotEnded" xml:space="preserve">
-    <value>(未结束)</value>
-  </data>
-  <data name="GameCalendar-EventNotStarted" xml:space="preserve">
-    <value>(未开始)</value>
-  </data>
-  <data name="GameCalendar-EventStarted" xml:space="preserve">
-    <value>(已开始)</value>
   </data>
   <data name="StartTime" xml:space="preserve">
     <value>开始时间</value>
@@ -1283,5 +1274,11 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="CommandHelp-Search" xml:space="preserve">
     <value>打开主界面, 并搜索指定关键词</value>
+  </data>
+  <data name="End" xml:space="preserve">
+    <value>结束</value>
+  </data>
+  <data name="GameCalendar-EndTimeMessage" xml:space="preserve">
+    <value>距离结束还有 {0} 天</value>
   </data>
 </root>

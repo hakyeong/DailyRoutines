@@ -241,6 +241,10 @@ public class MainSettings
         public DateTime BeginTime { get; set; } = DateTime.MinValue;
         public DateTime EndTime { get; set; } = DateTime.MaxValue;
         public Vector4 Color { get; set; }
+        /// <summary>
+        /// 0 - 正在进行; 1 - 未开始; 2 - 已结束
+        /// </summary>
+        public uint State { get; set; }
     }
 
     public class GameNews
@@ -258,7 +262,7 @@ public class MainSettings
     private static int TotalDownloadCounts;
     private static Version CurrentVersion = new();
     private static VersionInfo LatestVersionInfo = new();
-    private static readonly List<GameEvent> GameCalendars = [];
+    private static List<GameEvent> GameCalendars = [];
     private static readonly List<GameNews> GameNewsList = [];
 
     public static void Init()
@@ -280,10 +284,17 @@ public class MainSettings
             DrawPluginStats();
             ImGui.Separator();
 
+            ImGui.BeginGroup();
             DrawGameEventsCalendar();
-            ImGui.Separator();
-            
+            ImGui.EndGroup();
+
+            ImGui.SameLine();
+            ImGui.Dummy(new(48));
+
+            ImGui.SameLine();
+            ImGui.BeginGroup();
             DrawGameNews();
+            ImGui.EndGroup();
             ImGui.Separator();
             
             DrawTooltips();
@@ -454,37 +465,36 @@ public class MainSettings
 
             var buttonSize = ImGui.CalcTextSize($"前缀得五字{longestText}后缀也五字");
             var framePadding = ImGui.GetStyle().FramePadding;
-            var NowTime = DateTime.Now;
-            var List = GameCalendars.OrderByDescending(x => x.EndTime)
-                                    .ThenByDescending(x => x.EndTime < DateTime.Now ? x.EndTime : DateTime.MaxValue)
-                                    .ThenBy(x => x.EndTime >= DateTime.Now ? x.EndTime : DateTime.MinValue)
-                                    .ToList();
-            foreach (var activity in List)
+            foreach (var activity in GameCalendars)
             {
+                var statusStr = activity.State == 2 ? Service.Lang.GetText("GameCalendar-EventEnded") : "";
                 ImGui.PushStyleColor(ImGuiCol.Button, activity.Color);
-                var statusStr = "";
-                if (activity.EndTime < DateTime.Now)
-                {
-                    ImGui.BeginDisabled();
-                    statusStr = Service.Lang.GetText("GameCalendar-EventEnded");
-                }
-
-                if (ImGui.Button(
-                        $"{activity.Name}{statusStr}###{activity.Url}",
-                        buttonSize with { Y = (2 * framePadding.Y) + buttonSize.Y }))
+                ImGui.BeginDisabled(activity.State == 2);
+                if (ImGui.Button($"{activity.Name} {statusStr}###{activity.Url}", buttonSize with { Y = (2 * framePadding.Y) + buttonSize.Y }))
                     Util.OpenLink($"{activity.Url}");
-                if (statusStr.Length > 0) ImGui.EndDisabled();
+                ImGui.EndDisabled();
                 ImGui.PopStyleColor();
 
                 if (ImGui.IsItemHovered())
                 {
                     ImGui.BeginTooltip();
-                    ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("StartTime")}: ");
+                    ImGui.TextColored(ImGuiColors.DalamudOrange, "距离");
 
                     ImGui.SameLine();
-                    ImGui.Text($"{activity.BeginTime}");
+                    ImGui.TextColored(ImGuiColors.HealerGreen, $"{(activity.State is 0 ? Service.Lang.GetText("End") : Service.Lang.GetText("Start"))}");
 
                     ImGui.SameLine();
+                    ImGui.TextColored(ImGuiColors.DalamudOrange, "还有: ");
+
+                    ImGui.SameLine();
+                    ImGui.Text($"{(activity.State is 0 ? activity.EndTime - DateTime.Now : activity.BeginTime - DateTime.Now).Days} 天");
+
+                    ImGui.TextColored(ImGuiColors.DalamudOrange, activity.State is 0 ? $"{Service.Lang.GetText("EndTime")}: " : $"{Service.Lang.GetText("StartTime")}: ");
+
+                    ImGui.SameLine();
+                    ImGui.Text(activity.State is 0 ? $"{activity.EndTime}" : $"{activity.BeginTime}");
+
+                    /*ImGui.SameLine();
                     ImGui.TextColored(
                         activity.BeginTime > DateTime.Now ? ImGuiColors.DPSRed : ImGuiColors.HealerGreen,
                         activity.BeginTime > DateTime.Now
@@ -501,7 +511,7 @@ public class MainSettings
                         activity.EndTime < DateTime.Now ? ImGuiColors.DPSRed : ImGuiColors.HealerGreen,
                         activity.EndTime > DateTime.Now
                             ? Service.Lang.GetText("GameCalendar-EventNotEnded")
-                            : Service.Lang.GetText("GameCalendar-EventEnded"));
+                            : Service.Lang.GetText("GameCalendar-EventEnded"));*/
 
                     ImGui.EndTooltip();
                 }
@@ -516,24 +526,19 @@ public class MainSettings
         if (GameNewsList is { Count: > 0 })
         {
             var longestText = string.Empty;
-            foreach (var activity in GameCalendars)
-                if (activity.Name.Length > longestText.Length)
-                    longestText = activity.Name;
+            foreach (var news in GameNewsList)
+                if (news.Title.Length > longestText.Length)
+                    longestText = news.Title;
 
+            var buttonSize = ImGui.CalcTextSize($"前三字{longestText}后三字");
+            var framePadding = ImGui.GetStyle().FramePadding;
 
             foreach (var news in GameNewsList)
             {
-                if (ImGui.Button(
-                        $"{news.Title}###{news.Url}"
-                        ))
+                if (ImGui.Button($"{news.Title}###{news.Url}", buttonSize with { Y = (2 * framePadding.Y) + buttonSize.Y }))
                     Util.OpenLink($"{news.Url}");
 
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.BeginTooltip();
-                    ImGui.Text($"{news.Summary}");
-                    ImGui.EndTooltip();
-                }
+                ImGuiOm.TooltipHover($"{news.Summary}");
             }
         }
     }
@@ -574,9 +579,8 @@ public class MainSettings
                 if (gameEvent.BeginTime > DateTime.Now || DateTime.Now > gameEvent.EndTime) continue;
                 Service.Chat.Print(new SeStringBuilder().AddUiForeground($"{orderNumber}. ", 2)
                                                         .AddUiForeground($"{gameEvent.Name}", 25)
-                                                        .AddUiForeground(
-                                                            $" ({Service.Lang.GetText("EndTime")}: {gameEvent.EndTime.ToShortDateString()})",
-                                                            2)
+                                                        .AddUiForeground($" ({Service.Lang.GetText("GameCalendar-EndTimeMessage", 
+                                                            (gameEvent.EndTime - DateTime.Now).Days)}", 2)
                                                         .Build());
                 orderNumber++;
             }
@@ -621,16 +625,23 @@ public class MainSettings
             GameCalendars.Clear();
             foreach (var activity in result.data)
             {
+                var currentTime = DateTime.Now;
+                var beginTime = UnixSecondToDateTime(activity.begin_time);
+                var endTime = UnixSecondToDateTime(activity.end_time);
                 var gameEvent = new GameEvent
                 {
                     Name = activity.name,
                     Url = activity.url,
-                    BeginTime = UnixSecondToDateTime(activity.begin_time),
-                    EndTime = UnixSecondToDateTime(activity.end_time),
-                    Color = DarkenColor(HexToVector4(activity.color), 0.3f)
+                    BeginTime = beginTime,
+                    EndTime = endTime,
+                    Color = DarkenColor(HexToVector4(activity.color), 0.3f),
+                    State = (currentTime < beginTime) ? 1U :
+                            (currentTime <= endTime) ? 0U : 2U
                 };
                 GameCalendars.Add(gameEvent);
             }
+
+            GameCalendars = [..GameCalendars.OrderBy(x => x.State)];
         }
     }
 
