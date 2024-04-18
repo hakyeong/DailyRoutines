@@ -263,7 +263,7 @@ public class MainSettings
     private static Version CurrentVersion = new();
     private static VersionInfo LatestVersionInfo = new();
     private static List<GameEvent> GameCalendars = [];
-    private static readonly List<GameNews> GameNewsList = [];
+    private static List<GameNews> GameNewsList = [];
 
     public static void Init()
     {
@@ -538,7 +538,24 @@ public class MainSettings
                 if (ImGui.Button($"{news.Title}###{news.Url}", buttonSize with { Y = (2 * framePadding.Y) + buttonSize.Y }))
                     Util.OpenLink($"{news.Url}");
 
-                ImGuiOm.TooltipHover($"{news.Summary}");
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.BeginTooltip();
+                    var imageState = ImageManager.TryGetImage(news.HomeImagePath, out var imageHandle);
+                    if (imageState)
+                        ImGui.Image(imageHandle.ImGuiHandle, imageHandle.Size);
+                    else
+                        ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
+
+                    ImGui.Separator();
+
+                    ImGui.PushTextWrapPos(imageState ? imageHandle.Width + 10f : 400f);
+                    ImGui.Text(news.Summary);
+
+                    ImGui.Text($"({Service.Lang.GetText("PublishTime")}: {news.PublishDate})");
+                    ImGui.PopTextWrapPos();
+                    ImGui.EndTooltip();
+                }
             }
         }
     }
@@ -589,8 +606,7 @@ public class MainSettings
 
     private static async Task<int> GetTotalDownloadsAsync()
     {
-        const string url =
-            "https://mirror.ghproxy.com/https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/downloads.txt";
+        const string url = "https://gh.atmoomen.top/DailyRoutines/main/downloads.txt";
         var response = await client.GetStringAsync(url);
         return int.TryParse(response, out var totalDownloads) ? totalDownloads : 0;
     }
