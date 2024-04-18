@@ -1,14 +1,21 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
+using System.Text.Json;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Hooking;
+using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.System.String;
@@ -22,14 +29,15 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoAntiCensorshipTitle", "AutoAntiCensorshipDescription", ModuleCategories.Interface)]
 public unsafe class AutoAntiCensorship : DailyModuleBase
 {
-    private nint VulgarInstance = nint.Zero;
-
     [Signature("E8 ?? ?? ?? ?? 48 8B C3 48 83 C4 ?? 5B C3 CC CC CC CC CC CC CC 48 83 EC")]
     public readonly delegate* unmanaged <nint, Utf8String*, void> GetFilteredUtf8String;
 
-    [Signature(
-        "E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? 48 8B 89 ?? ?? ?? ?? 48 85 C9 74 ?? 48 8B D3 E8 ?? ?? ?? ?? 48 8B C3")]
+    [Signature("E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? 48 8B 89 ?? ?? ?? ?? 48 85 C9 74 ?? 48 8B D3 E8 ?? ?? ?? ?? 48 8B C3")]
     public readonly delegate* unmanaged <long, long, long> LocalMessageDisplayHandler;
+
+    private delegate byte ProcessSendedChatDelegate(nint uiModule, byte** message, nint a3);
+    [Signature("E8 ?? ?? ?? ?? FE 86 ?? ?? ?? ?? C7 86 ?? ?? ?? ?? ?? ?? ?? ??", DetourName = nameof(ProcessSendedChatDetour) )]
+    private readonly Hook<ProcessSendedChatDelegate>? ProcessSendedChatHook;
 
     [Signature("E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? 48 8B 81 ?? ?? ?? ?? 48 85 C0 74 ?? 48 8B D3")]
     public readonly delegate* unmanaged <long, long, long> PartyFinderMessageDisplayHandler;
@@ -40,20 +48,14 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
     public Hook<PartyFinderMessageDisplayDelegate>? PartyFinderMessageDisplayHook;
 
     public delegate long LocalMessageDelegate(long a1, long a2);
-    [Signature("40 53 48 83 EC ?? 48 8D 99 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 48 8B 0D",
-               DetourName = nameof(LocalMessageDetour))]
+    [Signature("40 53 48 83 EC ?? 48 8D 99 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 48 8B 0D", DetourName = nameof(LocalMessageDetour))]
     public Hook<LocalMessageDelegate>? LocalMessageDisplayHook;
 
-    private delegate nint AddonReceiveEventDelegate(
-        AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData);
-
-    private Hook<AddonReceiveEventDelegate>? ChatLogTextInputHook;
+    private delegate nint AddonReceiveEventDelegate
+        (AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData);
     private Hook<AddonReceiveEventDelegate>? PartyFinderDescriptionInputHook;
 
-    private const string AutoTranslateLeft = "\u0002\u0012\u00027\u0003";
-    private const string AutoTranslateRight = "\u0002\u0012\u00028\u0003";
-    private static readonly char[] SpecialChars =
-        ['*', '%', '+', '-', '^', '=', '|', '&', '!', '~', ',', '.', ';', ':', '?', '@', '#'];
+    private static readonly char[] SpecialChars = ['*', '%', '+', '-', '^', '=', '|', '&', '!', '~', ',', '.', ';', ':', '?', '@', '#'];
 
     private static Dictionary<char, char>? SpecialCharTranslateDictionary;
     private static Dictionary<char, char>? SpecialCharTranslateDictionaryRe;
@@ -70,7 +72,6 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
             for (var i = 0; i < SpecialChars.Length; i++)
             {
                 var specialChar = SpecialChars[i];
-
                 SpecialCharTranslateDictionary[specialChar] = (char)i;
             }
 
@@ -81,18 +82,11 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
 
         PartyFinderMessageDisplayHook?.Enable();
         LocalMessageDisplayHook?.Enable();
-        VulgarInstance = Marshal.ReadIntPtr((nint)Framework.Instance() + 0x2B40);
+        ProcessSendedChatHook?.Enable();
 
-        if (Service.Gui.GetAddonByName("ChatLog") != nint.Zero)
-            OnChatLogAddonSetup(AddonEvent.PostSetup, null);
-        else
-            Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "ChatLog", OnChatLogAddonSetup);
-
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "LookingForGroupCondition", OnPartyFinderConditionAddonSetup);
         if (Service.Gui.GetAddonByName("LookingForGroupCondition") != nint.Zero)
             OnPartyFinderConditionAddonSetup(AddonEvent.PostSetup, null);
-        else
-            Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "LookingForGroupCondition",
-                                                    OnChatLogAddonSetup);
     }
 
     public override void ConfigUI()
@@ -146,13 +140,34 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
         ImGui.InputText("###PreviewBypass", ref PreviewBypass, 1000, ImGuiInputTextFlags.ReadOnly);
     }
 
-    private void OnChatLogAddonSetup(AddonEvent type, AddonArgs? args)
+    // 消息发送处理
+    private byte ProcessSendedChatDetour(nint uiModule, byte** message, nint a3)
     {
-        var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("ChatLog");
-        var address = (nint)addon->GetNodeById(5)->GetComponent()->AtkEventListener.vfunc[2];
-        ChatLogTextInputHook ??=
-            Service.Hook.HookFromAddress<AddonReceiveEventDelegate>(address, ChatLogTextInputDetour);
-        ChatLogTextInputHook?.Enable();
+        var originalSeString = MemoryHelper.ReadSeStringNullTerminated((nint)(*message));
+        var messageDecode = originalSeString.ToString();
+
+        if (string.IsNullOrWhiteSpace(messageDecode) || messageDecode.StartsWith('/'))
+            return ProcessSendedChatHook.Original(uiModule, message, a3);
+
+        var ssb = new SeStringBuilder();
+        foreach (var payload in originalSeString.Payloads)
+        {
+            if (payload.Type == PayloadType.RawText)
+                ssb.Append(BypassCensorship(((TextPayload)payload).Text));
+            else
+                ssb.Add(payload);
+        }
+        var filteredSeString = ssb.Build();
+
+        if (filteredSeString.TextValue.Length <= 500)
+        {
+            var utf8String = Utf8String.FromString(".");
+            utf8String->SetString(filteredSeString.Encode());
+
+            return ProcessSendedChatHook.Original(uiModule, (byte**)((nint)utf8String).ToPointer(), a3);
+        }
+
+        return ProcessSendedChatHook.Original(uiModule, message, a3);
     }
 
     private void OnPartyFinderConditionAddonSetup(AddonEvent type, AddonArgs? args)
@@ -162,32 +177,6 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
         PartyFinderDescriptionInputHook ??=
             Service.Hook.HookFromAddress<AddonReceiveEventDelegate>(address, PartyFinderDescriptionInputDetour);
         if (!PartyFinderDescriptionInputHook.IsEnabled) PartyFinderDescriptionInputHook?.Enable();
-    }
-
-    // 聊天框 Event 处理, 应该找聊天框 SendChat 相关方法的, 但以后再找吧
-    private nint ChatLogTextInputDetour(
-        AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData)
-    {
-        if (eventType == AtkEventType.InputReceived)
-        {
-            var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("ChatLog");
-            var textInput = (AtkComponentTextInput*)addon->GetComponentNodeById(5);
-
-            var text1 = Marshal.PtrToStringUTF8((nint)textInput->AtkComponentInputBase.UnkText1.StringPtr);
-            if (string.IsNullOrWhiteSpace(text1) || text1.StartsWith('/'))
-                return ChatLogTextInputHook.Original(self, eventType, eventParam, eventData, inputData);
-
-            // UnkText1 暂时没看出来是怎么判断处理定型文的, 搁置了
-            var text2 = Marshal.PtrToStringUTF8((nint)textInput->AtkComponentInputBase.UnkText2.StringPtr);
-            if (text2.Contains(AutoTranslateLeft))
-                return ChatLogTextInputHook.Original(self, eventType, eventParam, eventData, inputData);
-
-            var handledText = BypassCensorship(text1);
-            textInput->AtkComponentInputBase.UnkText1 = *Utf8String.FromString(handledText);
-            textInput->AtkComponentInputBase.UnkText2 = *Utf8String.FromString(handledText);
-        }
-
-        return ChatLogTextInputHook.Original(self, eventType, eventParam, eventData, inputData);
     }
 
     // 招募板描述 Event 处理
@@ -204,8 +193,6 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
                 return PartyFinderDescriptionInputHook.Original(self, eventType, eventParam, eventData, inputData);
 
             var text2 = Marshal.PtrToStringUTF8((nint)textInput->AtkComponentInputBase.UnkText2.StringPtr);
-            if (text2.Contains(AutoTranslateLeft))
-                return PartyFinderDescriptionInputHook.Original(self, eventType, eventParam, eventData, inputData);
 
             var handledText = BypassCensorship(text1);
             textInput->AtkComponentInputBase.UnkText1 = *Utf8String.FromString(handledText);
@@ -231,7 +218,7 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
     private string GetFilteredString(string str)
     {
         var utf8String = Utf8String.FromString(str);
-        GetFilteredUtf8String(VulgarInstance, utf8String);
+        GetFilteredUtf8String(Marshal.ReadIntPtr((nint)Framework.Instance() + 0x2B40), utf8String);
 
         return (*utf8String).ToString();
     }
@@ -335,7 +322,7 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
 
     public override void Uninit()
     {
-        Service.AddonLifecycle.UnregisterListener(OnChatLogAddonSetup);
+        Service.AddonLifecycle.UnregisterListener(OnPartyFinderConditionAddonSetup);
 
         base.Uninit();
     }
