@@ -415,7 +415,10 @@ public class MainSettings
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("CurrentVersion")}:");
 
         ImGui.SameLine();
-        ImGui.Text($"{CurrentVersion}");
+        ImGui.TextColored(CurrentVersion < LatestVersionInfo.Version ? ImGuiColors.DPSRed : ImGuiColors.DalamudWhite, $"{CurrentVersion}");
+
+        if (CurrentVersion < LatestVersionInfo.Version)
+            ImGuiOm.TooltipHover(Service.Lang.GetText("LowVersionWarning"));
 
         ImGui.SameLine();
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestVersion")}:");
@@ -597,7 +600,7 @@ public class MainSettings
                 Service.Chat.Print(new SeStringBuilder().AddUiForeground($"{orderNumber}. ", 2)
                                                         .AddUiForeground($"{gameEvent.Name}", 25)
                                                         .AddUiForeground($" ({Service.Lang.GetText("GameCalendar-EndTimeMessage", 
-                                                            (gameEvent.EndTime - DateTime.Now).Days)}", 2)
+                                                            (gameEvent.EndTime - DateTime.Now).Days)})", 2)
                                                         .Build());
                 orderNumber++;
             }
@@ -606,7 +609,7 @@ public class MainSettings
 
     private static async Task<int> GetTotalDownloadsAsync()
     {
-        const string url = "https://gh.atmoomen.top/DailyRoutines/main/downloads.txt";
+        const string url = "https://gh.atmoomen.top/DailyRoutines/main/Assets/downloads.txt";
         var response = await client.GetStringAsync(url);
         return int.TryParse(response, out var totalDownloads) ? totalDownloads : 0;
     }

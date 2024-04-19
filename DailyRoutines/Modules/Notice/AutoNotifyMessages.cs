@@ -74,7 +74,7 @@ public class AutoNotifyMessages : DailyModuleBase
     public override void ConfigUI()
     {
         PreviewImageWithHelpText(Service.Lang.GetText("AutoNotifyMessages-NotificationMessageHelp"),
-                                 "https://gh.atmoomen.top/DailyRoutines/main/imgs/AutoNotifyMessages-1.png");
+                                 "https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/AutoNotifyMessages-1.png");
 
         if (ImGui.Checkbox(Service.Lang.GetText("OnlyNotifyWhenBackground"),
                            ref ConfigOnlyNotifyWhenBackground))

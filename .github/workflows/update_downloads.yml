@@ -43,13 +43,13 @@ jobs:
     - name: Update total downloads
       if: ${{ steps.repo_info.outputs.repo_name == 'AtmoOmen/DailyRoutines' }}
       run: |
-        python update_downloads.py > downloads.txt
+        python Assets/update_downloads.py > Assets/downloads.txt
 
     - name: Commit and push if changed
       if: ${{ steps.repo_info.outputs.repo_name == 'AtmoOmen/DailyRoutines' }}
       run: |
         git config --global user.email "actions@github.com"
         git config --global user.name "GitHub Actions"
-        git add downloads.txt
+        git add Assets/downloads.txt
         git commit -m "Update Total Downloads" -a || echo "No changes to commit"
         git push --set-upstream https://github.com/${{ github.repository }} HEAD:main

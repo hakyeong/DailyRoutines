@@ -35,7 +35,7 @@ public class AutoNotifyCutSceneEnd : DailyModuleBase
     public override void ConfigUI()
     {
         PreviewImageWithHelpText(Service.Lang.GetText("AutoNotifyCutSceneEnd-NotificationMessageHelp"),
-                                 "https://gh.atmoomen.top/DailyRoutines/main/imgs/AutoNotifyCutSceneEnd-1.png");
+                                 "https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/AutoNotifyCutSceneEnd-1.png");
 
         if (ImGui.Checkbox(Service.Lang.GetText("OnlyNotifyWhenBackground"),
                            ref ConfigOnlyNotifyWhenBackground))
