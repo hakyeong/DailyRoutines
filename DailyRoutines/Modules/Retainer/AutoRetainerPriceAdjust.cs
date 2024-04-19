@@ -105,7 +105,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
                 ref PriceReduction, 100))
         {
             PriceReduction = Math.Max(0, PriceReduction);
-            UpdateConfig(this, "SinglePriceReductionValue", PriceReduction);
+            UpdateConfig(this, "PriceReduction", PriceReduction);
         }
 
 
