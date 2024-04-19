@@ -415,7 +415,10 @@ public class MainSettings
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("CurrentVersion")}:");
 
         ImGui.SameLine();
-        ImGui.Text($"{CurrentVersion}");
+        ImGui.TextColored(CurrentVersion < LatestVersionInfo.Version ? ImGuiColors.DPSRed : ImGuiColors.DalamudWhite, $"{CurrentVersion}");
+
+        if (CurrentVersion < LatestVersionInfo.Version)
+            ImGuiOm.TooltipHover(Service.Lang.GetText("LowVersionWarning"));
 
         ImGui.SameLine();
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestVersion")}:");
