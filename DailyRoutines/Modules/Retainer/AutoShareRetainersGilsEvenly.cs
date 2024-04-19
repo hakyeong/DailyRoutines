@@ -1,8 +1,8 @@
 using System;
 using ClickLib;
 using ClickLib.Clicks;
-using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
+using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -134,7 +134,7 @@ public unsafe class AutoShareRetainersGilsEvenly : DailyModuleBase
         if (TryGetAddonByName<AtkUnitBase>("Bank", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             var retainerGils = addon->AtkValues[6].Int;
-            var handler = new ClickBankDR();
+            var handler = new ClickBank();
 
             if (retainerGils == AverageAmount) // 金币恰好相等
             {
@@ -167,7 +167,7 @@ public unsafe class AutoShareRetainersGilsEvenly : DailyModuleBase
         if (TryGetAddonByName<AtkUnitBase>("Bank", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             var retainerGils = addon->AtkValues[6].Int;
-            var handler = new ClickBankDR();
+            var handler = new ClickBank();
 
             if (retainerGils == 0)
                 handler.Cancel();

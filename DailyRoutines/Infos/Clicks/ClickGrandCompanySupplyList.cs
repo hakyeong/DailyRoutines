@@ -1,8 +1,8 @@
 using ClickLib.Bases;
 
-namespace DailyRoutines.Clicks;
+namespace DailyRoutines.Infos.Clicks;
 
-public class ClickGrandCompanySupplyListDR(nint addon = default) : ClickBase<ClickGrandCompanySupplyListDR>("GrandCompanySupplyList", addon)
+public class ClickGrandCompanySupplyList(nint addon = default) : ClickBase<ClickGrandCompanySupplyList>("GrandCompanySupplyList", addon)
 {
     public void ItemEntry(int index) => FireCallback(1, index, 0);
 
@@ -16,4 +16,6 @@ public class ClickGrandCompanySupplyListDR(nint addon = default) : ClickBase<Cli
     public void ExpertDelivery() => SwitchCategory(2);
 
     public void SwitchCategory(int index) => FireCallback(0, index, 0);
+
+    public static ClickGrandCompanySupplyList Using(nint addon) => new(addon);
 }

@@ -3,8 +3,8 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using ClickLib;
 using ClickLib.Clicks;
-using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
+using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
@@ -100,8 +100,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
     {
         if (AddonGrandCompanySupplyList == null) return;
 
-        var handler = new ClickGrandCompanySupplyListDR();
-        handler.ExpertDelivery();
+        ClickGrandCompanySupplyList.Using((nint)AddonGrandCompanySupplyList).ExpertDelivery();
 
         var listCount = ((AddonGrandCompanySupplyList*)AddonGrandCompanySupplyList)->ExpertDeliveryList->ListLength;
         if (listCount == 0) return;
@@ -124,7 +123,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
     private bool? CheckIfReachTheCap()
     {
-        if (AddonGrandCompanySupplyList == null || !HelpersOm.IsAddonAndNodesReady(AddonGrandCompanySupplyList)) return false;
+        if (AddonGrandCompanySupplyList == null || !IsAddonAndNodesReady(AddonGrandCompanySupplyList)) return false;
 
         var parts = Marshal.PtrToStringUTF8((nint)AtkStage.GetSingleton()->GetStringArrayData()[32]->StringArray[2])
                            .Split('/');
@@ -160,7 +159,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         if (TryGetAddonByName<AddonGrandCompanySupplyList>("GrandCompanySupplyList", out var addon) &&
             IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
-            var handler = new ClickGrandCompanySupplyListDR();
+            var handler = new ClickGrandCompanySupplyList();
             if (ConfigSkipWhenHQ)
             {
                 var onlyHQLeft = true;

@@ -1,6 +1,6 @@
 using ClickLib;
-using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
+using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
@@ -50,8 +50,7 @@ public class AutoUfoCatcher : DailyModuleBase
 
             addon->IsVisible = false;
 
-            var handler = new ClickUfoCatcherDR();
-            handler.BigBall();
+            ClickUfoCatcher.Using((nint)addon).BigBall();
 
             // 只是纯粹因为游玩动画太长了而已
             TaskManager.DelayNext(5000);

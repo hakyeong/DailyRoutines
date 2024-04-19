@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
+using DailyRoutines.Helpers;
 using ECommons.Automation;
 
 namespace DailyRoutines.Managers;
@@ -60,8 +61,8 @@ public class WinToast
     private static void ShowBalloonTip(ToastMessage message)
     {
         icon.ShowBalloonTip(
-            5000, string.IsNullOrEmpty(message.Title) ? P.Name : SanitizeManager.Sanitize(message.Title),
-            SanitizeManager.Sanitize(message.Message), message.Icon);
+            5000, string.IsNullOrEmpty(message.Title) ? P.Name : SanitizeHelper.Sanitize(message.Title),
+            SanitizeHelper.Sanitize(message.Message), message.Icon);
     }
 
     private static void CreateIcon()

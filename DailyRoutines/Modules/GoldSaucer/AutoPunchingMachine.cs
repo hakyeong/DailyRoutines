@@ -1,7 +1,7 @@
 using System;
 using ClickLib;
-using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
+using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
@@ -53,8 +53,7 @@ public class AutoPunchingMachine : DailyModuleBase
 
             addon->IsVisible = false;
 
-            var handler = new ClickPunchingMachineDR();
-            handler.Play(new Random().Next(1700, 1999));
+            ClickPunchingMachine.Using((nint)addon).Play(new Random().Next(1700, 1999));
 
             TaskManager.Enqueue(StartAnotherRound);
             return true;

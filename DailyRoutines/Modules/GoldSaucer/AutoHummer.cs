@@ -1,6 +1,6 @@
 using ClickLib;
-using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
+using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
@@ -52,8 +52,7 @@ public class AutoHummer : DailyModuleBase
 
             addon->IsVisible = false;
 
-            var handler = new ClickHummerDR();
-            handler.Play(3);
+            ClickHummer.Using((nint)addon).Play(3);
 
             // 只是纯粹因为游玩动画太长了而已
             TaskManager.DelayNext(5000);

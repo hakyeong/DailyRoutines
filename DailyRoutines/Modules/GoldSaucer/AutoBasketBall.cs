@@ -1,6 +1,6 @@
 using ClickLib;
-using DailyRoutines.Clicks;
 using DailyRoutines.Infos;
+using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
@@ -52,8 +52,7 @@ public class AutoBasketBall : DailyModuleBase
                     // 让进度条时时刻刻都是满的
                     addon->GetNodeById(12)->ChildNode->PrevSiblingNode->PrevSiblingNode->SetWidth(450);
 
-                    var handler = new ClickBasketBallDR();
-                    handler.Play(true);
+                    ClickBasketBall.Using((nint)addon).Play(true);
                 }
 
                 break;

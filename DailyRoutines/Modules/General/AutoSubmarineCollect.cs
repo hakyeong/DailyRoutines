@@ -2,8 +2,9 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Text.RegularExpressions;
 using ClickLib;
-using DailyRoutines.Clicks;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
+using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
@@ -209,7 +210,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         }
 
         if (AddonSelectString == null || !IsAddonAndNodesReady(AddonSelectString)) return false;
-        if (!ClickManager.SelectString("修理")) return false;
+        if (!ClickHelper.SelectString("修理")) return false;
 
         TaskManager.Enqueue(() => AddonSelectString->Close(true));
         TaskManager.Enqueue(RepairSubmarines);
@@ -224,8 +225,6 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         if (TryGetAddonByName<AtkUnitBase>("CompanyCraftSupply", out var addon) &&
             IsAddonAndNodesReady(addon))
         {
-            var handler = new ClickCompanyCraftSupplyDR();
-
             for (var i = 0; i < 4; i++)
             {
                 var endurance = addon->AtkValues[3 + (8 * i)].UInt;
@@ -237,7 +236,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
             }
 
             TaskManager.DelayNext(100);
-            TaskManager.Enqueue(handler.Close);
+            TaskManager.Enqueue(() => AddonManager.Callback(addon, true, 5));
             TaskManager.Enqueue(() => addon->Close(true));
 
             TaskManager.DelayNext(100);
@@ -262,7 +261,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
         if (AddonSelectString == null || !IsAddonAndNodesReady(AddonSelectString)) return false;
 
-        if (!ClickManager.SelectString("上次的远航报告")) return false;
+        if (!ClickHelper.SelectString("上次的远航报告")) return false;
         AddonSelectString->Close(true);
 
         TaskManager.DelayNext(100);

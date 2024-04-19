@@ -1,9 +1,10 @@
 using System.Collections.Generic;
+using DailyRoutines.Managers;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
-namespace DailyRoutines.Managers;
+namespace DailyRoutines.Helpers;
 
-public unsafe class ClickManager
+public unsafe class ClickHelper
 {
     public static bool ContextMenu(IReadOnlyList<string> text)
     {

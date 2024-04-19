@@ -1,11 +1,11 @@
-using Dalamud.Game.Text;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Dalamud.Game.Text;
 
-namespace DailyRoutines.Managers;
+namespace DailyRoutines.Helpers;
 
-public class SanitizeManager
+public class SanitizeHelper
 {
     private static readonly Lazy<Dictionary<char, string>> ChineseSimplifiedInitializer = new(() =>
     {

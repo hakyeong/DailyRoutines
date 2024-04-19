@@ -1,7 +1,7 @@
-using ClickLib;
 using ClickLib.Clicks;
-using DailyRoutines.Clicks;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
+using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -40,8 +40,6 @@ public unsafe class AutoWithdrawRetainersGils : DailyModuleBase
         var totalGilAmount = 0U;
         for (var i = 0U; i < retainerCount; i++) totalGilAmount += retainerManager->GetRetainerBySortedIndex(i)->Gil;
 
-        Service.Log.Debug($"当前 {retainerCount} 个雇员共有 {totalGilAmount} 金币,");
-
         if (totalGilAmount <= 0) return;
 
         for (var i = 0; i < retainerCount; i++)
@@ -56,48 +54,39 @@ public unsafe class AutoWithdrawRetainersGils : DailyModuleBase
 
     private void EnqueueSingleRetainer(int index)
     {
-        // 点击指定雇员
         TaskManager.Enqueue(() => ClickSpecificRetainer(index));
-        // 点击金币管理
-        TaskManager.Enqueue(() => Click.TrySendClick("select_string2"));
-        // 取出所有金币
+
+        TaskManager.Enqueue(() => ClickHelper.SelectString("金币管理"));
+
         TaskManager.DelayNext(100);
         TaskManager.Enqueue(WithdrawAllGils);
-        // 回到雇员列表
-        TaskManager.Enqueue(() => Click.TrySendClick("select_string13"));
+
+        TaskManager.Enqueue(() => ClickHelper.SelectString("返回"));
     }
 
     private static bool? ClickSpecificRetainer(int index)
     {
-        if (TryGetAddonByName<AtkUnitBase>("RetainerList", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
-        {
-            var handler = new ClickRetainerList();
-            handler.Retainer(index);
-            return true;
-        }
-
-        return false;
+        if (!TryGetAddonByName<AtkUnitBase>("RetainerList", out var addon) || !IsAddonAndNodesReady(addon)) return false;
+        ClickRetainerList.Using((nint)addon).Retainer(index);
+        return true;
     }
 
     private static bool? WithdrawAllGils()
     {
-        if (TryGetAddonByName<AtkUnitBase>("Bank", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (!TryGetAddonByName<AtkUnitBase>("Bank", out var addon) || !IsAddonAndNodesReady(addon)) return false;
+
+        var retainerGils = addon->AtkValues[6].Int;
+        var handler = new ClickBank();
+
+        if (retainerGils == 0)
+            handler.Cancel();
+        else
         {
-            var retainerGils = addon->AtkValues[6].Int;
-            var handler = new ClickBankDR();
-
-            if (retainerGils == 0)
-                handler.Cancel();
-            else
-            {
-                handler.DepositInput((uint)retainerGils);
-                handler.Confirm();
-            }
-
-            addon->Close(true);
-            return true;
+            handler.DepositInput((uint)retainerGils);
+            handler.Confirm();
         }
 
-        return false;
+        addon->Close(true);
+        return true;
     }
 }

@@ -6,8 +6,9 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using ClickLib;
 using ClickLib.Clicks;
-using DailyRoutines.Clicks;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
+using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
@@ -380,7 +381,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     private bool? ClickAdjustPrice()
     {
         if (InterruptByConflictKey()) return true;
-        if (!ClickManager.ContextMenu("修改价格")) return false;
+        if (!ClickHelper.ContextMenu("修改价格")) return false;
 
         TaskManager.EnqueueImmediate(ClickComparePrice);
         return true;
@@ -395,7 +396,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         {
             IsCurrentItemHQ = Marshal.PtrToStringUTF8((nint)addon->AtkValues[1].String).Contains(''); // HQ 符号
 
-            AddonManager.Callback(addon, true, 4);
+            ClickRetainerSell.Using((nint)addon).ComparePrice();
 
             TaskManager.DelayNextImmediate(200);
             TaskManager.EnqueueImmediate(ObtainMarketData);
@@ -409,7 +410,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     private bool? ObtainMarketData()
     {
         if (!EzThrottler.Throttle("AutoRetainerPriceAdjust-ObtainMarketData")) return false;
-        if (AddonItemSearchResult == null || !HelpersOm.IsAddonAndNodesReady(AddonItemSearchResult)) return false;
+        if (AddonItemSearchResult == null || !IsAddonAndNodesReady(AddonItemSearchResult)) return false;
         if (InfoItemSearch->SearchItemId != 0 && PriceCache.Count != 0)
         {
             if (PriceCache.TryGetValue((InfoItemSearch->SearchItemId, IsCurrentItemHQ), out var cachePrice) && cachePrice != 0)
@@ -421,7 +422,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         }
 
         if (AddonItemHistory == null) AddonManager.Callback(AddonItemSearchResult, true, 0);
-        if (!HelpersOm.IsAddonAndNodesReady(AddonItemHistory)) return false;
+        if (!IsAddonAndNodesReady(AddonItemHistory)) return false;
 
         var errorMessage = AddonItemSearchResult->GetTextNodeById(5);
         var messages = errorMessage->NodeText.ExtractText();
@@ -511,7 +512,6 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
         var ui = &addon->AtkUnitBase;
         var priceComponent = addon->AskingPrice;
-        var handler = new ClickRetainerSellDR((nint)addon);
 
         var originalPrice = ui->AtkValues[5].Int;
         var modifiedPrice = currentMarketLowestPrice - PriceReduction;
@@ -568,6 +568,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
         void OperateAndReturn(bool isConfirm, int price = 0)
         {
+            var handler = new ClickRetainerSell();
             if (isConfirm)
             {
                 priceComponent->SetValue(price);
@@ -610,7 +611,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             var listing = list->ItemRendererList[i].AtkComponentListItemRenderer->AtkComponentButton.AtkComponentBase.UldManager.NodeList;
             var isHQ = listing[8]->IsVisible;
             if (!uint.TryParse(
-                    SanitizeManager.Sanitize(listing[6]->GetAsAtkTextNode()->NodeText.ExtractText()).Replace(",", ""),
+                    SanitizeHelper.Sanitize(listing[6]->GetAsAtkTextNode()->NodeText.ExtractText()).Replace(",", ""),
                     out var price)) continue;
             if (!int.TryParse(listing[5]->GetAsAtkTextNode()->NodeText.ExtractText(), out var amount)) continue;
             result.Add((isHQ, price, amount));

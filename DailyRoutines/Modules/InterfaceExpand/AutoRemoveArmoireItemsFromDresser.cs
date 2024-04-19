@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using ClickLib;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
@@ -101,7 +102,7 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
     private bool? ClickRestoreItem()
     {
         if (!EzThrottler.Throttle("AutoRemoveArmoireItemsFromDresser", 100)) return false;
-        if (!ClickManager.ContextMenu("将幻影变回道具")) return false;
+        if (!ClickHelper.ContextMenu("将幻影变回道具")) return false;
 
         TaskManager.Enqueue(TryRemoveItem);
         return true;
