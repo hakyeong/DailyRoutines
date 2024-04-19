@@ -597,7 +597,7 @@ public class MainSettings
                 Service.Chat.Print(new SeStringBuilder().AddUiForeground($"{orderNumber}. ", 2)
                                                         .AddUiForeground($"{gameEvent.Name}", 25)
                                                         .AddUiForeground($" ({Service.Lang.GetText("GameCalendar-EndTimeMessage", 
-                                                            (gameEvent.EndTime - DateTime.Now).Days)}", 2)
+                                                            (gameEvent.EndTime - DateTime.Now).Days)})", 2)
                                                         .Build());
                 orderNumber++;
             }
