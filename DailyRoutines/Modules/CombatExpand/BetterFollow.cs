@@ -83,17 +83,18 @@ public unsafe class BetterFollow : DailyModuleBase
 
         _BassAddress = Process.GetCurrentProcess().MainModule.BaseAddress;
         //&unk_1421CF590
-        _a1 = _BassAddress + 0x21CF590;
+        _a1 = Service.SigScanner.GetStaticAddressFromSig(
+            "48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? EB ?? 48 8D 15 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 84 DB");
         //&unk_1421CF9C0
         //_a2 = _BassAddress + 0x21CF9C0;
         //qword_1421CFB60
-        _v5 = *(nint*)(_BassAddress + 0x21CFB60);
+        _v5 = *(nint*)Service.SigScanner.GetStaticAddressFromSig("4C 8B 35 ?? ?? ?? ?? 48 3B D0");
         //sub_141351D70(a1 + 1104, v6-objAddress);
         _a1_data = _a1 + 0x450;
         //*(_BYTE *)(a1 + 1369)
         _d1 = _a1 + 1369;
-        //141A13598+58->sub_140629380->v7 + 6600
-        _v8 = *(nint*)((*(ulong*)(_BassAddress + 0x21A8D48)) + 0x2B60)+0x19c8;
+        //141A13598+58->sub_140629380->v7 + 6600 g_Client::System::Framework::Framework_InstancePointer2
+        _v8 = *(nint*)((*(ulong*)Service.SigScanner.GetStaticAddressFromSig("48 8B 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B C8 48 8B 10 FF 52 ?? 4C 8B CE")) + 0x2B60)+0x19c8;
         
         _FollowStatus = *(int*)_d1 == 4;
         Service.Hook.InitializeFromAttributes(this);
