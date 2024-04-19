@@ -416,6 +416,12 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
     public override void OverlayUI()
     {
+        if (Service.ClientState.LocalPlayer == null)
+        {
+            Overlay.IsOpen = false;
+            return;
+        }
+
         var textInputNode = AddonChatLog->GetNodeById(5);
         if (textInputNode == null) return;
 
