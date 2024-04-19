@@ -92,11 +92,11 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
     public override void ConfigUI()
     {
         PreviewImageWithHelpText(Service.Lang.GetText("AutoAntiCensorship-Preview"),
-                                 "https://gh.atmoomen.top/DailyRoutines/main/imgs/AutoAntiCensorship-1.png");
+                                 "https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/AutoAntiCensorship-1.png");
 
         ImGui.SameLine();
         PreviewImageWithHelpText(Service.Lang.GetText("AutoAntiCensorship-Preview1"),
-                                 "https://gh.atmoomen.top/DailyRoutines/main/imgs/AutoAntiCensorship-2.png");
+                                 "https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/AutoAntiCensorship-2.png");
 
         ImGui.Separator();
 

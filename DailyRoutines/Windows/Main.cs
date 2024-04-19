@@ -609,7 +609,7 @@ public class MainSettings
 
     private static async Task<int> GetTotalDownloadsAsync()
     {
-        const string url = "https://gh.atmoomen.top/DailyRoutines/main/downloads.txt";
+        const string url = "https://gh.atmoomen.top/DailyRoutines/main/Assets/downloads.txt";
         var response = await client.GetStringAsync(url);
         return int.TryParse(response, out var totalDownloads) ? totalDownloads : 0;
     }
