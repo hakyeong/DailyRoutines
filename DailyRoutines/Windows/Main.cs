@@ -153,7 +153,7 @@ public class Main : Window, IDisposable
         {
             Service.Config.ModuleEnabled[moduleName] ^= true;
 
-            var component = ModuleManager.Modules[moduleInfo.Module];
+            var component = Service.ModuleManager.Modules[moduleInfo.Module];
             if (isModuleEnabled) Service.ModuleManager.Load(component);
             else Service.ModuleManager.Unload(component);
 
@@ -190,7 +190,7 @@ public class Main : Window, IDisposable
                 {
                     ImGui.SetCursorPosX(origCursorPosX);
                     ImGui.BeginGroup();
-                    ModuleManager.Modules[moduleInfo.Module].ConfigUI();
+                    Service.ModuleManager.Modules[moduleInfo.Module].ConfigUI();
                     ImGui.EndGroup();
                 }
             }

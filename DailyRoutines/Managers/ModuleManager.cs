@@ -8,7 +8,7 @@ namespace DailyRoutines.Managers;
 
 public class ModuleManager
 {
-    public static Dictionary<Type, DailyModuleBase> Modules { get; private set; } = [];
+    public Dictionary<Type, DailyModuleBase> Modules { get; private set; } = [];
 
     public void Init()
     {
@@ -90,8 +90,11 @@ public class ModuleManager
         }
     }
 
-    public static bool IsModuleEnabled(Type moduleType)
+    public bool IsModuleEnabled(Type moduleType)
         => Modules.TryGetValue(moduleType, out var module) && module.Initialized;
+
+    public bool TryGetModule<T>(out DailyModuleBase? module) where T : DailyModuleBase
+        => Modules.TryGetValue(typeof(T), out module);
 
     public void Uninit()
     {
