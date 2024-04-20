@@ -21,36 +21,28 @@ public class ModuleManager
         {
             var instance = Activator.CreateInstance(type);
             if (instance is DailyModuleBase module)
+            {
                 Modules.Add(type, module);
-        }
+                var moduleName = module.GetType().Name;
 
-        foreach (var module in Modules.Values)
-        {
-            var moduleName = module.GetType().Name;
-            if (Service.Config.ModuleEnabled.TryGetValue(moduleName, out var enabled))
-            {
-                if (!enabled) continue;
-            }
-            else
-            {
-                Service.Log.Warning($"Fail to get module {moduleName} configurations, skip loading");
-                continue;
-            }
+                Service.Config.ModuleEnabled.TryAdd(moduleName, false);
+                if (Service.Config.ModuleEnabled.TryGetValue(moduleName, out var enabled) && !enabled) continue;
 
-            try
-            {
-                if (!module.Initialized)
+                try
                 {
-                    module.Init();
-                    module.Initialized = true;
+                    if (!module.Initialized)
+                    {
+                        module.Init();
+                        module.Initialized = true;
+                    }
+                    else
+                        Service.Log.Debug($"{moduleName} has been loaded, skip.");
                 }
-                else
-                    Service.Log.Debug($"{moduleName} has been loaded, skip.");
-            }
-            catch (Exception ex)
-            {
-                Service.Log.Error($"Failed to load module {module} due to error: {ex.Message}");
-                Service.Log.Error(ex.StackTrace ?? "Unknown");
+                catch (Exception ex)
+                {
+                    Service.Log.Error($"Failed to load module {module} due to error: {ex.Message}");
+                    Service.Log.Error(ex.StackTrace ?? "Unknown");
+                }
             }
         }
     }
@@ -81,22 +73,25 @@ public class ModuleManager
             Service.Log.Error($"Fail to fetch {module}");
     }
 
-    public void Unload(DailyModuleBase component)
+    public void Unload(DailyModuleBase module)
     {
-        if (Modules.ContainsValue(component))
+        if (Modules.ContainsValue(module))
         {
             try
             {
-                component.Uninit();
-                component.Initialized = false;
-                Service.Log.Debug($"Unloaded {component.GetType().Name} moduleBase");
+                module.Uninit();
+                module.Initialized = false;
+                Service.Log.Debug($"Unloaded {module.GetType().Name} moduleBase");
             }
             catch (Exception ex)
             {
-                Service.Log.Error(ex, $"Fail to unload {component.GetType().Name} moduleBase");
+                Service.Log.Error(ex, $"Fail to unload {module.GetType().Name} moduleBase");
             }
         }
     }
+
+    public static bool IsModuleEnabled(Type moduleType)
+        => Modules.TryGetValue(moduleType, out var module) && module.Initialized;
 
     public void Uninit()
     {

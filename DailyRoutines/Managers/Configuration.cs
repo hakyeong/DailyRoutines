@@ -26,19 +26,9 @@ public class Configuration : IPluginConfiguration
     {
         pluginInterface = pInterface;
 
-        CheckModuleStates();
         CheckConflictKeyValidation();
 
         Save();
-    }
-
-    private void CheckModuleStates()
-    {
-        var assembly = Assembly.GetExecutingAssembly();
-        var moduleTypes = assembly.GetTypes()
-                                  .Where(t => typeof(DailyModuleBase).IsAssignableFrom(t) &&
-                                              t is { IsClass: true, IsAbstract: false });
-        foreach (var module in moduleTypes) ModuleEnabled.TryAdd(module.Name, false);
     }
 
     private void CheckConflictKeyValidation()
