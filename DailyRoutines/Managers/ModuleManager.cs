@@ -10,7 +10,7 @@ public class ModuleManager
 {
     public static Dictionary<Type, DailyModuleBase> Modules { get; private set; } = [];
 
-    public ModuleManager()
+    public void Init()
     {
         var types = Assembly.GetExecutingAssembly().GetTypes()
                             .Where(t => typeof(DailyModuleBase).IsAssignableFrom(t) &&
@@ -20,13 +20,10 @@ public class ModuleManager
         foreach (var type in types)
         {
             var instance = Activator.CreateInstance(type);
-            if (instance is DailyModuleBase component)
-                Modules.Add(type, component);
+            if (instance is DailyModuleBase module)
+                Modules.Add(type, module);
         }
-    }
 
-    public void Init()
-    {
         foreach (var module in Modules.Values)
         {
             var moduleName = module.GetType().Name;
@@ -103,18 +100,20 @@ public class ModuleManager
 
     public void Uninit()
     {
-        foreach (var component in Modules.Values)
+        foreach (var module in Modules.Values)
             try
             {
-                if (component.Initialized)
+                if (module.Initialized)
                 {
-                    component.Uninit();
-                    component.Initialized = false;
+                    module.Uninit();
+                    module.Initialized = false;
                 }
             }
             catch (Exception ex)
             {
-                Service.Log.Error(ex, $"Fail to unload {component.GetType().Name} moduleBase");
+                Service.Log.Error(ex, $"Fail to unload {module.GetType().Name} module");
             }
+
+        Modules.Clear();
     }
 }

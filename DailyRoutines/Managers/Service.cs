@@ -34,6 +34,7 @@ public class Service
         PresetData.Init();
         PayloadText.Init();
         WinToast.Init();
+        IPCManager.Init();
         ModuleManager.Init();
     }
 
@@ -70,6 +71,7 @@ public class Service
         LuminaCache.ClearCache();
         CommandManager.Uninit();
         ModuleManager.Uninit();
+        IPCManager.Uninit();
     }
 
     [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
@@ -116,6 +118,7 @@ public class Service
     public static DalamudPluginInterface PluginInterface { get; private set; } = null!;
     public static Configuration Config { get; private set; } = null!;
     public static LanguageManager Lang { get; private set; } = null!;
+    public static IPCManager IPCManager { get; private set; } = new();
     public static ModuleManager ModuleManager { get; private set; } = new();
     public static WindowManager WindowManager { get; private set; } = new();
     public static SigScanner SigScanner { get; private set; } = new();
