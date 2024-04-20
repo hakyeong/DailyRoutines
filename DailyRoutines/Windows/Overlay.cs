@@ -20,9 +20,7 @@ public class Overlay : Window
         RespectCloseHotkey = false;
         ModuleBase = moduleBase;
 
-        if (Service.WindowManager.WindowSystem.Windows.Any(x => x.WindowName == WindowName))
-            Service.WindowManager.WindowSystem.RemoveWindow(Service.WindowManager.WindowSystem.Windows.FirstOrDefault(x => x.WindowName == WindowName));
-        Service.WindowManager.WindowSystem.AddWindow(this);
+        Service.WindowManager.AddWindows(this);
     }
 
     public override void Draw()

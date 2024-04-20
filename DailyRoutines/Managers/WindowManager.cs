@@ -1,3 +1,4 @@
+using System.Linq;
 using DailyRoutines.Windows;
 using Dalamud.Interface.Windowing;
 
@@ -12,10 +13,30 @@ public class WindowManager
     {
         WindowSystem = new("DailyRoutines");
         Main = new();
-        WindowSystem.AddWindow(Main);
+        AddWindows(Main);
 
         Service.PluginInterface.UiBuilder.Draw += DrawUI;
         Service.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
+    }
+
+    public bool AddWindows(Window window)
+    {
+        var addedWindows = WindowSystem.Windows;
+        if (addedWindows.Contains(window) || addedWindows.Any(x => x.WindowName == window.WindowName))
+            return false;
+
+        WindowSystem.AddWindow(window);
+        return true;
+    }
+
+    public bool RemoveWindows(Window window)
+    {
+        var addedWindows = WindowSystem.Windows;
+        if (!addedWindows.Contains(window))
+            return false;
+
+        WindowSystem.RemoveWindow(window);
+        return true;
     }
 
     private void DrawUI()
