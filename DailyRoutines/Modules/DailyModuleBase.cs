@@ -10,7 +10,6 @@ using System;
 using System.Linq;
 using System.Reflection;
 using Dalamud.Interface.Internal.Notifications;
-using FFXIVClientStructs.FFXIV.Client.Game.Event;
 
 namespace DailyRoutines.Modules;
 
