@@ -58,23 +58,23 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     {
         #region Config
 
-        AddConfig(this, "PriceReduction", 1);
-        PriceReduction = GetConfig<int>(this, "PriceReduction");
+        AddConfig("PriceReduction", 1);
+        PriceReduction = GetConfig<int>("PriceReduction");
 
-        AddConfig(this, "LowestAcceptablePrice", 100);
-        LowestPrice = GetConfig<int>(this, "LowestAcceptablePrice");
+        AddConfig("LowestAcceptablePrice", 100);
+        LowestPrice = GetConfig<int>("LowestAcceptablePrice");
 
-        AddConfig(this, "SeparateNQAndHQ", false);
-        SeparateNQAndHQ = GetConfig<bool>(this, "SeparateNQAndHQ");
+        AddConfig("SeparateNQAndHQ", false);
+        SeparateNQAndHQ = GetConfig<bool>("SeparateNQAndHQ");
 
-        AddConfig(this, "MaxPriceReduction", 0);
-        MaxPriceReduction = GetConfig<int>(this, "MaxPriceReduction");
+        AddConfig("MaxPriceReduction", 0);
+        MaxPriceReduction = GetConfig<int>("MaxPriceReduction");
 
-        AddConfig(this, "ProhibitLowerThanSellPrice", true);
-        ProhibitLowerThanSellPrice = GetConfig<bool>(this, "ProhibitLowerThanSellPrice");
+        AddConfig("ProhibitLowerThanSellPrice", true);
+        ProhibitLowerThanSellPrice = GetConfig<bool>("ProhibitLowerThanSellPrice");
 
-        AddConfig(this, "AdjustToLowestPriceWhenLower", true);
-        AdjustToLowestPriceWhenLower = GetConfig<bool>(this, "AdjustToLowestPriceWhenLower");
+        AddConfig("AdjustToLowestPriceWhenLower", true);
+        AdjustToLowestPriceWhenLower = GetConfig<bool>("AdjustToLowestPriceWhenLower");
 
         #endregion
 
@@ -106,7 +106,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
                 ref PriceReduction, 100))
         {
             PriceReduction = Math.Max(0, PriceReduction);
-            UpdateConfig(this, "PriceReduction", PriceReduction);
+            UpdateConfig("PriceReduction", PriceReduction);
         }
 
 
@@ -116,7 +116,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
                 ref LowestPrice, 100))
         {
             LowestPrice = Math.Max(1, LowestPrice);
-            UpdateConfig(this, "LowestAcceptablePrice", LowestPrice);
+            UpdateConfig("LowestAcceptablePrice", LowestPrice);
         }
 
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
@@ -125,21 +125,21 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
                 ref MaxPriceReduction, 100))
         {
             MaxPriceReduction = Math.Max(0, MaxPriceReduction);
-            UpdateConfig(this, "MaxPriceReduction", MaxPriceReduction);
+            UpdateConfig("MaxPriceReduction", MaxPriceReduction);
         }
 
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(Service.Lang.GetText("AutoRetainerPriceAdjust-MaxPriceReductionInputHelp"));
 
         if (ImGui.Checkbox($"{Service.Lang.GetText("AutoRetainerPriceAdjust-SeparateNQAndHQ")}", ref SeparateNQAndHQ))
-            UpdateConfig(this, "SeparateNQAndHQ", SeparateNQAndHQ);
+            UpdateConfig("SeparateNQAndHQ", SeparateNQAndHQ);
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoRetainerPriceAdjust-SeparateNQAndHQHelp"));
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoRetainerPriceAdjust-ProhibitLowerThanSellPrice"), ref ProhibitLowerThanSellPrice))
-            UpdateConfig(this, "ProhibitLowerThanSellPrice", ProhibitLowerThanSellPrice);
+            UpdateConfig("ProhibitLowerThanSellPrice", ProhibitLowerThanSellPrice);
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoRetainerPriceAdjust-AdjustToLowestPriceWhenLower"), ref AdjustToLowestPriceWhenLower))
-            UpdateConfig(this, "AdjustToLowestPriceWhenLower", AdjustToLowestPriceWhenLower);
+            UpdateConfig("AdjustToLowestPriceWhenLower", AdjustToLowestPriceWhenLower);
     }
 
     public override void OverlayUI()

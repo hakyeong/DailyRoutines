@@ -10,6 +10,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using Dalamud.Interface.Internal.Notifications;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
 
 namespace DailyRoutines.Modules;
 
@@ -26,12 +27,15 @@ public abstract class DailyModuleBase
 
     public virtual void OverlayUI() { }
 
-    protected static T GetConfig<T>(DailyModuleBase moduleBase, string key)
+    protected T GetConfig<T>(string key)
     {
+        var module = this;
+        var moduleName = module.GetType().Name;
+
         try
         {
             var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, moduleBase.GetType().Name + ".json");
+            var configFile = Path.Combine(configDirectory, moduleName + ".json");
 
             if (!File.Exists(configFile))
             {
@@ -68,17 +72,20 @@ public abstract class DailyModuleBase
         }
         catch (Exception ex)
         {
-            Service.Log.Error(ex, $"Failed to get config for {moduleBase.GetType().Name}");
+            Service.Log.Error(ex, $"Failed to get config for {moduleName}");
             return default;
         }
     }
 
-    protected static bool AddConfig(DailyModuleBase moduleBase, string key, object? config)
+    protected bool AddConfig(string key, object? config)
     {
+        var module = this;
+        var moduleName = module.GetType().Name;
+
         try
         {
             var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, moduleBase.GetType().Name + ".json");
+            var configFile = Path.Combine(configDirectory, moduleName + ".json");
 
             Dictionary<string, object>? existingConfig;
 
@@ -102,21 +109,24 @@ public abstract class DailyModuleBase
         }
         catch (Exception ex)
         {
-            Service.Log.Error(ex, $"Failed to write config for {moduleBase.GetType().Name}");
+            Service.Log.Error(ex, $"Failed to write config for {moduleName}");
             return false;
         }
     }
 
-    protected static bool UpdateConfig(DailyModuleBase moduleBase, string key, object? newConfig)
+    protected bool UpdateConfig(string key, object? newConfig)
     {
+        var module = this;
+        var moduleName = module.GetType().Name;
+
         try
         {
             var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, moduleBase.GetType().Name + ".json");
+            var configFile = Path.Combine(configDirectory, moduleName + ".json");
 
             if (!File.Exists(configFile))
             {
-                Service.Log.Error($"Config file for {moduleBase.GetType().Name} does not exist.");
+                Service.Log.Error($"Config file for {moduleName} does not exist.");
                 return false;
             }
 
@@ -125,7 +135,7 @@ public abstract class DailyModuleBase
 
             if (!existingConfig.ContainsKey(key))
             {
-                Service.Log.Error($"Key '{key}' does not exist in the config for {moduleBase.GetType().Name}.");
+                Service.Log.Error($"Key '{key}' does not exist in the config for {moduleName}.");
                 return false;
             }
 
@@ -138,17 +148,20 @@ public abstract class DailyModuleBase
         }
         catch (Exception ex)
         {
-            Service.Log.Error(ex, $"Failed to update config for {moduleBase.GetType().Name}");
+            Service.Log.Error(ex, $"Failed to update config for {moduleName}");
             return false;
         }
     }
 
-    protected static bool RemoveConfig(DailyModuleBase moduleBase, string key)
+    protected bool RemoveConfig(string key)
     {
+        var module = this;
+        var moduleName = module.GetType().Name;
+
         try
         {
             var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, moduleBase.GetType().Name + ".json");
+            var configFile = Path.Combine(configDirectory, moduleName + ".json");
 
             Dictionary<string, object>? existingConfig;
 
@@ -170,7 +183,7 @@ public abstract class DailyModuleBase
         }
         catch (Exception ex)
         {
-            Service.Log.Error(ex, $"Failed to remove config for {moduleBase.GetType().Name}");
+            Service.Log.Error(ex, $"Failed to remove config for {moduleName}");
             return false;
         }
     }

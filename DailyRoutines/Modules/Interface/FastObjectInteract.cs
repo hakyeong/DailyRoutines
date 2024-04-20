@@ -70,30 +70,30 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     public override void Init()
     {
-        AddConfig(this, "MaxDisplayAmount", 5);
-        AddConfig(this, "AllowClickToTarget", false);
-        AddConfig(this, "WindowInvisibleWhenInteract", true);
-        AddConfig(this, "FontScale", 1f);
-        AddConfig(this, "SelectedKinds",
+        AddConfig("MaxDisplayAmount", 5);
+        AddConfig("AllowClickToTarget", false);
+        AddConfig("WindowInvisibleWhenInteract", true);
+        AddConfig("FontScale", 1f);
+        AddConfig("SelectedKinds",
                                  new HashSet<ObjectKind>
                                  {
                                      ObjectKind.EventNpc, ObjectKind.EventObj, ObjectKind.Treasure,
                                      ObjectKind.Aetheryte, ObjectKind.GatheringPoint
                                  });
-        AddConfig(this, "BlacklistKeys", new HashSet<string>());
-        AddConfig(this, "MinButtonWidth", 300f);
-        AddConfig(this, "OnlyDisplayInViewRange", false);
-        AddConfig(this, "LockWindow", false);
+        AddConfig("BlacklistKeys", new HashSet<string>());
+        AddConfig("MinButtonWidth", 300f);
+        AddConfig("OnlyDisplayInViewRange", false);
+        AddConfig("LockWindow", false);
 
-        ConfigMaxDisplayAmount = GetConfig<int>(this, "MaxDisplayAmount");
-        ConfigAllowClickToTarget = GetConfig<bool>(this, "AllowClickToTarget");
-        ConfigWindowInvisibleWhenInteract = GetConfig<bool>(this, "WindowInvisibleWhenInteract");
-        ConfigFontScale = GetConfig<float>(this, "FontScale");
-        ConfigSelectedKinds = GetConfig<HashSet<ObjectKind>>(this, "SelectedKinds");
-        ConfigBlacklistKeys = GetConfig<HashSet<string>>(this, "BlacklistKeys");
-        ConfigMinButtonWidth = GetConfig<float>(this, "MinButtonWidth");
-        ConfigOnlyDisplayInViewRange = GetConfig<bool>(this, "OnlyDisplayInViewRange");
-        ConfigLockWindow = GetConfig<bool>(this, "LockWindow");
+        ConfigMaxDisplayAmount = GetConfig<int>("MaxDisplayAmount");
+        ConfigAllowClickToTarget = GetConfig<bool>("AllowClickToTarget");
+        ConfigWindowInvisibleWhenInteract = GetConfig<bool>("WindowInvisibleWhenInteract");
+        ConfigFontScale = GetConfig<float>("FontScale");
+        ConfigSelectedKinds = GetConfig<HashSet<ObjectKind>>("SelectedKinds");
+        ConfigBlacklistKeys = GetConfig<HashSet<string>>("BlacklistKeys");
+        ConfigMinButtonWidth = GetConfig<float>("MinButtonWidth");
+        ConfigOnlyDisplayInViewRange = GetConfig<bool>("OnlyDisplayInViewRange");
+        ConfigLockWindow = GetConfig<bool>("LockWindow");
 
         ENpcTitles ??= LuminaCache.Get<ENpcResident>()
                               .Where(x => x.Unknown10)
@@ -122,7 +122,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                              ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigFontScale = Math.Max(0.1f, ConfigFontScale);
-            UpdateConfig(this, "FontScale", ConfigFontScale);
+            UpdateConfig("FontScale", ConfigFontScale);
         }
 
         ImGui.AlignTextToFramePadding();
@@ -135,7 +135,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                              ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigMinButtonWidth = Math.Max(1, ConfigMinButtonWidth);
-            UpdateConfig(this, "MinButtonWidth", ConfigMinButtonWidth);
+            UpdateConfig("MinButtonWidth", ConfigMinButtonWidth);
         }
 
         ImGui.AlignTextToFramePadding();
@@ -147,7 +147,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                            ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigMaxDisplayAmount = Math.Max(1, ConfigMaxDisplayAmount);
-            UpdateConfig(this, "MaxDisplayAmount", ConfigMaxDisplayAmount);
+            UpdateConfig("MaxDisplayAmount", ConfigMaxDisplayAmount);
         }
 
         ImGui.AlignTextToFramePadding();
@@ -167,7 +167,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                     if (!ConfigSelectedKinds.Remove(kind.Key))
                         ConfigSelectedKinds.Add(kind.Key);
 
-                    UpdateConfig(this, "SelectedKinds", ConfigSelectedKinds);
+                    UpdateConfig("SelectedKinds", ConfigSelectedKinds);
                 }
             }
 
@@ -193,7 +193,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
             {
                 if (!ConfigBlacklistKeys.Add(BlacklistKeyInput)) return;
 
-                UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
+                UpdateConfig("BlacklistKeys", ConfigBlacklistKeys);
             }
 
             ImGui.Separator();
@@ -204,7 +204,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                                        Service.Lang.GetText("FastObjectInteract-Remove")))
                 {
                     ConfigBlacklistKeys.Remove(key);
-                    UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
+                    UpdateConfig("BlacklistKeys", ConfigBlacklistKeys);
                 }
 
                 ImGui.SameLine();
@@ -216,12 +216,12 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
         if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-WindowInvisibleWhenInteract"),
                            ref ConfigWindowInvisibleWhenInteract))
-            UpdateConfig(this, "WindowInvisibleWhenInteract", ConfigWindowInvisibleWhenInteract);
+            UpdateConfig("WindowInvisibleWhenInteract", ConfigWindowInvisibleWhenInteract);
 
         if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-LockWindow"),
                            ref ConfigLockWindow))
         {
-            UpdateConfig(this, "LockWindow", ConfigLockWindow);
+            UpdateConfig("LockWindow", ConfigLockWindow);
 
             if (ConfigLockWindow)
                 Overlay.Flags |= ImGuiWindowFlags.NoMove;
@@ -231,11 +231,11 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
         if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-OnlyDisplayInViewRange"),
                            ref ConfigOnlyDisplayInViewRange))
-            UpdateConfig(this, "OnlyDisplayInViewRange", ConfigOnlyDisplayInViewRange);
+            UpdateConfig("OnlyDisplayInViewRange", ConfigOnlyDisplayInViewRange);
 
         if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-AllowClickToTarget"),
                            ref ConfigAllowClickToTarget))
-            UpdateConfig(this, "AllowClickToTarget", ConfigAllowClickToTarget);
+            UpdateConfig("AllowClickToTarget", ConfigAllowClickToTarget);
     }
 
     public override void OverlayUI()
@@ -271,7 +271,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                     {
                         if (!ConfigBlacklistKeys.Add(AddToBlacklistNameRegex().Replace(kvp.Value.Name, "").Trim()))
                             return;
-                        UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
+                        UpdateConfig("BlacklistKeys", ConfigBlacklistKeys);
                     }
 
                     ImGui.EndPopup();
@@ -296,7 +296,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                     {
                         if (!ConfigBlacklistKeys.Add(FastObjectInteractTitleRegex().Replace(kvp.Value.Name, "").Trim()))
                             return;
-                        UpdateConfig(this, "BlacklistKeys", ConfigBlacklistKeys);
+                        UpdateConfig("BlacklistKeys", ConfigBlacklistKeys);
                     }
 
                     ImGui.EndPopup();

@@ -58,13 +58,13 @@ public unsafe class AutoGardensWork : DailyModuleBase
                       .Where(x => x.FilterGroup == 22)
                       .ToDictionary(x => x.RowId, x => x);
 
-        AddConfig(this, "SelectedSeed", SelectedSeed);
-        AddConfig(this, "SelectedSoil", SelectedSoil);
-        AddConfig(this, "SelectedFertilizer", SelectedFertilizer);
+        AddConfig("SelectedSeed", SelectedSeed);
+        AddConfig("SelectedSoil", SelectedSoil);
+        AddConfig("SelectedFertilizer", SelectedFertilizer);
 
-        SelectedSeed = GetConfig<uint>(this, "SelectedSeed");
-        SelectedSoil = GetConfig<uint>(this, "SelectedSoil");
-        SelectedFertilizer = GetConfig<uint>(this, "SelectedFertilizer");
+        SelectedSeed = GetConfig<uint>("SelectedSeed");
+        SelectedSoil = GetConfig<uint>("SelectedSoil");
+        SelectedFertilizer = GetConfig<uint>("SelectedFertilizer");
 
         Service.Hook.InitializeFromAttributes(this);
 
@@ -105,7 +105,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
                 if (ImGui.Selectable($"{itemName}", SelectedSeed == item.Key))
                 {
                     SelectedSeed = item.Key;
-                    UpdateConfig(this, "SelectedSeed", SelectedSeed);
+                    UpdateConfig("SelectedSeed", SelectedSeed);
                 }
 
                 if (ImGui.IsWindowAppearing() && SelectedSeed == item.Key)
@@ -127,7 +127,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
                 if (ImGui.Selectable($"{item.Value.Name.ExtractText()}", SelectedSoil == item.Key))
                 {
                     SelectedSoil = item.Key;
-                    UpdateConfig(this, "SelectedSoil", SelectedSoil);
+                    UpdateConfig("SelectedSoil", SelectedSoil);
                 }
 
                 if (ImGui.IsWindowAppearing() && SelectedSoil == item.Key)
@@ -169,7 +169,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
                 if (ImGui.Selectable($"{item.Value.Name.ExtractText()}", SelectedFertilizer == item.Key))
                 {
                     SelectedFertilizer = item.Key;
-                    UpdateConfig(this, "SelectedFertilizer", SelectedFertilizer);
+                    UpdateConfig("SelectedFertilizer", SelectedFertilizer);
                 }
 
                 if (ImGui.IsWindowAppearing() && SelectedFertilizer == item.Key)

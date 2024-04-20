@@ -46,23 +46,23 @@ public unsafe class AutoPlayCards : DailyModuleBase
                                                                 UseActionSelf);
         useActionSelfHook?.Enable();
 
-        AddConfig(this, "SendMessage", SendMessage);
-        SendMessage = GetConfig<bool>(this, "SendMessage");
+        AddConfig("SendMessage", SendMessage);
+        SendMessage = GetConfig<bool>("SendMessage");
 
-        AddConfig(this, "UseAantonomasia", UseAantonomasia);
-        UseAantonomasia = GetConfig<bool>(this, "UseAantonomasia");
+        AddConfig("UseAantonomasia", UseAantonomasia);
+        UseAantonomasia = GetConfig<bool>("UseAantonomasia");
     }
 
     public override void ConfigUI()
     {
         if (ImGui.Checkbox(Service.Lang.GetText("AutoPlayCards-SendMessage"), ref SendMessage))
-            UpdateConfig(this, "SendMessage", SendMessage);
+            UpdateConfig("SendMessage", SendMessage);
 
         if (SendMessage)
         {
             ImGui.Indent();
             if (ImGui.Checkbox(Service.Lang.GetText("AutoPlayCards-UseAantonomasia"), ref UseAantonomasia))
-                UpdateConfig(this, "UseAantonomasia", UseAantonomasia);
+                UpdateConfig("UseAantonomasia", UseAantonomasia);
 
             ImGuiOm.HelpMarker(Service.Lang.GetText("AutoPlayCards-UseAantonomasiaHelp"));
             ImGui.Unindent();

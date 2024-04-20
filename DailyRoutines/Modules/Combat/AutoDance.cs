@@ -29,14 +29,14 @@ public unsafe class AutoDance : DailyModuleBase
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
 
-        AddConfig(this, "IsAutoFinish", IsAutoFinish);
-        IsAutoFinish = GetConfig<bool>(this, "IsAutoFinish");
+        AddConfig("IsAutoFinish", IsAutoFinish);
+        IsAutoFinish = GetConfig<bool>("IsAutoFinish");
     }
 
     public override void ConfigUI()
     {
         if (ImGui.Checkbox(Service.Lang.GetText("AutoDance-AutoFinish"), ref IsAutoFinish))
-            UpdateConfig(this, "IsAutoFinish", IsAutoFinish);
+            UpdateConfig("IsAutoFinish", IsAutoFinish);
     }
 
     private bool UseActionSelf(

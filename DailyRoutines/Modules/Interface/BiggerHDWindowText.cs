@@ -39,8 +39,8 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, TextInputWindows, OnTextInputAddon);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, TextWindows.Keys, OnTextAddon);
 
-        AddConfig(this, "FontScale", FontScale);
-        FontScale = GetConfig<float>(this, "FontScale");
+        AddConfig("FontScale", FontScale);
+        FontScale = GetConfig<float>("FontScale");
     }
 
     public override void ConfigUI()
@@ -54,7 +54,7 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
                              ImGuiInputTextFlags.EnterReturnsTrue))
         {
             FontScale = (float)Math.Clamp(FontScale, 0.1, 5f);
-            UpdateConfig(this, "FontScale", FontScale);
+            UpdateConfig("FontScale", FontScale);
         }
     }
 

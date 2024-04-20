@@ -23,8 +23,8 @@ public unsafe class AutoDesynthesizeItems : DailyModuleBase
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
         Overlay ??= new Overlay(this);
 
-        AddConfig(this, "SkipWhenHQ", ConfigSkipWhenHQ);
-        ConfigSkipWhenHQ = GetConfig<bool>(this, "SkipWhenHQ");
+        AddConfig("SkipWhenHQ", ConfigSkipWhenHQ);
+        ConfigSkipWhenHQ = GetConfig<bool>("SkipWhenHQ");
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SalvageItemSelector", OnAddonList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "SalvageItemSelector", OnAddonList);
@@ -44,7 +44,7 @@ public unsafe class AutoDesynthesizeItems : DailyModuleBase
 
         ImGui.BeginDisabled(TaskManager.IsBusy);
         if (ImGui.Checkbox(Service.Lang.GetText("AutoDesynthesizeItems-SkipHQ"), ref ConfigSkipWhenHQ))
-            UpdateConfig(this, "SkipWhenHQ", ConfigSkipWhenHQ);
+            UpdateConfig("SkipWhenHQ", ConfigSkipWhenHQ);
 
         if (ImGui.Button(Service.Lang.GetText("Start"))) StartDesynthesize();
         ImGui.EndDisabled();

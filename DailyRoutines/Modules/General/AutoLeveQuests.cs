@@ -35,8 +35,8 @@ public class AutoLeveQuests : DailyModuleBase
         Service.ClientState.TerritoryChanged += OnZoneChanged;
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
 
-        AddConfig(this, "OperationDelay", 0);
-        ConfigOperationDelay = GetConfig<int>(this, "OperationDelay");
+        AddConfig("OperationDelay", 0);
+        ConfigOperationDelay = GetConfig<int>("OperationDelay");
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", AlwaysYes);
     }
 
@@ -48,7 +48,7 @@ public class AutoLeveQuests : DailyModuleBase
                            ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigOperationDelay = Math.Max(0, ConfigOperationDelay);
-            UpdateConfig(this, "OperationDelay", ConfigOperationDelay);
+            UpdateConfig("OperationDelay", ConfigOperationDelay);
         }
 
         ImGui.SameLine();

@@ -34,11 +34,11 @@ public class AutoJumboCactpot : DailyModuleBase
 
     public override void Init()
     {
-        AddConfig(this, "NumberMode", Mode.Random);
-        NumberMode = GetConfig<Mode>(this, "NumberMode");
+        AddConfig("NumberMode", Mode.Random);
+        NumberMode = GetConfig<Mode>("NumberMode");
 
-        AddConfig(this, "FixedNumber", 1);
-        FixedNumber = GetConfig<int>(this, "FixedNumber");
+        AddConfig("FixedNumber", 1);
+        FixedNumber = GetConfig<int>("FixedNumber");
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
 
@@ -55,7 +55,7 @@ public class AutoJumboCactpot : DailyModuleBase
                 if (ImGui.Selectable(modePair.Value, modePair.Key == NumberMode))
                 {
                     NumberMode = modePair.Key;
-                    UpdateConfig(this, "NumberMode", NumberMode);
+                    UpdateConfig("NumberMode", NumberMode);
                 }
             }
 
@@ -71,7 +71,7 @@ public class AutoJumboCactpot : DailyModuleBase
             if (ImGui.IsItemDeactivatedAfterEdit())
             {
                 FixedNumber = Math.Clamp(FixedNumber, 0, 9999);
-                UpdateConfig(this, "FixedNumber", FixedNumber);
+                UpdateConfig("FixedNumber", FixedNumber);
             }
         }
     }

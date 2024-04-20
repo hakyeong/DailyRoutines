@@ -83,11 +83,11 @@ public class AutoLogin : DailyModuleBase
 
     public override void Init()
     {
-        AddConfig(this, "LoginInfos", LoginInfos);
-        LoginInfos = GetConfig<List<LoginInfo>>(this, "LoginInfos");
+        AddConfig("LoginInfos", LoginInfos);
+        LoginInfos = GetConfig<List<LoginInfo>>("LoginInfos");
 
-        AddConfig(this, "Mode", Mode);
-        Mode = GetConfig<BehaviourMode>(this, "Mode");
+        AddConfig("Mode", Mode);
+        Mode = GetConfig<BehaviourMode>("Mode");
 
         Worlds ??= LuminaCache.Get<World>()
                           .Where(x => x.DataCenter.Value.Region == 5 && !string.IsNullOrWhiteSpace(x.Name.RawString) && !string.IsNullOrWhiteSpace(x.InternalName.RawString) && IsChineseString(x.Name.RawString))
@@ -164,7 +164,7 @@ public class AutoLogin : DailyModuleBase
                 if (LoginInfos.Contains(info)) return;
 
                 LoginInfos.Add(info);
-                UpdateConfig(this, "LoginInfos", LoginInfos);
+                UpdateConfig("LoginInfos", LoginInfos);
             }
             ImGuiOm.TooltipHover(Service.Lang.GetText("AutoLogin-LoginInfoOrderHelp"));
 
@@ -223,7 +223,7 @@ public class AutoLogin : DailyModuleBase
                 if (ImGui.Selectable(mode.Value, mode.Key == Mode))
                 {
                     Mode = mode.Key;
-                    UpdateConfig(this, "Mode", Mode);
+                    UpdateConfig("Mode", Mode);
                 }
             }
             ImGui.EndCombo();
@@ -343,7 +343,7 @@ public class AutoLogin : DailyModuleBase
         TaskManager.Abort();
 
         TaskManager.DelayNext(500);
-        TaskManager.Enqueue(() => { UpdateConfig(this, "LoginInfos", LoginInfos); });
+        TaskManager.Enqueue(() => { UpdateConfig("LoginInfos", LoginInfos); });
     }
 
     public override void Uninit()

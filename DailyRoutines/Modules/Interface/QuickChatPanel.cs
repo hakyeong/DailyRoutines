@@ -94,29 +94,29 @@ public unsafe class QuickChatPanel : DailyModuleBase
     {
         #region Config Init
 
-        AddConfig(this, "SavedMessages", ConfigSavedMessages);
-        ConfigSavedMessages = GetConfig<List<string>>(this, "SavedMessages");
+        AddConfig("SavedMessages", ConfigSavedMessages);
+        ConfigSavedMessages = GetConfig<List<string>>("SavedMessages");
 
-        AddConfig(this, "SavedMacros", ConfigSavedMacros);
-        ConfigSavedMacros = GetConfig<List<SavedMacro>>(this, "SavedMacros");
+        AddConfig("SavedMacros", ConfigSavedMacros);
+        ConfigSavedMacros = GetConfig<List<SavedMacro>>("SavedMacros");
 
-        AddConfig(this, "FontScale", 1.5f);
-        ConfigFontScale = GetConfig<float>(this, "FontScale");
+        AddConfig("FontScale", 1.5f);
+        ConfigFontScale = GetConfig<float>("FontScale");
 
-        AddConfig(this, "ButtonOffset", ConfigButtonOffset);
-        ConfigButtonOffset = GetConfig<Vector2>(this, "ButtonOffset");
+        AddConfig("ButtonOffset", ConfigButtonOffset);
+        ConfigButtonOffset = GetConfig<Vector2>("ButtonOffset");
 
-        AddConfig(this, "ButtonSize", ConfigButtonSize);
-        ConfigButtonSize = GetConfig<ushort>(this, "ButtonSize");
+        AddConfig("ButtonSize", ConfigButtonSize);
+        ConfigButtonSize = GetConfig<ushort>("ButtonSize");
 
-        AddConfig(this, "ButtonIcon", ConfigButtonIcon);
-        ConfigButtonIcon = GetConfig<int>(this, "ButtonIcon");
+        AddConfig("ButtonIcon", ConfigButtonIcon);
+        ConfigButtonIcon = GetConfig<int>("ButtonIcon");
 
-        AddConfig(this, "OverlayHeight", ConfigOverlayHeight);
-        ConfigOverlayHeight = GetConfig<float>(this, "OverlayHeight");
+        AddConfig("OverlayHeight", ConfigOverlayHeight);
+        ConfigOverlayHeight = GetConfig<float>("OverlayHeight");
 
-        AddConfig(this, "OverlayMacroDisplayMode", ConfigOverlayMacroDisplayMode);
-        ConfigOverlayMacroDisplayMode = GetConfig<MacroDisplayMode>(this, "OverlayMacroDisplayMode");
+        AddConfig("OverlayMacroDisplayMode", ConfigOverlayMacroDisplayMode);
+        ConfigOverlayMacroDisplayMode = GetConfig<MacroDisplayMode>("OverlayMacroDisplayMode");
 
         #endregion
 
@@ -193,7 +193,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 if (ConfigSavedMessages.Contains(MessageInput)) return;
                 ConfigSavedMessages.Add(MessageInput);
 
-                UpdateConfig(this, "SavedMessages", ConfigSavedMessages);
+                UpdateConfig("SavedMessages", ConfigSavedMessages);
             }
 
             if (ConfigSavedMessages.Count > 0) ImGui.Separator();
@@ -215,7 +215,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             if (messagesToDelete.Count > 0)
             {
                 messagesToDelete.ForEach(x => ConfigSavedMessages.Remove(x));
-                UpdateConfig(this, "SavedMessages", ConfigSavedMessages);
+                UpdateConfig("SavedMessages", ConfigSavedMessages);
             }
 
             ImGui.EndCombo();
@@ -255,7 +255,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                         if (!ConfigSavedMacros.Remove(currentSavedMacro))
                         {
                             ConfigSavedMacros.Add(currentSavedMacro);
-                            UpdateConfig(this, "SavedMacros", ConfigSavedMacros);
+                            UpdateConfig("SavedMacros", ConfigSavedMacros);
                         }
                     }
 
@@ -276,7 +276,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                             if (currentIndex != -1)
                             {
                                 ConfigSavedMacros[currentIndex] = currentSavedMacro;
-                                UpdateConfig(this, "SavedMacros", ConfigSavedMacros);
+                                UpdateConfig("SavedMacros", ConfigSavedMacros);
                             }
                         }
 
@@ -317,7 +317,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                         if (!ConfigSavedMacros.Remove(currentSavedMacro))
                         {
                             ConfigSavedMacros.Add(currentSavedMacro);
-                            UpdateConfig(this, "SavedMacros", ConfigSavedMacros);
+                            UpdateConfig("SavedMacros", ConfigSavedMacros);
                         }
                     }
 
@@ -337,7 +337,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                             if (ConfigSavedMacros.Remove(currentSavedMacro))
                             {
                                 ConfigSavedMacros.Add(currentSavedMacro);
-                                UpdateConfig(this, "SavedMacros", ConfigSavedMacros);
+                                UpdateConfig("SavedMacros", ConfigSavedMacros);
                             }
                         }
 
@@ -358,21 +358,21 @@ public unsafe class QuickChatPanel : DailyModuleBase
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
         if (ImGui.InputFloat2("###ButtonOffsetInput", ref ConfigButtonOffset, "%.1f",
                               ImGuiInputTextFlags.EnterReturnsTrue))
-            UpdateConfig(this, "ButtonOffset", ConfigButtonOffset);
+            UpdateConfig("ButtonOffset", ConfigButtonOffset);
 
         ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
         var intConfigButtonSize = (int)ConfigButtonSize;
         if (ImGui.InputInt("###ButtonSizeInput", ref intConfigButtonSize, 0, 0, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigButtonSize = (ushort)Math.Clamp(intConfigButtonSize, 1, 65535);
-            UpdateConfig(this, "ButtonSize", ConfigButtonSize);
+            UpdateConfig("ButtonSize", ConfigButtonSize);
         }
 
         ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
         if (ImGui.InputInt("###ButtonIconInput", ref ConfigButtonIcon, 0, 0, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigButtonIcon = Math.Max(ConfigButtonIcon, 1);
-            UpdateConfig(this, "ButtonIcon", ConfigButtonIcon);
+            UpdateConfig("ButtonIcon", ConfigButtonIcon);
         }
 
         ImGui.SameLine();
@@ -387,7 +387,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                              ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigFontScale = (float)Math.Clamp(ConfigFontScale, 0.1, 10f);
-            UpdateConfig(this, "FontScale", ConfigFontScale);
+            UpdateConfig("FontScale", ConfigFontScale);
         }
 
         ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
@@ -395,7 +395,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                              ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigOverlayHeight = Math.Clamp(ConfigOverlayHeight, 100f, 10000f);
-            UpdateConfig(this, "OverlayHeight", ConfigOverlayHeight);
+            UpdateConfig("OverlayHeight", ConfigOverlayHeight);
         }
 
         ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
@@ -405,7 +405,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 if (ImGui.Selectable(MacroDisplayModeLoc[mode], mode == ConfigOverlayMacroDisplayMode))
                 {
                     ConfigOverlayMacroDisplayMode = mode;
-                    UpdateConfig(this, "OverlayMacroDisplayMode", ConfigOverlayMacroDisplayMode);
+                    UpdateConfig("OverlayMacroDisplayMode", ConfigOverlayMacroDisplayMode);
                 }
 
             ImGui.EndCombo();
@@ -811,7 +811,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
         TaskManager.Abort();
 
         TaskManager.DelayNext(500);
-        TaskManager.Enqueue(() => { UpdateConfig(this, "SavedMacros", ConfigSavedMacros); });
+        TaskManager.Enqueue(() => { UpdateConfig("SavedMacros", ConfigSavedMacros); });
     }
 
     private void SwapMessages(int index1, int index2)
@@ -822,7 +822,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
         TaskManager.Abort();
 
         TaskManager.DelayNext(500);
-        TaskManager.Enqueue(() => { UpdateConfig(this, "SavedMessages", ConfigSavedMessages); });
+        TaskManager.Enqueue(() => { UpdateConfig("SavedMessages", ConfigSavedMessages); });
     }
 
     public override void Uninit()

@@ -17,8 +17,8 @@ namespace DailyRoutines.Modules
 
         public override void Init()
         {
-            AddConfig(this, "OnlyNotifyWhenBackground", true);
-            ConfigOnlyNotifyWhenBackground = GetConfig<bool>(this, "OnlyNotifyWhenBackground");
+            AddConfig("OnlyNotifyWhenBackground", true);
+            ConfigOnlyNotifyWhenBackground = GetConfig<bool>("OnlyNotifyWhenBackground");
 
             Service.Chat.ChatMessage += OnChatMessage;
         }
@@ -30,7 +30,7 @@ namespace DailyRoutines.Modules
 
             if (ImGui.Checkbox(Service.Lang.GetText("OnlyNotifyWhenBackground"),
                                ref ConfigOnlyNotifyWhenBackground))
-                UpdateConfig(this, "OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
+                UpdateConfig("OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
         }
 
         private static void OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)

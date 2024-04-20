@@ -150,14 +150,14 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
                                                                 UseActionSelf);
         useActionSelfHook?.Enable();
 
-        AddConfig(this, "EnabledActions", new Dictionary<uint, bool>());
-        ConfigEnabledActions = GetConfig<Dictionary<uint, bool>>(this, "EnabledActions");
+        AddConfig("EnabledActions", new Dictionary<uint, bool>());
+        ConfigEnabledActions = GetConfig<Dictionary<uint, bool>>("EnabledActions");
 
         DuplicateActions.Keys.Except(ConfigEnabledActions.Keys).ToList().ForEach(key => ConfigEnabledActions[key] = true);
         ConfigEnabledActions.Keys.Except(DuplicateActions.Keys).ToList()
                             .ForEach(key => ConfigEnabledActions.Remove(key));
 
-        UpdateConfig(this, "EnabledActions", ConfigEnabledActions);
+        UpdateConfig("EnabledActions", ConfigEnabledActions);
     }
 
     public override void ConfigUI()
@@ -184,7 +184,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
                     if (ImGui.Checkbox($"###Is{info.Key}Enabled", ref isActionEnabled))
                     {
                         ConfigEnabledActions[info.Key] ^= true;
-                        UpdateConfig(this, "EnabledActions", ConfigEnabledActions);
+                        UpdateConfig("EnabledActions", ConfigEnabledActions);
                     }
 
                     ImGui.SameLine();

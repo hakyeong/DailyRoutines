@@ -35,14 +35,14 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
 
     public override void Init()
     {
-        AddConfig(this, "RisingStoneEnabled", true);
-        RisingStoneEnabled = GetConfig<bool>(this, "RisingStoneEnabled");
+        AddConfig("RisingStoneEnabled", true);
+        RisingStoneEnabled = GetConfig<bool>("RisingStoneEnabled");
 
-        AddConfig(this, "FFLogsEnabled", true);
-        FFLogsEnabled = GetConfig<bool>(this, "FFLogsEnabled");
+        AddConfig("FFLogsEnabled", true);
+        FFLogsEnabled = GetConfig<bool>("FFLogsEnabled");
 
-        AddConfig(this, "TiebaEnabled", true);
-        TiebaEnabled = GetConfig<bool>(this, "TiebaEnabled");
+        AddConfig("TiebaEnabled", true);
+        TiebaEnabled = GetConfig<bool>("TiebaEnabled");
 
         Service.ContextMenu.OnMenuOpened += OnMenuOpen;
         base.Init();
@@ -51,11 +51,11 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
     public override void ConfigUI()
     {
         if (ImGui.Checkbox(Service.Lang.GetText("ExpandPlayerMenuSearch-RisingStoneSearch"), ref RisingStoneEnabled))
-            UpdateConfig(this, "RisingStoneEnabled", RisingStoneEnabled);
+            UpdateConfig("RisingStoneEnabled", RisingStoneEnabled);
         if (ImGui.Checkbox(Service.Lang.GetText("ExpandPlayerMenuSearch-FFLogsSearch"), ref FFLogsEnabled))
-            UpdateConfig(this, "FFLogsEnabled", FFLogsEnabled);
+            UpdateConfig("FFLogsEnabled", FFLogsEnabled);
         if (ImGui.Checkbox(Service.Lang.GetText("ExpandPlayerMenuSearch-TiebaSearch"), ref TiebaEnabled))
-            UpdateConfig(this, "TiebaEnabled", TiebaEnabled);
+            UpdateConfig("TiebaEnabled", TiebaEnabled);
     }
 
     private static void OnMenuOpen(MenuOpenedArgs args)

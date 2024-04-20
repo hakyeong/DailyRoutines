@@ -59,14 +59,14 @@ public class AutoNotifyMessages : DailyModuleBase
 
     public override void Init()
     {
-        AddConfig(this, "OnlyNotifyWhenBackground", true);
-        ConfigOnlyNotifyWhenBackground = GetConfig<bool>(this, "OnlyNotifyWhenBackground");
+        AddConfig("OnlyNotifyWhenBackground", true);
+        ConfigOnlyNotifyWhenBackground = GetConfig<bool>("OnlyNotifyWhenBackground");
 
-        AddConfig(this, "ValidChatTypes", new HashSet<XivChatType> { XivChatType.TellIncoming });
-        ConfigValidChatTypes = GetConfig<HashSet<XivChatType>>(this, "ValidChatTypes");
+        AddConfig("ValidChatTypes", new HashSet<XivChatType> { XivChatType.TellIncoming });
+        ConfigValidChatTypes = GetConfig<HashSet<XivChatType>>("ValidChatTypes");
 
-        AddConfig(this, "BlockOwnMessages", true);
-        ConfigBlockOwnMessages = GetConfig<bool>(this, "BlockOwnMessages");
+        AddConfig("BlockOwnMessages", true);
+        ConfigBlockOwnMessages = GetConfig<bool>("BlockOwnMessages");
 
         Service.Chat.ChatMessage += OnChatMessage;
     }
@@ -78,10 +78,10 @@ public class AutoNotifyMessages : DailyModuleBase
 
         if (ImGui.Checkbox(Service.Lang.GetText("OnlyNotifyWhenBackground"),
                            ref ConfigOnlyNotifyWhenBackground))
-            UpdateConfig(this, "OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
+            UpdateConfig("OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoNotifyMessages-BlockOwnMessages"), ref ConfigBlockOwnMessages))
-            UpdateConfig(this, "BlockOwnMessages", ConfigBlockOwnMessages);
+            UpdateConfig("BlockOwnMessages", ConfigBlockOwnMessages);
 
         ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
         if (ImGui.BeginCombo("###SelectChatTypesCombo",
@@ -105,7 +105,7 @@ public class AutoNotifyMessages : DailyModuleBase
                     if (!ConfigValidChatTypes.Remove(chatType.Key))
                         ConfigValidChatTypes.Add(chatType.Key);
 
-                    UpdateConfig(this, "ValidChatTypes", ConfigValidChatTypes);
+                    UpdateConfig("ValidChatTypes", ConfigValidChatTypes);
                 }
             }
 

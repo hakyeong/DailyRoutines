@@ -24,8 +24,8 @@ public class CustomizeASTCardNames : DailyModuleBase
 
     public override void Init()
     {
-        AddConfig(this, "CardNames", CardNames);
-        CardNames = GetConfig<Dictionary<string, string>>(this, "CardNames");
+        AddConfig("CardNames", CardNames);
+        CardNames = GetConfig<Dictionary<string, string>>("CardNames");
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "JobHudAST0", OnAddon0);
     }
@@ -50,7 +50,7 @@ public class CustomizeASTCardNames : DailyModuleBase
             if (ImGui.InputText("###ReplaceNameInput", ref cardReplacedName, 32, ImGuiInputTextFlags.EnterReturnsTrue))
             {
                 CardNames[cardName] = cardReplacedName;
-                UpdateConfig(this, "CardNames", CardNames);
+                UpdateConfig("CardNames", CardNames);
             }
 
             ImGui.PopID();

@@ -79,12 +79,12 @@ public class AutoMJIGather : DailyModuleBase
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
-        AddConfig(this, "GatherNodes", GatherNodes);
-        AddConfig(this, "StopWhenReachCaps", true);
+        AddConfig("GatherNodes", GatherNodes);
+        AddConfig("StopWhenReachCaps", true);
 
         GatherNodes =
-            GetConfig<Dictionary<string, AutoMJIGatherGroup>>(this, "GatherNodes");
-        ConfigStopWhenReachCaps = GetConfig<bool>(this, "StopWhenReachCaps");
+            GetConfig<Dictionary<string, AutoMJIGatherGroup>>("GatherNodes");
+        ConfigStopWhenReachCaps = GetConfig<bool>("StopWhenReachCaps");
 
         Service.Chat.ChatMessage += OnChatMessage;
     }
@@ -137,7 +137,7 @@ public class AutoMJIGather : DailyModuleBase
                     if (ImGui.Checkbox($"##{nodeGroup.Key}", ref groupState))
                     {
                         GatherNodes[nodeGroup.Key] = new AutoMJIGatherGroup(groupState, nodeGroup.Value.Nodes);
-                        UpdateConfig(this, "GatherNodes", GatherNodes);
+                        UpdateConfig("GatherNodes", GatherNodes);
                         CurrentGatherIndex = 0;
                         QueuedGatheringList.Clear();
                     }
@@ -206,7 +206,7 @@ public class AutoMJIGather : DailyModuleBase
         ImGui.Spacing();
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoMJIGather-StopWhenReachCaps"), ref ConfigStopWhenReachCaps))
-            UpdateConfig(this, "StopWhenReachCaps", ConfigStopWhenReachCaps);
+            UpdateConfig("StopWhenReachCaps", ConfigStopWhenReachCaps);
     }
 
     private void OnUpdate(IFramework framework)
@@ -226,7 +226,7 @@ public class AutoMJIGather : DailyModuleBase
             if (string.IsNullOrWhiteSpace(objName)) continue;
             if (!GatherNodes.ContainsKey(objName)) GatherNodes.Add(objName, new AutoMJIGatherGroup(false, []));
             if (GatherNodes[objName].Nodes.Add(obj.Position))
-                UpdateConfig(this, "GatherNodes", GatherNodes);
+                UpdateConfig("GatherNodes", GatherNodes);
         }
     }
 
@@ -349,7 +349,7 @@ public class AutoMJIGather : DailyModuleBase
 
     public override void Uninit()
     {
-        UpdateConfig(this, "GatherNodes", GatherNodes);
+        UpdateConfig("GatherNodes", GatherNodes);
 
         Service.Framework.Update -= OnUpdate;
         Service.Chat.ChatMessage -= OnChatMessage;

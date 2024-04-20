@@ -37,14 +37,14 @@ public unsafe class NoAttackWrongMandragoras : DailyModuleBase
                                .Where(x => x.Singular.RawString.Contains("王后"))
                                .Select(queen => new[] { queen.RowId - 4, queen.RowId - 3, queen.RowId - 2, queen.RowId - 1, queen.RowId })
                                .ToList();
-        AddConfig(this, "OnlyInTreasureHunt", true);
-        OnlyInTreasureHunt = GetConfig<bool>(this, "OnlyInTreasureHunt");
+        AddConfig("OnlyInTreasureHunt", true);
+        OnlyInTreasureHunt = GetConfig<bool>("OnlyInTreasureHunt");
     }
 
     public override void ConfigUI()
     {
         if (ImGui.Checkbox(Service.Lang.GetText("NoAttackWrongMandragoras-OnlyInTreasureHunt"), ref OnlyInTreasureHunt))
-            UpdateConfig(this, "OnlyInTreasureHunt", OnlyInTreasureHunt);
+            UpdateConfig("OnlyInTreasureHunt", OnlyInTreasureHunt);
     }
 
     private byte IsTargetableDetour(GameObject* potentialTarget) 

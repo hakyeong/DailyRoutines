@@ -11,8 +11,8 @@ public class AutoNotifyDutyStart : DailyModuleBase
 
     public override void Init()
     {
-        AddConfig(this, "OnlyNotifyWhenBackground", true);
-        ConfigOnlyNotifyWhenBackground = GetConfig<bool>(this, "OnlyNotifyWhenBackground");
+        AddConfig("OnlyNotifyWhenBackground", true);
+        ConfigOnlyNotifyWhenBackground = GetConfig<bool>("OnlyNotifyWhenBackground");
 
         Service.DutyState.DutyStarted += OnDutyStart;
     }
@@ -20,7 +20,7 @@ public class AutoNotifyDutyStart : DailyModuleBase
     public override void ConfigUI()
     {
         if (ImGui.Checkbox(Service.Lang.GetText("OnlyNotifyWhenBackground"), ref ConfigOnlyNotifyWhenBackground))
-            UpdateConfig(this, "OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
+            UpdateConfig("OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
     }
 
     private static void OnDutyStart(object? sender, ushort e)

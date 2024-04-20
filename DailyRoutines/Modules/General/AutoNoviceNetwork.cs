@@ -35,8 +35,8 @@ public class AutoNoviceNetwork : DailyModuleBase
 
     public override void Init()
     {
-        AddConfig(this, "IsTryJoinWhenInactive", false);
-        ConfigIsTryJoinWhenInactive = GetConfig<bool>(this, "IsTryJoinWhenInactive");
+        AddConfig("IsTryJoinWhenInactive", false);
+        ConfigIsTryJoinWhenInactive = GetConfig<bool>("IsTryJoinWhenInactive");
 
         AfkTimer ??= new Timer(10000);
         AfkTimer.Elapsed += OnAfkStateCheck;
@@ -71,7 +71,7 @@ public class AutoNoviceNetwork : DailyModuleBase
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoNoviceNetwork-TryJoinWhenInactive"), ref ConfigIsTryJoinWhenInactive))
         {
-            UpdateConfig(this, "IsTryJoinWhenInactive", ConfigIsTryJoinWhenInactive);
+            UpdateConfig("IsTryJoinWhenInactive", ConfigIsTryJoinWhenInactive);
         }
 
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoNoviceNetwork-TryJoinWhenInactiveHelp"));

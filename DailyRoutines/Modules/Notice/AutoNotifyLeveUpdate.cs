@@ -21,10 +21,10 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
 
     public override void Init()
     {
-        AddConfig(this, "OnChatMessage", true);
-        AddConfig(this, "NotificationThreshold", 97);
-        OnChatMessage = GetConfig<bool>(this, "OnChatMessage");
-        NotificationThreshold = GetConfig<int>(this, "NotificationThreshold");
+        AddConfig("OnChatMessage", true);
+        AddConfig("NotificationThreshold", 97);
+        OnChatMessage = GetConfig<bool>("OnChatMessage");
+        NotificationThreshold = GetConfig<int>("NotificationThreshold");
         Service.Framework.Update += OnFrameworkLeve;
     }
 
@@ -40,7 +40,7 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoNotifyLeveUpdate-OnChatMessageConfig"),
                            ref OnChatMessage))
-            UpdateConfig(this, "OnChatMessage", OnChatMessage);
+            UpdateConfig("OnChatMessage", OnChatMessage);
 
         ImGui.PushItemWidth(300f);
         ImGui.SliderInt(Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationThreshold"), ref NotificationThreshold, 1, 100);
@@ -48,7 +48,7 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
             lastLeve = 0;
-            UpdateConfig(this, "NotificationThreshold", NotificationThreshold);
+            UpdateConfig("NotificationThreshold", NotificationThreshold);
         }
         
     }

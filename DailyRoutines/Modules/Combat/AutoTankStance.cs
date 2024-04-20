@@ -34,8 +34,8 @@ public class AutoTankStance : DailyModuleBase
 
     public override void Init()
     {
-        AddConfig(this, "OnlyAutoStanceWhenOneTank", true);
-        ConfigOnlyAutoStanceWhenOneTank = GetConfig<bool>(this, "OnlyAutoStanceWhenOneTank");
+        AddConfig("OnlyAutoStanceWhenOneTank", true);
+        ConfigOnlyAutoStanceWhenOneTank = GetConfig<bool>("OnlyAutoStanceWhenOneTank");
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
 
@@ -52,7 +52,7 @@ public class AutoTankStance : DailyModuleBase
     {
         if (ImGui.Checkbox(Service.Lang.GetText("AutoTankStance-OnlyAutoStanceWhenOneTank"),
                            ref ConfigOnlyAutoStanceWhenOneTank))
-            UpdateConfig(this, "OnlyAutoStanceWhenOneTank", ConfigOnlyAutoStanceWhenOneTank);
+            UpdateConfig("OnlyAutoStanceWhenOneTank", ConfigOnlyAutoStanceWhenOneTank);
 
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoTankStance-OnlyAutoStanceWhenOneTankHelp"));
     }

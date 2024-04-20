@@ -22,8 +22,8 @@ public unsafe class AutoShareRetainersGilsEvenly : DailyModuleBase
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
 
-        AddConfig(this, "AdjustMethod", 0);
-        ConfigAdjustMethod = GetConfig<int>(this, "AdjustMethod");
+        AddConfig("AdjustMethod", 0);
+        ConfigAdjustMethod = GetConfig<int>("AdjustMethod");
     }
 
     public override void ConfigUI()

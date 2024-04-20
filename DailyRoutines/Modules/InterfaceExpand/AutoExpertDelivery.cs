@@ -44,8 +44,8 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
     public override void Init()
     {
-        AddConfig(this, "SkipWhenHQ", ConfigSkipWhenHQ);
-        ConfigSkipWhenHQ = GetConfig<bool>(this, "SkipWhenHQ");
+        AddConfig("SkipWhenHQ", ConfigSkipWhenHQ);
+        ConfigSkipWhenHQ = GetConfig<bool>("SkipWhenHQ");
 
         AtkUnitBaseClose ??= Marshal.GetDelegateForFunctionPointer<AtkUnitBaseCloseDelegate>(Service.SigScanner.ScanText("40 53 48 83 EC 50 81 A1"));
 
@@ -71,7 +71,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
         ImGui.BeginDisabled(TaskManager.IsBusy);
         if (ImGui.Checkbox(Service.Lang.GetText("AutoExpertDelivery-SkipHQ"), ref ConfigSkipWhenHQ))
-            UpdateConfig(this, "SkipWhenHQ", ConfigSkipWhenHQ);
+            UpdateConfig("SkipWhenHQ", ConfigSkipWhenHQ);
 
         if (ImGui.Button(Service.Lang.GetText("Start"))) EnqueueAllItems();
         ImGui.EndDisabled();

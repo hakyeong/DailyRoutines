@@ -24,14 +24,14 @@ public unsafe class AutoMount : DailyModuleBase
     public override void Init()
     {
         #region Config
-        AddConfig(this, "MountWhenZoneChange", true);
-        MountWhenZoneChange = GetConfig<bool>(this, "MountWhenZoneChange");
+        AddConfig("MountWhenZoneChange", true);
+        MountWhenZoneChange = GetConfig<bool>("MountWhenZoneChange");
 
-        AddConfig(this, "MountWhenGatherEnd", true);
-        MountWhenGatherEnd = GetConfig<bool>(this, "MountWhenGatherEnd");
+        AddConfig("MountWhenGatherEnd", true);
+        MountWhenGatherEnd = GetConfig<bool>("MountWhenGatherEnd");
 
-        AddConfig(this, "MountWhenCombatEnd", true);
-        MountWhenCombatEnd = GetConfig<bool>(this, "MountWhenCombatEnd");
+        AddConfig("MountWhenCombatEnd", true);
+        MountWhenCombatEnd = GetConfig<bool>("MountWhenCombatEnd");
         #endregion
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = false };
@@ -43,13 +43,13 @@ public unsafe class AutoMount : DailyModuleBase
     public override void ConfigUI()
     {
         if (ImGui.Checkbox(Service.Lang.GetText("AutoMount-MountWhenZoneChange"), ref MountWhenZoneChange))
-            UpdateConfig(this, "MountWhenZoneChange", MountWhenZoneChange);
+            UpdateConfig("MountWhenZoneChange", MountWhenZoneChange);
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoMount-MountWhenGatherEnd"), ref MountWhenGatherEnd))
-            UpdateConfig(this, "MountWhenGatherEnd", MountWhenGatherEnd);
+            UpdateConfig("MountWhenGatherEnd", MountWhenGatherEnd);
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoMount-MountWhenCombatEnd"), ref MountWhenCombatEnd))
-            UpdateConfig(this, "MountWhenCombatEnd", MountWhenCombatEnd);
+            UpdateConfig("MountWhenCombatEnd", MountWhenCombatEnd);
     }
 
     private void OnZoneChanged(ushort zone)

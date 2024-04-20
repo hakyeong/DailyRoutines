@@ -61,20 +61,20 @@ public unsafe class BetterFollow : DailyModuleBase
     public override void Init()
     {
         #region Config
-        AddConfig(this, "AutoReFollow", AutoReFollow);
-        AutoReFollow = GetConfig<bool>(this, "AutoReFollow");
+        AddConfig("AutoReFollow", AutoReFollow);
+        AutoReFollow = GetConfig<bool>("AutoReFollow");
 
-        AddConfig(this, "OnCombatOver", OnCombatOver);
-        OnCombatOver = GetConfig<bool>(this, "OnCombatOver");
+        AddConfig("OnCombatOver", OnCombatOver);
+        OnCombatOver = GetConfig<bool>("OnCombatOver");
 
-        AddConfig(this, "Delay", Delay);
-        Delay = GetConfig<float>(this, "Delay");
+        AddConfig("Delay", Delay);
+        Delay = GetConfig<float>("Delay");
 
-        AddConfig(this, "OnDuty", OnDuty);
-        OnDuty = GetConfig<bool>(this, "OnDuty");
+        AddConfig("OnDuty", OnDuty);
+        OnDuty = GetConfig<bool>("OnDuty");
 
-        AddConfig(this, "ForcedFollow", ForcedFollow);
-        ForcedFollow = GetConfig<bool>(this, "ForcedFollow");
+        AddConfig("ForcedFollow", ForcedFollow);
+        ForcedFollow = GetConfig<bool>("ForcedFollow");
         #endregion
         
         _a1_data = 0;
@@ -114,29 +114,29 @@ public unsafe class BetterFollow : DailyModuleBase
         ImGui.Spacing();
 
         if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-AutoReFollowConfig"), ref AutoReFollow))
-            UpdateConfig(this, "AutoReFollow", AutoReFollow);
+            UpdateConfig("AutoReFollow", AutoReFollow);
         if (AutoReFollow)
         {
             ImGui.Indent();
             ImGui.Text(Service.Lang.GetText("BetterFollow-Status", _enableReFollow, _LastFollowObjectName, _LastFollowObjectStatus));
 
             if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-OnCombatOverConfig"), ref OnCombatOver))
-                UpdateConfig(this, "OnCombatOver", OnCombatOver);
+                UpdateConfig("OnCombatOver", OnCombatOver);
             
             if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-OnDutyConfig"), ref OnDuty))
-                UpdateConfig(this, "OnCombatOver", OnDuty);
+                UpdateConfig("OnCombatOver", OnDuty);
 
             ImGui.SetNextItemWidth(300f);
             ImGui.SliderFloat(Service.Lang.GetText("BetterFollow-DelayConfig"), ref Delay, 0.5f, 5f, "%.1f");
             if (ImGui.IsItemDeactivatedAfterEdit())
-                UpdateConfig(this, "Delay", Delay);
+                UpdateConfig("Delay", Delay);
 
             ImGui.Unindent();
         }
 
         if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-ForcedFollowConfig", CommandStr), ref ForcedFollow))
         {
-            UpdateConfig(this, "ForcedFollow", ForcedFollow);
+            UpdateConfig("ForcedFollow", ForcedFollow);
             if (ForcedFollow)
                 CommandManager.AddCommand(CommandStr, 
                                           new CommandInfo(OnCommand) 

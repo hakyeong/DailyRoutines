@@ -46,17 +46,17 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
 
     public override void Init()
     {
-        AddConfig(this, "SearchCollector", true);
-        SearchCollector = GetConfig<bool>(this, "SearchCollector");
+        AddConfig("SearchCollector", true);
+        SearchCollector = GetConfig<bool>("SearchCollector");
 
-        AddConfig(this, "SearchCollectorByGlamour", true);
-        SearchCollectorByGlamour = GetConfig<bool>(this, "SearchCollectorByGlamour");
+        AddConfig("SearchCollectorByGlamour", true);
+        SearchCollectorByGlamour = GetConfig<bool>("SearchCollectorByGlamour");
 
-        AddConfig(this, "SearchWiki", true);
-        SearchWiki = GetConfig<bool>(this, "SearchWiki");
+        AddConfig("SearchWiki", true);
+        SearchWiki = GetConfig<bool>("SearchWiki");
 
-        AddConfig(this, "SearchWikiByGlamour", true);
-        SearchWikiByGlamour = GetConfig<bool>(this, "SearchWikiByGlamour");
+        AddConfig("SearchWikiByGlamour", true);
+        SearchWikiByGlamour = GetConfig<bool>("SearchWikiByGlamour");
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
 
@@ -76,7 +76,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
     public override void ConfigUI()
     {
         if (ImGui.Checkbox(Service.Lang.GetText("ExpandItemMenuSearch-CollectorSearch"), ref SearchCollector))
-            UpdateConfig(this, "SearchCollector", SearchCollector);
+            UpdateConfig("SearchCollector", SearchCollector);
 
         if (SearchCollector)
         {
@@ -84,13 +84,13 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
             ImGui.PushID("CollectorSearchGlamour");
             if (ImGui.Checkbox(Service.Lang.GetText("ExpandItemMenuSearch-SearchGlamour"),
                                ref SearchCollectorByGlamour))
-                UpdateConfig(this, "SearchCollectorByGlamour", SearchCollectorByGlamour);
+                UpdateConfig("SearchCollectorByGlamour", SearchCollectorByGlamour);
             ImGui.PopID();
             ImGui.Unindent();
         }
 
         if (ImGui.Checkbox(Service.Lang.GetText("ExpandItemMenuSearch-WikiSearch"), ref SearchWiki))
-            UpdateConfig(this, "SearchWiki", SearchWiki);
+            UpdateConfig("SearchWiki", SearchWiki);
 
         if (SearchWiki)
         {
@@ -98,7 +98,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
             ImGui.PushID("WikiSearchGlamour");
             if (ImGui.Checkbox(Service.Lang.GetText("ExpandItemMenuSearch-SearchGlamour"),
                                ref SearchWikiByGlamour))
-                UpdateConfig(this, "SearchWikiByGlamour", SearchWikiByGlamour);
+                UpdateConfig("SearchWikiByGlamour", SearchWikiByGlamour);
             ImGui.PopID();
             ImGui.Unindent();
         }
