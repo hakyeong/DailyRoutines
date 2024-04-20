@@ -245,6 +245,10 @@ public class MainSettings
         /// 0 - 正在进行; 1 - 未开始; 2 - 已结束
         /// </summary>
         public uint State { get; set; }
+        /// <summary>
+        /// 如果已结束, 则为 -1
+        /// </summary>
+        public int DaysLeft { get; set; } = int.MaxValue;
     }
 
     public class GameNews
@@ -254,7 +258,7 @@ public class MainSettings
         public string PublishDate { get; set; } = string.Empty;
         public string Summary { get; set; } = string.Empty;
         public string HomeImagePath { get; set; } = string.Empty;
-        public int SortIndex { get; set; } = 0;
+        public int SortIndex { get; set; }
     }
 
     private static string ConflictKeySearchString = string.Empty;
@@ -263,7 +267,7 @@ public class MainSettings
     private static Version CurrentVersion = new();
     private static VersionInfo LatestVersionInfo = new();
     private static List<GameEvent> GameCalendars = [];
-    private static List<GameNews> GameNewsList = [];
+    private static readonly List<GameNews> GameNewsList = [];
 
     public static void Init()
     {
@@ -454,6 +458,13 @@ public class MainSettings
                 Service.Config.Save();
             }
 
+            var checkboxBool2 = Service.Config.IsHideOutdatedEvent;
+            if (ImGui.Checkbox(Service.Lang.GetText("Settings-HideOutdatedEvents"), ref checkboxBool2))
+            {
+                Service.Config.IsHideOutdatedEvent ^= true;
+                Service.Config.Save();
+            }
+
             ImGui.EndPopup();
         }
 
@@ -470,6 +481,7 @@ public class MainSettings
             var framePadding = ImGui.GetStyle().FramePadding;
             foreach (var activity in GameCalendars)
             {
+                if (Service.Config.IsHideOutdatedEvent && activity.State == 2) continue;
                 var statusStr = activity.State == 2 ? Service.Lang.GetText("GameCalendar-EventEnded") : "";
                 ImGui.PushStyleColor(ImGuiCol.Button, activity.Color);
                 ImGui.BeginDisabled(activity.State == 2);
@@ -596,11 +608,11 @@ public class MainSettings
             var orderNumber = 1;
             foreach (var gameEvent in GameCalendars)
             {
-                if (gameEvent.BeginTime > DateTime.Now || DateTime.Now > gameEvent.EndTime) continue;
+                if (gameEvent.State != 0) continue;
                 Service.Chat.Print(new SeStringBuilder().AddUiForeground($"{orderNumber}. ", 2)
                                                         .AddUiForeground($"{gameEvent.Name}", 25)
                                                         .AddUiForeground($" ({Service.Lang.GetText("GameCalendar-EndTimeMessage", 
-                                                            (gameEvent.EndTime - DateTime.Now).Days)})", 2)
+                                                            gameEvent.DaysLeft)})", 2)
                                                         .Build());
                 orderNumber++;
             }
@@ -655,12 +667,13 @@ public class MainSettings
                     EndTime = endTime,
                     Color = DarkenColor(HexToVector4(activity.color), 0.3f),
                     State = (currentTime < beginTime) ? 1U :
-                            (currentTime <= endTime) ? 0U : 2U
+                            (currentTime <= endTime) ? 0U : 2U,
+                    DaysLeft = (currentTime <= endTime) ? (endTime - currentTime).Days : int.MaxValue
                 };
                 GameCalendars.Add(gameEvent);
             }
 
-            GameCalendars = [..GameCalendars.OrderBy(x => x.State)];
+            GameCalendars = [..GameCalendars.OrderBy(x => x.DaysLeft)];
         }
     }
 

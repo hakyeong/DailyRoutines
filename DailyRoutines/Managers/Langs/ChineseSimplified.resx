@@ -1294,4 +1294,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoJoinExitDutyTitle" xml:space="preserve">
     <value>自动进退副本一次</value>
   </data>
+  <data name="Settings-HideOutdatedEvents" xml:space="preserve">
+    <value>隐藏已结束活动</value>
+  </data>
 </root>
