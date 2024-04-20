@@ -7,6 +7,7 @@ using ImGuiNET;
 using Lumina.Excel.GeneratedSheets2;
 using System.Numerics;
 using PayloadType = Lumina.Text.Payloads.PayloadType;
+using DailyRoutines.Notifications;
 namespace DailyRoutines.Modules
 {
     [ModuleDescription("AutoNotifyCountdownTitle", "AutoNotifyCountdownDescription", ModuleCategories.Notice)]

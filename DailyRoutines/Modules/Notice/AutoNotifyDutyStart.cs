@@ -1,5 +1,6 @@
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using DailyRoutines.Notifications;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;

@@ -1,5 +1,6 @@
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using DailyRoutines.Notifications;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Memory;

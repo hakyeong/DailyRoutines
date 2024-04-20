@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using DailyRoutines.Notifications;
 using Dalamud.Plugin.Services;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
