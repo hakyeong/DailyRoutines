@@ -12,9 +12,9 @@ public class FontManager
     public IFontHandle? Axis18 { get; private set; }
 
 
-    public FontManager()
+    public void Init()
     {
-        FontAtlas ??= P.PluginInterface.UiBuilder.CreateFontAtlas(FontAtlasAutoRebuildMode.OnNewFrame);
+        FontAtlas ??= Service.PluginInterface.UiBuilder.CreateFontAtlas(FontAtlasAutoRebuildMode.OnNewFrame);
         Axis96 ??= ConstructFontHandle(GameFontFamilyAndSize.Axis96);
         Axis12 ??= ConstructFontHandle(GameFontFamilyAndSize.Axis12);
         Axis14 ??= ConstructFontHandle(GameFontFamilyAndSize.Axis14);

@@ -108,7 +108,7 @@ public class ImageManager
                     foreach (var conversion in ConversionsToBitmap)
                         try
                         {
-                            texture = P.PluginInterface.UiBuilder.LoadImage(conversion(content));
+                            texture = Service.PluginInterface.UiBuilder.LoadImage(conversion(content));
                             break;
                         }
                         catch (Exception ex)
@@ -121,7 +121,7 @@ public class ImageManager
                 else
                 {
                     imagePair.Value.Image = File.Exists(imagePair.Key)
-                                                ? P.PluginInterface.UiBuilder.LoadImage(imagePair.Key)
+                                                ? Service.PluginInterface.UiBuilder.LoadImage(imagePair.Key)
                                                 : Service.Texture.GetTextureFromGame(imagePair.Key);
                 }
             }

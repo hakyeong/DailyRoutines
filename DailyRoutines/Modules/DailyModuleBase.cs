@@ -30,7 +30,7 @@ public abstract class DailyModuleBase
     {
         try
         {
-            var configDirectory = P.PluginInterface.GetPluginConfigDirectory();
+            var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
             var configFile = Path.Combine(configDirectory, moduleBase.GetType().Name + ".json");
 
             if (!File.Exists(configFile))
@@ -77,7 +77,7 @@ public abstract class DailyModuleBase
     {
         try
         {
-            var configDirectory = P.PluginInterface.GetPluginConfigDirectory();
+            var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
             var configFile = Path.Combine(configDirectory, moduleBase.GetType().Name + ".json");
 
             Dictionary<string, object>? existingConfig;
@@ -111,7 +111,7 @@ public abstract class DailyModuleBase
     {
         try
         {
-            var configDirectory = P.PluginInterface.GetPluginConfigDirectory();
+            var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
             var configFile = Path.Combine(configDirectory, moduleBase.GetType().Name + ".json");
 
             if (!File.Exists(configFile))
@@ -147,7 +147,7 @@ public abstract class DailyModuleBase
     {
         try
         {
-            var configDirectory = P.PluginInterface.GetPluginConfigDirectory();
+            var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
             var configFile = Path.Combine(configDirectory, moduleBase.GetType().Name + ".json");
 
             Dictionary<string, object>? existingConfig;
@@ -193,7 +193,7 @@ public abstract class DailyModuleBase
 
     public virtual void Uninit()
     {
-        if (Overlay != null && P.WindowSystem.Windows.Contains(Overlay)) P.WindowSystem.RemoveWindow(Overlay);
+        if (Overlay != null && Service.WindowManager.WindowSystem.Windows.Contains(Overlay)) Service.WindowManager.WindowSystem.RemoveWindow(Overlay);
         Overlay = null;
 
         TaskManager?.Abort();

@@ -18,7 +18,7 @@ public unsafe class FieldMarkerManager
         A, B, C, D, One, Two, Three, Four
     }
 
-    public FieldMarkerManager()
+    public void Init()
     {
         FieldMarkerController =
             Service.SigScanner.GetStaticAddressFromSig("48 8D 0D ?? ?? ?? ?? 41 B0 ?? E8 ?? ?? ?? ?? 85 C0");

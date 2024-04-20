@@ -670,8 +670,8 @@ public unsafe class QuickChatPanel : DailyModuleBase
             ImGui.SameLine();
             if (ImGuiOm.ButtonIcon("OpenQuickChatPanelSettings", FontAwesomeIcon.Cog))
             {
-                P.Main.IsOpen ^= true;
-                if (P.Main.IsOpen)
+                WindowManager.Main.IsOpen ^= true;
+                if (WindowManager.Main.IsOpen)
                 {
                     Main.SearchString = Service.Lang.GetText("QuickChatPanelTitle");
                     return;

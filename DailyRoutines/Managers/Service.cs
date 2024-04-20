@@ -1,7 +1,7 @@
 using System.Linq;
+using ClickLib;
 using DailyRoutines.Infos;
 using Dalamud.Game;
-using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.IoC;
 using Dalamud.Plugin;
@@ -11,21 +11,30 @@ namespace DailyRoutines.Managers;
 
 public class Service
 {
-    internal static void Initialize(DalamudPluginInterface pluginInterface)
+    internal static void Init(DalamudPluginInterface pluginInterface)
     {
-        Config = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-        Config.Initialize(pluginInterface);
+        // PluginInterface 初始化
+        InitPluginInterface(pluginInterface);
         pluginInterface.Create<Service>();
 
+        // 配置 初始化
+        Config = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+        Config.Initialize(pluginInterface);
+
+        // 前置管理器/服务 初始化
         InitLanguage();
-        CheckConflictKeyValidation();
-        AddonManager.Init();
-        PresetData = new();
-        WinToast.Init();
-        Waymarks = new();
-        Font = new();
-        PayloadText = new();
+        WindowManager.Init();
         CommandManager.Init();
+        Click.Initialize();
+        AddonManager.Init();
+
+        // 一般管理器/服务 初始化
+        Font.Init();
+        Waymarks.Init();
+        PresetData.Init();
+        PayloadText.Init();
+        WinToast.Init();
+        ModuleManager.Init();
     }
 
     private static void InitLanguage()
@@ -45,24 +54,22 @@ public class Service
         Lang = new LanguageManager(playerLang);
     }
 
-    private static void CheckConflictKeyValidation()
+    private static void InitPluginInterface(DalamudPluginInterface pluginInterface)
     {
-        var validKeys = KeyState.GetValidVirtualKeys();
-        if (!validKeys.Contains(Config.ConflictKey))
-        {
-            Config.ConflictKey = VirtualKey.SHIFT;
-            Config.Save();
-        }
+        PluginInterface = pluginInterface;
+        PluginInterface.UiBuilder.DisableCutsceneUiHide = true;
     }
 
     internal static void Uninit()
     {
+        Config.Uninit();
+        WindowManager.Uninit();
         AddonManager.Uninit();
         Waymarks.Uninit();
-        Config.Uninit();
         WinToast.Dispose();
         LuminaCache.ClearCache();
         CommandManager.Uninit();
+        ModuleManager.Uninit();
     }
 
     [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
@@ -106,11 +113,14 @@ public class Service
     [PluginService] public static ITitleScreenMenu TitleScreenMenu { get; private set; } = null!;
     [PluginService] public static IToastGui Toast { get; private set; } = null!;
 
+    public static DalamudPluginInterface PluginInterface { get; private set; } = null!;
+    public static Configuration Config { get; private set; } = null!;
+    public static LanguageManager Lang { get; private set; } = null!;
+    public static ModuleManager ModuleManager { get; private set; } = new();
+    public static WindowManager WindowManager { get; private set; } = new();
     public static SigScanner SigScanner { get; private set; } = new();
-    public static FontManager Font { get; private set; } = null!;
-    public static PresetData PresetData { get; set; } = null!;
-    public static FieldMarkerManager Waymarks { get; set; } = null!;
-    public static LanguageManager Lang { get; set; } = null!;
-    public static Configuration Config { get; set; } = null!;
-    public static PayloadText PayloadText { get; set; } = null!;
+    public static FontManager Font { get; private set; } = new();
+    public static PresetData PresetData { get; private set; } = new();
+    public static FieldMarkerManager Waymarks { get; private set; } = new();
+    public static PayloadText PayloadText { get; private set; } = new();
 }

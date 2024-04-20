@@ -61,7 +61,7 @@ public class WinToast
     private static void ShowBalloonTip(ToastMessage message)
     {
         icon.ShowBalloonTip(
-            5000, string.IsNullOrEmpty(message.Title) ? P.Name : SanitizeHelper.Sanitize(message.Title),
+            5000, string.IsNullOrEmpty(message.Title) ? Plugin.Name : SanitizeHelper.Sanitize(message.Title),
             SanitizeHelper.Sanitize(message.Message), message.Icon);
     }
 
@@ -70,8 +70,8 @@ public class WinToast
         DestroyIcon();
         icon = new NotifyIcon
         {
-            Icon = new Icon(Path.Join(P.PluginInterface.AssemblyLocation.DirectoryName, "Assets", "FFXIVICON.ico")),
-            Text = P.Name,
+            Icon = new Icon(Path.Join(Service.PluginInterface.AssemblyLocation.DirectoryName, "Assets", "FFXIVICON.ico")),
+            Text = Plugin.Name,
             Visible = true
         };
     }

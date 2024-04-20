@@ -25,12 +25,29 @@ public class Configuration : IPluginConfiguration
     {
         pluginInterface = pInterface;
 
+        CheckModuleStates();
+        CheckConflictKeyValidation();
+
+        Save();
+    }
+
+    private void CheckModuleStates()
+    {
         var assembly = Assembly.GetExecutingAssembly();
         var moduleTypes = assembly.GetTypes()
                                   .Where(t => typeof(DailyModuleBase).IsAssignableFrom(t) &&
                                               t is { IsClass: true, IsAbstract: false });
         foreach (var module in moduleTypes) ModuleEnabled.TryAdd(module.Name, false);
-        Save();
+    }
+
+    private void CheckConflictKeyValidation()
+    {
+        var validKeys = Service.KeyState.GetValidVirtualKeys();
+        if (!validKeys.Contains(ConflictKey))
+        {
+            ConflictKey = VirtualKey.SHIFT;
+            Save();
+        }
     }
 
     public void Save() => pluginInterface!.SavePluginConfig(this);

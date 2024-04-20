@@ -1,4 +1,5 @@
 using System.Linq;
+using DailyRoutines.Managers;
 using DailyRoutines.Modules;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
@@ -19,9 +20,9 @@ public class Overlay : Window
         RespectCloseHotkey = false;
         ModuleBase = moduleBase;
 
-        if (P.WindowSystem.Windows.Any(x => x.WindowName == WindowName))
-            P.WindowSystem.RemoveWindow(P.WindowSystem.Windows.FirstOrDefault(x => x.WindowName == WindowName));
-        P.WindowSystem.AddWindow(this);
+        if (Service.WindowManager.WindowSystem.Windows.Any(x => x.WindowName == WindowName))
+            Service.WindowManager.WindowSystem.RemoveWindow(Service.WindowManager.WindowSystem.Windows.FirstOrDefault(x => x.WindowName == WindowName));
+        Service.WindowManager.WindowSystem.AddWindow(this);
     }
 
     public override void Draw()

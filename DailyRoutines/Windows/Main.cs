@@ -33,11 +33,11 @@ public class Main : Window, IDisposable
     }
 
     private static readonly List<ModuleInfo> Modules = [];
-    private static readonly Dictionary<ModuleCategories, List<ModuleInfo>> categorizedModules = new();
+    private static readonly Dictionary<ModuleCategories, List<ModuleInfo>> categorizedModules = [];
 
     internal static string SearchString = string.Empty;
 
-    public Main(Plugin plugin) : base("Daily Routines - Main")
+    public Main() : base("Daily Routines - Main")
     {
         Flags = ImGuiWindowFlags.NoScrollbar;
         SizeConstraints = new WindowSizeConstraints { MinimumSize = new(650, 300) };
@@ -154,8 +154,8 @@ public class Main : Window, IDisposable
             Service.Config.ModuleEnabled[moduleName] ^= true;
 
             var component = ModuleManager.Modules[moduleInfo.Module];
-            if (isModuleEnabled) ModuleManager.Load(component);
-            else ModuleManager.Unload(component);
+            if (isModuleEnabled) Service.ModuleManager.Load(component);
+            else Service.ModuleManager.Unload(component);
 
             Service.Config.Save();
         }
@@ -320,7 +320,7 @@ public class MainSettings
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("OpenFolder")))
-            OpenFolder(P.PluginInterface.ConfigDirectory.FullName);
+            OpenFolder(Service.PluginInterface.ConfigDirectory.FullName);
 
         ImGuiOm.TooltipHover(Service.Lang.GetText("ModulesConfigHelp"));
 

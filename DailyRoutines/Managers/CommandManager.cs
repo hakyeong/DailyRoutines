@@ -118,7 +118,7 @@ public static class CommandManager
         if (string.IsNullOrWhiteSpace(args))
         {
             Main.SearchString = string.Empty;
-            P.Main.IsOpen ^= true;
+            WindowManager.Main.IsOpen ^= true;
         }
 
         var spiltedArgs = args.Split(' ', 2);
@@ -134,7 +134,7 @@ public static class CommandManager
             return;
         }
         Main.SearchString = args;
-        P.Main.IsOpen ^= true;
+        WindowManager.Main.IsOpen ^= true;
     }
 
     public static void Uninit()

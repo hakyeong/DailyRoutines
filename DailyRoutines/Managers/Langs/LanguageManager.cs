@@ -21,7 +21,7 @@ public partial class LanguageManager
 
     public LanguageManager(string languageName, bool isDev = false, string devLangPath = "")
     {
-        LangsDirectory = Path.Join(Path.GetDirectoryName(P.PluginInterface.AssemblyLocation.FullName),
+        LangsDirectory = Path.Join(Path.GetDirectoryName(Service.PluginInterface.AssemblyLocation.FullName),
                                    "Managers", "Langs");
 
         if (isDev)

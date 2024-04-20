@@ -12,14 +12,14 @@ public class PayloadText
     public List<string>? EndFollow { get; private set; }
     public List<string>? Countdown { get; private set; }
 
-    public PayloadText()
+    public void Init()
     {
-        StartFollow ??= getLogMessageRowToStringList(52);
-        EndFollow ??= getLogMessageRowToStringList(53);
-        Countdown ??= getLogMessageRowToStringList(5255);
+        StartFollow ??= GetLogMessageRowToStringList(52);
+        EndFollow ??= GetLogMessageRowToStringList(53);
+        Countdown ??= GetLogMessageRowToStringList(5255);
     }
 
-    private static List<string>? getLogMessageRowToStringList(uint row)
+    private static List<string> GetLogMessageRowToStringList(uint row)
     {
         return LuminaCache.GetRow<LogMessage>(row).Text.Payloads
                           .Where(x => x.PayloadType == PayloadType.Text)

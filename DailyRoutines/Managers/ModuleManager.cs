@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using ClickLib;
 using DailyRoutines.Modules;
 
 namespace DailyRoutines.Managers;
@@ -13,8 +12,6 @@ public class ModuleManager
 
     public ModuleManager()
     {
-        Click.Initialize();
-
         var types = Assembly.GetExecutingAssembly().GetTypes()
                             .Where(t => typeof(DailyModuleBase).IsAssignableFrom(t) &&
                                         !t.IsAbstract &&
@@ -28,7 +25,7 @@ public class ModuleManager
         }
     }
 
-    public static void Init()
+    public void Init()
     {
         foreach (var module in Modules.Values)
         {
@@ -61,7 +58,7 @@ public class ModuleManager
         }
     }
 
-    public static void Load(DailyModuleBase module)
+    public void Load(DailyModuleBase module)
     {
         if (Modules.ContainsValue(module))
         {
@@ -87,7 +84,7 @@ public class ModuleManager
             Service.Log.Error($"Fail to fetch {module}");
     }
 
-    public static void Unload(DailyModuleBase component)
+    public void Unload(DailyModuleBase component)
     {
         if (Modules.ContainsValue(component))
         {
@@ -104,7 +101,7 @@ public class ModuleManager
         }
     }
 
-    public static void Uninit()
+    public void Uninit()
     {
         foreach (var component in Modules.Values)
             try

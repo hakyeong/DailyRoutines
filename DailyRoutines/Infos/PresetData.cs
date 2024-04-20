@@ -15,12 +15,12 @@ public class PresetData
     public Dictionary<uint, Item>? Gears { get; private set; }
     public Dictionary<uint, Item>? Dyes { get; private set; } // 不包含特制
 
-    public PresetData()
+    public void Init()
     {
         PlayerActions ??= LuminaCache.Get<Action>()
-                                 .Where(x => x.ClassJobCategory.Row > 0 && x.ActionCategory.Row <= 4 && x.RowId > 8 &&
-                                             !string.IsNullOrWhiteSpace(x.Name.ExtractText()))
-                                 .ToDictionary(x => x.RowId, x => x);
+                                     .Where(x => x.ClassJobCategory.Row > 0 && x.ActionCategory.Row <= 4 && x.RowId > 8 &&
+                                                 !string.IsNullOrWhiteSpace(x.Name.ExtractText()))
+                                     .ToDictionary(x => x.RowId, x => x);
 
         Statuses ??= LuminaCache.Get<Status>()
                                 .Where(x => !string.IsNullOrWhiteSpace(x.Name.ExtractText()))
