@@ -1288,4 +1288,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>版本过低, 请及时升级!
 任何来自非最新版本的报告与请求都不会被受理!</value>
   </data>
+  <data name="AutoJoinExitDutyDescription" xml:space="preserve">
+    <value>添加 /pdr joinexitduty 指令, 使用后可快速进退副本一次</value>
+  </data>
+  <data name="AutoJoinExitDutyTitle" xml:space="preserve">
+    <value>自动进退副本一次</value>
+  </data>
 </root>
