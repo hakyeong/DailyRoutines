@@ -1,6 +1,6 @@
 # Daily Routines
 
-<img src="https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/icon.png" width="128" height="128" alt="Icon by DALL·E">
+<img src="https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/Assets/Images/icon.png" width="128" height="128" alt="Icon by DALL·E">
 
 轻量化、低性能消耗、简单的自动化功能/易用性改动合集, 帮你从游戏内一些无意义的重复性工作中解放出来。
 
@@ -18,7 +18,7 @@ https://github.com/AtmoOmen/DalamudPlugins
 
 ## 界面预览
 
-![UI1](https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/imgs/UI-1.png)
+![UI1](https://raw.githubusercontent.com/AtmoOmen/DailyRoutines/main/Assets/Images/UI-1.png)
 
 ## 国内反馈渠道:
 
