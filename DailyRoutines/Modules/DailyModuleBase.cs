@@ -7,9 +7,9 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
 using System;
-using System.Linq;
 using System.Reflection;
 using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Plugin.Services;
 
 namespace DailyRoutines.Modules;
 
@@ -205,13 +205,15 @@ public abstract class DailyModuleBase
 
     public virtual void Uninit()
     {
-        if (Overlay != null && Service.WindowManager.WindowSystem.Windows.Contains(Overlay)) Service.WindowManager.WindowSystem.RemoveWindow(Overlay);
+        Service.WindowManager.RemoveWindows(Overlay);
         Overlay = null;
 
         TaskManager?.Abort();
         TaskManager = null;
 
-        foreach (var field in GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+        var derivedInstance = GetType();
+        // 字段
+        foreach (var field in derivedInstance.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
         {
             if (field.FieldType.IsGenericType && field.FieldType.GetGenericTypeDefinition() == typeof(Hook<>))
             {
@@ -224,6 +226,16 @@ public abstract class DailyModuleBase
 
                     field.SetValue(this, null);
                 }
+            }
+        }
+        // 函数
+        foreach (var method in derivedInstance.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance))
+        {
+            if (method.ReturnType == typeof(void) &&
+                method.GetParameters().Length == 1 &&
+                method.GetParameters()[0].ParameterType == typeof(IFramework))
+            {
+                Service.FrameworkManager.Unregister(method);
             }
         }
     }
