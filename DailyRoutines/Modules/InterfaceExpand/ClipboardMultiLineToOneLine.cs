@@ -4,76 +4,64 @@ using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Hooking;
-using Dalamud.Plugin.Services;
-using ECommons.Throttlers;
+using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("ClipboardMultiLineToOneLineTitle", "ClipboardMultiLineToOneLineDescription", ModuleCategories.InterfaceExpand)]
+[ModuleDescription("ClipboardMultiLineToOneLineTitle", "ClipboardMultiLineToOneLineDescription",
+                   ModuleCategories.Interface)]
 public unsafe class ClipboardMultiLineToOneLine : DailyModuleBase
 {
-    private delegate nint AddonReceiveEventDelegate(
-        AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData);
+    private delegate long GetClipboardDataDelegate(long a1);
 
-    private Hook<AddonReceiveEventDelegate>? ChatLogTextInputHook;
+    [Signature("40 53 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 8B D9 BA",
+               DetourName = nameof(GetClipboardDataDetour))]
+    private readonly Hook<GetClipboardDataDelegate>? GetClipboardDataHook;
 
-    private static bool IsOnChatLog;
+    internal static bool IsBlocked;
 
     public override void Init()
     {
-        if (Service.Gui.GetAddonByName("ChatLog") != nint.Zero)
-            OnChatLogAddonSetup(AddonEvent.PostSetup, null);
-        else
-            Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "ChatLog", OnChatLogAddonSetup);
+        Service.Hook.InitializeFromAttributes(this);
+        GetClipboardDataHook?.Enable();
 
-        Service.Framework.Update += OnUpdate;
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Macro", OnAddon);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "Macro", OnAddon);
     }
 
-    private void OnChatLogAddonSetup(AddonEvent type, AddonArgs? args)
+    private static void OnAddon(AddonEvent type, AddonArgs args)
     {
-        var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("ChatLog");
-        var address = (nint)addon->GetNodeById(5)->GetComponent()->AtkEventListener.vfunc[2];
-        ChatLogTextInputHook ??=
-            Service.Hook.HookFromAddress<AddonReceiveEventDelegate>(address, ChatLogTextInputDetour);
-        ChatLogTextInputHook?.Enable();
-    }
-
-    private nint ChatLogTextInputDetour(AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData)
-    {
-        IsOnChatLog = eventType switch
+        IsBlocked = type switch
         {
-            AtkEventType.FocusStart => true,
-            AtkEventType.FocusStop => false,
-            _ => IsOnChatLog
+            AddonEvent.PostSetup => true,
+            AddonEvent.PreFinalize => false,
+            _ => IsBlocked
         };
-
-        return ChatLogTextInputHook.Original(self, eventType, eventParam, eventData, inputData);
     }
 
-    private static void OnUpdate(IFramework framework)
+    private long GetClipboardDataDetour(long a1)
     {
-        if (!IsOnChatLog) return;
-        if (!EzThrottler.Throttle("ClipboardMultiLineToOneLine", 100)) return;
-        if (Framework.Instance()->WindowInactive) return;
+        if (IsBlocked) return GetClipboardDataHook.Original(a1);
 
         var copyModule = Framework.Instance()->GetUIClipboard();
-        if (copyModule == null) return;
+        if (copyModule == null) return GetClipboardDataHook.Original(a1);
 
         var originalText = Clipboard.GetText();
-        if (string.IsNullOrWhiteSpace(originalText)) return;
+        if (string.IsNullOrWhiteSpace(originalText)) return GetClipboardDataHook.Original(a1);
 
-        var modifiedText = originalText.Replace("\r\n", " ").Replace("\n", " ").Replace("\u000D", " ").Replace("\u000D\u000A", " ");
-        if (modifiedText == originalText) return;
+        var modifiedText = originalText.Replace("\r\n", " ").Replace("\n", " ").Replace("\u000D", " ")
+                                       .Replace("\u000D\u000A", " ");
+        if (modifiedText == originalText) return GetClipboardDataHook.Original(a1);
 
         Clipboard.SetText(modifiedText);
+        return GetClipboardDataHook.Original(a1);
     }
-
 
     public override void Uninit()
     {
-        Service.Framework.Update -= OnUpdate;
+        Service.AddonLifecycle.UnregisterListener(OnAddon);
+
         base.Uninit();
     }
 }
