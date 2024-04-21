@@ -1203,6 +1203,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="BetterFollow-DelayConfig" xml:space="preserve">
     <value>检查周期 (单位: 秒)</value>
   </data>
+    <data name="BetterFollow-MoveType" xml:space="preserve">
+    <value>跟随寻路方式:</value>
+  </data>
   <data name="BetterFollow-OnDutyConfig" xml:space="preserve">
     <value>在副本中启用</value>
   </data>
@@ -1215,6 +1218,15 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="BetterFollow-CommandDesc" xml:space="preserve">
     <value>对当前选择目标进行强制自动跟随</value>
   </data>
+    <data name="BetterFollow-SystemFollow" xml:space="preserve">
+    <value>系统跟随</value>
+  </data>
+    <data name="BetterFollow-NvavmeshFollow" xml:space="preserve">
+    <value>Nvavmesh跟随</value>
+  </data>
+    <data name="BetterFollow-NvavmeshFollowDesc" xml:space="preserve">
+    <value>Nvavmesh跟随依赖插件nvavmesh,取消跟随方式为键盘ASD</value>
+  </data>
   <data name="AutoMount-MountWhenCombatEnd" xml:space="preserve">
     <value>当结束战斗时</value>
   </data>
@@ -1223,6 +1235,12 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoMount-MountWhenZoneChange" xml:space="preserve">
     <value>当切换区域时</value>
+  </data>
+    <data name="AutoMount-MountWhenFollowMount" xml:space="preserve">
+    <value>当跟随目标上坐骑时</value>
+  </data>
+    <data name="AutoMount-FlyingWhenFollowFlying" xml:space="preserve">
+    <value>跟随目标起飞时自动起飞</value>
   </data>
   <data name="Add" xml:space="preserve">
     <value>添加</value>
