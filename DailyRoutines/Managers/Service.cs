@@ -26,6 +26,7 @@ public class Service
         WindowManager.Init();
         CommandManager.Init();
         Click.Initialize();
+        FrameworkManager.Init();
         AddonManager.Init();
         Notify.Init();;
 
@@ -70,6 +71,7 @@ public class Service
 
         // 前置管理器/服务 卸载
         Notify.Uninit();
+        FrameworkManager.Uninit();
         CommandManager.Uninit();
         LuminaCache.ClearCache();
         AddonManager.Uninit();
@@ -99,6 +101,9 @@ public class Service
     [PluginService] public static IDutyState DutyState { get; private set; } = null!;
     [PluginService] public static IFateTable Fate { get; private set; } = null!;
     [PluginService] public static IFlyTextGui FlyText { get; private set; } = null!;
+    /// <summary>
+    /// 如果需要挂钩 Update 事件, 请使用 FrameworkManager
+    /// </summary>
     [PluginService] public static IFramework Framework { get; private set; } = null!;
     [PluginService] public static IGameConfig GameConfig { get; private set; } = null!;
     [PluginService] public static IGameGui Gui { get; private set; } = null!;
@@ -123,6 +128,7 @@ public class Service
     public static DalamudPluginInterface PluginInterface { get; private set; } = null!;
     public static Configuration Config { get; private set; } = null!;
     public static LanguageManager Lang { get; private set; } = null!;
+    public static FrameworkManager FrameworkManager { get; private set; } = new();
     public static IPCManager IPCManager { get; private set; } = new();
     public static NotifyManager Notify { get; private set; } = new();
     public static ModuleManager ModuleManager { get; private set; } = new();
