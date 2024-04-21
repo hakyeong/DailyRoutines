@@ -5,7 +5,9 @@ using Dalamud.Game.Command;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System.Runtime.InteropServices;
+using ClickLib.Clicks;
 using Dalamud.Memory;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Lumina.Excel.GeneratedSheets;
@@ -21,12 +23,10 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
     private const string AbandonDutySig = "E8 ?? ?? ?? ?? 48 8B 43 28 B1 01";
     private delegate void AbandonDutyDelagte(bool a1);
     private static AbandonDutyDelagte? AbandonDuty;
-    private static string? ContentName;
 
     public override void Init()
     {
         AbandonDuty ??= Marshal.GetDelegateForFunctionPointer<AbandonDutyDelagte>(Service.SigScanner.ScanText(AbandonDutySig));
-        ContentName ??= LuminaCache.GetRow<ContentFinderCondition>(4).Name.ExtractText();
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
         CommandManager.AddSubCommand("joinexitduty", 
@@ -37,14 +37,17 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
     {
         if (Flags.BoundByDuty() || !UIState.IsInstanceContentUnlocked(4) ||
             Service.ClientState.LocalPlayer == null || Service.ClientState.LocalPlayer.ClassJob.Id is >= 8 and <= 18) return;
+
+        TaskManager.Abort();
         EnqueueARound();
     }
 
     private void EnqueueARound()
     {
         TaskManager.Enqueue(OpenContentsFinder);
+        TaskManager.Enqueue(CancelSelectedContents);
         TaskManager.Enqueue(SelectDuty);
-        TaskManager.DelayNext(1000);
+        TaskManager.Enqueue(CommenceDuty);
         TaskManager.Enqueue(ExitDuty);
     }
 
@@ -56,8 +59,21 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
         return true;
     }
 
+    private static bool? CancelSelectedContents()
+    {
+        if (ContentsFinder == null || !IsAddonAndNodesReady(ContentsFinder)) return false;
+
+        AddonManager.Callback(ContentsFinder, true, 12, 1);
+        var atkValues = ContentsFinder->AtkValues;
+        atkValues[7].UInt = 3;
+        atkValues[7].Type = ValueType.UInt;
+        ContentsFinder->OnRefresh(ContentsFinder->AtkValuesCount, atkValues);
+        return true;
+    }
+
     private static bool? SelectDuty()
     {
+        if (!EzThrottler.Throttle("AutoJoinExitDuty-SelectDuty", 100)) return false;
         if (ContentsFinder == null || !IsAddonAndNodesReady(ContentsFinder)) return false;
 
         var agent = AgentModule.Instance()->GetAgentContentsFinder();
@@ -70,29 +86,38 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
             return false;
         }
 
-        var selectedDuty = MemoryHelper.ReadSeStringNullTerminated((nint)ContentsFinder->AtkValues[18].String).ExtractText();
-        if (addon->ClearSelectionButton->IsEnabled && !string.IsNullOrWhiteSpace(selectedDuty) && selectedDuty != ContentName)
+        AddonManager.Callback(ContentsFinder, true, 1, 1);
+        AddonManager.Callback(ContentsFinder, true, 4, 0, true);
+        AddonManager.Callback(ContentsFinder, true, 4, 1, false);
+        AddonManager.Callback(ContentsFinder, true, 4, 2, false);
+        AddonManager.Callback(ContentsFinder, true, 4, 3, false);
+
+        if (ContentsFinder->AtkValues[7].UInt != 0)
         {
-            AddonManager.Callback(ContentsFinder, true, 12, 1);
+            AddonManager.Callback(ContentsFinder, true, 3, 1U);
+            agent->OpenRegularDuty(4);
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(selectedDuty) || (!string.IsNullOrWhiteSpace(selectedDuty) && selectedDuty != ContentName))
-        {
-            AddonManager.Callback(ContentsFinder, true, 1, 1);
-            AddonManager.Callback(ContentsFinder, true, 3, 1);
-            agent->OpenRegularDuty(4);
-
-            ContentsFinder->AtkValues[18].SetString(ContentName);
-            ContentsFinder->OnRefresh(ContentsFinder->AtkValuesCount, ContentsFinder->AtkValues);
-        }
-
-        if (!string.IsNullOrWhiteSpace(selectedDuty))
+        if (ContentsFinder->AtkValues[7].UInt == 0)
         {
             AddonManager.Callback(ContentsFinder, true, 12, 0);
             return true;
         }
         return false;
+    }
+
+    public bool? CommenceDuty()
+    {
+        if (Service.ModuleManager.IsModuleEnabled(typeof(AutoCommenceDuty)))
+        {
+            TaskManager.InsertDelayNext(500);
+            return true;
+        }
+        if (!TryGetAddonByName<AtkUnitBase>("ContentsFinderConfirm", out var addon) || !IsAddonAndNodesReady(addon)) return false;
+
+        ClickContentsFinderConfirm.Using((nint)addon).Commence();;
+        return true;
     }
 
     private static bool? ExitDuty()
@@ -101,6 +126,7 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
             Service.Condition[ConditionFlag.BoundToDuty97] || Flags.BetweenAreas()) return false;
 
         AbandonDuty(false);
+
         return true;
     }
 

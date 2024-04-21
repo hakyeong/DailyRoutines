@@ -27,13 +27,13 @@ public class Service
         CommandManager.Init();
         Click.Initialize();
         AddonManager.Init();
+        Notify.Init();;
 
         // 一般管理器/服务 初始化
         Font.Init();
         Waymarks.Init();
         PresetData.Init();
         PayloadText.Init();
-        WinToast.Init();
         IPCManager.Init();
         ModuleManager.Init();
     }
@@ -63,15 +63,20 @@ public class Service
 
     internal static void Uninit()
     {
-        Config.Uninit();
-        WindowManager.Uninit();
-        AddonManager.Uninit();
+        // 一般管理器/服务 卸载
         Waymarks.Uninit();
-        WinToast.Dispose();
-        LuminaCache.ClearCache();
-        CommandManager.Uninit();
         ModuleManager.Uninit();
         IPCManager.Uninit();
+
+        // 前置管理器/服务 卸载
+        Notify.Uninit();
+        CommandManager.Uninit();
+        LuminaCache.ClearCache();
+        AddonManager.Uninit();
+        WindowManager.Uninit();
+
+        // 配置 卸载
+        Config.Uninit();
     }
 
     [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
@@ -119,6 +124,7 @@ public class Service
     public static Configuration Config { get; private set; } = null!;
     public static LanguageManager Lang { get; private set; } = null!;
     public static IPCManager IPCManager { get; private set; } = new();
+    public static NotifyManager Notify { get; private set; } = new();
     public static ModuleManager ModuleManager { get; private set; } = new();
     public static WindowManager WindowManager { get; private set; } = new();
     public static SigScanner SigScanner { get; private set; } = new();

@@ -1176,10 +1176,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>低于最低价时改成最低价</value>
   </data>
   <data name="ClipboardMultiLineToOneLineDescription" xml:space="preserve">
-    <value>在聊天栏输入框复制文本时, 强制将多行文本转成单行, 用空格隔开, 以方便游戏内编辑发送</value>
+    <value>在游戏内粘贴文本时, 强制将多行文本转成单行, 以方便游戏内编辑发送</value>
   </data>
   <data name="ClipboardMultiLineToOneLineTitle" xml:space="preserve">
-    <value>强制消息复制多行转单行</value>
+    <value>强制粘贴多行转单行</value>
   </data>
   <data name="AutoPlayCards-UseAantonomasia" xml:space="preserve">
     <value>使用卡牌代称</value>
@@ -1311,5 +1311,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoJoinExitDutyTitle" xml:space="preserve">
     <value>自动进退副本一次</value>
+  </data>
+  <data name="Settings-HideOutdatedEvents" xml:space="preserve">
+    <value>隐藏已结束活动</value>
   </data>
 </root>

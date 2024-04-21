@@ -16,6 +16,7 @@ public class Configuration : IPluginConfiguration
     public string SelectedLanguage { get; set; } = string.Empty;
     public VirtualKey ConflictKey { get; set; } = VirtualKey.SHIFT;
     public bool SendCalendarToChatWhenLogin { get; set; } = false;
+    public bool IsHideOutdatedEvent { get; set; } = true;
     public Dictionary<string, bool> ModuleEnabled { get; set; } = [];
 
     [NonSerialized]
@@ -25,19 +26,9 @@ public class Configuration : IPluginConfiguration
     {
         pluginInterface = pInterface;
 
-        CheckModuleStates();
         CheckConflictKeyValidation();
 
         Save();
-    }
-
-    private void CheckModuleStates()
-    {
-        var assembly = Assembly.GetExecutingAssembly();
-        var moduleTypes = assembly.GetTypes()
-                                  .Where(t => typeof(DailyModuleBase).IsAssignableFrom(t) &&
-                                              t is { IsClass: true, IsAbstract: false });
-        foreach (var module in moduleTypes) ModuleEnabled.TryAdd(module.Name, false);
     }
 
     private void CheckConflictKeyValidation()

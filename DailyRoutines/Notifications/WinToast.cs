@@ -3,11 +3,12 @@ using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 using DailyRoutines.Helpers;
+using DailyRoutines.Managers;
 using ECommons.Automation;
 
-namespace DailyRoutines.Managers;
+namespace DailyRoutines.Notifications;
 
-public class WinToast
+public class WinToast : DailyNotificationBase
 {
     private class ToastMessage(string? title, string message, ToolTipIcon icon = ToolTipIcon.Info)
     {
@@ -21,7 +22,7 @@ public class WinToast
     private static NotifyIcon? icon;
     private static readonly Queue<ToastMessage> messagesQueue = new();
 
-    public static void Init()
+    public override void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
     }
@@ -86,7 +87,7 @@ public class WinToast
         }
     }
 
-    public static void Dispose()
+    public override void Uninit()
     {
         DestroyIcon();
         TaskManager?.Abort();

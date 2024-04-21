@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using DailyRoutines.Notifications;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Utility;
