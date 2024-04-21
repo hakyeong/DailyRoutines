@@ -19,8 +19,10 @@ public class WindowManager
         Service.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
     }
 
-    public bool AddWindows(Window window)
+    public bool AddWindows(Window? window)
     {
+        if (window == null) return false;
+
         var addedWindows = WindowSystem.Windows;
         if (addedWindows.Contains(window) || addedWindows.Any(x => x.WindowName == window.WindowName))
             return false;
@@ -29,8 +31,10 @@ public class WindowManager
         return true;
     }
 
-    public bool RemoveWindows(Window window)
+    public bool RemoveWindows(Window? window)
     {
+        if (window == null) return false;
+
         var addedWindows = WindowSystem.Windows;
         if (!addedWindows.Contains(window))
             return false;
