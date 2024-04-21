@@ -1,10 +1,9 @@
-﻿using System.Linq;
+using System.Linq;
 using DailyRoutines.Managers;
-using ECommons.Reflection;
 
-namespace DailyRoutines.Infos;
+namespace DailyRoutines.Helpers;
 
-public static unsafe class Utils
+public static class Utils
 {
     public static bool HasPlugin(string name)
     {

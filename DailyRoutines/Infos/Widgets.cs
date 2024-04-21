@@ -4,8 +4,8 @@ using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
-using ECommons.ImGuiMethods;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Infos;
 
@@ -65,6 +65,29 @@ public static class Widgets
             else
                 ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
             ImGui.EndTooltip();
+        }
+    }
+
+    public static void CNWorldSelectCombo(ref World? selectedWorld, ref string worldSearchInput)
+    {
+        if (ImGui.BeginCombo("###WorldSelectCombo", selectedWorld == null ? "" : selectedWorld.Name.RawString, ImGuiComboFlags.HeightLarge))
+        {
+            ImGui.InputTextWithHint("###SearchInput", Service.Lang.GetText("PleaseSearch"), ref worldSearchInput, 32);
+
+            ImGui.Separator();
+            foreach (var world in Worlds)
+            {
+                var worldName = world.Value.Name.RawString;
+                var dcName = world.Value.DataCenter.Value.Name.RawString;
+                if (!string.IsNullOrWhiteSpace(WorldSearchInput) && !worldName.Contains(WorldSearchInput) && !dcName.Contains(WorldSearchInput)) continue;
+
+                if (ImGui.Selectable($"[{dcName}] {worldName}", SelectedWorld != null && SelectedWorld.RowId == world.Key))
+                    SelectedWorld = world.Value;
+
+                ImGui.Separator();
+            }
+
+            ImGui.EndCombo();
         }
     }
 

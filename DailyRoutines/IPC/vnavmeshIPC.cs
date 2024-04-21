@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
-using DailyRoutines.Infos;
+using DailyRoutines.Helpers;
 using Dalamud.Plugin.Ipc;
 
 namespace DailyRoutines.IPC;
