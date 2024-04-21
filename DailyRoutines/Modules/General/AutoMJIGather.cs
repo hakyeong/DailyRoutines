@@ -108,7 +108,7 @@ public class AutoMJIGather : DailyModuleBase
             {
                 if (IsOnDataCollecting)
                 {
-                    Service.Framework.Update -= OnUpdate;
+                    Service.FrameworkManager.Unregister(OnUpdate);
                     IsOnDataCollecting = false;
                 }
                 else
@@ -120,7 +120,7 @@ public class AutoMJIGather : DailyModuleBase
                                        .ToList();
 
                     foreach (var key in keysToRemove) GatherNodes.Remove(key);
-                    Service.Framework.Update += OnUpdate;
+                    Service.FrameworkManager.Register(OnUpdate);
                     IsOnDataCollecting = true;
                 }
             }
@@ -214,7 +214,7 @@ public class AutoMJIGather : DailyModuleBase
     {
         if (!IsOnDataCollecting)
         {
-            Service.Framework.Update -= OnUpdate;
+            Service.FrameworkManager.Unregister(OnUpdate);
             return;
         }
 
@@ -352,7 +352,6 @@ public class AutoMJIGather : DailyModuleBase
     {
         UpdateConfig("GatherNodes", GatherNodes);
 
-        Service.Framework.Update -= OnUpdate;
         Service.Chat.ChatMessage -= OnChatMessage;
         QueuedGatheringList.Clear();
         IsOnDataCollecting = false;

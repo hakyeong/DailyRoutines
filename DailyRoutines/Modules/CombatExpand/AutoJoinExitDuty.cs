@@ -6,11 +6,8 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System.Runtime.InteropServices;
 using ClickLib.Clicks;
-using Dalamud.Memory;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using FFXIVClientStructs.FFXIV.Client.UI;
-using Lumina.Excel.GeneratedSheets;
 using TaskManager = ECommons.Automation.TaskManager;
 
 namespace DailyRoutines.Modules;
@@ -78,7 +75,6 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
 
         var agent = AgentModule.Instance()->GetAgentContentsFinder();
         var instance = FFXIVClientStructs.FFXIV.Client.Game.UI.ContentsFinder.Instance();
-        var addon = (AddonContentsFinder*)ContentsFinder;
         if (agent == null || instance == null) return false;
         if (!instance->IsExplorerMode)
         {
@@ -126,7 +122,6 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
             Service.Condition[ConditionFlag.BoundToDuty97] || Flags.BetweenAreas()) return false;
 
         AbandonDuty(false);
-
         return true;
     }
 

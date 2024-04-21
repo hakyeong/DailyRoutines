@@ -75,11 +75,11 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         AddConfig("WindowInvisibleWhenInteract", true);
         AddConfig("FontScale", 1f);
         AddConfig("SelectedKinds",
-                                 new HashSet<ObjectKind>
-                                 {
-                                     ObjectKind.EventNpc, ObjectKind.EventObj, ObjectKind.Treasure,
-                                     ObjectKind.Aetheryte, ObjectKind.GatheringPoint
-                                 });
+                  new HashSet<ObjectKind>
+                  {
+                      ObjectKind.EventNpc, ObjectKind.EventObj, ObjectKind.Treasure,
+                      ObjectKind.Aetheryte, ObjectKind.GatheringPoint
+                  });
         AddConfig("BlacklistKeys", new HashSet<string>());
         AddConfig("MinButtonWidth", 300f);
         AddConfig("OnlyDisplayInViewRange", false);
@@ -96,10 +96,10 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         ConfigLockWindow = GetConfig<bool>("LockWindow");
 
         ENpcTitles ??= LuminaCache.Get<ENpcResident>()
-                              .Where(x => x.Unknown10)
-                              .ToDictionary(x => x.RowId, x => x.Title.RawString);
+                                  .Where(x => x.Unknown10)
+                                  .ToDictionary(x => x.RowId, x => x.Title.RawString);
 
-        Service.Framework.Update += OnUpdate;
+        Service.FrameworkManager.Register(OnUpdate);
 
         Overlay ??= new Overlay(this, $"Daily Routines {Service.Lang.GetText("FastObjectInteractTitle")}");
         Overlay.Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize |
@@ -118,7 +118,8 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputFloat("###FontScaleInput", ref ConfigFontScale, 0f, 0f, ConfigFontScale.ToString(CultureInfo.InvariantCulture),
+        if (ImGui.InputFloat("###FontScaleInput", ref ConfigFontScale, 0f, 0f,
+                             ConfigFontScale.ToString(CultureInfo.InvariantCulture),
                              ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigFontScale = Math.Max(0.1f, ConfigFontScale);
@@ -313,73 +314,74 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     private void OnUpdate(IFramework framework)
     {
-        if (EzThrottler.Throttle("FastSelectObjects", 250))
+        if (!EzThrottler.Throttle("FastSelectObjects", 250)) return;
+        if (Service.ClientState.LocalPlayer == null || Service.Condition[ConditionFlag.BetweenAreas])
         {
-            if (Service.ClientState.LocalPlayer == null || Service.Condition[ConditionFlag.BetweenAreas])
-            {
-                ObjectsWaitSelected.Clear();
-                WindowWidth = 0f;
-                Overlay.IsOpen = false;
-                return;
-            }
-
-            tempObjects.Clear();
-            distanceSet.Clear();
-
-            var localPlayer = (GameObject*)Service.ClientState.LocalPlayer.Address;
-            var localPlayerY = localPlayer->Position.Y;
-
-            foreach (var obj in Service.ObjectTable)
-            {
-                if (!obj.IsTargetable || obj.IsDead) continue;
-
-                var objKind = obj.ObjectKind;
-                if (!ConfigSelectedKinds.Contains(objKind)) continue;
-                if (objKind == ObjectKind.EventNpc && !ENpcTitles.ContainsKey(obj.DataId)) continue;
-
-                var objName = obj.Name.ExtractText();
-                if (ConfigBlacklistKeys.Contains(objName)) continue;
-
-                var gameObj = (GameObject*)obj.Address;
-                if (ConfigOnlyDisplayInViewRange) if (!TargetSystem.Instance()->IsObjectInViewRange(gameObj)) continue;
-                var objDistance = HelpersOm.GetGameDistanceFromObject(localPlayer, gameObj);
-                var verticalDistance = localPlayerY - gameObj->Position.Y;
-                if (objDistance > 10 || verticalDistance > 4) continue;
-
-                var adjustedDistance = objDistance;
-                while (distanceSet.Contains(adjustedDistance)) adjustedDistance += 0.001f;
-                distanceSet.Add(adjustedDistance);
-
-                if (objKind == ObjectKind.EventNpc &&
-                    ENpcTitles.TryGetValue(obj.DataId, out var ENPCTitle) &&
-                    !string.IsNullOrEmpty(ENPCTitle))
-                {
-                    var stringBuilder = new StringBuilder();
-                    stringBuilder.Append('[');
-                    stringBuilder.Append(ENPCTitle);
-                    stringBuilder.Append(']');
-                    stringBuilder.Append(' ');
-                    stringBuilder.Append(obj.Name);
-                    objName = stringBuilder.ToString();
-                }
-
-                if (tempObjects.Count > ConfigMaxDisplayAmount) break;
-                tempObjects.Add(new ObjectWaitSelected(gameObj, objName, objKind, adjustedDistance));
-            }
-
-            tempObjects.Sort((a, b) => a.Distance.CompareTo(b.Distance));
-
             ObjectsWaitSelected.Clear();
-            foreach (var tempObj in tempObjects) ObjectsWaitSelected.Add((nint)tempObj.GameObject, tempObj);
-
-            if (!IsWindowShouldBeOpen())
-            {
-                Overlay.IsOpen = false;
-                WindowWidth = 0f;
-            }
-            else
-                Overlay.IsOpen = true;
+            WindowWidth = 0f;
+            Overlay.IsOpen = false;
+            return;
         }
+
+        tempObjects.Clear();
+        distanceSet.Clear();
+
+        var localPlayer = (GameObject*)Service.ClientState.LocalPlayer.Address;
+        var localPlayerY = localPlayer->Position.Y;
+
+        foreach (var obj in Service.ObjectTable)
+        {
+            if (!obj.IsTargetable || obj.IsDead) continue;
+
+            var objKind = obj.ObjectKind;
+            if (!ConfigSelectedKinds.Contains(objKind)) continue;
+            if (objKind == ObjectKind.EventNpc && !ENpcTitles.ContainsKey(obj.DataId)) continue;
+
+            var objName = obj.Name.ExtractText();
+            if (ConfigBlacklistKeys.Contains(objName)) continue;
+
+            var gameObj = (GameObject*)obj.Address;
+            if (ConfigOnlyDisplayInViewRange)
+                if (!TargetSystem.Instance()->IsObjectInViewRange(gameObj))
+                    continue;
+            var objDistance = GetGameDistanceFromObject(localPlayer, gameObj);
+            var verticalDistance = localPlayerY - gameObj->Position.Y;
+            if (objDistance > 10 || verticalDistance > 4) continue;
+
+            var adjustedDistance = objDistance;
+            while (distanceSet.Contains(adjustedDistance)) adjustedDistance += 0.001f;
+            distanceSet.Add(adjustedDistance);
+
+            if (objKind == ObjectKind.EventNpc &&
+                ENpcTitles.TryGetValue(obj.DataId, out var ENPCTitle) &&
+                !string.IsNullOrEmpty(ENPCTitle))
+            {
+                var stringBuilder = new StringBuilder();
+                stringBuilder.Append('[');
+                stringBuilder.Append(ENPCTitle);
+                stringBuilder.Append(']');
+                stringBuilder.Append(' ');
+                stringBuilder.Append(obj.Name);
+                objName = stringBuilder.ToString();
+            }
+
+            if (tempObjects.Count > ConfigMaxDisplayAmount) break;
+            tempObjects.Add(new ObjectWaitSelected(gameObj, objName, objKind, adjustedDistance));
+        }
+
+        tempObjects.Sort((a, b) => a.Distance.CompareTo(b.Distance));
+
+        ObjectsWaitSelected.Clear();
+        foreach (var tempObj in tempObjects) ObjectsWaitSelected.Add((nint)tempObj.GameObject, tempObj);
+
+        if (Overlay == null) return;
+        if (!IsWindowShouldBeOpen())
+        {
+            Overlay.IsOpen = false;
+            WindowWidth = 0f;
+        }
+        else
+            Overlay.IsOpen = true;
     }
 
     private static void InteractWithObject(GameObject* obj, ObjectKind kind)
@@ -392,7 +394,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     private static bool IsWindowShouldBeOpen()
     {
-        return ObjectsWaitSelected.Any() && (!ConfigWindowInvisibleWhenInteract || !IsOccupied());
+        return ObjectsWaitSelected.Count != 0 && (!ConfigWindowInvisibleWhenInteract || !IsOccupied());
     }
 
     private static bool CanInteract(ObjectKind kind, float distance)
@@ -429,7 +431,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     public override void Uninit()
     {
-        Service.Framework.Update -= OnUpdate;
         ObjectsWaitSelected.Clear();
 
         base.Uninit();

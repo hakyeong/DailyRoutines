@@ -157,8 +157,8 @@ public unsafe class BetterFollow : DailyModuleBase
             Service.Log.Warning("当前未安装或启用 vnavmesh, 相关功能已禁用");
         }
 
-        Service.Framework.Update += ReFollowOnFramework;
-        Service.Framework.Update += FollowOnFramework;
+        Service.FrameworkManager.Register(ReFollowOnFramework);
+        Service.FrameworkManager.Register(FollowOnFramework);
         Service.Chat.ChatMessage += OnChatMessage;
         if (ForcedFollow)
             CommandManager.AddCommand(CommandStr,
@@ -476,8 +476,6 @@ public unsafe class BetterFollow : DailyModuleBase
     public override void Uninit()
     {
         CommandManager.RemoveCommand(CommandStr);
-        Service.Framework.Update -= FollowOnFramework;
-        Service.Framework.Update -= ReFollowOnFramework;
         Service.Chat.ChatMessage -= OnChatMessage;
         _enableReFollow = false;
         _FollowStatus = false;

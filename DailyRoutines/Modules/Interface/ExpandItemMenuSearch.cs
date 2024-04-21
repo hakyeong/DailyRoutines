@@ -62,7 +62,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
 
         Service.ContextMenu.OnMenuOpened += OnMenuOpened;
         Service.Gui.HoveredItemChanged += OnHoveredItemChanged;
-        Service.Framework.Update += OnUpdate;
+        Service.FrameworkManager.Register(OnUpdate);
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "CharacterInspect", OnAddon);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize,
@@ -404,7 +404,6 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
 
         Service.AddonLifecycle.UnregisterListener(OnAddon);
         Service.Gui.HoveredItemChanged -= OnHoveredItemChanged;
-        Service.Framework.Update -= OnUpdate;
         Service.ContextMenu.OnMenuOpened -= OnMenuOpened;
 
         base.Uninit();

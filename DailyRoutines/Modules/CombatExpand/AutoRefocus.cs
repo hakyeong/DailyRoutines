@@ -15,9 +15,10 @@ public unsafe class AutoRefocus : DailyModuleBase
     private delegate void SetFocusTargetByObjectIDDelegate(TargetSystem* targetSystem, long objectID);
 
     [Signature("E8 ?? ?? ?? ?? BA 0C 00 00 00 48 8D 0D", DetourName = nameof(SetFocusTargetByObjectID))]
-    private Hook<SetFocusTargetByObjectIDDelegate>? setFocusTargetByObjectIDHook;
+    private static Hook<SetFocusTargetByObjectIDDelegate>? setFocusTargetByObjectIDHook;
 
     private static ulong? FocusTarget;
+    private static bool IsNeedToRefocus;
 
     public override void Init()
     {
@@ -26,19 +27,18 @@ public unsafe class AutoRefocus : DailyModuleBase
 
         if (IsBoundByDuty()) OnZoneChange(Service.ClientState.TerritoryType);
         Service.ClientState.TerritoryChanged += OnZoneChange;
+        Service.FrameworkManager.Register(OnUpdate);
     }
 
-    private void OnZoneChange(ushort territory)
+    private static void OnZoneChange(ushort territory)
     {
         FocusTarget = null;
-        if (Service.PresetData.Contents.ContainsKey(territory))
-            Service.Framework.Update += OnUpdate;
-        else
-            Service.Framework.Update -= OnUpdate;
+        IsNeedToRefocus = Service.PresetData.Contents.ContainsKey(territory);
     }
 
-    private void OnUpdate(IFramework framework)
+    private static void OnUpdate(IFramework framework)
     {
+        if (!IsNeedToRefocus) return;
         if (EzThrottler.Throttle("AutoRefocus"))
         {
             if (FocusTarget != null && Service.Target.FocusTarget == null)
@@ -46,7 +46,7 @@ public unsafe class AutoRefocus : DailyModuleBase
         }
     }
 
-    private void SetFocusTargetByObjectID(TargetSystem* targetSystem, long objectID)
+    private static void SetFocusTargetByObjectID(TargetSystem* targetSystem, long objectID)
     {
         if (objectID == 0xE000_0000)
         {
@@ -68,7 +68,6 @@ public unsafe class AutoRefocus : DailyModuleBase
     public override void Uninit()
     {
         Service.ClientState.TerritoryChanged -= OnZoneChange;
-        Service.Framework.Update -= OnUpdate;
 
         base.Uninit();
     }

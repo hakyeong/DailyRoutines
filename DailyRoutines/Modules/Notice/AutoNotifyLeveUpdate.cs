@@ -26,7 +26,7 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
         AddConfig("NotificationThreshold", 97);
         OnChatMessage = GetConfig<bool>("OnChatMessage");
         NotificationThreshold = GetConfig<int>("NotificationThreshold");
-        Service.Framework.Update += OnFrameworkLeve;
+        Service.FrameworkManager.Register(OnFrameworkLeve);
     }
 
     public override void ConfigUI()
@@ -113,11 +113,5 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
         }
         var lastIncrementTimeUtc = new DateTime(NowUtc.Year, NowUtc.Month, NowUtc.Day, NowUtc.Hour >= 12 ? 12 : 0, 0, 0, DateTimeKind.Utc);
         return lastIncrementTimeUtc.AddHours(12 * requiredPeriods);
-    }
-
-    public override void Uninit()
-    {
-        Service.Framework.Update -= OnFrameworkLeve;
-        base.Uninit();
     }
 }
