@@ -93,6 +93,8 @@ public unsafe class BetterFollow : DailyModuleBase
 
     private const string CommandStr = "/pdrfollow";
 
+    private static vnavmeshIPC? vnavmesh;
+
     public override void Init()
     {
         #region Config
@@ -148,7 +150,13 @@ public unsafe class BetterFollow : DailyModuleBase
         _FollowStatus = *(int*)_d1 == 4;
         Service.Hook.InitializeFromAttributes(this);
         FollowDataHook?.Enable();
-        vnavmeshIPC.Init();
+
+        vnavmesh ??= Service.IPCManager.Load<vnavmeshIPC>(this);
+        if (vnavmesh == null)
+        {
+            Service.Log.Warning("当前未安装或启用 vnavmesh, 相关功能已禁用");
+        }
+
         Service.Framework.Update += ReFollowOnFramework;
         Service.Framework.Update += FollowOnFramework;
         Service.Chat.ChatMessage += OnChatMessage;
@@ -305,9 +313,9 @@ public unsafe class BetterFollow : DailyModuleBase
             if (Vector3.Distance(Service.ClientState.LocalPlayer.Position, followObject.Position) < 5) return;
             if (Service.ClientState.LocalPlayer.IsCasting) return;
             if (Service.ClientState.LocalPlayer.IsDead) return;
-            if (!vnavmeshIPC.NavIsReady()) return;
+            if (!vnavmesh.NavIsReady()) return;
 
-            vnavmeshIPC.PathfindAndMoveTo(followObject.Position, Service.Condition[ConditionFlag.InFlight]);
+            vnavmesh.PathfindAndMoveTo(followObject.Position, Service.Condition[ConditionFlag.InFlight]);
         }
     }
 
@@ -405,8 +413,8 @@ public unsafe class BetterFollow : DailyModuleBase
                 _FollowStatus = false;
                 break;
             case MoveTypeList.Nvavmesh:
-                if (!vnavmeshIPC.PathIsRunning()) return;
-                vnavmeshIPC.PathStop();
+                if (!vnavmesh.PathIsRunning()) return;
+                vnavmesh.PathStop();
                 _FollowStatus = false;
                 break;
         }

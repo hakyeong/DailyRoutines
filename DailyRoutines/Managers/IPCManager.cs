@@ -31,7 +31,7 @@ public class IPCManager
         }
     }
 
-    public DailyIPCBase? Load<T>(DailyModuleBase sourceModule) where T : DailyIPCBase
+    public T? Load<T>(DailyModuleBase sourceModule) where T : DailyIPCBase
     {
         var ipcName = typeof(T).Name;
         if (!IPCs.TryGetValue(typeof(T), out var instance))
@@ -56,7 +56,7 @@ public class IPCManager
 
             IPCRegState[typeof(T)].Add(sourceModule);
 
-            return instance;
+            return (T)instance;
         }
         catch (Exception ex)
         {
