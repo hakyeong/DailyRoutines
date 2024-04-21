@@ -1,6 +1,7 @@
 using DailyRoutines.Managers;
 using System.Collections.Generic;
 using System.Linq;
+using DailyRoutines.Helpers;
 using Lumina.Excel.GeneratedSheets;
 using Action = Lumina.Excel.GeneratedSheets.Action;
 using Status = Lumina.Excel.GeneratedSheets.Status;
@@ -14,6 +15,7 @@ public class PresetData
     public Dictionary<uint, ContentFinderCondition>? Contents { get; private set; }
     public Dictionary<uint, Item>? Gears { get; private set; }
     public Dictionary<uint, Item>? Dyes { get; private set; } // 不包含特制
+    public Dictionary<uint, World>? CNWorlds { get; private set; }
 
     public void Init()
     {
@@ -39,6 +41,10 @@ public class PresetData
         Dyes ??= LuminaCache.Get<StainTransient>()
                             .Where(x => x.Item1.Value != null)
                             .ToDictionary(x => x.RowId, x => x.Item1.Value)!;
+
+        CNWorlds ??= LuminaCache.Get<World>()
+                                .Where(x => x.DataCenter.Value.Region == 5 && !string.IsNullOrWhiteSpace(x.Name.RawString) && !string.IsNullOrWhiteSpace(x.InternalName.RawString) && Utils.IsChineseString(x.Name.RawString))
+                                .ToDictionary(x => x.RowId, x => x);
     }
 
     public bool TryGetPlayerActions(uint rowID, out Action action)
@@ -55,4 +61,7 @@ public class PresetData
 
     public bool TryGetStain(uint rowID, out Item item)
         => Dyes.TryGetValue(rowID, out item);
+
+    public bool TryGetCNWorld(uint rowID, out World world)
+        => CNWorlds.TryGetValue(rowID, out world);
 }
