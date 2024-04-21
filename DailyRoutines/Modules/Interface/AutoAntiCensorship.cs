@@ -1,17 +1,10 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Numerics;
 using System.Runtime.InteropServices;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
-using System.Text.Json;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.Addon.Lifecycle;
-using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Hooking;
@@ -19,9 +12,10 @@ using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.System.String;
-using FFXIVClientStructs.FFXIV.Component.GUI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
 using TinyPinyin;
+
 // ReSharper disable All
 
 namespace DailyRoutines.Modules;
@@ -30,32 +24,37 @@ namespace DailyRoutines.Modules;
 public unsafe class AutoAntiCensorship : DailyModuleBase
 {
     [Signature("E8 ?? ?? ?? ?? 48 8B C3 48 83 C4 ?? 5B C3 CC CC CC CC CC CC CC 48 83 EC")]
-    public readonly delegate* unmanaged <nint, Utf8String*, void> GetFilteredUtf8String;
+    private readonly delegate* unmanaged <nint, Utf8String*, void> GetFilteredUtf8String;
 
     [Signature("E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? 48 8B 89 ?? ?? ?? ?? 48 85 C9 74 ?? 48 8B D3 E8 ?? ?? ?? ?? 48 8B C3")]
-    public readonly delegate* unmanaged <long, long, long> LocalMessageDisplayHandler;
-
-    private delegate byte ProcessSendedChatDelegate(nint uiModule, byte** message, nint a3);
-    [Signature("E8 ?? ?? ?? ?? FE 86 ?? ?? ?? ?? C7 86 ?? ?? ?? ?? ?? ?? ?? ??", DetourName = nameof(ProcessSendedChatDetour) )]
-    private readonly Hook<ProcessSendedChatDelegate>? ProcessSendedChatHook;
+    private readonly delegate* unmanaged <long, long, long> LocalMessageDisplayHandler;
 
     [Signature("E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? 48 8B 81 ?? ?? ?? ?? 48 85 C0 74 ?? 48 8B D3")]
-    public readonly delegate* unmanaged <long, long, long> PartyFinderMessageDisplayHandler;
+    private readonly delegate* unmanaged <long, long, long> PartyFinderMessageDisplayHandler;
 
-    public delegate long PartyFinderMessageDisplayDelegate(long a1, long a2);
+    private delegate long LocalMessageDelegate(long a1, long a2);
+
+    [Signature("40 53 48 83 EC ?? 48 8D 99 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 48 8B 0D",
+               DetourName = nameof(LocalMessageDetour))]
+    private Hook<LocalMessageDelegate>? LocalMessageDisplayHook;
+
+    private delegate byte ProcessSendedChatDelegate(nint uiModule, byte** message, nint a3);
+
+    [Signature("E8 ?? ?? ?? ?? FE 86 ?? ?? ?? ?? C7 86 ?? ?? ?? ?? ?? ?? ?? ??",
+               DetourName = nameof(ProcessSendedChatDetour))]
+    private static Hook<ProcessSendedChatDelegate>? ProcessSendedChatHook;
+
+    private delegate long PartyFinderMessageDisplayDelegate(long a1, long a2);
     [Signature("48 89 5C 24 ?? 57 48 83 EC ?? 48 8D 99 ?? ?? ?? ?? 48 8B F9 48 8B CB E8",
                DetourName = nameof(PartyFinderMessageDisplayDetour))]
-    public Hook<PartyFinderMessageDisplayDelegate>? PartyFinderMessageDisplayHook;
+    private static Hook<PartyFinderMessageDisplayDelegate>? PartyFinderMessageDisplayHook;
 
-    public delegate long LocalMessageDelegate(long a1, long a2);
-    [Signature("40 53 48 83 EC ?? 48 8D 99 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 48 8B 0D", DetourName = nameof(LocalMessageDetour))]
-    public Hook<LocalMessageDelegate>? LocalMessageDisplayHook;
+    private delegate char LookingForGroupConditionReceiveEventDelegate(long a1, long a2);
+    [Signature("48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ?? ?? ?? ?? B8 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 2B E0 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 48 8B D9", DetourName = nameof(LookingForGroupConditionReceiveEventDetour))]
+    private static Hook<LookingForGroupConditionReceiveEventDelegate>? LookingForGroupConditionReceiveEventHook;
 
-    private delegate nint AddonReceiveEventDelegate
-        (AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData);
-    private Hook<AddonReceiveEventDelegate>? PartyFinderDescriptionInputHook;
-
-    private static readonly char[] SpecialChars = ['*', '%', '+', '-', '^', '=', '|', '&', '!', '~', ',', '.', ';', ':', '?', '@', '#'];
+    private static readonly char[] SpecialChars =
+        ['*', '%', '+', '-', '^', '=', '|', '&', '!', '~', ',', '.', ';', ':', '?', '@', '#'];
 
     private static Dictionary<char, char>? SpecialCharTranslateDictionary;
     private static Dictionary<char, char>? SpecialCharTranslateDictionaryRe;
@@ -80,13 +79,11 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
 
         Service.Hook.InitializeFromAttributes(this);
 
-        PartyFinderMessageDisplayHook?.Enable();
         LocalMessageDisplayHook?.Enable();
         ProcessSendedChatHook?.Enable();
 
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "LookingForGroupCondition", OnPartyFinderConditionAddonSetup);
-        if (Service.Gui.GetAddonByName("LookingForGroupCondition") != nint.Zero)
-            OnPartyFinderConditionAddonSetup(AddonEvent.PostSetup, null);
+        PartyFinderMessageDisplayHook?.Enable();
+        LookingForGroupConditionReceiveEventHook?.Enable();
     }
 
     public override void ConfigUI()
@@ -138,6 +135,22 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
         ImGui.InputText("###PreviewBypass", ref PreviewBypass, 1000, ImGuiInputTextFlags.ReadOnly);
     }
 
+    private char LookingForGroupConditionReceiveEventDetour(long a1, long a2)
+    {
+        var eventType = AddonManager.GetAtkValueInt((nint)a2);
+        if (eventType != 15) return LookingForGroupConditionReceiveEventHook.Original(a1, a2);
+
+        var originalText = Marshal.PtrToStringUTF8((nint)AddonManager.GetAtkValueString((nint)a2 + 16));
+        var handledText = BypassCensorship(originalText);
+        if (handledText != originalText)
+        {
+            AgentManager.SendEvent(AgentId.LookingForGroup, 3, 15, handledText, 0);
+            return (char)0;
+        }
+
+        return LookingForGroupConditionReceiveEventHook.Original(a1, a2);
+    }
+
     // 消息发送处理
     private byte ProcessSendedChatDetour(nint uiModule, byte** message, nint a3)
     {
@@ -155,6 +168,7 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
             else
                 ssb.Add(payload);
         }
+
         var filteredSeString = ssb.Build();
 
         if (filteredSeString.TextValue.Length <= 500)
@@ -168,49 +182,11 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
         return ProcessSendedChatHook.Original(uiModule, message, a3);
     }
 
-    private void OnPartyFinderConditionAddonSetup(AddonEvent type, AddonArgs? args)
-    {
-        var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("LookingForGroupCondition");
-        var address = (nint)addon->GetNodeById(22)->GetComponent()->AtkEventListener.vfunc[2];
-        PartyFinderDescriptionInputHook ??=
-            Service.Hook.HookFromAddress<AddonReceiveEventDelegate>(address, PartyFinderDescriptionInputDetour);
-        if (!PartyFinderDescriptionInputHook.IsEnabled) PartyFinderDescriptionInputHook?.Enable();
-    }
-
-    // 招募板描述 Event 处理
-    private nint PartyFinderDescriptionInputDetour(
-        AtkEventListener* self, AtkEventType eventType, uint eventParam, AtkEvent* eventData, ulong* inputData)
-    {
-        if (eventType is AtkEventType.InputReceived or AtkEventType.FocusStop or AtkEventType.MouseClick)
-        {
-            var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("LookingForGroupCondition");
-            var textInput = (AtkComponentTextInput*)addon->GetComponentNodeById(22);
-
-            var text1 = Marshal.PtrToStringUTF8((nint)textInput->AtkComponentInputBase.UnkText1.StringPtr);
-            if (string.IsNullOrWhiteSpace(text1) || text1.StartsWith('/'))
-                return PartyFinderDescriptionInputHook.Original(self, eventType, eventParam, eventData, inputData);
-
-            var text2 = Marshal.PtrToStringUTF8((nint)textInput->AtkComponentInputBase.UnkText2.StringPtr);
-
-            var handledText = BypassCensorship(text1);
-            textInput->AtkComponentInputBase.UnkText1 = *Utf8String.FromString(handledText);
-            textInput->AtkComponentInputBase.UnkText2 = *Utf8String.FromString(handledText);
-        }
-
-        return PartyFinderDescriptionInputHook.Original(self, eventType, eventParam, eventData, inputData);
-    }
-
     // 本地聊天消息显示处理函数
-    private long LocalMessageDetour(long a1, long a2)
-    {
-        return LocalMessageDisplayHandler(a1 + 1096, a2);
-    }
+    private long LocalMessageDetour(long a1, long a2) => LocalMessageDisplayHandler(a1 + 1096, a2);
 
     // 招募板信息显示处理函数
-    private long PartyFinderMessageDisplayDetour(long a1, long a2)
-    {
-        return PartyFinderMessageDisplayHandler(a1 + 10488, a2);
-    }
+    private long PartyFinderMessageDisplayDetour(long a1, long a2) => PartyFinderMessageDisplayHandler(a1 + 10488, a2);
 
     // 获取屏蔽词处理后的文本
     private string GetFilteredString(string str)
@@ -220,7 +196,6 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
 
         return (*utf8String).ToString();
     }
-
 
     private string BypassCensorship(string text)
     {
@@ -234,7 +209,7 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
             var processedText = GetFilteredString(text);
             tempResult.Clear();
 
-            for (var i = 0; i < processedText.Length; )
+            for (var i = 0; i < processedText.Length;)
             {
                 if (processedText[i] == '<')
                 {
@@ -250,7 +225,7 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
                 {
                     isCensored = true;
                     var start = i;
-                    while (++i < processedText.Length && processedText[i] == '*');
+                    while (++i < processedText.Length && processedText[i] == '*') ;
 
                     var length = i - start;
                     if (length == 1 && IsChineseCharacter(text[start]))
@@ -275,7 +250,7 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
             }
 
             text = tempResult.ToString();
-        } 
+        }
         while (isCensored);
 
         return ReplaceSpecialChars(text, true);
@@ -316,12 +291,5 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
     private static bool IsChineseCharacter(char c)
     {
         return c >= 0x4E00 && c <= 0x9FA5;
-    }
-
-    public override void Uninit()
-    {
-        Service.AddonLifecycle.UnregisterListener(OnPartyFinderConditionAddonSetup);
-
-        base.Uninit();
     }
 }

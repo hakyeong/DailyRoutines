@@ -15,19 +15,25 @@ public static unsafe class AddonManager
 {
     public record PartInfo(ushort U, ushort V, ushort Width, ushort Height);
 
-    private delegate byte FireCallbackDelegate(AtkUnitBase* Base, int valueCount, AtkValue* values, byte updateState);
+    public delegate byte FireCallbackDelegate(AtkUnitBase* Base, int valueCount, AtkValue* values, byte updateState);
+    public static FireCallbackDelegate? FireCallback;
 
-    private static FireCallbackDelegate? FireCallback;
+    public delegate int GetAtkValueIntDelegate(nint address);
+    public static GetAtkValueIntDelegate? GetAtkValueInt;
+
+    public delegate byte* GetAtkValueStringDelegate(nint address);
+    public static GetAtkValueStringDelegate? GetAtkValueString;
 
     public static readonly AtkValue ZeroAtkValue = new() { Type = 0, Int = 0 };
 
     internal static void Init()
     {
-        FireCallback =
-            Marshal.GetDelegateForFunctionPointer<FireCallbackDelegate>(
-                Service.SigScanner.ScanText("E8 ?? ?? ?? ?? 8B 4C 24 20 0F B6 D8"));
+        FireCallback ??= Marshal.GetDelegateForFunctionPointer<FireCallbackDelegate>(Service.SigScanner.ScanText("E8 ?? ?? ?? ?? 8B 4C 24 20 0F B6 D8"));
+        GetAtkValueInt ??= Marshal.GetDelegateForFunctionPointer<GetAtkValueIntDelegate>(Service.SigScanner.ScanText("E8 ?? ?? ?? ?? C6 45 ?? ?? 8D 48"));
+        GetAtkValueString ??= Marshal.GetDelegateForFunctionPointer<GetAtkValueStringDelegate>(Service.SigScanner.ScanText("E8 ?? ?? ?? ?? 33 D2 48 8D 8B ?? ?? ?? ?? 41 B8 ?? ?? ?? ?? 48 8B F8"));
     }
 
+    #region Callback
     public static void CallbackRaw(AtkUnitBase* Base, int valueCount, AtkValue* values, byte updateState = 0)
     {
         if (FireCallback == null) Init();
@@ -151,6 +157,7 @@ public static unsafe class AddonManager
 
         return str.ToString();
     }
+    #endregion
 
     #region AddonFireback
     public static bool? ClickContextMenuByText(string text)

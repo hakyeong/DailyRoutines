@@ -213,7 +213,7 @@ public abstract class DailyModuleBase
 
         var derivedInstance = GetType();
         // 字段
-        foreach (var field in derivedInstance.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+        foreach (var field in derivedInstance.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static))
         {
             if (field.FieldType.IsGenericType && field.FieldType.GetGenericTypeDefinition() == typeof(Hook<>))
             {
