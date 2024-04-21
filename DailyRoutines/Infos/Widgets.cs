@@ -68,27 +68,34 @@ public static class Widgets
         }
     }
 
-    public static void CNWorldSelectCombo(ref World? selectedWorld, ref string worldSearchInput)
+    public static bool CNWorldSelectCombo(ref World? selectedWorld, ref string worldSearchInput)
     {
+        var selectState = false;
         if (ImGui.BeginCombo("###WorldSelectCombo", selectedWorld == null ? "" : selectedWorld.Name.RawString, ImGuiComboFlags.HeightLarge))
         {
-            ImGui.InputTextWithHint("###SearchInput", Service.Lang.GetText("PleaseSearch"), ref worldSearchInput, 32);
+            ImGui.InputTextWithHint("###WorldSearchInput", Service.Lang.GetText("PleaseSearch"), ref worldSearchInput, 32);
 
             ImGui.Separator();
-            foreach (var world in Worlds)
+            foreach (var world in Service.PresetData.CNWorlds)
             {
                 var worldName = world.Value.Name.RawString;
                 var dcName = world.Value.DataCenter.Value.Name.RawString;
-                if (!string.IsNullOrWhiteSpace(WorldSearchInput) && !worldName.Contains(WorldSearchInput) && !dcName.Contains(WorldSearchInput)) continue;
+                if (!string.IsNullOrWhiteSpace(worldSearchInput) && !worldName.Contains(worldSearchInput) && !dcName.Contains(worldSearchInput)) continue;
 
-                if (ImGui.Selectable($"[{dcName}] {worldName}", SelectedWorld != null && SelectedWorld.RowId == world.Key))
-                    SelectedWorld = world.Value;
+                if (ImGui.Selectable($"[{dcName}] {worldName}", selectedWorld != null && selectedWorld.RowId == world.Key))
+                {
+                    selectedWorld = world.Value;
+                    ImGui.CloseCurrentPopup();
+                    selectState = true;
+                }
 
                 ImGui.Separator();
             }
 
             ImGui.EndCombo();
         }
+
+        return selectState;
     }
 
     public static void ConflictKeyText()

@@ -115,25 +115,7 @@ public class AutoLogin : DailyModuleBase
 
             ImGui.SameLine();
             ImGui.SetNextItemWidth(120f * ImGuiHelpers.GlobalScale);
-            if (ImGui.BeginCombo("###AutoLoginWorldSelectCombo", SelectedWorld == null ? "" : SelectedWorld.Name, ImGuiComboFlags.HeightLarge))
-            {
-                ImGui.InputTextWithHint("###SearchInput", Service.Lang.GetText("PleaseSearch"), ref WorldSearchInput, 32);
-
-                ImGui.Separator();
-                foreach (var world in Worlds)
-                {
-                    var worldName = world.Value.Name.RawString;
-                    var dcName = world.Value.DataCenter.Value.Name.RawString;
-                    if (!string.IsNullOrWhiteSpace(WorldSearchInput) && !worldName.Contains(WorldSearchInput) && !dcName.Contains(WorldSearchInput)) continue;
-
-                    if (ImGui.Selectable($"[{dcName}] {worldName}", SelectedWorld != null && SelectedWorld.RowId == world.Key))
-                        SelectedWorld = world.Value;
-
-                    ImGui.Separator();
-                }
-
-                ImGui.EndCombo();
-            }
+            CNWorldSelectCombo(ref SelectedWorld, ref WorldSearchInput);
 
             // 选择当前服务器
             ImGui.SameLine();
