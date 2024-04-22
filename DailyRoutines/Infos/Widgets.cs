@@ -98,6 +98,38 @@ public static class Widgets
         return selectState;
     }
 
+    public static bool ContentSelectCombo(ref ContentFinderCondition? selectedContent, ref string contentSearchInput)
+    {
+        var selectState = false;
+        if (ImGui.BeginCombo("###ContentSelectCombo", selectedContent == null ? "" : selectedContent.Name.RawString, ImGuiComboFlags.HeightLarge))
+        {
+            ImGui.InputTextWithHint("###WorldSearchInput", Service.Lang.GetText("PleaseSearch"), ref contentSearchInput, 32);
+
+            ImGui.Separator();
+            foreach (var content in Service.PresetData.Contents)
+            {
+                var contentName = content.Value.Name.RawString;
+                var placeName = content.Value.TerritoryType.Value.PlaceName.Value.Name.RawString;
+
+                if (!string.IsNullOrWhiteSpace(contentSearchInput) && 
+                    !contentName.Contains(contentSearchInput) && !placeName.Contains(contentSearchInput)) continue;
+
+                if (ImGui.Selectable($"{placeName} | {content}", selectedContent != null && selectedContent.RowId == content.Key))
+                {
+                    selectedContent = content.Value;
+                    ImGui.CloseCurrentPopup();
+                    selectState = true;
+                }
+
+                ImGui.Separator();
+            }
+
+            ImGui.EndCombo();
+        }
+
+        return selectState;
+    }
+
     public static void ConflictKeyText()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
