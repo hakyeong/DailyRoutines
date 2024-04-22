@@ -5,13 +5,19 @@ using System.Linq;
 using DailyRoutines.Infos;
 using DailyRoutines.IPC;
 using DailyRoutines.Modules;
+using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
+using ECommons.Throttlers;
 
 namespace DailyRoutines.Managers;
 
 public class IPCManager : IDailyManager
 {
-    public Dictionary<Type, DailyIPCBase> IPCs = [];
-    public Dictionary<Type, HashSet<DailyModuleBase>> IPCRegState = [];
+    internal Dictionary<Type, DailyIPCBase> IPCs = [];
+    internal Dictionary<Type, HashSet<DailyModuleBase>> IPCRegState = [];
+
+    private List<InstalledPluginState>? LastInstalledPluginStates;
+    private Dictionary<string, Action>? MethodsInfo;
 
     private void Init()
     {
@@ -29,6 +35,23 @@ public class IPCManager : IDailyManager
                 IPCs.Add(type, ipc);
                 IPCRegState.Add(type, []);
             }
+        }
+
+        MethodsInfo ??= [];
+        LastInstalledPluginStates ??= Service.PluginInterface.InstalledPlugins.ToList();
+        Service.FrameworkManager.Register(OnUpdate);
+    }
+
+    private void OnUpdate(IFramework _)
+    {
+        if (!EzThrottler.Throttle("IPCManager_MonitorPlugins", 5000)) return;
+
+        if (!LastInstalledPluginStates.SequenceEqual(Service.PluginInterface.InstalledPlugins))
+        {
+            foreach (var action in MethodsInfo)
+                action.Value.Invoke();
+
+            LastInstalledPluginStates = Service.PluginInterface.InstalledPlugins.ToList();
         }
     }
 
@@ -104,6 +127,26 @@ public class IPCManager : IDailyManager
         return false;
     }
 
+    public void RegisterPluginChanged(params Action[] actions)
+    {
+        foreach (var action in actions)
+        {
+            var methodInfo = action.Method;
+            var uniqueName = $"{methodInfo.DeclaringType.FullName}_{methodInfo.Name}";
+            MethodsInfo.TryAdd(uniqueName, action);
+        }
+    }
+
+    public void UnregisterPluginChanged(params Action[] actions)
+    {
+        foreach (var action in actions)
+        {
+            var methodInfo = action.Method;
+            var uniqueName = $"{methodInfo.DeclaringType.FullName}_{methodInfo.Name}";
+            MethodsInfo.Remove(uniqueName);
+        }
+    }
+
     public static bool IsPluginEnabled(string internalName)
         => Service.PluginInterface.InstalledPlugins.FirstOrDefault(x => x.InternalName == internalName && x.IsLoaded) != null;
 
@@ -125,5 +168,7 @@ public class IPCManager : IDailyManager
 
         IPCs.Clear();
         IPCRegState.Clear();
+        MethodsInfo = null;
+        Service.FrameworkManager.Unregister(OnUpdate);
     }
 }
