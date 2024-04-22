@@ -36,6 +36,8 @@ public unsafe class BetterFollow : DailyModuleBase
         public bool MountWhenFollowMount = true;
         public bool UnMountWhenFollowUnMount = false;
         public bool FlyingWhenFollowFlying = true;
+        public int FollowDistance = 5;
+        public int ReFollowDistance = 3;
         public MoveTypeList MoveType = MoveTypeList.System;
     }
 
@@ -72,7 +74,7 @@ public unsafe class BetterFollow : DailyModuleBase
 
     private static vnavmeshIPC? vnavmesh;
     public const string CommandStr = "/pdrfollow";
-    
+
     public override void Init()
     {
         ModuleConfig = LoadConfig<Config>() ?? new();
@@ -150,6 +152,12 @@ public unsafe class BetterFollow : DailyModuleBase
         {
             ImGui.SameLine();
             ImGui.Text(Service.Lang.GetText("BetterFollow-NvavmeshFollowDesc"));
+            ImGui.Text(Service.Lang.GetText("BetterFollow-FollowDistance"));
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(300f);
+            ImGui.SliderInt("###BetterFollow-FollowDistance", ref ModuleConfig.FollowDistance, 1, 15);
+            if (ImGui.IsItemDeactivatedAfterEdit())
+                SaveConfig(ModuleConfig);
         }
 
         ImGui.Spacing();
@@ -191,6 +199,12 @@ public unsafe class BetterFollow : DailyModuleBase
                 SaveConfig(ModuleConfig);
 
             if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-OnDutyConfig"), ref ModuleConfig.OnDuty))
+                SaveConfig(ModuleConfig);
+            ImGui.Text(Service.Lang.GetText("BetterFollow-ReFollowDistance"));
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(300f);
+            ImGui.SliderInt("###BetterFollow-ReFollowDistance", ref ModuleConfig.ReFollowDistance, 1, 15);
+            if (ImGui.IsItemDeactivatedAfterEdit())
                 SaveConfig(ModuleConfig);
             ImGui.Unindent();
         }
@@ -253,7 +267,8 @@ public unsafe class BetterFollow : DailyModuleBase
         if (Service.Condition[ConditionFlag.InFlight]) TaskManager.Abort();
 
         //处理上坐骑和起飞逻辑
-        if (_FollowStatus && followObject != null && followObject.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
+        if (_FollowStatus && followObject != null &&
+            followObject.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
         {
             //跟随目标上坐骑
             if (ModuleConfig.MountWhenFollowMount &&
@@ -293,7 +308,8 @@ public unsafe class BetterFollow : DailyModuleBase
         //处理移动逻辑
         if (ModuleConfig.MoveType == MoveTypeList.Nvavmesh && _FollowStatus && followObject != null)
         {
-            if (Vector3.Distance(Service.ClientState.LocalPlayer.Position, followObject.Position) < 5) return;
+            if (Vector3.Distance(Service.ClientState.LocalPlayer.Position, followObject.Position) <
+                ModuleConfig.FollowDistance) return;
             if (Service.ClientState.LocalPlayer.IsCasting) return;
             if (!vnavmesh.NavIsReady()) return;
             vnavmesh.PathfindAndMoveTo(followObject.Position, Service.Condition[ConditionFlag.InFlight]);
@@ -321,7 +337,9 @@ public unsafe class BetterFollow : DailyModuleBase
             _LastFollowObjectStatus = false;
             return;
         }
-
+        //距离不够
+        if (Vector3.Distance(Service.ClientState.LocalPlayer.Position, Service.ObjectTable.SearchById(_LastFollowObjectId).Position) <
+            ModuleConfig.ReFollowDistance) return;
         // 跟随目标换图了并且换了内存地址
         if (Service.ObjectTable.SearchById(_LastFollowObjectId).Address != _LastFollowObjectAddress)
         {
