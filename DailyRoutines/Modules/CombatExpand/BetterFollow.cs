@@ -141,6 +141,11 @@ public unsafe class BetterFollow : DailyModuleBase
             ImGui.EndDisabled();
         }
 
+        if (ImGui.Button(Service.Lang.GetText("BetterFollow-ReloadIPC")))
+        {
+            vnavmesh = Service.IPCManager.Load<vnavmeshIPC>(this);
+        }
+
         if (ModuleConfig.MoveType == MoveTypeList.Nvavmesh)
         {
             ImGui.SameLine();
@@ -248,7 +253,7 @@ public unsafe class BetterFollow : DailyModuleBase
         if (Service.Condition[ConditionFlag.InFlight]) TaskManager.Abort();
 
         //处理上坐骑和起飞逻辑
-        if (followObject != null && followObject.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
+        if (_FollowStatus && followObject != null && followObject.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
         {
             //跟随目标上坐骑
             if (ModuleConfig.MountWhenFollowMount &&
