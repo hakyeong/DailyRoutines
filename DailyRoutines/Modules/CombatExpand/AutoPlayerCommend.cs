@@ -259,7 +259,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
     private void OnDutyComplete(object? sender, ushort dutyZoneID)
     {
         if (InterruptByConflictKey()) return;
-        if (ModuleConfig.BlacklistContents.FirstOrDefault(x => x.TerritoryID == dutyZoneID) is null) return;
+        if (ModuleConfig.BlacklistContents.FirstOrDefault(x => x.TerritoryID == dutyZoneID) is not null) return;
 
         TaskManager.Enqueue(OpenCommendWindow);
     }
