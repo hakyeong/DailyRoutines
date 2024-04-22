@@ -15,6 +15,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
 using System.Numerics;
 using Dalamud.Game.ClientState.Keys;
+using Newtonsoft.Json;
 using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
@@ -23,6 +24,22 @@ namespace DailyRoutines.Modules;
 public unsafe class BetterFollow : DailyModuleBase
 {
     public override string? Author { get; set; } = "HSS";
+
+    // 配置
+    private class Config : ModuleConfiguration
+    {
+        public bool AutoReFollow = true;
+        public bool OnCombatOver = true;
+        public bool OnDuty = false;
+        public bool ForcedFollow = false;
+        public float Delay = 0.5f;
+        public bool MountWhenFollowMount = true;
+        public bool UnMountWhenFollowUnMount = false;
+        public bool FlyingWhenFollowFlying = true;
+        public MoveTypeList MoveType = MoveTypeList.System;
+    }
+
+    private Config ModuleConfig = null!;
 
     // 状态
     private static bool _FollowStatus;
@@ -52,52 +69,13 @@ public unsafe class BetterFollow : DailyModuleBase
     [Signature("48 89 5C 24 ?? 57 48 83 EC ?? 48 8B F9 48 8B DA 48 8B CA E8 ?? ?? ?? ?? 44 8B 00")]
     private readonly delegate* unmanaged<nint, nint, ulong> FollowDataPush;
 
-    // 配置
-    private static bool AutoReFollow = true;
-    private static bool OnCombatOver;
-    private static bool OnDuty;
-    private static bool ForcedFollow;
-    private static float Delay = 0.5f;
-    private static bool MountWhenFollowMount = true;
-    private static bool UnMountWhenFollowUnMount = false;
-    private static bool FlyingWhenFollowFlying = true;
-    private static MoveTypeList MoveType = MoveTypeList.System;
-    private const string CommandStr = "/pdrfollow";
 
     private static vnavmeshIPC? vnavmesh;
-
+    public const string CommandStr = "/pdrfollow";
+    
     public override void Init()
     {
-        #region Config
-
-        AddConfig("AutoReFollow", AutoReFollow);
-        AutoReFollow = GetConfig<bool>("AutoReFollow");
-
-        AddConfig("OnCombatOver", OnCombatOver);
-        OnCombatOver = GetConfig<bool>("OnCombatOver");
-
-        AddConfig("Delay", Delay);
-        Delay = GetConfig<float>("Delay");
-
-        AddConfig("OnDuty", OnDuty);
-        OnDuty = GetConfig<bool>("OnDuty");
-
-        AddConfig("ForcedFollow", ForcedFollow);
-        ForcedFollow = GetConfig<bool>("ForcedFollow");
-
-        AddConfig("MountWhenFollowMount", true);
-        MountWhenFollowMount = GetConfig<bool>("MountWhenFollowMount");
-
-        AddConfig("UnMountWhenFollowUnMount", true);
-        UnMountWhenFollowUnMount = GetConfig<bool>("UnMountWhenFollowUnMount");
-
-        AddConfig("FlyingWhenFollowFlying", true);
-        FlyingWhenFollowFlying = GetConfig<bool>("FlyingWhenFollowFlying");
-
-        AddConfig("MoveType", true);
-        MoveType = GetConfig<MoveTypeList>("MoveType");
-
-        #endregion
+        ModuleConfig = LoadConfig<Config>() ?? new();
 
         #region Data
 
@@ -122,13 +100,14 @@ public unsafe class BetterFollow : DailyModuleBase
         Service.Hook.InitializeFromAttributes(this);
         FollowDataHook?.Enable();
         vnavmesh ??= Service.IPCManager.Load<vnavmeshIPC>(this);
-        if (vnavmesh == null) MoveType = MoveTypeList.System;
+        if (vnavmesh == null) ModuleConfig.MoveType = MoveTypeList.System;
         Service.FrameworkManager.Register(OnFramework);
-        if (ForcedFollow)
+        if (ModuleConfig.ForcedFollow)
             CommandManager.AddCommand(CommandStr,
                                       new CommandInfo(OnCommand)
                                       {
-                                          HelpMessage = Service.Lang.GetText("BetterFollow-CommandDesc", CommandStr)
+                                          HelpMessage =
+                                              Service.Lang.GetText("BetterFollow-CommandDesc", CommandStr)
                                       });
     }
 
@@ -143,14 +122,14 @@ public unsafe class BetterFollow : DailyModuleBase
         ImGui.Text(Service.Lang.GetText("BetterFollow-MoveType"));
         ImGui.SameLine();
         ImGui.SetNextItemWidth(200f);
-        if (ImGui.BeginCombo("###MoveTypoCombo", MoveTypeLoc[MoveType]))
+        if (ImGui.BeginCombo("###MoveTypoCombo", MoveTypeLoc[ModuleConfig.MoveType]))
         {
             foreach (var mode in MoveTypeLoc)
             {
-                if (ImGui.Selectable(mode.Value, mode.Key == MoveType))
+                if (ImGui.Selectable(mode.Value, mode.Key == ModuleConfig.MoveType))
                 {
-                    MoveType = mode.Key;
-                    UpdateConfig("MoveType", MoveType);
+                    ModuleConfig.MoveType = mode.Key;
+                    SaveConfig(ModuleConfig);
                 }
             }
 
@@ -162,7 +141,7 @@ public unsafe class BetterFollow : DailyModuleBase
             ImGui.EndDisabled();
         }
 
-        if (MoveType == MoveTypeList.Nvavmesh)
+        if (ModuleConfig.MoveType == MoveTypeList.Nvavmesh)
         {
             ImGui.SameLine();
             ImGui.Text(Service.Lang.GetText("BetterFollow-NvavmeshFollowDesc"));
@@ -173,55 +152,61 @@ public unsafe class BetterFollow : DailyModuleBase
         ImGui.Text(Service.Lang.GetText("BetterFollow-DelayConfig"));
         ImGui.SameLine();
         ImGui.SetNextItemWidth(300f);
-        ImGui.SliderFloat("###BetterFollow-DelayConfig", ref Delay, 0.5f, 5f, "%.1f");
+        ImGui.SliderFloat("###BetterFollow-DelayConfig", ref ModuleConfig.Delay, 0.5f, 5f, "%.1f");
         if (ImGui.IsItemDeactivatedAfterEdit())
-            UpdateConfig("Delay", Delay);
+            SaveConfig(ModuleConfig);
 
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoMount-MountWhenFollowMount"), ref MountWhenFollowMount))
-            UpdateConfig("MountWhenFollowMount", MountWhenFollowMount);
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoMount-MountWhenFollowMount"),
+                           ref ModuleConfig.MountWhenFollowMount))
+            SaveConfig(ModuleConfig);
 
-        if (MountWhenFollowMount)
+        if (ModuleConfig.MountWhenFollowMount)
         {
             ImGui.Indent();
-            if (ImGui.Checkbox(Service.Lang.GetText("AutoMount-FlyingWhenFollowFlying"), ref FlyingWhenFollowFlying))
-                UpdateConfig("FlyingWhenFollowFlying", FlyingWhenFollowFlying);
+            if (ImGui.Checkbox(Service.Lang.GetText("AutoMount-FlyingWhenFollowFlying"),
+                               ref ModuleConfig.FlyingWhenFollowFlying))
+                SaveConfig(ModuleConfig);
             ImGui.Unindent();
         }
 
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoMount-UnMountWhenFollowUnMount"), ref UnMountWhenFollowUnMount))
-            UpdateConfig("UnMountWhenFollowUnMount", UnMountWhenFollowUnMount);
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoMount-UnMountWhenFollowUnMount"),
+                           ref ModuleConfig.UnMountWhenFollowUnMount))
+            SaveConfig(ModuleConfig);
 
-        if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-AutoReFollowConfig"), ref AutoReFollow))
-            UpdateConfig("AutoReFollow", AutoReFollow);
-        if (AutoReFollow)
+        if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-AutoReFollowConfig"), ref ModuleConfig.AutoReFollow))
+            SaveConfig(ModuleConfig);
+        if (ModuleConfig.AutoReFollow)
         {
             ImGui.Indent();
             ConflictKeyText();
             ImGui.Text(Service.Lang.GetText("BetterFollow-Status", _enableReFollow, _LastFollowObjectName,
                                             _LastFollowObjectStatus));
 
-            if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-OnCombatOverConfig"), ref OnCombatOver))
-                UpdateConfig("OnCombatOver", OnCombatOver);
+            if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-OnCombatOverConfig"), ref ModuleConfig.OnCombatOver))
+                SaveConfig(ModuleConfig);
 
-            if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-OnDutyConfig"), ref OnDuty))
-                UpdateConfig("OnCombatOver", OnDuty);
+            if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-OnDutyConfig"), ref ModuleConfig.OnDuty))
+                SaveConfig(ModuleConfig);
             ImGui.Unindent();
         }
 
-        if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-ForcedFollowConfig", CommandStr), ref ForcedFollow))
+        if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-ForcedFollowConfig", CommandStr),
+                           ref ModuleConfig.ForcedFollow))
         {
-            UpdateConfig("ForcedFollow", ForcedFollow);
-            if (ForcedFollow)
+            SaveConfig(ModuleConfig);
+            if (ModuleConfig.ForcedFollow)
                 CommandManager.AddCommand(CommandStr,
                                           new CommandInfo(OnCommand)
                                           {
-                                              HelpMessage = Service.Lang.GetText("BetterFollow-CommandDesc", CommandStr)
+                                              HelpMessage =
+                                                  Service.Lang.GetText("BetterFollow-CommandDesc",
+                                                                       CommandStr)
                                           });
             else
                 CommandManager.RemoveCommand(CommandStr);
         }
 
-        if (ForcedFollow)
+        if (ModuleConfig.ForcedFollow)
         {
             ImGui.Indent();
             ImGui.Text(Service.Lang.GetText("BetterFollow-CommandDesc"));
@@ -243,7 +228,7 @@ public unsafe class BetterFollow : DailyModuleBase
 
         var followObject = Service.ObjectTable.SearchById(_LastFollowObjectId);
         //处理打断Vnavmesh跟随逻辑
-        if (MoveType == MoveTypeList.Nvavmesh && _FollowStatus)
+        if (ModuleConfig.MoveType == MoveTypeList.Nvavmesh && _FollowStatus)
         {
             //目标无了
             if (followObject == null) StopFollow(true);
@@ -257,16 +242,16 @@ public unsafe class BetterFollow : DailyModuleBase
         }
 
         //更新系统跟随状态
-        if (MoveType == MoveTypeList.System) _FollowStatus = *(int*)_d1 == 4;
+        if (ModuleConfig.MoveType == MoveTypeList.System) _FollowStatus = *(int*)_d1 == 4;
 
         //如果已经进入飞行状态就别跳了
         if (Service.Condition[ConditionFlag.InFlight]) TaskManager.Abort();
 
         //处理上坐骑和起飞逻辑
-        if (followObject!=null && followObject.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
+        if (followObject != null && followObject.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
         {
             //跟随目标上坐骑
-            if (MountWhenFollowMount &&
+            if (ModuleConfig.MountWhenFollowMount &&
                 ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)followObject.Address)->IsMounted() &&
                 Flags.CanMount)
             {
@@ -276,7 +261,7 @@ public unsafe class BetterFollow : DailyModuleBase
             }
 
             //跟随目标起飞
-            if (FlyingWhenFollowFlying && ((CharacterFlying*)followObject.Address)->IsFlying != 0 &&
+            if (ModuleConfig.FlyingWhenFollowFlying && ((CharacterFlying*)followObject.Address)->IsFlying != 0 &&
                 !Service.Condition[ConditionFlag.InFlight] && Service.Condition[ConditionFlag.Mounted])
             {
                 TaskManager.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.GeneralAction, 2));
@@ -286,7 +271,7 @@ public unsafe class BetterFollow : DailyModuleBase
             }
 
             //跟随目标下坐骑
-            if (UnMountWhenFollowUnMount &&
+            if (ModuleConfig.UnMountWhenFollowUnMount &&
                 !((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)followObject.Address)->IsMounted() &&
                 Service.Condition[ConditionFlag.Mounted])
             {
@@ -298,10 +283,10 @@ public unsafe class BetterFollow : DailyModuleBase
         }
 
         /*-------------------------------不需要实时处理的模块-------------------------------*/
-        if (!EzThrottler.Throttle("BetterFollow", (int)Delay * 1000)) return;
+        if (!EzThrottler.Throttle("BetterFollow", (int)ModuleConfig.Delay * 1000)) return;
 
         //处理移动逻辑
-        if (MoveType == MoveTypeList.Nvavmesh && _FollowStatus && followObject != null)
+        if (ModuleConfig.MoveType == MoveTypeList.Nvavmesh && _FollowStatus && followObject != null)
         {
             if (Vector3.Distance(Service.ClientState.LocalPlayer.Position, followObject.Position) < 5) return;
             if (Service.ClientState.LocalPlayer.IsCasting) return;
@@ -311,11 +296,11 @@ public unsafe class BetterFollow : DailyModuleBase
 
         //处理重新跟随逻辑
         if (!_enableReFollow) return;
-        if (!AutoReFollow || _FollowStatus) return;
+        if (!ModuleConfig.AutoReFollow || _FollowStatus) return;
         // 在战斗
-        if (OnCombatOver && Service.Condition[ConditionFlag.InCombat]) return;
+        if (ModuleConfig.OnCombatOver && Service.Condition[ConditionFlag.InCombat]) return;
         // 在副本里
-        if (!OnDuty && Flags.BoundByDuty()) return;
+        if (!ModuleConfig.OnDuty && Flags.BoundByDuty()) return;
         // 在读条
         if (Service.ClientState.LocalPlayer.IsCasting) return;
         // 在看剧情
@@ -352,7 +337,7 @@ public unsafe class BetterFollow : DailyModuleBase
 
     private void ReFollow()
     {
-        switch (MoveType)
+        switch (ModuleConfig.MoveType)
         {
             case MoveTypeList.System:
                 if (_FollowStatus) return;
@@ -369,9 +354,9 @@ public unsafe class BetterFollow : DailyModuleBase
         }
     }
 
-    private static void StopFollow(bool message = false)
+    private void StopFollow(bool message = false)
     {
-        switch (MoveType)
+        switch (ModuleConfig.MoveType)
         {
             case MoveTypeList.System:
                 if (!_FollowStatus) return;
@@ -398,7 +383,7 @@ public unsafe class BetterFollow : DailyModuleBase
         _LastFollowObjectId = (*(GameObject*)objectAddress).ObjectID;
         _LastFollowObjectName = Service.ObjectTable.SearchById((*(GameObject*)objectAddress).ObjectID).Name
                                        .ToString();
-        switch (MoveType)
+        switch (ModuleConfig.MoveType)
         {
             case MoveTypeList.System:
                 FollowStart(_v8, 52, _v5, objectAddress);
@@ -422,7 +407,7 @@ public unsafe class BetterFollow : DailyModuleBase
         _LastFollowObjectAddress = a2;
         _LastFollowObjectId = (*(GameObject*)a2).ObjectID;
         _LastFollowObjectName = Service.ObjectTable.SearchById((*(GameObject*)a2).ObjectID).Name.ToString();
-        if (MoveType == MoveTypeList.Nvavmesh)
+        if (ModuleConfig.MoveType == MoveTypeList.Nvavmesh)
         {
             //停止系统跟随
             TaskManager.DelayNext(100);
@@ -445,7 +430,7 @@ public unsafe class BetterFollow : DailyModuleBase
         Nvavmesh
     }
 
-    private static readonly Dictionary<MoveTypeList, string> MoveTypeLoc = new()
+    private static readonly Dictionary<MoveTypeList, string> MoveTypeLoc = new Dictionary<MoveTypeList, string>
     {
         { MoveTypeList.System, Service.Lang.GetText("BetterFollow-SystemFollow") },
         { MoveTypeList.Nvavmesh, Service.Lang.GetText("BetterFollow-NvavmeshFollow") },
