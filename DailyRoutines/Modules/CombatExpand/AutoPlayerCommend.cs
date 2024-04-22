@@ -1,13 +1,20 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Interface;
+using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using ECommons.Automation;
+using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
@@ -23,15 +30,112 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
         None
     }
 
-    private class PlayerInfo(string name, PlayerRole role, ClassJob job)
+    private class PlayerInfo : IEquatable<PlayerInfo>
     {
-        public string PlayerName { get; set; } = name;
-        public PlayerRole Role { get; set; } = role;
-        public ClassJob Job { get; set; } = job;
+        public string PlayerName { get; set; } = string.Empty;
+        public uint WorldID { get; set; }
+        public PlayerRole? Role { get; set; } = PlayerRole.None;
+        public uint JobID { get; set; }
+
+        public PlayerInfo() { }
+
+        public PlayerInfo(string name, uint world)
+        {
+            PlayerName = name;
+            WorldID = world;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as PlayerInfo);
+        }
+
+        public bool Equals(PlayerInfo? other)
+        {
+            if (other is null || GetType() != other.GetType())
+                return false;
+
+            return PlayerName == other.PlayerName && WorldID == other.WorldID;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(PlayerName, WorldID);
+        }
+
+        public static bool operator ==(PlayerInfo? lhs, PlayerInfo? rhs)
+        {
+            if (lhs is null)
+            {
+                return rhs is null;
+            }
+            return lhs.Equals(rhs);
+        }
+
+        public static bool operator !=(PlayerInfo lhs, PlayerInfo rhs)
+        {
+            return !(lhs == rhs);
+        }
     }
+
+    private class ContentInfo : IEquatable<ContentInfo>
+    {
+        public uint ContentID { get; set; }
+        public uint TerritoryID { get; set; }
+        public ContentInfo() { }
+
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as ContentInfo);
+        }
+
+        public bool Equals(ContentInfo? other)
+        {
+            if (other is null || GetType() != other.GetType())
+                return false;
+
+            return ContentID == other.ContentID && TerritoryID == other.TerritoryID;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(ContentID, TerritoryID);
+        }
+
+        public static bool operator ==(ContentInfo? lhs, ContentInfo? rhs)
+        {
+            if (lhs is null)
+            {
+                return rhs is null;
+            }
+            return lhs.Equals(rhs);
+        }
+
+        public static bool operator !=(ContentInfo lhs, ContentInfo rhs)
+        {
+            return !(lhs == rhs);
+        }
+    }
+
+    private class Config : ModuleConfiguration
+    {
+        public readonly HashSet<PlayerInfo> BlacklistPlayers = [];
+        public readonly HashSet<ContentInfo> BlacklistContents = [];
+    }
+
+    private static World? SelectedWorld;
+    private static ContentFinderCondition? SelectedContent;
+
+    private static string WorldSearchInput = string.Empty;
+    private static string PlayerNameInput = string.Empty;
+    private static string ContentSearchInput = string.Empty;
+
+    private Config? ModuleConfig;
 
     public override void Init()
     {
+        ModuleConfig = LoadConfig<Config>() ?? new();
+
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
         Service.DutyState.DutyCompleted += OnDutyComplete;
 
@@ -39,8 +143,124 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "BannerMIP", OnAddonList);
     }
 
-    private void OnDutyComplete(object? sender, ushort dutyID)
+    public override void ConfigUI()
     {
+        ImGui.AlignTextToFramePadding();
+        ImGui.Text($"{Service.Lang.GetText("AutoPlayerCommend-BlacklistPlayers")}:");
+
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+        if (ImGui.BeginCombo("###BlacklistPlayerInfoCombo", Service.Lang.GetText("AutoPlayerCommend-BlacklistPlayersAmount", ModuleConfig.BlacklistPlayers.Count), ImGuiComboFlags.HeightLarge))
+        {
+            ImGui.BeginGroup();
+            ImGui.AlignTextToFramePadding();
+            ImGui.Text($"{Service.Lang.GetText("AutoPlayerCommend-World")}:");
+
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(120f * ImGuiHelpers.GlobalScale);
+            CNWorldSelectCombo(ref SelectedWorld, ref WorldSearchInput);
+
+            ImGui.AlignTextToFramePadding();
+            ImGui.Text($"{Service.Lang.GetText("AutoPlayerCommend-PlayerName")}:");
+
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(120f * ImGuiHelpers.GlobalScale);
+            ImGui.InputText("###PlayerNameInput", ref PlayerNameInput, 100);
+            ImGui.EndGroup();
+
+            ImGui.SameLine();
+            if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Plus, Service.Lang.GetText("Add")))
+            {
+                if (SelectedWorld == null || string.IsNullOrWhiteSpace(PlayerNameInput)) return;
+                var info = new PlayerInfo(PlayerNameInput, SelectedWorld.RowId);
+                if (ModuleConfig.BlacklistPlayers.Add(info))
+                    SaveConfig(ModuleConfig);
+            }
+
+            ImGui.SameLine();
+            if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Sync, Service.Lang.GetText("AutoPlayerCommend-SyncBlacklist")))
+            {
+                var blacklist = GetBlacklistInfo((InfoProxyBlacklist*)InfoModule.Instance()->GetInfoProxyById(InfoProxyId.Blacklist));
+                foreach (var player in blacklist)
+                    ModuleConfig.BlacklistPlayers.Add(player);
+
+                SaveConfig(ModuleConfig);
+            }
+
+            ImGuiOm.TooltipHover(Service.Lang.GetText("AutoPlayerCommend-SyncBlacklistHelp"));
+
+            ImGui.Separator();
+            ImGui.Separator();
+
+            foreach (var player in ModuleConfig.BlacklistPlayers)
+            {
+                if (!Service.PresetData.TryGetCNWorld(player.WorldID, out var world)) continue;
+                ImGui.Selectable($"{world.Name.RawString} / {player.PlayerName}");
+
+                if (ImGui.BeginPopupContextItem($"DeleteBlacklistPlayer_{player.PlayerName}_{player.WorldID}"))
+                {
+                    if (ImGui.Selectable(Service.Lang.GetText("Delete")))
+                    {
+                        ModuleConfig.BlacklistPlayers.Remove(player);
+                        SaveConfig(ModuleConfig);
+                    }
+                    ImGui.EndPopup();
+                }
+            }
+
+            ImGui.EndCombo();
+        }
+
+        ImGui.AlignTextToFramePadding();
+        ImGui.Text($"{Service.Lang.GetText("AutoPlayerCommend-BlacklistContents")}:");
+
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+        if (ImGui.BeginCombo("###BlacklistContentsCombo", Service.Lang.GetText("AutoPlayerCommend-BlacklistContentsAmount", ModuleConfig.BlacklistContents.Count)))
+        {
+            ImGui.AlignTextToFramePadding();
+            ImGui.Text($"{Service.Lang.GetText("AutoPlayerCommend-Content")}:");
+
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(180f * ImGuiHelpers.GlobalScale);
+            ContentSelectCombo(ref SelectedContent, ref ContentSearchInput);
+
+            ImGui.SameLine();
+            if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Plus, Service.Lang.GetText("Add")))
+            {
+                if (SelectedContent != null)
+                {
+                    var info = new ContentInfo { ContentID = SelectedContent.RowId, TerritoryID = SelectedContent.TerritoryType.Row };
+                    if (ModuleConfig.BlacklistContents.Add(info))
+                        SaveConfig(ModuleConfig);
+                }
+            }
+
+            ImGui.Separator();
+            ImGui.Separator();
+
+            foreach (var contentInfo in ModuleConfig.BlacklistContents)
+            {
+                if (!LuminaCache.TryGetRow<ContentFinderCondition>(contentInfo.ContentID, out var content)) continue;
+                ImGui.Selectable($"{content.Name.RawString}");
+
+                if (ImGui.BeginPopupContextItem($"DeleteBlacklistContent_{contentInfo.ContentID}_{contentInfo.TerritoryID}"))
+                {
+                    if (ImGui.Selectable(Service.Lang.GetText("Delete")))
+                        if (ModuleConfig.BlacklistContents.Remove(contentInfo)) SaveConfig(ModuleConfig);
+                    ImGui.EndPopup();
+                }
+            }
+
+            ImGui.EndCombo();
+        }
+    }
+
+    private void OnDutyComplete(object? sender, ushort dutyZoneID)
+    {
+        if (InterruptByConflictKey()) return;
+        if (ModuleConfig.BlacklistContents.FirstOrDefault(x => x.TerritoryID == dutyZoneID) is null) return;
+
         TaskManager.Enqueue(OpenCommendWindow);
     }
 
@@ -61,27 +281,28 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
         TaskManager.Abort();
 
         var localPlayer = Service.ClientState.LocalPlayer;
-        var localPlayerName = localPlayer.Name.ExtractText();
-        var localPlayerRole = GetCharacterJobRole(localPlayer.ClassJob.GameData.Role);
-        var allies = Service.PartyList
-                            .Where(ally => ally.Name.ExtractText() != localPlayerName)
-                            .ToDictionary(ally => ally.Address,
-                                          ally => new PlayerInfo(ally.Name.ExtractText(),
-                                                                 GetCharacterJobRole(ally.ClassJob.GameData.Role),
-                                                                 ally.ClassJob.GameData));
+        var localPlayerInfo = new PlayerInfo(localPlayer.Name.ExtractText(), localPlayer.HomeWorld.GameData.RowId)
+        {
+            JobID = localPlayer.ClassJob.GameData.RowId,
+            Role = GetCharacterJobRole(localPlayer.ClassJob.GameData.Role)
+        };
+
+        var allies = Service.PartyList.Select(x => new PlayerInfo(x.Name.ExtractText(), x.World.GameData.RowId)
+                            {
+                                Role = GetCharacterJobRole(x.ClassJob.GameData.Role),
+                                JobID = x.ClassJob.GameData.RowId
+                            })
+                            .Where(x => x != localPlayerInfo && !ModuleConfig.BlacklistPlayers.Contains(x)).ToList();
 
         if (allies.Count == 0) return;
-
-        var playersToCommend = allies.Values
-                                     .OrderByDescending(player => player.Role == localPlayerRole)
+        var playersToCommend = allies
+                                     .OrderByDescending(player => player.Role == localPlayerInfo.Role)
                                      .ThenByDescending(player =>
                                      {
-                                         return localPlayerRole switch
+                                         return localPlayerInfo.Role switch
                                          {
-                                             PlayerRole.Tank or PlayerRole.Healer => player.Role is PlayerRole.Tank
-                                                 or PlayerRole.Healer
-                                                 ? 1
-                                                 : 0,
+                                             PlayerRole.Tank or PlayerRole.Healer => player.Role is PlayerRole.Tank or PlayerRole.Healer
+                                                 ? 1 : 0,
                                              PlayerRole.DPS => player.Role switch
                                              {
                                                  PlayerRole.DPS => 3,
@@ -93,7 +314,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
                                          };
                                      });
 
-        if (TryGetAddonByName<AtkUnitBase>(addonName, out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>(addonName, out var addon) && IsAddonAndNodesReady(addon))
         {
             foreach (var player in playersToCommend)
                 for (var i = 0; i < allies.Count; i++)
@@ -104,8 +325,8 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
                         if (playerNameInAddon == player.PlayerName)
                         {
                             AddonManager.Callback(addon, true, callbackIndex, i);
-
-                            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoPlayerCommend-NoticeMessage", player.Job.ToBitmapFontIcon(), player.Job.Name.RawString, player.PlayerName)).Build();
+                            var job = LuminaCache.GetRow<ClassJob>(player.JobID);
+                            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoPlayerCommend-NoticeMessage", job.ToBitmapFontIcon(), job.Name.RawString, player.PlayerName)).Build();
                             Service.Chat.Print(message);
                             return;
                         }
@@ -135,6 +356,24 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
             4 => PlayerRole.Healer,
             _ => PlayerRole.None
         };
+    }
+
+    private static List<PlayerInfo> GetBlacklistInfo(InfoProxyBlacklist* blacklist)
+    {
+        var list = new List<PlayerInfo>();
+        var stringArray = (nint*)AtkStage.GetSingleton()->AtkArrayDataHolder->StringArrays[14]->StringArray;
+        for (var num = 0u; num < blacklist->InfoProxyPageInterface.InfoProxyInterface.EntryCount; num++)
+        {
+            var playerName = MemoryHelper.ReadStringNullTerminated(stringArray[num]);
+            var worldName = MemoryHelper.ReadStringNullTerminated(stringArray[200 + num]);
+            var world = Service.PresetData.CNWorlds.Values.FirstOrDefault(x => x.Name.RawString == worldName);
+            if (world == null || string.IsNullOrWhiteSpace(playerName)) continue;
+
+            var player = new PlayerInfo(playerName, world.RowId);
+            list.Add(player);
+        }
+
+        return list;
     }
 
     public override void Uninit()

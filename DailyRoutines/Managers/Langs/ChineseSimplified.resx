@@ -1203,7 +1203,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="BetterFollow-DelayConfig" xml:space="preserve">
     <value>检查周期 (单位: 秒)</value>
   </data>
-    <data name="BetterFollow-MoveType" xml:space="preserve">
+  <data name="BetterFollow-MoveType" xml:space="preserve">
     <value>跟随寻路方式:</value>
   </data>
   <data name="BetterFollow-OnDutyConfig" xml:space="preserve">
@@ -1218,13 +1218,13 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="BetterFollow-CommandDesc" xml:space="preserve">
     <value>对当前选择目标进行强制自动跟随</value>
   </data>
-    <data name="BetterFollow-SystemFollow" xml:space="preserve">
+  <data name="BetterFollow-SystemFollow" xml:space="preserve">
     <value>系统跟随</value>
   </data>
-    <data name="BetterFollow-NvavmeshFollow" xml:space="preserve">
+  <data name="BetterFollow-NvavmeshFollow" xml:space="preserve">
     <value>Vnavmesh跟随</value>
   </data>
-    <data name="BetterFollow-NvavmeshFollowDesc" xml:space="preserve">
+  <data name="BetterFollow-NvavmeshFollowDesc" xml:space="preserve">
     <value>Vnavmesh跟随依赖插件vnavmesh,请勿在跟随时关闭vnavmesh</value>
   </data>
   <data name="AutoMount-MountWhenCombatEnd" xml:space="preserve">
@@ -1236,13 +1236,13 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoMount-MountWhenZoneChange" xml:space="preserve">
     <value>当切换区域时</value>
   </data>
-    <data name="AutoMount-MountWhenFollowMount" xml:space="preserve">
+  <data name="AutoMount-MountWhenFollowMount" xml:space="preserve">
     <value>和跟随目标一起上坐骑</value>
   </data>
-    <data name="AutoMount-UnMountWhenFollowUnMount" xml:space="preserve">
+  <data name="AutoMount-UnMountWhenFollowUnMount" xml:space="preserve">
     <value>和跟随目标一起下坐骑</value>
   </data>
-    <data name="AutoMount-FlyingWhenFollowFlying" xml:space="preserve">
+  <data name="AutoMount-FlyingWhenFollowFlying" xml:space="preserve">
     <value>跟随目标起飞时自动起飞</value>
   </data>
   <data name="Add" xml:space="preserve">
@@ -1317,5 +1317,32 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="Settings-HideOutdatedEvents" xml:space="preserve">
     <value>隐藏已结束活动</value>
+  </data>
+  <data name="AutoPlayerCommend-BlacklistContents" xml:space="preserve">
+    <value>黑名单副本</value>
+  </data>
+  <data name="AutoPlayerCommend-BlacklistContentsAmount" xml:space="preserve">
+    <value>已存在 {0} 条副本数据</value>
+  </data>
+  <data name="AutoPlayerCommend-BlacklistPlayers" xml:space="preserve">
+    <value>黑名单玩家</value>
+  </data>
+  <data name="AutoPlayerCommend-BlacklistPlayersAmount" xml:space="preserve">
+    <value>已存在 {0} 条玩家数据</value>
+  </data>
+  <data name="AutoPlayerCommend-Content" xml:space="preserve">
+    <value>副本</value>
+  </data>
+  <data name="AutoPlayerCommend-PlayerName" xml:space="preserve">
+    <value>玩家名</value>
+  </data>
+  <data name="AutoPlayerCommend-SyncBlacklist" xml:space="preserve">
+    <value>同步</value>
+  </data>
+  <data name="AutoPlayerCommend-SyncBlacklistHelp" xml:space="preserve">
+    <value>同步游戏内黑名单玩家至此处</value>
+  </data>
+  <data name="AutoPlayerCommend-World" xml:space="preserve">
+    <value>服务器</value>
   </data>
 </root>
