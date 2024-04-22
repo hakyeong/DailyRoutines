@@ -1222,10 +1222,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>系统跟随</value>
   </data>
     <data name="BetterFollow-NvavmeshFollow" xml:space="preserve">
-    <value>Nvavmesh跟随</value>
+    <value>Vnavmesh跟随</value>
   </data>
     <data name="BetterFollow-NvavmeshFollowDesc" xml:space="preserve">
-    <value>Nvavmesh跟随依赖插件nvavmesh,取消跟随方式为键盘ASD</value>
+    <value>Vnavmesh跟随依赖插件vnavmesh,请勿在跟随时关闭vnavmesh</value>
   </data>
   <data name="AutoMount-MountWhenCombatEnd" xml:space="preserve">
     <value>当结束战斗时</value>
@@ -1237,7 +1237,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>当切换区域时</value>
   </data>
     <data name="AutoMount-MountWhenFollowMount" xml:space="preserve">
-    <value>当跟随目标上坐骑时</value>
+    <value>和跟随目标一起上坐骑</value>
+  </data>
+    <data name="AutoMount-UnMountWhenFollowUnMount" xml:space="preserve">
+    <value>和跟随目标一起下坐骑</value>
   </data>
     <data name="AutoMount-FlyingWhenFollowFlying" xml:space="preserve">
     <value>跟随目标起飞时自动起飞</value>
