@@ -1191,8 +1191,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>更好的自动跟随</value>
   </data>
   <data name="BetterFollowDescription" xml:space="preserve">
-    <value>启用并配置完毕后, 为游戏原生的自动跟随添加了自动重新跟随功能, 并解除了对跟踪对象类型的限制
-(前置模块: 自动上坐骑)</value>
+    <value>启用并配置完毕后, 为游戏原生的自动跟随添加了自动重新跟随功能, 并解除了对跟踪对象类型的限制</value>
   </data>
   <data name="BetterFollow-AutoReFollowConfig" xml:space="preserve">
     <value>自动重新建立跟随</value>
@@ -1211,6 +1210,15 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="BetterFollow-ForcedFollowConfig" xml:space="preserve">
     <value>添加强制跟随命令 ({0})</value>
+  </data>
+    <data name="BetterFollow-ReloadIPC" xml:space="preserve">
+    <value>刷新插件状态</value>
+  </data>
+    <data name="BetterFollow-FollowDistance" xml:space="preserve">
+    <value>重新算路距离</value>
+  </data>
+    <data name="BetterFollow-ReFollowDistance" xml:space="preserve">
+    <value>重新跟随距离</value>
   </data>
   <data name="BetterFollow-Status" xml:space="preserve">
     <value>跟踪状态: {0} / 跟踪目标: {1} / 目标是否在周围: {2}</value>
