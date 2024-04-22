@@ -408,16 +408,19 @@ public unsafe class BetterFollow : DailyModuleBase
         switch (ModuleConfig.MoveType)
         {
             case MoveTypeList.System:
-                if (!_FollowStatus) return;
-                if (*(int*)_d1 != 4) return;
-                SafeMemory.Write(_a1 + 1189, 0);
-                SafeMemory.Write(_a1 + 1369, 0);
                 _FollowStatus = false;
+                if (*(int*)_d1 == 4)
+                {
+                    SafeMemory.Write(_a1 + 1189, 0);
+                    SafeMemory.Write(_a1 + 1369, 0);
+                }
                 break;
             case MoveTypeList.Navmesh:
                 _FollowStatus = false;
-                if (!vnavmesh.PathIsRunning()) return;
-                vnavmesh.PathStop();
+                if (vnavmesh.PathIsRunning())
+                {
+                    vnavmesh.PathStop();
+                }
                 break;
         }
 
