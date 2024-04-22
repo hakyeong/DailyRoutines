@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ClickLib;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
@@ -183,7 +184,10 @@ public class AutoLogin : DailyModuleBase
                 if (ImGui.BeginPopupContextItem($"ContextMenu_{i}"))
                 {
                     if (ImGui.Selectable(Service.Lang.GetText("Delete")))
+                    {
                         LoginInfos.Remove(info);
+                        UpdateConfig("LoginInfos", LoginInfos);
+                    }
                     ImGui.EndPopup();
                 }
 
