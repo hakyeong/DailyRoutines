@@ -1,15 +1,16 @@
 using System.Linq;
+using DailyRoutines.Infos;
 using DailyRoutines.Windows;
 using Dalamud.Interface.Windowing;
 
 namespace DailyRoutines.Managers;
 
-public class WindowManager
+public class WindowManager : IDailyManager
 {
     public WindowSystem? WindowSystem { get; private set; }
     public static Main? Main { get; private set; }
 
-    public void Init()
+    private void Init()
     {
         WindowSystem = new("DailyRoutines");
         Main = new();
@@ -53,7 +54,7 @@ public class WindowManager
         if (Main != null) Main.IsOpen ^= true;
     }
 
-    public void Uninit()
+    private void Uninit()
     {
         WindowSystem.RemoveAllWindows();
         Main?.Dispose();

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using ClickLib.Clicks;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
@@ -110,12 +111,12 @@ public class AutoRequestItemSubmit : DailyModuleBase
         {
             var slot = i - 1;
 
-            AddonManager.Callback(&addon->AtkUnitBase, false, 2, slot, 0, 0);
+            AddonHelper.Callback(&addon->AtkUnitBase, false, 2, slot, 0, 0);
 
             return false;
         }
 
-        AddonManager.Callback(contextMenu, false, 0, 0, 1021003, 0, 0);
+        AddonHelper.Callback(contextMenu, false, 0, 0, 1021003, 0, 0);
         SlotsFilled.Add(i);
         return true;
     }

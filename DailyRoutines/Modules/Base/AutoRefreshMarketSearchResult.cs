@@ -1,3 +1,4 @@
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud;
@@ -64,7 +65,7 @@ public unsafe class AutoRefreshMarketSearchResult : DailyModuleBase
     {
         if (!TryGetAddonByName<AddonItemSearchResult>("ItemSearchResult", out var addonItemSearchResult)) return;
         if (!AddonItemSearchResultThrottled(addonItemSearchResult)) return;
-        AgentManager.SendEvent(AgentId.ItemSearch, 2, 0, 0);
+        AgentHelper.SendEvent(AgentId.ItemSearch, 2, 0, 0);
     }
 
     private static bool AddonItemSearchResultThrottled(AddonItemSearchResult* addon)

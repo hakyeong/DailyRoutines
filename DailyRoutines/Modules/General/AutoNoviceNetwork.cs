@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Timers;
 using ClickLib;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
@@ -111,7 +112,7 @@ public class AutoNoviceNetwork : DailyModuleBase
 
     private static unsafe void ClickNoviceNetworkButton()
     {
-        AgentManager.SendEvent(AgentId.ChatLog, 0, 3);
+        AgentHelper.SendEvent(AgentId.ChatLog, 0, 3);
     }
 
     private void CheckJoinState(bool isOnlyOneRound)

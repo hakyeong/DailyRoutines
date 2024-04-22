@@ -103,7 +103,7 @@ public unsafe class BetterFollow : DailyModuleBase
         if (vnavmesh == null) ModuleConfig.MoveType = MoveTypeList.System;
         Service.FrameworkManager.Register(OnFramework);
         if (ModuleConfig.ForcedFollow)
-            CommandManager.AddCommand(CommandStr,
+            Service.CommandManager.AddCommand(CommandStr,
                                       new CommandInfo(OnCommand)
                                       {
                                           HelpMessage =
@@ -195,15 +195,15 @@ public unsafe class BetterFollow : DailyModuleBase
         {
             SaveConfig(ModuleConfig);
             if (ModuleConfig.ForcedFollow)
-                CommandManager.AddCommand(CommandStr,
-                                          new CommandInfo(OnCommand)
-                                          {
-                                              HelpMessage =
-                                                  Service.Lang.GetText("BetterFollow-CommandDesc",
-                                                                       CommandStr)
-                                          });
+                Service.CommandManager.AddCommand(CommandStr,
+                                                  new CommandInfo(OnCommand)
+                                                  {
+                                                      HelpMessage =
+                                                          Service.Lang.GetText("BetterFollow-CommandDesc",
+                                                                               CommandStr)
+                                                  });
             else
-                CommandManager.RemoveCommand(CommandStr);
+                Service.CommandManager.RemoveCommand(CommandStr);
         }
 
         if (ModuleConfig.ForcedFollow)
@@ -439,7 +439,7 @@ public unsafe class BetterFollow : DailyModuleBase
 
     public override void Uninit()
     {
-        CommandManager.RemoveCommand(CommandStr);
+        Service.CommandManager.RemoveCommand(CommandStr);
         _enableReFollow = false;
         _FollowStatus = false;
 

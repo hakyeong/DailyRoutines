@@ -1,23 +1,24 @@
 using System.Collections.Generic;
 using System.Text;
+using DailyRoutines.Infos;
 using DailyRoutines.Windows;
 using Dalamud.Game.Command;
 
 namespace DailyRoutines.Managers;
 
-public static class CommandManager
+public class CommandManager : IDailyManager
 {
     public const string CommandPDR = "/pdr";
     private static readonly Dictionary<string, CommandInfo> AddedCommands = [];
     private static readonly Dictionary<string, CommandInfo> SubPDRArgs = [];
 
-    public static void Init()
+    private void Init()
     {
         AddSubCommand("search", new CommandInfo(OnSubSearch) { HelpMessage = Service.Lang.GetText("CommandHelp-Search"), ShowInHelp = true });
         RefreshCommandDetails();
     }
 
-    private static void RefreshCommandDetails()
+    private void RefreshCommandDetails()
     {
         var stringBuilder = new StringBuilder();
         stringBuilder.Append(Service.Lang.GetText("CommandHelp"));
@@ -39,7 +40,7 @@ public static class CommandManager
     /// <param name="commandInfo"></param>
     /// <param name="isForceToAdd">如果已有同名命令, 是否强制覆盖添加</param>
     /// <returns></returns>
-    public static bool AddCommand(string command, CommandInfo commandInfo, bool isForceToAdd = false)
+    public bool AddCommand(string command, CommandInfo commandInfo, bool isForceToAdd = false)
     {
         switch (Service.Command.Commands.ContainsKey(command))
         {
@@ -61,7 +62,7 @@ public static class CommandManager
     /// </summary>
     /// <param name="command"></param>
     /// <returns></returns>
-    public static bool RemoveCommand(string command)
+    public bool RemoveCommand(string command)
     {
         if (Service.Command.Commands.ContainsKey(command))
         {
@@ -81,7 +82,7 @@ public static class CommandManager
     /// <param name="commandInfo">你可以控制 ShowInHelp 属性来控制是否在详情页显示命令</param>
     /// <param name="isForceToAdd">如果已有同名命令, 是否强制覆盖添加</param>
     /// <returns></returns>
-    public static bool AddSubCommand(string args, CommandInfo commandInfo, bool isForceToAdd = false)
+    public bool AddSubCommand(string args, CommandInfo commandInfo, bool isForceToAdd = false)
     {
         switch (SubPDRArgs.ContainsKey(args))
         {
@@ -102,7 +103,7 @@ public static class CommandManager
     /// </summary>
     /// <param name="args"></param>
     /// <returns></returns>
-    public static bool RemoveSubCommand(string args)
+    public bool RemoveSubCommand(string args)
     {
         if (SubPDRArgs.Remove(args))
         {
@@ -113,7 +114,7 @@ public static class CommandManager
         return false;
     }
 
-    private static void OnCommandPDR(string command, string args)
+    private void OnCommandPDR(string command, string args)
     {
         if (string.IsNullOrWhiteSpace(args))
         {
@@ -126,7 +127,7 @@ public static class CommandManager
             commandInfo.Handler(spiltedArgs[0], spiltedArgs.Length > 1 ? spiltedArgs[1] : "");
     }
 
-    private static void OnSubSearch(string command, string args)
+    private void OnSubSearch(string command, string args)
     {
         if (string.IsNullOrWhiteSpace(args))
         {
@@ -137,7 +138,7 @@ public static class CommandManager
         WindowManager.Main.IsOpen ^= true;
     }
 
-    public static void Uninit()
+    private void Uninit()
     {
         foreach (var command in AddedCommands.Keys)
             RemoveCommand(command);

@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Numerics;
 using System.Reflection;
 using System.Threading.Tasks;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Modules;
@@ -556,7 +557,7 @@ public class MainSettings
                 if (ImGui.IsItemHovered())
                 {
                     ImGui.BeginTooltip();
-                    var imageState = ImageManager.TryGetImage(news.HomeImagePath, out var imageHandle);
+                    var imageState = ImageHelper.TryGetImage(news.HomeImagePath, out var imageHandle);
                     if (imageState)
                         ImGui.Image(imageHandle.ImGuiHandle, imageHandle.Size);
                     else

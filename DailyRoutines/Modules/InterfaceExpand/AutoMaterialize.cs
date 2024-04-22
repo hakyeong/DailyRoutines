@@ -1,4 +1,5 @@
 using System.Numerics;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
@@ -63,7 +64,7 @@ public class AutoMaterialize : DailyModuleBase
         var addon = (AtkUnitBase*)args.Addon;
         if (addon == null) return;
 
-        AddonManager.Callback(addon, true, 0);
+        AddonHelper.Callback(addon, true, 0);
     }
 
     private unsafe bool? StartARound()
@@ -96,7 +97,7 @@ public class AutoMaterialize : DailyModuleBase
                 {
                     var agent = AgentModule.Instance()->GetAgentByInternalId(AgentId.Materialize);
                     if (agent == null) return false;
-                    AgentManager.SendEvent(agent, 0, 2, 0);
+                    AgentHelper.SendEvent(agent, 0, 2, 0);
 
                     TaskManager.DelayNext(1500);
                     TaskManager.Enqueue(StartARound);

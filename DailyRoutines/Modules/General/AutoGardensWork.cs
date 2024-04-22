@@ -209,19 +209,19 @@ public unsafe class AutoGardensWork : DailyModuleBase
         var inventoryManager = InventoryManager.Instance();
         if (inventoryManager->GetInventoryItemCount(SelectedSeed) == 0 || inventoryManager->GetInventoryItemCount(SelectedSoil) == 0) return;
 
-        TaskManager.EnqueueImmediate(() => AgentManager.SendEvent(AgentId.HousingPlant, 0, 2, 0U, 0, 0, 1U));
+        TaskManager.EnqueueImmediate(() => AgentHelper.SendEvent(AgentId.HousingPlant, 0, 2, 0U, 0, 0, 1U));
 
         TaskManager.DelayNextImmediate(10);
         TaskManager.EnqueueImmediate(() => FillContextMenu(Soils[SelectedSoil].Name.ExtractText()));
 
         TaskManager.DelayNextImmediate(10);
-        TaskManager.EnqueueImmediate(() => AgentManager.SendEvent(AgentId.HousingPlant, 0, 2, 1U, 0, 0, 1U));
+        TaskManager.EnqueueImmediate(() => AgentHelper.SendEvent(AgentId.HousingPlant, 0, 2, 1U, 0, 0, 1U));
 
         TaskManager.DelayNextImmediate(10);
         TaskManager.EnqueueImmediate(() => FillContextMenu(Seeds[SelectedSeed].Name.ExtractText()));
 
         TaskManager.DelayNextImmediate(10);
-        TaskManager.EnqueueImmediate(() => AgentManager.SendEvent(AgentId.HousingPlant, 0, 0, 0, 0, 0, 0));
+        TaskManager.EnqueueImmediate(() => AgentHelper.SendEvent(AgentId.HousingPlant, 0, 0, 0, 0, 0, 0));
 
         TaskManager.DelayNextImmediate(10);
         TaskManager.EnqueueImmediate(() => Click.TrySendClick("select_yes"));
@@ -404,7 +404,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
                 return true;
             }
 
-            AddonManager.Callback(addon, true, 0, index, 0U, 0, 0);
+            AddonHelper.Callback(addon, true, 0, index, 0U, 0, 0);
         }
 
         return false;
@@ -426,7 +426,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
             if (itemName == itemNameToSelect)
             {
-                AddonManager.Callback(addon, true, 0, i, iconID, 0U, 0);
+                AddonHelper.Callback(addon, true, 0, i, iconID, 0U, 0);
                 return true;
             }
         }

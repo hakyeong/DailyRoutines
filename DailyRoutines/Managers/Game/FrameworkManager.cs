@@ -1,16 +1,17 @@
 using System.Collections.Generic;
 using System.Reflection;
+using DailyRoutines.Infos;
 using Dalamud.Plugin.Services;
 
 namespace DailyRoutines.Managers;
 
-public class FrameworkManager
+public class FrameworkManager : IDailyManager
 {
     internal static Dictionary<string, IFramework.OnUpdateDelegate>? MethodsInfo;
     private static IFramework.OnUpdateDelegate[]? _updateMehtods;
     internal static int _length;
 
-    public void Init()
+    private void Init()
     {
         MethodsInfo ??= [];
         _updateMehtods ??= [];
@@ -101,7 +102,7 @@ public class FrameworkManager
         }
     }
 
-    public void Uninit()
+    private void Uninit()
     {
         Service.Framework.Update -= OnUpdate;
 

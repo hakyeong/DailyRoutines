@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Text.SeStringHandling;
@@ -137,14 +138,14 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
 
     private char LookingForGroupConditionReceiveEventDetour(long a1, long a2)
     {
-        var eventType = AddonManager.GetAtkValueInt((nint)a2);
+        var eventType = AddonHelper.GetAtkValueInt((nint)a2);
         if (eventType != 15) return LookingForGroupConditionReceiveEventHook.Original(a1, a2);
 
-        var originalText = Marshal.PtrToStringUTF8((nint)AddonManager.GetAtkValueString((nint)a2 + 16));
+        var originalText = Marshal.PtrToStringUTF8((nint)AddonHelper.GetAtkValueString((nint)a2 + 16));
         var handledText = BypassCensorship(originalText);
         if (handledText != originalText)
         {
-            AgentManager.SendEvent(AgentId.LookingForGroup, 3, 15, handledText, 0);
+            AgentHelper.SendEvent(AgentId.LookingForGroup, 3, 15, handledText, 0);
             return (char)0;
         }
 

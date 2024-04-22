@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Objects.Types;
@@ -177,7 +178,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
 
                 foreach (var info in DuplicateActions)
                 {
-                    if (!Service.PresetData.PlayerActions.TryGetValue(info.Key, out var result)) continue;
+                    if (!PresetData.PlayerActions.TryGetValue(info.Key, out var result)) continue;
                     ImGui.TableNextRow();
                     ImGui.TableNextColumn();
                     var isActionEnabled = ConfigEnabledActions[info.Key];
@@ -192,7 +193,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
 
                     ImGui.SameLine();
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 2.5f);
-                    ImGui.Image(ImageManager.GetIcon(result.Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(20f));
+                    ImGui.Image(ImageHelper.GetIcon(result.Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(20f));
 
                     ImGui.SameLine();
                     ImGui.Text($"{result.Name.ExtractText()}");
@@ -205,7 +206,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
                     foreach (var status in info.Value.StatusID)
                     {
                         if (info.Key is 7551 or 7538) continue;
-                        var statusResult = Service.PresetData.Statuses[status];
+                        var statusResult = PresetData.Statuses[status];
                         ImGui.SameLine();
                         ImGui.Image(Service.Texture.GetIcon(statusResult.Icon).ImGuiHandle,
                                     ImGuiHelpers.ScaledVector2(24f));
@@ -271,7 +272,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
             {
                 var statusIndex = statusManager->GetStatusIndex(status);
                 if (statusIndex != -1 &&
-                    (Service.PresetData.Statuses[status].IsPermanent ||
+                    (PresetData.Statuses[status].IsPermanent ||
                      statusManager->StatusSpan[statusIndex].RemainingTime > 3.5))
                     return false;
             }

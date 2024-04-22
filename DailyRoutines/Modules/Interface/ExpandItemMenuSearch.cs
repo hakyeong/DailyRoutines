@@ -196,11 +196,11 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
             var itemId = inventoryTarget.TargetItem.Value.ItemId;
             var glamourId = inventoryTarget.TargetItem.Value.GlamourId;
 
-            if (SearchCollector && Service.PresetData.TryGetGear(itemId, out var itemCollector))
+            if (SearchCollector && PresetData.TryGetGear(itemId, out var itemCollector))
             {
                 _LastItem = itemCollector;
                 if (SearchCollectorByGlamour)
-                    _LastGlamourItem = Service.PresetData.TryGetGear(glamourId, out var glamourItem) ? glamourItem : _LastItem;
+                    _LastGlamourItem = PresetData.TryGetGear(glamourId, out var glamourItem) ? glamourItem : _LastItem;
                 
                 args.AddMenuItem(CollectorItem);
             }
@@ -209,7 +209,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
             {
                 _LastItem = itemWiki;
                 if (SearchWikiByGlamour)
-                    _LastGlamourItem = Service.PresetData.TryGetGear(glamourId, out var glamourItem) ? glamourItem : _LastItem;
+                    _LastGlamourItem = PresetData.TryGetGear(glamourId, out var glamourItem) ? glamourItem : _LastItem;
 
                 args.AddMenuItem(WikiItem);
             }
@@ -224,7 +224,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
                 _LastGlamourItem = null;
 
                 var itemID = (uint)AgentContext.Instance()->UpdateCheckerParam;
-                if (SearchCollector && Service.PresetData.Gears.TryGetValue(itemID, out var searchCollectorItem))
+                if (SearchCollector && PresetData.Gears.TryGetValue(itemID, out var searchCollectorItem))
                 {
                     _LastItem = searchCollectorItem;
                     args.AddMenuItem(CollectorItem);
@@ -246,7 +246,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
                 if (agent == nint.Zero || !IsValidChatLogContext(agent)) return;
 
                 var itemID = *(uint*)(agent + ChatLogContextItemId);
-                if (SearchCollector && Service.PresetData.Gears.TryGetValue(itemID, out var collectorItem))
+                if (SearchCollector && PresetData.Gears.TryGetValue(itemID, out var collectorItem))
                 {
                     _LastItem = collectorItem;
                     args.AddMenuItem(CollectorItem);
@@ -266,7 +266,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
                 var agentDetail = AgentMiragePrismPrismItemDetail.Instance();
                 if (agentDetail == null) return;
 
-                if (!Service.PresetData.Gears.TryGetValue(agentDetail->ItemId, out var mirageItem)) return;
+                if (!PresetData.Gears.TryGetValue(agentDetail->ItemId, out var mirageItem)) return;
                 _LastItem = mirageItem;
 
                 if (SearchCollector) args.AddMenuItem(CollectorItem);
@@ -278,7 +278,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
                 var agentColoring = AgentColorant.Instance();
                 if (agentColoring == null) return;
 
-                if (!Service.PresetData.Dyes.TryGetValue(agentColoring->CharaView.SelectedStain, out var stainItem)) return;
+                if (!PresetData.Dyes.TryGetValue(agentColoring->CharaView.SelectedStain, out var stainItem)) return;
                 _LastItem = stainItem;
 
                 if (SearchWiki) args.AddMenuItem(WikiItem);
@@ -286,7 +286,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
             case "CabinetWithdraw":
                 _LastGlamourItem = null;
 
-                if (!Service.PresetData.Gears.TryGetValue((uint)_LastDetailItemID, out var cabinetItem)) return;
+                if (!PresetData.Gears.TryGetValue((uint)_LastDetailItemID, out var cabinetItem)) return;
                 _LastItem = cabinetItem;
 
                 if (SearchCollector) args.AddMenuItem(CollectorItem);
@@ -296,9 +296,9 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
             {
                 var glamourID = _CharacterInspectItems.FirstOrDefault(x => x.ItemID == _LastHoveredItemID).GlamourID;
 
-                if (!Service.PresetData.Gears.TryGetValue((uint)_LastHoveredItemID, out var inspectItem)) return;
+                if (!PresetData.Gears.TryGetValue((uint)_LastHoveredItemID, out var inspectItem)) return;
                 _LastItem = inspectItem;
-                _LastGlamourItem = Service.PresetData.Gears.GetValueOrDefault(glamourID, _LastItem);
+                _LastGlamourItem = PresetData.Gears.GetValueOrDefault(glamourID, _LastItem);
 
                 if (SearchCollector) args.AddMenuItem(CollectorItem);
                 if (SearchWiki) args.AddMenuItem(WikiItem);
@@ -308,8 +308,8 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
             case "MiragePrismPrismBoxCrystallize":
             {
                 var itemId = AgentMiragePrismPrismItemDetail.Instance()->ItemId;
-                Service.PresetData.Gears.TryGetValue(itemId, out var miragePrismPrismBoxCrystallizeItem);
-                Service.PresetData.Gears.TryGetValue((uint)_LastHoveredItemID, out var miragePrismPrismBoxItem);
+                PresetData.Gears.TryGetValue(itemId, out var miragePrismPrismBoxCrystallizeItem);
+                PresetData.Gears.TryGetValue((uint)_LastHoveredItemID, out var miragePrismPrismBoxItem);
                 if (miragePrismPrismBoxCrystallizeItem == null && miragePrismPrismBoxItem == null) return;
 
                 _LastItem = miragePrismPrismBoxItem;

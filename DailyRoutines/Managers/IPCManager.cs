@@ -2,17 +2,18 @@ using System.Reflection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using DailyRoutines.Infos;
 using DailyRoutines.IPC;
 using DailyRoutines.Modules;
 
 namespace DailyRoutines.Managers;
 
-public class IPCManager
+public class IPCManager : IDailyManager
 {
     public Dictionary<Type, DailyIPCBase> IPCs = [];
     public Dictionary<Type, HashSet<DailyModuleBase>> IPCRegState = [];
 
-    public void Init()
+    private void Init()
     {
         var types = Assembly.GetExecutingAssembly().GetTypes()
                             .Where(t => typeof(DailyIPCBase).IsAssignableFrom(t) &&
@@ -106,7 +107,7 @@ public class IPCManager
     public static bool IsPluginEnabled(string internalName)
         => Service.PluginInterface.InstalledPlugins.FirstOrDefault(x => x.InternalName == internalName && x.IsLoaded) != null;
 
-    public void Uninit()
+    private void Uninit()
     {
         foreach (var ipc in IPCs.Values)
             try

@@ -3,50 +3,24 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using DailyRoutines.Infos;
 using Dalamud.Game.Text.SeStringHandling;
 
 namespace DailyRoutines.Managers;
 
-public partial class LanguageManager
+public partial class LanguageManager : IDailyManager
 {
-    public static string LangsDirectory { get; private set; } = null!;
-    public string Language { get; private set; }
+    private static Dictionary<string, string>? resourceData;
 
-    private readonly Dictionary<string, string>? resourceData;
-
-    public static readonly TranslationInfo[] LanguageNames =
-    [
-        new TranslationInfo { Language = "ChineseSimplified", DisplayName = "简体中文", Translators = ["AtmoOmen"] }
-    ];
-
-    public LanguageManager(string languageName, bool isDev = false, string devLangPath = "")
+    private void Init()
     {
-        LangsDirectory = Path.Join(Path.GetDirectoryName(Service.PluginInterface.AssemblyLocation.FullName),
-                                   "Managers", "Langs");
-
-        if (isDev)
-            resourceData = LoadResourceFile(devLangPath);
-        else
-        {
-            if (LanguageNames.All(x => x.Language != languageName)) languageName = "ChineseSimplified";
-
-            var resourcePath = Path.Join(LangsDirectory, languageName + ".resx");
-            if (!File.Exists(resourcePath)) LanguageUpdater.DownloadLanguageFilesAsync().GetAwaiter().GetResult();
-            resourceData = LoadResourceFile(resourcePath);
-        }
-
-        Language = languageName;
+        resourceData = LoadResourceFile(Path.Join(Path.GetDirectoryName(Service.PluginInterface.AssemblyLocation.FullName), 
+                                                  "Managers", "Langs" , "ChineseSimplified.resx"));
     }
 
     private static Dictionary<string, string> LoadResourceFile(string filePath)
     {
         var data = new Dictionary<string, string>();
-
-        if (!File.Exists(filePath))
-        {
-            LanguageUpdater.DownloadLanguageFilesAsync().GetAwaiter().GetResult();
-            if (!File.Exists(filePath)) return data;
-        }
 
         var doc = XDocument.Load(filePath);
         var dataElements = doc.Root.Elements("data");
@@ -106,13 +80,8 @@ public partial class LanguageManager
         return ssb.Build();
     }
 
+    private void Uninit() { }
+
     [GeneratedRegex("\\{(\\d+)\\}")]
     private static partial Regex SeStringRegex();
-}
-
-public class TranslationInfo
-{
-    public string Language { get; set; } = null!;
-    public string DisplayName { get; set; } = null!;
-    public string[] Translators { get; set; } = null!;
 }

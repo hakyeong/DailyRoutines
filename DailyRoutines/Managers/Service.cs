@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Reflection;
 using ClickLib;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
@@ -22,39 +23,22 @@ public class Service
         Config = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         Config.Initialize(pluginInterface);
 
-        // 前置管理器/服务 初始化
-        InitLanguage();
-        WindowManager.Init();
-        CommandManager.Init();
+        // Helpers/Infos 初始化
         Click.Initialize();
-        FrameworkManager.Init();
-        AddonManager.Init();
-        Notify.Init();;
-
-        // 一般管理器/服务 初始化
-        Font.Init();
-        Waymarks.Init();
+        AddonHelper.Init();
+        FieldMarkerHelper.Init();
         PresetData.Init();
-        PayloadText.Init();
-        IPCManager.Init();
-        ModuleManager.Init();
-    }
+        PresetFont.Init();
 
-    private static void InitLanguage()
-    {
-        var playerLang = Config.SelectedLanguage;
-        if (string.IsNullOrEmpty(playerLang))
+        foreach (var property in typeof(Service).GetProperties(BindingFlags.Static | BindingFlags.Public)
+                                                .Where(p => typeof(IDailyManager).IsAssignableFrom(p.PropertyType)))
         {
-            playerLang = ClientState.ClientLanguage.ToString();
-            if (LanguageManager.LanguageNames.All(x => x.Language != playerLang))
-            {
-                playerLang = "English";
-            }
-            Config.SelectedLanguage = playerLang;
-            Config.Save();
-        }
+            var manager = (IDailyManager?)property.GetValue(null);
+            var managerType = manager?.GetType();
 
-        Lang = new LanguageManager(playerLang);
+            var initMethod = managerType?.GetMethod("Init", BindingFlags.NonPublic | BindingFlags.Instance);
+            initMethod?.Invoke(manager, null);
+        }
     }
 
     private static void InitPluginInterface(DalamudPluginInterface pluginInterface)
@@ -65,23 +49,21 @@ public class Service
 
     internal static void Uninit()
     {
-        // 一般管理器/服务 卸载
-        Waymarks.Uninit();
-        ModuleManager.Uninit();
-        IPCManager.Uninit();
+        foreach (var property in typeof(Service).GetProperties(BindingFlags.Static | BindingFlags.Public)
+                                                .Where(p => typeof(IDailyManager).IsAssignableFrom(p.PropertyType)).Reverse())
+        {
+            var manager = (IDailyManager?)property.GetValue(null);
+            var managerType = manager?.GetType();
 
-        // 前置管理器/服务 卸载
-        Notify.Uninit();
-        FrameworkManager.Uninit();
-        CommandManager.Uninit();
+            var initMethod = managerType?.GetMethod("Uninit", BindingFlags.NonPublic | BindingFlags.Instance);
+            initMethod?.Invoke(manager, null);
+        }
+
         LuminaCache.ClearCache();
-        AddonManager.Uninit();
-        WindowManager.Uninit();
-
-        // 配置 卸载
         Config.Uninit();
     }
 
+    #region DalamudServices
     [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
     [PluginService] public static IAddonEventManager AddonEvent { get; private set; } = null!;
     [PluginService] public static IAetheryteList AetheryteList { get; private set; } = null!;
@@ -125,18 +107,16 @@ public class Service
     [PluginService] public static ITextureProvider Texture { get; private set; } = null!;
     [PluginService] public static ITitleScreenMenu TitleScreenMenu { get; private set; } = null!;
     [PluginService] public static IToastGui Toast { get; private set; } = null!;
+    #endregion
 
     public static DalamudPluginInterface PluginInterface { get; private set; } = null!;
     public static Configuration Config { get; private set; } = null!;
-    public static LanguageManager Lang { get; private set; } = null!;
-    public static FrameworkManager FrameworkManager { get; private set; } = new();
-    public static IPCManager IPCManager { get; private set; } = new();
-    public static NotifyManager Notify { get; private set; } = new();
-    public static ModuleManager ModuleManager { get; private set; } = new();
+    public static LanguageManager Lang { get; private set; } = new();
     public static WindowManager WindowManager { get; private set; } = new();
+    public static CommandManager CommandManager { get; private set; } = new();
+    public static FrameworkManager FrameworkManager { get; private set; } = new();
+    public static NotifyManager Notify { get; private set; } = new();
     public static SigScanner SigScanner { get; private set; } = new();
-    public static FontManager Font { get; private set; } = new();
-    public static PresetData PresetData { get; private set; } = new();
-    public static FieldMarkerManager Waymarks { get; private set; } = new();
-    public static PayloadText PayloadText { get; private set; } = new();
+    public static IPCManager IPCManager { get; private set; } = new();
+    public static ModuleManager ModuleManager { get; private set; } = new();
 }

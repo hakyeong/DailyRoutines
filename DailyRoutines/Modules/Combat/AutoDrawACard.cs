@@ -25,7 +25,7 @@ public class AutoDrawACard : DailyModuleBase
 
     private void OnZoneChanged(ushort zone)
     {
-        if (!Service.PresetData.Contents.ContainsKey(zone) || Service.ClientState.IsPvP) return;
+        if (!PresetData.Contents.ContainsKey(zone) || Service.ClientState.IsPvP) return;
         TaskManager.Abort();
         TaskManager.Enqueue(CheckCurrentJob);
     }

@@ -27,7 +27,7 @@ public class AutoNotifyDutyName : DailyModuleBase
 
     private static void OnZoneChange(ushort territory)
     {
-        if (!Service.PresetData.Contents.TryGetValue(territory, out var content)) return;
+        if (!PresetData.Contents.TryGetValue(territory, out var content)) return;
         var contentName = content.Name.RawString;
 
         var message = new SeStringBuilder().Append(DRPrefix()).Append(" ")

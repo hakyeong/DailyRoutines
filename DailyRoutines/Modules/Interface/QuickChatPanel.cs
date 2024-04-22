@@ -241,7 +241,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                     if (macro == null) continue;
 
                     var name = macro->Name.ExtractText();
-                    var icon = ImageManager.GetIcon(macro->IconId);
+                    var icon = ImageHelper.GetIcon(macro->IconId);
                     if (string.IsNullOrEmpty(name) || icon == null) continue;
 
                     var currentSavedMacro = (*macro).ToSavedMacro();
@@ -303,7 +303,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                     if (macro == null) continue;
 
                     var name = macro->Name.ExtractText();
-                    var icon = ImageManager.GetIcon(macro->IconId);
+                    var icon = ImageHelper.GetIcon(macro->IconId);
                     if (string.IsNullOrEmpty(name) || icon == null) continue;
 
                     var currentSavedMacro = (*macro).ToSavedMacro();
@@ -438,7 +438,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 var maxTextWidth = 200f;
                 if (ImGui.BeginChild("MessagesChild", ImGui.GetContentRegionAvail(), false))
                 {
-                    Service.Font.Axis14.Push();
+                    PresetFont.Axis14.Push();
                     ImGui.SetWindowFontScale(ConfigFontScale);
                     for (var i = 0; i < ConfigSavedMessages.Count; i++)
                     {
@@ -481,7 +481,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                             ImGui.Separator();
                     }
 
-                    Service.Font.Axis14.Pop();
+                    PresetFont.Axis14.Pop();
                     ImGui.SetWindowFontScale(1f);
                     ImGui.EndChild();
                 }
@@ -496,7 +496,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 var maxTextWidth = 200f;
                 if (ImGui.BeginChild("MacroChild", ImGui.GetContentRegionAvail(), false))
                 {
-                    Service.Font.Axis14.Push();
+                    PresetFont.Axis14.Push();
                     ImGui.SetWindowFontScale(ConfigFontScale);
                     ImGui.BeginGroup();
                     for (var i = 0; i < ConfigSavedMacros.Count; i++)
@@ -504,7 +504,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                         var macro = ConfigSavedMacros[i];
 
                         var name = macro.Name;
-                        var icon = ImageManager.GetIcon(macro.IconID);
+                        var icon = ImageHelper.GetIcon(macro.IconID);
                         if (string.IsNullOrEmpty(name) || icon == null) continue;
 
                         switch (ConfigOverlayMacroDisplayMode)
@@ -573,7 +573,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                     maxTextWidth = ImGui.GetItemRectSize().X;
 
                     ImGui.SetWindowFontScale(1f);
-                    Service.Font.Axis14.Pop();
+                    PresetFont.Axis14.Pop();
                     ImGui.EndChild();
                 }
 
@@ -587,7 +587,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 var maxTextWidth = 200f;
                 if (ImGui.BeginChild("GameItemChild", ImGui.GetContentRegionAvail(), false))
                 {
-                    Service.Font.Axis14.Push();
+                    PresetFont.Axis14.Push();
                     ImGui.SetWindowFontScale(ConfigFontScale);
 
                     ImGui.SetNextItemWidth(-1f);
@@ -611,7 +611,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                     foreach (var (itemName, item) in _ItemNames)
                     {
                         if (itemName.Length > longestText.Length) longestText = itemName;
-                        if (ImGuiOm.SelectableImageWithText(ImageManager.GetIcon(item.Icon).ImGuiHandle,
+                        if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(item.Icon).ImGuiHandle,
                                                             new(24),
                                                             itemName, false))
                             Service.Chat.Print(new SeStringBuilder().AddItemLink(item.RowId).Build());
@@ -620,7 +620,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                     maxTextWidth = ImGui.CalcTextSize(longestText).X + 100f;
 
                     ImGui.SetWindowFontScale(1f);
-                    Service.Font.Axis14.Pop();
+                    PresetFont.Axis14.Pop();
                     ImGui.EndChild();
                 }
 
@@ -635,7 +635,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 var maxTextWidth = 200f;
                 if (ImGui.BeginChild("SeIconChild", ImGui.GetContentRegionAvail(), false))
                 {
-                    Service.Font.Axis14.Push();
+                    PresetFont.Axis14.Push();
                     ImGui.SetWindowFontScale(ConfigFontScale);
 
                     ImGui.BeginGroup();
@@ -659,7 +659,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
                     maxTextWidth = ImGui.GetItemRectSize().X;
                     ImGui.SetWindowFontScale(1f);
-                    Service.Font.Axis14.Pop();
+                    PresetFont.Axis14.Pop();
                     ImGui.EndChild();
                 }
 
@@ -734,7 +734,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
     private void MakeIconNode(uint nodeId, Vector2 position, int icon)
     {
-        var imageNode = AddonManager.MakeImageNode(nodeId, new AddonManager.PartInfo(0, 0, 64, 64));
+        var imageNode = AddonHelper.MakeImageNode(nodeId, new AddonHelper.PartInfo(0, 0, 64, 64));
         imageNode->AtkResNode.NodeFlags = NodeFlags.AnchorTop | NodeFlags.AnchorLeft | NodeFlags.Visible |
                                           NodeFlags.Enabled | NodeFlags.EmitsEvents;
         imageNode->WrapMode = 1;
@@ -747,7 +747,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
         imageNode->AtkResNode.SetHeight(ConfigButtonSize);
         imageNode->AtkResNode.SetPositionShort((short)position.X, (short)position.Y);
 
-        AddonManager.LinkNodeAtEnd((AtkResNode*)imageNode, AddonChatLog);
+        AddonHelper.LinkNodeAtEnd((AtkResNode*)imageNode, AddonChatLog);
 
         imageNode->AtkResNode.NodeFlags |= NodeFlags.RespondToMouse | NodeFlags.EmitsEvents | NodeFlags.HasCollision;
         AddonChatLog->UpdateCollisionNodeList(true);
@@ -769,7 +769,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             var node = AddonChatLog->UldManager.NodeList[i];
             if (node->NodeID == 10001)
             {
-                AddonManager.UnlinkAndFreeImageNode((AtkImageNode*)node, AddonChatLog);
+                AddonHelper.UnlinkAndFreeImageNode((AtkImageNode*)node, AddonChatLog);
                 Service.AddonEvent.RemoveEvent(MouseClickHandle);
                 MouseClickHandle = null;
             }

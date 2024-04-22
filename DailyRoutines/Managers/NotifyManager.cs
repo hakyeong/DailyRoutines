@@ -2,15 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using DailyRoutines.Infos;
 using DailyRoutines.Notifications;
 
 namespace DailyRoutines.Managers;
 
-public class NotifyManager
+public class NotifyManager : IDailyManager
 {
     public Dictionary<Type, DailyNotificationBase> Engines = [];
 
-    public void Init()
+    private void Init()
     {
         var types = Assembly.GetExecutingAssembly().GetTypes()
                             .Where(t => typeof(DailyNotificationBase).IsAssignableFrom(t) &&
@@ -30,7 +31,7 @@ public class NotifyManager
         }
     }
 
-    public void Uninit()
+    private void Uninit()
     {
         foreach (var engine in Engines.Values)
         {

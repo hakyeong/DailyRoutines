@@ -242,7 +242,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     public override void OverlayUI()
     {
-        Service.Font.Axis14.Push();
+        PresetFont.Axis14.Push();
         var colors = ImGui.GetStyle().Colors;
         ImGui.BeginGroup();
         foreach (var kvp in ObjectsWaitSelected)
@@ -310,7 +310,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
         ImGui.EndGroup();
         WindowWidth = Math.Max(ConfigMinButtonWidth, ImGui.GetItemRectSize().X);
-        Service.Font.Axis14.Pop();
+        PresetFont.Axis14.Pop();
     }
 
     private void OnUpdate(IFramework framework)

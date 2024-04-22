@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Windows.Forms;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Notifications;
@@ -271,10 +272,10 @@ public class AutoMJIGather : DailyModuleBase
 
         if (TryGetAddonByName<AtkUnitBase>("MJIHud", out var hud) && HelpersOm.IsAddonAndNodesReady(hud))
         {
-            AddonManager.Callback(hud, true, 11, 0);
+            AddonHelper.Callback(hud, true, 11, 0);
             if (TryGetAddonByName<AtkUnitBase>("ContextIconMenu", out var menu) && HelpersOm.IsAddonAndNodesReady(menu))
             {
-                AddonManager.Callback(menu, true, 0, 1, 82043, 0, 0);
+                AddonHelper.Callback(menu, true, 0, 1, 82043, 0, 0);
                 TaskManager.Enqueue(CloseContextIconMenu);
                 return true;
             }
@@ -287,7 +288,7 @@ public class AutoMJIGather : DailyModuleBase
     {
         if (TryGetAddonByName<AtkUnitBase>("ContextIconMenu", out var menu) && HelpersOm.IsAddonAndNodesReady(menu))
         {
-            AddonManager.Callback(menu, true, -1);
+            AddonHelper.Callback(menu, true, -1);
             menu->Close(true);
             return true;
         }

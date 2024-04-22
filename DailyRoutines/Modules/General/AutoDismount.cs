@@ -33,7 +33,7 @@ public unsafe class AutoDismount : DailyModuleBase
                                                     UseActionSelf);
 
         TargetSelfOrAreaActions ??=
-            Service.PresetData.PlayerActions.Where(x => x.Value.CanTargetSelf || x.Value.TargetArea).Select(x => x.Key).ToHashSet();
+            PresetData.PlayerActions.Where(x => x.Value.CanTargetSelf || x.Value.TargetArea).Select(x => x.Key).ToHashSet();
 
         Service.Condition.ConditionChange += OnConditionChanged;
 

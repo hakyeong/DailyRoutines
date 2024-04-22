@@ -1,5 +1,6 @@
 using System.Numerics;
 using ClickLib;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
@@ -10,7 +11,7 @@ using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
-namespace DailyRoutines.Modules; 
+namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoDeleteLettersTitle", "AutoDeleteLettersDescription", ModuleCategories.InterfaceExpand)]
 public unsafe class AutoDeleteLetters : DailyModuleBase
@@ -67,7 +68,7 @@ public unsafe class AutoDeleteLetters : DailyModuleBase
 
             var pnrLetters = addon->GetNodeById(7)->GetComponent()->UldManager.NodeList[2]->IsVisible; // 特典与商城道具邮件
 
-            AddonManager.Callback(addon, true, 0, pnrLetters ? 0 : 1, 0, 1); // 第二个 0 是索引
+            AddonHelper.Callback(addon, true, 0, pnrLetters ? 0 : 1, 0, 1); // 第二个 0 是索引
 
             TaskManager.DelayNext(100);
             TaskManager.Enqueue(ClickDeleteEntry);
@@ -83,7 +84,7 @@ public unsafe class AutoDeleteLetters : DailyModuleBase
         {
             if (!HelpersOm.TryScanContextMenuText(addon, "删除", out var index)) return false;
 
-            AddonManager.Callback(addon, true, 0, index, 0, 0, 0);
+            AddonHelper.Callback(addon, true, 0, index, 0, 0, 0);
 
             TaskManager.DelayNext(100);
             TaskManager.Enqueue(RightClickLetter);

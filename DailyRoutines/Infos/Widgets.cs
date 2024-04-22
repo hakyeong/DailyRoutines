@@ -1,4 +1,5 @@
 using System.Numerics;
+using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
@@ -48,7 +49,7 @@ public static class Widgets
         string helpText, string imageUrl, Vector2 imageSize = default,
         FontAwesomeIcon imageIcon = FontAwesomeIcon.InfoCircle)
     {
-        var imageState = ImageManager.TryGetImage(imageUrl, out var imageHandle);
+        var imageState = ImageHelper.TryGetImage(imageUrl, out var imageHandle);
 
         ImGui.TextColored(ImGuiColors.DalamudOrange, helpText);
 
@@ -76,7 +77,7 @@ public static class Widgets
             ImGui.InputTextWithHint("###WorldSearchInput", Service.Lang.GetText("PleaseSearch"), ref worldSearchInput, 32);
 
             ImGui.Separator();
-            foreach (var world in Service.PresetData.CNWorlds)
+            foreach (var world in PresetData.CNWorlds)
             {
                 var worldName = world.Value.Name.RawString;
                 var dcName = world.Value.DataCenter.Value.Name.RawString;
@@ -106,7 +107,7 @@ public static class Widgets
             ImGui.InputTextWithHint("###ContentSearchInput", Service.Lang.GetText("PleaseSearch"), ref contentSearchInput, 32);
 
             ImGui.Separator();
-            foreach (var content in Service.PresetData.Contents)
+            foreach (var content in PresetData.Contents)
             {
                 var contentName = content.Value.Name.RawString;
                 var placeName = content.Value.TerritoryType.Value.PlaceName.Value.Name.RawString;

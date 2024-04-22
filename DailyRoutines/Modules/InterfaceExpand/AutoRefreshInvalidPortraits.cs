@@ -1,4 +1,5 @@
 using System.Numerics;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
@@ -56,13 +57,13 @@ public unsafe class AutoRefreshInvalidPortraits : DailyModuleBase
 
         if (addon->SaveButton->IsEnabled)
         {
-            AgentManager.SendEvent(AgentId.BannerEditor, 0, 0, 9, -1, -1);
-            AddonManager.Callback(&addon->AtkUnitBase, true, 0, 8, 0);
+            AgentHelper.SendEvent(AgentId.BannerEditor, 0, 0, 9, -1, -1);
+            AddonHelper.Callback(&addon->AtkUnitBase, true, 0, 8, 0);
 
             return;
         }
 
-        AddonManager.Callback(&addon->AtkUnitBase, true, 0, 8, 0);
+        AddonHelper.Callback(&addon->AtkUnitBase, true, 0, 8, 0);
     }
 
     private void OnAddonList(AddonEvent type, AddonArgs args)
@@ -81,15 +82,15 @@ public unsafe class AutoRefreshInvalidPortraits : DailyModuleBase
             var il = i;
             TaskManager.Enqueue(() => ClickBannerListEntry(il));
             TaskManager.DelayNext(20);
-            TaskManager.Enqueue(() => AgentManager.SendEvent(AgentId.BannerList, 6, 0, 0, 0U, 0, 0));
+            TaskManager.Enqueue(() => AgentHelper.SendEvent(AgentId.BannerList, 6, 0, 0, 0U, 0, 0));
             TaskManager.DelayNext(100);
         }
     }
 
     private static bool? ClickBannerListEntry(int itemIndex)
     {
-        AgentManager.SendEvent(AgentId.BannerList, 0, 2, itemIndex);
-        AgentManager.SendEvent(AgentId.BannerList, 0, 3, itemIndex);
+        AgentHelper.SendEvent(AgentId.BannerList, 0, 2, itemIndex);
+        AgentHelper.SendEvent(AgentId.BannerList, 0, 3, itemIndex);
         return true;
     }
 

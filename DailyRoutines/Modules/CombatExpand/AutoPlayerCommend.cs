@@ -194,7 +194,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
 
             foreach (var player in ModuleConfig.BlacklistPlayers)
             {
-                if (!Service.PresetData.TryGetCNWorld(player.WorldID, out var world)) continue;
+                if (!PresetData.TryGetCNWorld(player.WorldID, out var world)) continue;
                 ImGui.Selectable($"{world.Name.RawString} / {player.PlayerName}");
 
                 if (ImGui.BeginPopupContextItem($"DeleteBlacklistPlayer_{player.PlayerName}_{player.WorldID}"))
@@ -272,7 +272,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
         var notificationMvp = (AtkUnitBase*)Service.Gui.GetAddonByName("_NotificationIcMvp");
         if (notification == null && notificationMvp == null) return true;
 
-        AddonManager.Callback(notification, true, 0, 11);
+        AddonHelper.Callback(notification, true, 0, 11);
         return true;
     }
 
@@ -324,7 +324,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
                             MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i + nameOffset].String);
                         if (playerNameInAddon == player.PlayerName)
                         {
-                            AddonManager.Callback(addon, true, callbackIndex, i);
+                            AddonHelper.Callback(addon, true, callbackIndex, i);
                             var job = LuminaCache.GetRow<ClassJob>(player.JobID);
                             var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoPlayerCommend-NoticeMessage", job.ToBitmapFontIcon(), job.Name.RawString, player.PlayerName)).Build();
                             Service.Chat.Print(message);
@@ -366,7 +366,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
         {
             var playerName = MemoryHelper.ReadStringNullTerminated(stringArray[num]);
             var worldName = MemoryHelper.ReadStringNullTerminated(stringArray[200 + num]);
-            var world = Service.PresetData.CNWorlds.Values.FirstOrDefault(x => x.Name.RawString == worldName);
+            var world = PresetData.CNWorlds.Values.FirstOrDefault(x => x.Name.RawString == worldName);
             if (world == null || string.IsNullOrWhiteSpace(playerName)) continue;
 
             var player = new PlayerInfo(playerName, world.RowId);

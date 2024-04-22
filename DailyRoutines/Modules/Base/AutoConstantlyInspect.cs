@@ -1,3 +1,4 @@
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
@@ -28,7 +29,7 @@ public class AutoConstantlyInspect : DailyModuleBase
 
         var nextButton = addon->GetButtonNodeById(74);
         if (nextButton == null || !nextButton->IsEnabled) return;
-        AgentManager.SendEvent(AgentId.ItemInspection, 3, 0);
+        AgentHelper.SendEvent(AgentId.ItemInspection, 3, 0);
         addon->Close(true);
     }
 

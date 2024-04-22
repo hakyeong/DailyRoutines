@@ -368,7 +368,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     {
         if (TryGetAddonByName<AtkUnitBase>("RetainerSellList", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            AgentManager.SendEvent(AgentId.Retainer, 3, 0, index, 1);
+            AgentHelper.SendEvent(AgentId.Retainer, 3, 0, index, 1);
 
             TaskManager.EnqueueImmediate(ClickAdjustPrice);
             return true;
@@ -421,7 +421,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             }
         }
 
-        if (AddonItemHistory == null) AddonManager.Callback(AddonItemSearchResult, true, 0);
+        if (AddonItemHistory == null) AddonHelper.Callback(AddonItemSearchResult, true, 0);
         if (!IsAddonAndNodesReady(AddonItemHistory)) return false;
 
         var errorMessage = AddonItemSearchResult->GetTextNodeById(5);

@@ -9,6 +9,7 @@ using ClickLib.Clicks;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using TaskManager = ECommons.Automation.TaskManager;
+using DailyRoutines.Helpers;
 
 namespace DailyRoutines.Modules;
 
@@ -26,7 +27,7 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
         AbandonDuty ??= Marshal.GetDelegateForFunctionPointer<AbandonDutyDelagte>(Service.SigScanner.ScanText(AbandonDutySig));
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
-        CommandManager.AddSubCommand("joinexitduty", 
+        Service.CommandManager.AddSubCommand("joinexitduty", 
                                      new CommandInfo(OnCommand) { HelpMessage = Service.Lang.GetText("AutoJoinExitDutyTitle"), ShowInHelp = true });
     }
 
@@ -60,7 +61,7 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
     {
         if (ContentsFinder == null || !IsAddonAndNodesReady(ContentsFinder)) return false;
 
-        AddonManager.Callback(ContentsFinder, true, 12, 1);
+        AddonHelper.Callback(ContentsFinder, true, 12, 1);
         var atkValues = ContentsFinder->AtkValues;
         atkValues[7].UInt = 3;
         atkValues[7].Type = ValueType.UInt;
@@ -82,22 +83,22 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
             return false;
         }
 
-        AddonManager.Callback(ContentsFinder, true, 1, 1);
-        AddonManager.Callback(ContentsFinder, true, 4, 0, true);
-        AddonManager.Callback(ContentsFinder, true, 4, 1, false);
-        AddonManager.Callback(ContentsFinder, true, 4, 2, false);
-        AddonManager.Callback(ContentsFinder, true, 4, 3, false);
+        AddonHelper.Callback(ContentsFinder, true, 1, 1);
+        AddonHelper.Callback(ContentsFinder, true, 4, 0, true);
+        AddonHelper.Callback(ContentsFinder, true, 4, 1, false);
+        AddonHelper.Callback(ContentsFinder, true, 4, 2, false);
+        AddonHelper.Callback(ContentsFinder, true, 4, 3, false);
 
         if (ContentsFinder->AtkValues[7].UInt != 0)
         {
-            AddonManager.Callback(ContentsFinder, true, 3, 1U);
+            AddonHelper.Callback(ContentsFinder, true, 3, 1U);
             agent->OpenRegularDuty(4);
             return false;
         }
 
         if (ContentsFinder->AtkValues[7].UInt == 0)
         {
-            AddonManager.Callback(ContentsFinder, true, 12, 0);
+            AddonHelper.Callback(ContentsFinder, true, 12, 0);
             return true;
         }
         return false;
@@ -127,7 +128,7 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
 
     public override void Uninit()
     {
-        CommandManager.RemoveSubCommand("joinexitduty");
+        Service.CommandManager.RemoveSubCommand("joinexitduty");
 
         base.Uninit();
     }

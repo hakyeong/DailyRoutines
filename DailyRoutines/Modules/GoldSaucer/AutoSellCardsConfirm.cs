@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
@@ -56,7 +57,7 @@ public class AutoSellCardsConfirm : DailyModuleBase
 
         if (args.AddonName == "ShopCardDialog")
         {
-            AgentManager.SendEvent(AgentId.TripleTriadCoinExchange, 1, 0, 1);
+            AgentHelper.SendEvent(AgentId.TripleTriadCoinExchange, 1, 0, 1);
             addon->FireCloseCallback();
             addon->Close(true);
             return;
@@ -96,7 +97,7 @@ public class AutoSellCardsConfirm : DailyModuleBase
                 return true;
             }
 
-            TaskManager.Enqueue(() => AddonManager.Callback(addon, true, 0, 0, 0));
+            TaskManager.Enqueue(() => AddonHelper.Callback(addon, true, 0, 0, 0));
             TaskManager.DelayNext(400);
             TaskManager.Enqueue(StartHandOver);
 

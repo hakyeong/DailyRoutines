@@ -43,7 +43,7 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
         if (ImGui.Button(Service.Lang.GetText("Start")))
         {
             if (AddonMiragePrismPrismBox == null) return;
-            TaskManager.Enqueue(() => AddonManager.Callback(AddonMiragePrismPrismBox, true, 0U, 0U));
+            TaskManager.Enqueue(() => AddonHelper.Callback(AddonMiragePrismPrismBox, true, 0U, 0U));
             TaskManager.DelayNext(20);
             TaskManager.Enqueue(TryRemoveItem);
         }
@@ -77,7 +77,7 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
             Service.Log.Debug(currentItemID.ToString());
             if (ArmoireAvailableItems.Contains(currentItemID))
             {
-                AddonManager.Callback(AddonMiragePrismPrismBox, true, 3U, i);
+                AddonHelper.Callback(AddonMiragePrismPrismBox, true, 3U, i);
                 
                 TaskManager.Enqueue(ClickRestoreItem);
                 return true;
@@ -88,7 +88,7 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
         if (nextPageButton == null) return false;
         if (nextPageButton->IsEnabled)
         {
-            AddonManager.Callback(AddonMiragePrismPrismBox, true, 1U, 1U);
+            AddonHelper.Callback(AddonMiragePrismPrismBox, true, 1U, 1U);
 
             TaskManager.Enqueue(TryRemoveItem);
             return true;
@@ -118,7 +118,7 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
         var currentTabIndex = agent->TabIndex;
         if (currentTabIndex < 10)
         {
-            AddonManager.Callback(AddonMiragePrismPrismBox, true, 0U, (uint)(currentTabIndex + 1));
+            AddonHelper.Callback(AddonMiragePrismPrismBox, true, 0U, (uint)(currentTabIndex + 1));
 
             TaskManager.Enqueue(TryRemoveItem);
         }

@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using System.Timers;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
@@ -101,7 +102,7 @@ public class AutoRefreshPartyFinder : DailyModuleBase
     {
         if (TryGetAddonByName<AtkUnitBase>("LookingForGroup", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
-            AddonManager.Callback(addon, true, 17);
+            AddonHelper.Callback(addon, true, 17);
             return;
         }
 

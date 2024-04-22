@@ -2,15 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using DailyRoutines.Infos;
 using DailyRoutines.Modules;
 
 namespace DailyRoutines.Managers;
 
-public class ModuleManager
+public class ModuleManager : IDailyManager
 {
     public Dictionary<Type, DailyModuleBase> Modules { get; private set; } = [];
 
-    public void Init()
+    private void Init()
     {
         var types = Assembly.GetExecutingAssembly().GetTypes()
                             .Where(t => typeof(DailyModuleBase).IsAssignableFrom(t) &&
@@ -96,7 +97,7 @@ public class ModuleManager
     public bool TryGetModule<T>(out DailyModuleBase? module) where T : DailyModuleBase
         => Modules.TryGetValue(typeof(T), out module);
 
-    public void Uninit()
+    private void Uninit()
     {
         foreach (var module in Modules.Values)
             try

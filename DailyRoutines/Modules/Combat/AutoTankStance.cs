@@ -39,7 +39,7 @@ public class AutoTankStance : DailyModuleBase
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
 
-        ContentsWithOneTank ??= Service.PresetData.Contents
+        ContentsWithOneTank ??= PresetData.Contents
                                        .Where(x => (uint)x.Value.ContentMemberType.Value.TanksPerParty == 1)
                                        .Select(x => x.Key)
                                        .ToHashSet();
@@ -61,7 +61,7 @@ public class AutoTankStance : DailyModuleBase
     {
         if (Service.ClientState.IsPvP) return;
         if ((ConfigOnlyAutoStanceWhenOneTank && ContentsWithOneTank.Contains(zone)) ||
-            (!ConfigOnlyAutoStanceWhenOneTank && Service.PresetData.Contents.ContainsKey(zone)))
+            (!ConfigOnlyAutoStanceWhenOneTank && PresetData.Contents.ContainsKey(zone)))
         {
             TaskManager.Abort();
             TaskManager.Enqueue(CheckCurrentJob);

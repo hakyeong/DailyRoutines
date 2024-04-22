@@ -33,7 +33,7 @@ public unsafe class AutoRefocus : DailyModuleBase
     private static void OnZoneChange(ushort territory)
     {
         FocusTarget = null;
-        IsNeedToRefocus = Service.PresetData.Contents.ContainsKey(territory);
+        IsNeedToRefocus = PresetData.Contents.ContainsKey(territory);
     }
 
     private static void OnUpdate(IFramework framework)

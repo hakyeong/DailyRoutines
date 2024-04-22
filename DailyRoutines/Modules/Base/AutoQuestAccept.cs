@@ -1,3 +1,4 @@
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
@@ -27,7 +28,7 @@ public class AutoQuestAccept : DailyModuleBase
         var questID = addon->AtkValues[226].UInt;
         if (questID == 0) return;
 
-        AddonManager.Callback(addon, true, 3, questID);
+        AddonHelper.Callback(addon, true, 3, questID);
     }
 
     public override void Uninit()

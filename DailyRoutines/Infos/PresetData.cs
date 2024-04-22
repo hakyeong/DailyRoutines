@@ -1,4 +1,3 @@
-using DailyRoutines.Managers;
 using System.Collections.Generic;
 using System.Linq;
 using DailyRoutines.Helpers;
@@ -10,14 +9,14 @@ namespace DailyRoutines.Infos;
 
 public class PresetData
 {
-    public Dictionary<uint, Action>? PlayerActions { get; private set; }
-    public Dictionary<uint, Status>? Statuses { get; private set; }
-    public Dictionary<uint, ContentFinderCondition>? Contents { get; private set; }
-    public Dictionary<uint, Item>? Gears { get; private set; }
-    public Dictionary<uint, Item>? Dyes { get; private set; } // 不包含特制
-    public Dictionary<uint, World>? CNWorlds { get; private set; }
+    public static Dictionary<uint, Action>? PlayerActions { get; private set; }
+    public static Dictionary<uint, Status>? Statuses { get; private set; }
+    public static Dictionary<uint, ContentFinderCondition>? Contents { get; private set; }
+    public static Dictionary<uint, Item>? Gears { get; private set; }
+    public static Dictionary<uint, Item>? Dyes { get; private set; } // 不包含特制
+    public static Dictionary<uint, World>? CNWorlds { get; private set; }
 
-    public void Init()
+    public static void Init()
     {
         PlayerActions ??= LuminaCache.Get<Action>()
                                      .Where(x => x.ClassJobCategory.Row > 0 && x.ActionCategory.Row <= 4 && x.RowId > 8 &&
@@ -47,21 +46,21 @@ public class PresetData
                                 .ToDictionary(x => x.RowId, x => x);
     }
 
-    public bool TryGetPlayerActions(uint rowID, out Action action)
+    public static bool TryGetPlayerActions(uint rowID, out Action action)
         => PlayerActions.TryGetValue(rowID, out action);
 
-    public bool TryGetStatus(uint rowID, out Status status)
+    public static bool TryGetStatus(uint rowID, out Status status)
         => Statuses.TryGetValue(rowID, out status);
 
-    public bool TryGetContent(uint rowID, out ContentFinderCondition content)
+    public static bool TryGetContent(uint rowID, out ContentFinderCondition content)
         => Contents.TryGetValue(rowID, out content);
 
-    public bool TryGetGear(uint rowID, out Item item)
+    public static bool TryGetGear(uint rowID, out Item item)
         => Gears.TryGetValue(rowID, out item);
 
-    public bool TryGetStain(uint rowID, out Item item)
+    public static bool TryGetStain(uint rowID, out Item item)
         => Dyes.TryGetValue(rowID, out item);
 
-    public bool TryGetCNWorld(uint rowID, out World world)
+    public static bool TryGetCNWorld(uint rowID, out World world)
         => CNWorlds.TryGetValue(rowID, out world);
 }

@@ -1,4 +1,5 @@
 using System.Numerics;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
@@ -88,7 +89,7 @@ public unsafe class AutoDesynthesizeItems : DailyModuleBase
                 var agent = AgentModule.Instance()->GetAgentByInternalId(AgentId.Salvage);
                 if (agent == null) return false;
 
-                AgentManager.SendEvent(agent, 0, 12, i);
+                AgentHelper.SendEvent(agent, 0, 12, i);
 
                 TaskManager.DelayNext(1500);
                 TaskManager.Enqueue(StartDesynthesize);

@@ -245,7 +245,7 @@ public class AutoLogin : DailyModuleBase
     {
         if (InterruptByConflictKey()) return true;
 
-        AgentManager.SendEvent(AgentId.Lobby, 0, 1);
+        AgentHelper.SendEvent(AgentId.Lobby, 0, 1);
         TaskManager.Enqueue(() => SelectCharacter());
         return true;
     }
@@ -265,9 +265,9 @@ public class AutoLogin : DailyModuleBase
         var requestedLoginInfo = LoginInfos[infoIndex];
         if (agent->WorldId == requestedLoginInfo.WorldID)
         {
-            AddonManager.Callback(addon, true, 6, requestedLoginInfo.CharaIndex);
-            AddonManager.Callback(addon, true, 18, 0, requestedLoginInfo.CharaIndex);
-            AddonManager.Callback(addon, true, 6, requestedLoginInfo.CharaIndex);
+            AddonHelper.Callback(addon, true, 6, requestedLoginInfo.CharaIndex);
+            AddonHelper.Callback(addon, true, 18, 0, requestedLoginInfo.CharaIndex);
+            AddonHelper.Callback(addon, true, 6, requestedLoginInfo.CharaIndex);
 
             TaskManager.Enqueue(() => Click.TrySendClick("select_yes"));
             TaskManager.Enqueue(() => HasLoginOnce = true);
@@ -293,11 +293,11 @@ public class AutoLogin : DailyModuleBase
             var loginInfo = LoginInfos[infoIndex];
             for (var i = 0; i < 16; i++)
             {
-                AddonManager.Callback(addon, true, 9, 0, i);
+                AddonHelper.Callback(addon, true, 9, 0, i);
 
                 if (agent->WorldId == loginInfo.WorldID)
                 {
-                    AddonManager.Callback(addon, true, 10, 0, i);
+                    AddonHelper.Callback(addon, true, 10, 0, i);
 
                     TaskManager.DelayNext(200);
                     TaskManager.Enqueue(() => SelectCharacter(infoIndex));

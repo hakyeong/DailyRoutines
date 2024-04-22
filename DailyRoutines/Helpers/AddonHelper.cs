@@ -4,14 +4,14 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using DailyRoutines.Managers;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
-namespace DailyRoutines.Managers;
+namespace DailyRoutines.Helpers;
 
-// Mainly from Simple Tweaks Plugin
-public static unsafe class AddonManager
+public static unsafe class AddonHelper
 {
     public record PartInfo(ushort U, ushort V, ushort Width, ushort Height);
 
@@ -49,12 +49,13 @@ public static unsafe class AddonManager
         try
         {
             CallbackRaw(Base, values.Length, atkValues, (byte)(updateState ? 1 : 0));
-        } finally
+        }
+        finally
         {
             for (var i = 0; i < values.Length; i++)
                 if (atkValues[i].Type == ValueType.String)
-                    Marshal.FreeHGlobal(new IntPtr(atkValues[i].String));
-            Marshal.FreeHGlobal(new IntPtr(atkValues));
+                    Marshal.FreeHGlobal(new nint(atkValues[i].String));
+            Marshal.FreeHGlobal(new nint(atkValues));
         }
     }
 
@@ -86,15 +87,15 @@ public static unsafe class AddonManager
                         atkValues[i].Byte = (byte)(boolValue ? 1 : 0);
                         break;
                     case string stringValue:
-                    {
-                        atkValues[i].Type = ValueType.String;
-                        var stringBytes = Encoding.UTF8.GetBytes(stringValue);
-                        var stringAlloc = Marshal.AllocHGlobal(stringBytes.Length + 1);
-                        Marshal.Copy(stringBytes, 0, stringAlloc, stringBytes.Length);
-                        Marshal.WriteByte(stringAlloc, stringBytes.Length, 0);
-                        atkValues[i].String = (byte*)stringAlloc;
-                        break;
-                    }
+                        {
+                            atkValues[i].Type = ValueType.String;
+                            var stringBytes = Encoding.UTF8.GetBytes(stringValue);
+                            var stringAlloc = Marshal.AllocHGlobal(stringBytes.Length + 1);
+                            Marshal.Copy(stringBytes, 0, stringAlloc, stringBytes.Length);
+                            Marshal.WriteByte(stringAlloc, stringBytes.Length, 0);
+                            atkValues[i].String = (byte*)stringAlloc;
+                            break;
+                        }
                     default:
                         throw new ArgumentException($"Unable to convert type {v.GetType()} to AtkValue");
                 }
@@ -129,30 +130,30 @@ public static unsafe class AddonManager
         switch (a.Type)
         {
             case ValueType.Int:
-            {
-                str.Append(a.Int);
-                break;
-            }
+                {
+                    str.Append(a.Int);
+                    break;
+                }
             case ValueType.String:
-            {
-                str.Append(Marshal.PtrToStringUTF8(new IntPtr(a.String)));
-                break;
-            }
+                {
+                    str.Append(Marshal.PtrToStringUTF8(new nint(a.String)));
+                    break;
+                }
             case ValueType.UInt:
-            {
-                str.Append(a.UInt);
-                break;
-            }
+                {
+                    str.Append(a.UInt);
+                    break;
+                }
             case ValueType.Bool:
-            {
-                str.Append(a.Byte != 0);
-                break;
-            }
+                {
+                    str.Append(a.Byte != 0);
+                    break;
+                }
             default:
-            {
-                str.Append($"Unknown Type: {a.Int}");
-                break;
-            }
+                {
+                    str.Append($"Unknown Type: {a.Int}");
+                    break;
+                }
         }
 
         return str.ToString();
@@ -162,9 +163,9 @@ public static unsafe class AddonManager
     #region AddonFireback
     public static bool? ClickContextMenuByText(string text)
     {
-        if (TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && IsAddonAndNodesReady(addon))
         {
-            if (!HelpersOm.TryScanContextMenuText(addon, text, out var index))
+            if (!TryScanContextMenuText(addon, text, out var index))
             {
                 addon->FireCloseCallback();
                 addon->Close(true);
@@ -411,12 +412,6 @@ public static unsafe class AddonManager
         parent->UldManager.UpdateDrawNodeList();
         FreeTextNode(node);
     }
-
-    internal static void Uninit()
-    {
-        FireCallback = null;
-    }
-
     #endregion
-    
+
 }

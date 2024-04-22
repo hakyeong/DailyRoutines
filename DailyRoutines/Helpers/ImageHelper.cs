@@ -5,12 +5,13 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using DailyRoutines.Managers;
 using Dalamud.Interface.Internal;
 using Dalamud.Plugin.Services;
 
-namespace DailyRoutines.Managers;
+namespace DailyRoutines.Helpers;
 
-public class ImageManager
+public class ImageHelper
 {
     private class ImageState
     {

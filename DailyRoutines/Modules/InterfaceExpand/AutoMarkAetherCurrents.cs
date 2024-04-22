@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
@@ -257,7 +258,7 @@ public class AutoMarkAetherCurrents : DailyModuleBase
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("AutoMarkAetherCurrents-RemoveAllWaymarks")))
         {
-            for (var i = 0; i < 8; i++) Service.Waymarks.Remove((FieldMarkerManager.FieldMarkerPoint)i);
+            for (var i = 0; i < 8; i++) FieldMarkerHelper.Remove((FieldMarkerHelper.FieldMarkerPoint)i);
         }
 
         ImGui.SameLine();
@@ -408,7 +409,7 @@ public class AutoMarkAetherCurrents : DailyModuleBase
     {
         if (!ValidTerritories.Contains(territoryID)) return;
 
-        var waymarkIndexesLength = Enum.GetValues(typeof(FieldMarkerManager.FieldMarkerPoint)).Length;
+        var waymarkIndexesLength = Enum.GetValues(typeof(FieldMarkerHelper.FieldMarkerPoint)).Length;
 
         List<(uint TerritoryID, AetherCurrent AetherCurrent)> result =
             SelectedAetherCurrents.TryGetValue(Service.ClientState.TerritoryType, out var selectedResult) &&
@@ -430,16 +431,16 @@ public class AutoMarkAetherCurrents : DailyModuleBase
         {
             if (currentIndex >= waymarkIndexesLength) break;
 
-            var currentMarker = (FieldMarkerManager.FieldMarkerPoint)currentIndex;
+            var currentMarker = (FieldMarkerHelper.FieldMarkerPoint)currentIndex;
 
-            Service.Waymarks.Place(currentMarker, point.AetherCurrent.Position, true);
+            FieldMarkerHelper.Place(currentMarker, point.AetherCurrent.Position, true);
             currentIndex++;
         }
 
         if (currentIndex != 8)
         {
             for (; currentIndex < waymarkIndexesLength; currentIndex++)
-                Service.Waymarks.Place((FieldMarkerManager.FieldMarkerPoint)currentIndex, Vector3.Zero, false);
+                FieldMarkerHelper.Place((FieldMarkerHelper.FieldMarkerPoint)currentIndex, Vector3.Zero, false);
         }
     }
 

@@ -130,7 +130,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationResult", out var addon) &&
             IsAddonAndNodesReady(addon))
         {
-            AddonManager.Callback(addon, true, 1);
+            AddonHelper.Callback(addon, true, 1);
 
             if (TaskManager.IsBusy) addon->IsVisible = false;
         }
@@ -186,7 +186,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var addon) &&
             IsAddonAndNodesReady(addon))
         {
-            AddonManager.Callback(addon, true, 0);
+            AddonHelper.Callback(addon, true, 0);
             addon->Close(true);
 
             // 一轮结束, 清理任务; 会有动画
@@ -205,7 +205,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var addon) &&
             IsAddonAndNodesReady(addon))
         {
-            AddonManager.Callback(addon, true, -1);
+            AddonHelper.Callback(addon, true, -1);
             addon->Close(true);
         }
 
@@ -230,13 +230,13 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
                 var endurance = addon->AtkValues[3 + (8 * i)].UInt;
                 if (endurance <= 0)
                 {
-                    AgentManager.SendEvent(AgentId.SubmersibleParts, 0, 3, 0, i, 0, 0, 0);
+                    AgentHelper.SendEvent(AgentId.SubmersibleParts, 0, 3, 0, i, 0, 0, 0);
                     return false;
                 }
             }
 
             TaskManager.DelayNext(100);
-            TaskManager.Enqueue(() => AddonManager.Callback(addon, true, 5));
+            TaskManager.Enqueue(() => AddonHelper.Callback(addon, true, 5));
             TaskManager.Enqueue(() => addon->Close(true));
 
             TaskManager.DelayNext(100);

@@ -201,7 +201,7 @@ public class AutoLeveQuests : DailyModuleBase
     {
         if (!TryGetAddonByName<AtkUnitBase>("GuildLeve", out var addon) || HelpersOm.IsAddonAndNodesReady(addon)) return false;
 
-        AgentManager.SendEvent(AgentId.LeveQuest, 0, 3, SelectedLeve.RowId);
+        AgentHelper.SendEvent(AgentId.LeveQuest, 0, 3, SelectedLeve.RowId);
 
         return true;
     }

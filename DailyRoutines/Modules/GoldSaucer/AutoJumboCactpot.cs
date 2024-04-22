@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ClickLib;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
@@ -95,7 +96,7 @@ public class AutoJumboCactpot : DailyModuleBase
                 _ => 0
             };
 
-            AddonManager.Callback(addon, true, number);
+            AddonHelper.Callback(addon, true, number);
             return true;
         });
 

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using DailyRoutines.Managers;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace DailyRoutines.Helpers;
@@ -26,7 +25,7 @@ public unsafe class ClickHelper
     {
         if (!TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) || !IsAddonAndNodesReady(addon)) return false;
 
-        AddonManager.Callback(addon, true, 0, index, 0U, 0, 0);
+        AddonHelper.Callback(addon, true, 0, index, 0U, 0, 0);
         return true;
     }
 
@@ -50,7 +49,7 @@ public unsafe class ClickHelper
     {
         if (!TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) || !IsAddonAndNodesReady(addon)) return false;
 
-        AddonManager.Callback(addon, true, index);
+        AddonHelper.Callback(addon, true, index);
         return true;
     }
 
@@ -59,7 +58,7 @@ public unsafe class ClickHelper
         if (!TryGetAddonByName<AtkUnitBase>("SelectIconString", out var addon) || !IsAddonAndNodesReady(addon)) return false;
         if (!TryScanSelectIconStringText(addon, text, out var index)) return false;
 
-        AddonManager.Callback(addon, true, index);
+        AddonHelper.Callback(addon, true, index);
         return true;
     }
 
@@ -68,7 +67,7 @@ public unsafe class ClickHelper
         if (!TryGetAddonByName<AtkUnitBase>("SelectIconString", out var addon) || !IsAddonAndNodesReady(addon)) return false;
         if (!TryScanSelectIconStringText(addon, text, out var index)) return false;
 
-        AddonManager.Callback(addon, true, index);
+        AddonHelper.Callback(addon, true, index);
         return true;
     }
 
@@ -76,7 +75,7 @@ public unsafe class ClickHelper
     {
         if (!TryGetAddonByName<AtkUnitBase>("SelectIconString", out var addon) || !IsAddonAndNodesReady(addon)) return false;
 
-        AddonManager.Callback(addon, true, index);
+        AddonHelper.Callback(addon, true, index);
         return true;
     }
 }

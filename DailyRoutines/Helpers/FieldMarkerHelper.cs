@@ -1,33 +1,34 @@
 using System;
 using System.Numerics;
+using System.Runtime.InteropServices;
+using DailyRoutines.Managers;
 using Dalamud.Memory;
-using Dalamud.Utility.Signatures;
 
-namespace DailyRoutines.Managers;
+namespace DailyRoutines.Helpers;
 
-public unsafe class FieldMarkerManager
+public class FieldMarkerHelper
 {
-    [Signature("E8 ?? ?? ?? ?? EB D8 83 FB 09")]
-    public readonly delegate* unmanaged<long, uint, char> RemoveFieldMarkerOriginal;
+    public delegate bool RemoveFieldMarkerDelegate(long a1, uint index);
+    public static RemoveFieldMarkerDelegate? RemoveFieldMarker;
 
-    public nint FieldMarkerData;
-    public nint FieldMarkerController;
+    public static nint FieldMarkerData;
+    public static nint FieldMarkerController;
 
     public enum FieldMarkerPoint
     {
         A, B, C, D, One, Two, Three, Four
     }
 
-    public void Init()
+    public static void Init()
     {
-        FieldMarkerController =
-            Service.SigScanner.GetStaticAddressFromSig("48 8D 0D ?? ?? ?? ?? 41 B0 ?? E8 ?? ?? ?? ?? 85 C0");
+        FieldMarkerController = Service.SigScanner.GetStaticAddressFromSig("48 8D 0D ?? ?? ?? ?? 41 B0 ?? E8 ?? ?? ?? ?? 85 C0");
         FieldMarkerData = FieldMarkerController + 0x1E0;
 
-        Service.Hook.InitializeFromAttributes(this);
+        RemoveFieldMarker ??= Marshal.GetDelegateForFunctionPointer<RemoveFieldMarkerDelegate>
+            (Service.SigScanner.ScanText("E8 ?? ?? ?? ?? EB D8 83 FB 09"));
     }
 
-    public void Place(FieldMarkerPoint index, Vector3 pos, bool isActive)
+    public static void Place(FieldMarkerPoint index, Vector3 pos, bool isActive)
     {
         var markAddress = index switch
         {
@@ -39,7 +40,7 @@ public unsafe class FieldMarkerManager
             FieldMarkerPoint.Two => FieldMarkerData + 0xA0,
             FieldMarkerPoint.Three => FieldMarkerData + 0xC0,
             FieldMarkerPoint.Four => FieldMarkerData + 0xE0,
-            _ => IntPtr.Zero
+            _ => nint.Zero
         };
 
         MemoryHelper.Write(markAddress, pos.X);
@@ -53,7 +54,7 @@ public unsafe class FieldMarkerManager
         MemoryHelper.Write(markAddress + 0x1C, (byte)(isActive ? 1 : 0));
     }
 
-    public void Place(uint index, Vector3 pos, bool isActive)
+    public static void Place(uint index, Vector3 pos, bool isActive)
     {
         if (index > 7) return;
 
@@ -67,7 +68,6 @@ public unsafe class FieldMarkerManager
             5 => FieldMarkerData + 0xA0,
             6 => FieldMarkerData + 0xC0,
             7 => FieldMarkerData + 0xE0,
-            _ => FieldMarkerData
         };
 
         MemoryHelper.Write(markAddress, pos.X);
@@ -81,7 +81,7 @@ public unsafe class FieldMarkerManager
         MemoryHelper.Write(markAddress + 0x1C, (byte)(isActive ? 1 : 0));
     }
 
-    public void Remove(FieldMarkerPoint index)
+    public static void Remove(FieldMarkerPoint index)
     {
         var markerIndex = index switch
         {
@@ -96,14 +96,12 @@ public unsafe class FieldMarkerManager
             _ => 0U
         };
 
-        RemoveFieldMarkerOriginal(FieldMarkerController, markerIndex);
+        RemoveFieldMarker(FieldMarkerController, markerIndex);
     }
 
-    public void Remove(uint index)
+    public static void Remove(uint index)
     {
         if (index > 7) return;
-        RemoveFieldMarkerOriginal(FieldMarkerController, index);
+        RemoveFieldMarker(FieldMarkerController, index);
     }
-
-    public void Uninit() { }
 }
