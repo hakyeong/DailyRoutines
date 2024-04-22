@@ -1,7 +1,8 @@
+using DailyRoutines.Managers;
 using Lumina.Excel;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace DailyRoutines.Managers;
+namespace DailyRoutines.Helpers;
 
 public static class LuminaCache
 {
