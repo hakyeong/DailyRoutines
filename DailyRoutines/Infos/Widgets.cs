@@ -103,7 +103,7 @@ public static class Widgets
         var selectState = false;
         if (ImGui.BeginCombo("###ContentSelectCombo", selectedContent == null ? "" : selectedContent.Name.RawString, ImGuiComboFlags.HeightLarge))
         {
-            ImGui.InputTextWithHint("###WorldSearchInput", Service.Lang.GetText("PleaseSearch"), ref contentSearchInput, 32);
+            ImGui.InputTextWithHint("###ContentSearchInput", Service.Lang.GetText("PleaseSearch"), ref contentSearchInput, 32);
 
             ImGui.Separator();
             foreach (var content in Service.PresetData.Contents)
@@ -114,7 +114,7 @@ public static class Widgets
                 if (!string.IsNullOrWhiteSpace(contentSearchInput) && 
                     !contentName.Contains(contentSearchInput) && !placeName.Contains(contentSearchInput)) continue;
 
-                if (ImGui.Selectable($"{placeName} | {content}", selectedContent != null && selectedContent.RowId == content.Key))
+                if (ImGui.Selectable($"{placeName} | {contentName}", selectedContent != null && selectedContent.RowId == content.Key))
                 {
                     selectedContent = content.Value;
                     ImGui.CloseCurrentPopup();
