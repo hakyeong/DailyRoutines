@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System;
 using System.Reflection;
+using DailyRoutines.Infos;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin.Services;
 
@@ -19,6 +20,7 @@ public abstract class DailyModuleBase
     public virtual string? Author { get; set; }
     protected TaskManager? TaskManager { get; set; }
     protected Overlay? Overlay { get; set; }
+    protected string ModuleConfigFile => Path.Join(Service.PluginInterface.GetPluginConfigDirectory(), $"{GetType().Name}.json");
 
     public virtual void Init() { }
 
@@ -26,23 +28,98 @@ public abstract class DailyModuleBase
 
     public virtual void OverlayUI() { }
 
+    protected T LoadConfig<T>() where T : ModuleConfiguration => LoadConfig<T>(GetType().Name);
+
+    protected T LoadConfig<T>(string key) where T : ModuleConfiguration 
+    {
+        try 
+        {
+            var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
+            var configFile = Path.Combine(configDirectory, key + ".json");
+            if (!File.Exists(configFile)) return default;
+            var jsonString = File.ReadAllText(configFile);
+            return JsonConvert.DeserializeObject<T>(jsonString);
+        } 
+        catch (Exception ex) 
+        {
+            Service.Log.Error($"Failed to load config for module: {key}");
+            Service.Log.Error(ex.StackTrace);
+            return default;
+        }
+    }
+    
+    private object LoadConfig(Type T, string key) 
+    {
+        if (!T.IsSubclassOf(typeof(ModuleConfiguration))) 
+            throw new Exception($"{T} is not a ModuleConfiguration class.");
+        try 
+        {
+            var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
+            var configFile = Path.Combine(configDirectory, key + ".json");
+            if (!File.Exists(configFile)) return default;
+            var jsonString = File.ReadAllText(configFile);
+            return JsonConvert.DeserializeObject(jsonString, T);
+        } 
+        catch (Exception ex) 
+        {
+            Service.Log.Error($"Failed to load config for module: {key}");
+            Service.Log.Error(ex.StackTrace);
+            return default;
+        }
+    }
+    
+    protected void SaveConfig<T>(T config) where T : ModuleConfiguration 
+    {
+        try 
+        {
+            var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
+            var configFile = Path.Combine(configDirectory, GetType().Name + ".json");
+            var jsonString = JsonConvert.SerializeObject(config, Formatting.Indented);
+
+            File.WriteAllText(configFile, jsonString);
+        } 
+        catch (Exception ex) 
+        {
+            Service.Log.Error($"Failed to load config for module: {GetType().Name}");
+            Service.Log.Error(ex.StackTrace);
+        }
+    }
+    
+    private void SaveConfig(object config) 
+    {
+        try 
+        {
+            if (!config.GetType().IsSubclassOf(typeof(ModuleConfiguration))) 
+            {
+                Service.Log.Error($"Failed to save Config: {config.GetType().Name} is not a subclass of ModuleConfiguration.");
+                return;
+            }
+            var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
+            var configFile = Path.Combine(configDirectory, GetType().Name + ".json");
+            var jsonString = JsonConvert.SerializeObject(config, Formatting.Indented);
+            File.WriteAllText(configFile, jsonString);
+        } 
+        catch (Exception ex) 
+        {
+            Service.Log.Error($"Failed to load config for module: {GetType().Name}");
+            Service.Log.Error(ex.StackTrace);
+        }
+    }
+
+
     protected T GetConfig<T>(string key)
     {
-        var module = this;
-        var moduleName = module.GetType().Name;
+        var moduleName = GetType().Name;
 
         try
         {
-            var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, moduleName + ".json");
-
-            if (!File.Exists(configFile))
+            if (!File.Exists(ModuleConfigFile))
             {
-                Service.Log.Error($"Config file not found: {configFile}");
+                Service.Log.Error($"Config file not found: {ModuleConfigFile}");
                 return default;
             }
 
-            var existingJson = File.ReadAllText(configFile);
+            var existingJson = File.ReadAllText(ModuleConfigFile);
             var existingConfig = JsonConvert.DeserializeObject<Dictionary<string, JToken>>(existingJson);
 
             if (existingConfig == null)
@@ -78,19 +155,15 @@ public abstract class DailyModuleBase
 
     protected bool AddConfig(string key, object? config)
     {
-        var module = this;
-        var moduleName = module.GetType().Name;
+        var moduleName = GetType().Name;
 
         try
         {
-            var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, moduleName + ".json");
-
             Dictionary<string, object>? existingConfig;
 
-            if (File.Exists(configFile))
+            if (File.Exists(ModuleConfigFile))
             {
-                var existingJson = File.ReadAllText(configFile);
+                var existingJson = File.ReadAllText(ModuleConfigFile);
                 existingConfig = JsonConvert.DeserializeObject<Dictionary<string, object>>(existingJson);
                 if (existingConfig != null && existingConfig.ContainsKey(key)) return false;
             }
@@ -102,7 +175,7 @@ public abstract class DailyModuleBase
 
             var jsonString = JsonConvert.SerializeObject(existingConfig, Formatting.Indented);
 
-            File.WriteAllText(configFile, jsonString);
+            File.WriteAllText(ModuleConfigFile, jsonString);
 
             return true;
         }
@@ -115,21 +188,17 @@ public abstract class DailyModuleBase
 
     protected bool UpdateConfig(string key, object? newConfig)
     {
-        var module = this;
-        var moduleName = module.GetType().Name;
+        var moduleName = GetType().Name;
 
         try
         {
-            var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, moduleName + ".json");
-
-            if (!File.Exists(configFile))
+            if (!File.Exists(ModuleConfigFile))
             {
                 Service.Log.Error($"Config file for {moduleName} does not exist.");
                 return false;
             }
 
-            var existingJson = File.ReadAllText(configFile);
+            var existingJson = File.ReadAllText(ModuleConfigFile);
             var existingConfig = JsonConvert.DeserializeObject<Dictionary<string, object?>>(existingJson);
 
             if (!existingConfig.ContainsKey(key))
@@ -141,7 +210,7 @@ public abstract class DailyModuleBase
             existingConfig[key] = newConfig;
 
             var jsonString = JsonConvert.SerializeObject(existingConfig, Formatting.Indented);
-            File.WriteAllText(configFile, jsonString);
+            File.WriteAllText(ModuleConfigFile, jsonString);
 
             return true;
         }
@@ -154,19 +223,15 @@ public abstract class DailyModuleBase
 
     protected bool RemoveConfig(string key)
     {
-        var module = this;
-        var moduleName = module.GetType().Name;
+        var moduleName = GetType().Name;
 
         try
         {
-            var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, moduleName + ".json");
-
             Dictionary<string, object>? existingConfig;
 
-            if (File.Exists(configFile))
+            if (File.Exists(ModuleConfigFile))
             {
-                var existingJson = File.ReadAllText(configFile);
+                var existingJson = File.ReadAllText(ModuleConfigFile);
                 existingConfig = JsonConvert.DeserializeObject<Dictionary<string, object>>(existingJson);
             }
             else
@@ -176,7 +241,7 @@ public abstract class DailyModuleBase
 
             var jsonString = JsonConvert.SerializeObject(existingConfig, Formatting.Indented);
 
-            File.WriteAllText(configFile, jsonString);
+            File.WriteAllText(ModuleConfigFile, jsonString);
 
             return true;
         }
