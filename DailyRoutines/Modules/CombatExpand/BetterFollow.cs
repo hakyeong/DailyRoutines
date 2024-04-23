@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Numerics;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.IPC;
 using DailyRoutines.Managers;
@@ -33,8 +34,8 @@ public unsafe class BetterFollow : DailyModuleBase
     {
         public bool AutoReFollow = true;
         public bool OnCombatOver = true;
-        public bool OnDuty;
-        public bool ForcedFollow;
+        public bool OnDuty = true;
+        public bool ForcedFollow = false;
         public float Delay = 0.5f;
         public bool MountWhenFollowMount = true;
         public bool UnMountWhenFollowUnMount;
@@ -105,6 +106,7 @@ public unsafe class BetterFollow : DailyModuleBase
         Service.Hook.InitializeFromAttributes(this);
         FollowDataHook?.Enable();
         vnavmesh ??= Service.IPCManager.Load<vnavmeshIPC>(this);
+        Service.IPCManager.RegisterPluginChanged(OnPluginsChanged);
         if (vnavmesh == null) ModuleConfig.MoveType = MoveTypeList.System;
         Service.FrameworkManager.Register(OnFramework);
         if (ModuleConfig.ForcedFollow)
@@ -149,11 +151,15 @@ public unsafe class BetterFollow : DailyModuleBase
             ImGui.SameLine();
             ImGui.Dummy(new(12f));
         }
+
         if (disabledFlag) ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGuiOm.ButtonIcon("BetterFollow-ReloadIPC", FontAwesomeIcon.Sync, Service.Lang.GetText("BetterFollow-ReloadIPC")))
-            vnavmesh = Service.IPCManager.Load<vnavmeshIPC>(this);
+        if (ImGuiOm.ButtonIcon("BetterFollow-ReloadIPC", FontAwesomeIcon.Sync,
+                               Service.Lang.GetText("BetterFollow-ReloadIPC")))
+        {
+            if (Utils.HasPlugin(vnavmesh.InternalName)) vnavmesh = Service.IPCManager.Load<vnavmeshIPC>(this);
+        }
 
         if (ModuleConfig.MoveType == MoveTypeList.Navmesh)
         {
@@ -202,7 +208,8 @@ public unsafe class BetterFollow : DailyModuleBase
             ImGui.Indent();
             ConflictKeyText();
 
-            ImGui.Text(Service.Lang.GetText("BetterFollow-Status", _enableReFollow, _LastFollowObjectName, _LastFollowObjectStatus));
+            ImGui.Text(Service.Lang.GetText("BetterFollow-Status", _enableReFollow, _LastFollowObjectName,
+                                            _LastFollowObjectStatus));
 
             if (ImGui.Checkbox(Service.Lang.GetText("BetterFollow-OnCombatOverConfig"), ref ModuleConfig.OnCombatOver))
                 SaveConfig(ModuleConfig);
@@ -229,7 +236,8 @@ public unsafe class BetterFollow : DailyModuleBase
                 Service.CommandManager.AddCommand(CommandStr,
                                                   new CommandInfo(OnCommand)
                                                   {
-                                                      HelpMessage = Service.Lang.GetText("BetterFollow-CommandDesc", CommandStr)
+                                                      HelpMessage =
+                                                          Service.Lang.GetText("BetterFollow-CommandDesc", CommandStr)
                                                   });
             }
             else
@@ -241,6 +249,28 @@ public unsafe class BetterFollow : DailyModuleBase
             ImGui.Indent();
             ImGui.Text(Service.Lang.GetText("BetterFollow-CommandDesc"));
             ImGui.Unindent();
+        }
+    }
+
+    private void OnPluginsChanged()
+    {
+        if (Utils.HasPlugin(vnavmesh.InternalName))
+        {
+            vnavmesh = Service.IPCManager.Load<vnavmeshIPC>(this);
+        }
+        else
+        {
+            if (ModuleConfig.MoveType == MoveTypeList.Navmesh)
+            {
+                _enableReFollow = false;
+                _FollowStatus = false;
+                _LastFollowObjectAddress = 0;
+                _LastFollowObjectId = 0;
+                _LastFollowObjectName = "无";
+                _LastFollowObjectStatus = false;
+                ModuleConfig.MoveType = MoveTypeList.System;
+                SaveConfig(ModuleConfig);
+            }
         }
     }
 
@@ -395,16 +425,19 @@ public unsafe class BetterFollow : DailyModuleBase
         switch (ModuleConfig.MoveType)
         {
             case MoveTypeList.System:
-                if (!_FollowStatus) return;
-                if (*(int*)_d1 != 4) return;
-                SafeMemory.Write(_a1 + 1189, 0);
-                SafeMemory.Write(_a1 + 1369, 0);
                 _FollowStatus = false;
+                if (*(int*)_d1 == 4)
+                {
+                    SafeMemory.Write(_a1 + 1189, 0);
+                    SafeMemory.Write(_a1 + 1369, 0);
+                }
                 break;
             case MoveTypeList.Navmesh:
                 _FollowStatus = false;
-                if (!vnavmesh.PathIsRunning()) return;
-                vnavmesh.PathStop();
+                if (vnavmesh.PathIsRunning())
+                {
+                    vnavmesh.PathStop();
+                }
                 break;
         }
 
@@ -475,6 +508,8 @@ public unsafe class BetterFollow : DailyModuleBase
     public override void Uninit()
     {
         Service.CommandManager.RemoveCommand(CommandStr);
+        if (vnavmesh != null) Service.IPCManager.Unload<vnavmeshIPC>(this);
+        Service.IPCManager.UnregisterPluginChanged(OnPluginsChanged);
         _enableReFollow = false;
         _FollowStatus = false;
 
