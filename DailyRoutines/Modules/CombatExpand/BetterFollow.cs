@@ -162,7 +162,7 @@ public unsafe class BetterFollow : DailyModuleBase
         if (ImGuiOm.ButtonIcon("BetterFollow-ReloadIPC", FontAwesomeIcon.Sync,
                                Service.Lang.GetText("BetterFollow-ReloadIPC")))
         {
-            if (IPCManager.IsPluginEnabled(vnavmesh.InternalName)) vnavmesh = Service.IPCManager.Load<vnavmeshIPC>(this);
+            if (IPCManager.IsPluginEnabled("vnavmesh")) vnavmesh = Service.IPCManager.Load<vnavmeshIPC>(this);
         }
 
         if (ModuleConfig.MoveType == MoveTypeList.Navmesh)
