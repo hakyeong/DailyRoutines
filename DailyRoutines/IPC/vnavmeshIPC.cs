@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
 using DailyRoutines.Helpers;
+using DailyRoutines.Managers;
 using Dalamud.Plugin.Ipc;
 
 namespace DailyRoutines.IPC;
@@ -38,7 +39,7 @@ internal class vnavmeshIPC : DailyIPCBase
 
     public override void Init()
     {
-        if (!Utils.HasPlugin(InternalName)) return;
+        if (!IPCManager.IsPluginEnabled(InternalName)) return;
 
         try
         {
@@ -79,7 +80,7 @@ internal class vnavmeshIPC : DailyIPCBase
 
     internal T? Execute<T>(Func<T>? func)
     {
-        if (!Utils.HasPlugin(InternalName)) return default;
+        if (!IPCManager.IsPluginEnabled(InternalName)) return default;
 
         try
         {
@@ -95,7 +96,7 @@ internal class vnavmeshIPC : DailyIPCBase
 
     internal void Execute(Action action)
     {
-        if (Utils.HasPlugin(InternalName))
+        if (IPCManager.IsPluginEnabled(InternalName))
         {
             try
             {
@@ -110,7 +111,7 @@ internal class vnavmeshIPC : DailyIPCBase
 
     internal void Execute<T>(Action<T>? action, T param)
     {
-        if (!Utils.HasPlugin(InternalName)) return;
+        if (!IPCManager.IsPluginEnabled(InternalName)) return;
 
         try
         {
@@ -124,7 +125,7 @@ internal class vnavmeshIPC : DailyIPCBase
 
     internal void Execute<T1, T2>(Action<T1, T2>? action, T1 p1, T2 p2)
     {
-        if (!Utils.HasPlugin(InternalName)) return;
+        if (!IPCManager.IsPluginEnabled(InternalName)) return;
 
         try
         {

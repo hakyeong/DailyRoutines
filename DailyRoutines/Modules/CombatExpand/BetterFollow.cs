@@ -103,12 +103,16 @@ public unsafe class BetterFollow : DailyModuleBase
         #endregion
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+
         Service.Hook.InitializeFromAttributes(this);
         FollowDataHook?.Enable();
+
         vnavmesh ??= Service.IPCManager.Load<vnavmeshIPC>(this);
-        Service.IPCManager.RegisterPluginChanged(OnPluginsChanged);
         if (vnavmesh == null) ModuleConfig.MoveType = MoveTypeList.System;
+        Service.IPCManager.RegisterPluginChanged(OnPluginsChanged);
+
         Service.FrameworkManager.Register(OnFramework);
+
         if (ModuleConfig.ForcedFollow)
         {
             Service.CommandManager.AddCommand(CommandStr,
@@ -158,7 +162,7 @@ public unsafe class BetterFollow : DailyModuleBase
         if (ImGuiOm.ButtonIcon("BetterFollow-ReloadIPC", FontAwesomeIcon.Sync,
                                Service.Lang.GetText("BetterFollow-ReloadIPC")))
         {
-            if (Utils.HasPlugin(vnavmesh.InternalName)) vnavmesh = Service.IPCManager.Load<vnavmeshIPC>(this);
+            if (IPCManager.IsPluginEnabled(vnavmesh.InternalName)) vnavmesh = Service.IPCManager.Load<vnavmeshIPC>(this);
         }
 
         if (ModuleConfig.MoveType == MoveTypeList.Navmesh)
@@ -254,10 +258,8 @@ public unsafe class BetterFollow : DailyModuleBase
 
     private void OnPluginsChanged()
     {
-        if (Utils.HasPlugin(vnavmesh.InternalName))
-        {
+        if (IPCManager.IsPluginEnabled("vnavmesh"))
             vnavmesh = Service.IPCManager.Load<vnavmeshIPC>(this);
-        }
         else
         {
             if (ModuleConfig.MoveType == MoveTypeList.Navmesh)
