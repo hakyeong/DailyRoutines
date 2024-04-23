@@ -42,7 +42,7 @@ public unsafe class ClipboardMultiLineToOneLine : DailyModuleBase
 
     private long GetClipboardDataDetour(long a1)
     {
-        if (IsBlocked) return GetClipboardDataHook.Original(a1);
+        if (IsBlocked || Framework.Instance()->WindowInactive) return GetClipboardDataHook.Original(a1);
 
         var copyModule = Framework.Instance()->GetUIClipboard();
         if (copyModule == null) return GetClipboardDataHook.Original(a1);
