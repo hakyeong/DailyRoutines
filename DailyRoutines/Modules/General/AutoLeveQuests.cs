@@ -80,7 +80,7 @@ public class AutoLeveQuests : DailyModuleBase
                         !leve.Value.ClassJobCategory.Value.Name.RawString.Contains(SearchString, StringComparison.OrdinalIgnoreCase))
                         continue;
 
-                    if (ImGui.Selectable($"{leve.Value.ClassJobCategory.Value.Name.RawString}{leve.Value.Name.RawString[leve.Value.Name.RawString.IndexOf('：')..]}"))
+                    if (ImGui.Selectable($"{leve.Value.ClassJobCategory.Value.Name.RawString}{leve.Value.Name.RawString[leve.Value.Name.RawString.IndexOf('：')..]} ({leve.Value.RowId})"))
                         SelectedLeve = leve.Value;
 
                     ImGui.Separator();
