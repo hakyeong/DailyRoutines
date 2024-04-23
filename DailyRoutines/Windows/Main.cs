@@ -38,7 +38,7 @@ public class Main : Window, IDisposable
 
     internal static string SearchString = string.Empty;
 
-    public Main() : base("Daily Routines - Main")
+    public Main() : base("Daily Routines - 主界面")
     {
         Flags = ImGuiWindowFlags.NoScrollbar;
         SizeConstraints = new WindowSizeConstraints { MinimumSize = new(650, 300) };
@@ -149,14 +149,14 @@ public class Main : Window, IDisposable
     {
         var moduleName = moduleInfo.Module.Name;
         if (!Service.Config.ModuleEnabled.TryGetValue(moduleName, out var isModuleEnabled)) return;
-
+            
         if (ImGuiOm.CheckboxColored("", ref isModuleEnabled))
         {
             Service.Config.ModuleEnabled[moduleName] ^= true;
 
-            var component = Service.ModuleManager.Modules[moduleInfo.Module];
-            if (isModuleEnabled) Service.ModuleManager.Load(component);
-            else Service.ModuleManager.Unload(component);
+            var module = Service.ModuleManager.Modules[moduleInfo.Module];
+            if (isModuleEnabled) Service.ModuleManager.Load(module);
+            else Service.ModuleManager.Unload(module);
 
             Service.Config.Save();
         }
