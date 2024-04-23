@@ -254,7 +254,24 @@ public unsafe class BetterFollow : DailyModuleBase
 
     private void OnPluginsChanged()
     {
-        if (Utils.HasPlugin(vnavmesh.InternalName)) vnavmesh = Service.IPCManager.Load<vnavmeshIPC>(this);
+        if (Utils.HasPlugin(vnavmesh.InternalName))
+        {
+            vnavmesh = Service.IPCManager.Load<vnavmeshIPC>(this);
+        }
+        else
+        {
+            if (ModuleConfig.MoveType == MoveTypeList.Navmesh)
+            {
+                _enableReFollow = false;
+                _FollowStatus = false;
+                _LastFollowObjectAddress = 0;
+                _LastFollowObjectId = 0;
+                _LastFollowObjectName = "无";
+                _LastFollowObjectStatus = false;
+                ModuleConfig.MoveType = MoveTypeList.System;
+                SaveConfig(ModuleConfig);
+            }
+        }
     }
 
     private void OnFramework(IFramework _)
