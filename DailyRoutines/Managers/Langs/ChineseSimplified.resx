@@ -1233,7 +1233,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>vnavmesh 跟随</value>
   </data>
   <data name="BetterFollow-NvavmeshFollowDesc" xml:space="preserve">
-    <value>请勿在跟随时关闭 vnavmesh 插件</value>
+    <value>请勿在跟随时关闭 vnavmesh 插件
+在副本内使用Vnavmesh跟随时遭遇击退/止步等移动相关状态时将会发生不可预料的后果</value>
   </data>
   <data name="AutoMount-MountWhenCombatEnd" xml:space="preserve">
     <value>当结束战斗时</value>

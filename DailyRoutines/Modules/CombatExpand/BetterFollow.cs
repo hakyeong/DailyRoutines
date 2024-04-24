@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using DailyRoutines.Helpers;
@@ -297,6 +298,8 @@ public unsafe class BetterFollow : DailyModuleBase
             // 自行移动了
             if (Service.KeyState[VirtualKey.W] || Service.KeyState[VirtualKey.S] || Service.KeyState[VirtualKey.A] ||
                 Service.KeyState[VirtualKey.D]) StopFollow(true);
+            // 自己无了
+            if (Service.ClientState.LocalPlayer == null) StopFollow(true);
             // 过图了或者死了
             if (Service.ClientState.LocalPlayer.IsDead || Flags.BetweenAreas()) StopFollow(true);
             // 进剧情了
@@ -347,14 +350,15 @@ public unsafe class BetterFollow : DailyModuleBase
 
         /*-------------------------------不需要实时处理的模块-------------------------------*/
         if (!EzThrottler.Throttle("BetterFollow", (int)ModuleConfig.Delay * 1000)) return;
-
-        // 处理移动逻辑
+        //处理移动逻辑
         if (ModuleConfig.MoveType == MoveTypeList.Navmesh && _FollowStatus && followObject != null)
         {
             if (Vector3.Distance(Service.ClientState.LocalPlayer.Position, followObject.Position) <
                 ModuleConfig.FollowDistance) return;
             if (Service.ClientState.LocalPlayer.IsCasting) return;
             if (!vnavmesh.NavIsReady()) return;
+            if (vnavmesh.PathfindInProgress()) return;
+            if (vnavmesh.PathIsRunning()) vnavmesh.PathStop();
             vnavmesh.PathfindAndMoveTo(followObject.Position, Service.Condition[ConditionFlag.InFlight]);
         }
 
@@ -365,6 +369,10 @@ public unsafe class BetterFollow : DailyModuleBase
         if (ModuleConfig.OnCombatOver && Service.Condition[ConditionFlag.InCombat]) return;
         // 在副本里
         if (!ModuleConfig.OnDuty && Flags.BoundByDuty()) return;
+        //自己无了
+        if (Service.ClientState.LocalPlayer == null) return;
+        // 过图了或者死了
+        if (Service.ClientState.LocalPlayer.IsDead || Flags.BetweenAreas()) return;
         // 在读条
         if (Service.ClientState.LocalPlayer.IsCasting) return;
         // 在看剧情
@@ -436,10 +444,7 @@ public unsafe class BetterFollow : DailyModuleBase
                 break;
             case MoveTypeList.Navmesh:
                 _FollowStatus = false;
-                if (vnavmesh.PathIsRunning())
-                {
-                    vnavmesh.PathStop();
-                }
+                vnavmesh.PathStop();
                 break;
         }
 
