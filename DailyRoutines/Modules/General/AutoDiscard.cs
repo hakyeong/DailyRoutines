@@ -93,7 +93,7 @@ public unsafe class AutoDiscard : DailyModuleBase
     ];
     private const string ModuleCommand = "/pdrdiscard";
 
-    private Config ModuleConfig = null!;
+    private static Config ModuleConfig = null!;
 
     private static string NewGroupNameInput = string.Empty;
     private static string EditGroupNameInput = string.Empty;

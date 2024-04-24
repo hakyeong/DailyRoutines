@@ -1399,6 +1399,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Mode" xml:space="preserve">
     <value>模式</value>
   </data>
+  <data name="ModuleConfig" xml:space="preserve">
+    <value>模块配置</value>
+  </data>
   <data name="Name" xml:space="preserve">
     <value>名称</value>
   </data>

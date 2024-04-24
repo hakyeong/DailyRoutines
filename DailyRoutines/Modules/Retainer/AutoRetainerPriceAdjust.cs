@@ -36,16 +36,19 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     private static AtkUnitBase* AddonRetainerList => (AtkUnitBase*)Service.Gui.GetAddonByName("RetainerList");
     private static AtkUnitBase* AddonItemSearchResult => (AtkUnitBase*)Service.Gui.GetAddonByName("ItemSearchResult");
     private static AtkUnitBase* AddonItemHistory => (AtkUnitBase*)Service.Gui.GetAddonByName("ItemHistory");
+    private static InfoProxyItemSearch* InfoItemSearch => (InfoProxyItemSearch*)InfoModule.Instance()->GetInfoProxyById(InfoProxyId.ItemSearch);
 
-    private static InfoProxyItemSearch* InfoItemSearch =>
-        (InfoProxyItemSearch*)InfoModule.Instance()->GetInfoProxyById(InfoProxyId.ItemSearch);
+    private class Config : ModuleConfiguration
+    {
+        public int PriceReduction = 1;
+        public int LowestPrice = 100;
+        public int MaxPriceReduction;
+        public bool SeparateNQAndHQ;
+        public bool ProhibitLowerThanSellPrice = true;
+        public bool AdjustToLowestPriceWhenLower = true;
+    }
 
-    private static int PriceReduction;
-    private static int LowestPrice;
-    private static int MaxPriceReduction;
-    private static bool SeparateNQAndHQ;
-    private static bool ProhibitLowerThanSellPrice;
-    private static bool AdjustToLowestPriceWhenLower;
+    private static Config ModuleConfig = null!;
     
     private static Dictionary<(uint Id, bool HQ), int> PriceCache = [];
     private static bool IsCurrentItemHQ;
@@ -56,27 +59,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
     public override void Init()
     {
-        #region Config
-
-        AddConfig("PriceReduction", 1);
-        PriceReduction = GetConfig<int>("PriceReduction");
-
-        AddConfig("LowestAcceptablePrice", 100);
-        LowestPrice = GetConfig<int>("LowestAcceptablePrice");
-
-        AddConfig("SeparateNQAndHQ", false);
-        SeparateNQAndHQ = GetConfig<bool>("SeparateNQAndHQ");
-
-        AddConfig("MaxPriceReduction", 0);
-        MaxPriceReduction = GetConfig<int>("MaxPriceReduction");
-
-        AddConfig("ProhibitLowerThanSellPrice", true);
-        ProhibitLowerThanSellPrice = GetConfig<bool>("ProhibitLowerThanSellPrice");
-
-        AddConfig("AdjustToLowestPriceWhenLower", true);
-        AdjustToLowestPriceWhenLower = GetConfig<bool>("AdjustToLowestPriceWhenLower");
-
-        #endregion
+        ModuleConfig = LoadConfig<Config>() ?? new();
 
         ItemsSellPrice ??= LuminaCache.Get<Item>()
                                   .Where(x => !string.IsNullOrEmpty(x.Name.RawString) && x.PriceLow != 0)
@@ -90,7 +73,6 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "RetainerList", OnRetainerList);
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSell", OnRetainerSell);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "RetainerSell", OnRetainerSell);
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
         Overlay ??= new Overlay(this);
@@ -101,45 +83,41 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         ConflictKeyText();
 
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputInt(
-                $"{Service.Lang.GetText("AutoRetainerPriceAdjust-SinglePriceReductionValue")}##AutoRetainerPriceAdjust-SinglePriceReductionValue",
-                ref PriceReduction, 100))
+        ImGui.InputInt($"{Service.Lang.GetText("AutoRetainerPriceAdjust-SinglePriceReductionValue")}##AutoRetainerPriceAdjust-SinglePriceReductionValue", ref ModuleConfig.PriceReduction, 100);
+        if (ImGui.IsItemDeactivatedAfterEdit())
         {
-            PriceReduction = Math.Max(0, PriceReduction);
-            UpdateConfig("PriceReduction", PriceReduction);
-        }
-
-
-        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputInt(
-                $"{Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice")}##AutoRetainerPriceAdjust-LowestAcceptablePrice",
-                ref LowestPrice, 100))
-        {
-            LowestPrice = Math.Max(1, LowestPrice);
-            UpdateConfig("LowestAcceptablePrice", LowestPrice);
+            ModuleConfig.PriceReduction = Math.Max(0, ModuleConfig.PriceReduction);
+            SaveConfig(ModuleConfig);
         }
 
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputInt(
-                $"{Service.Lang.GetText("AutoRetainerPriceAdjust-MaxPriceReduction")}##AutoRetainerPriceAdjust-MaxPriceReduction",
-                ref MaxPriceReduction, 100))
+        ImGui.InputInt($"{Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice")}##AutoRetainerPriceAdjust-LowestAcceptablePrice", ref ModuleConfig.LowestPrice, 100);
+        if (ImGui.IsItemDeactivatedAfterEdit())
         {
-            MaxPriceReduction = Math.Max(0, MaxPriceReduction);
-            UpdateConfig("MaxPriceReduction", MaxPriceReduction);
+            ModuleConfig.LowestPrice = Math.Max(1, ModuleConfig.LowestPrice);
+            SaveConfig(ModuleConfig);
+        }
+
+        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        ImGui.InputInt($"{Service.Lang.GetText("AutoRetainerPriceAdjust-MaxPriceReduction")}##AutoRetainerPriceAdjust-MaxPriceReduction", ref ModuleConfig.MaxPriceReduction, 100);
+        if (ImGui.IsItemDeactivatedAfterEdit())
+        {
+            ModuleConfig.MaxPriceReduction = Math.Max(0, ModuleConfig.MaxPriceReduction);
+            SaveConfig(ModuleConfig);
         }
 
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(Service.Lang.GetText("AutoRetainerPriceAdjust-MaxPriceReductionInputHelp"));
 
-        if (ImGui.Checkbox($"{Service.Lang.GetText("AutoRetainerPriceAdjust-SeparateNQAndHQ")}", ref SeparateNQAndHQ))
-            UpdateConfig("SeparateNQAndHQ", SeparateNQAndHQ);
+        if (ImGui.Checkbox($"{Service.Lang.GetText("AutoRetainerPriceAdjust-SeparateNQAndHQ")}", ref ModuleConfig.SeparateNQAndHQ))
+            SaveConfig(ModuleConfig);
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoRetainerPriceAdjust-SeparateNQAndHQHelp"));
 
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoRetainerPriceAdjust-ProhibitLowerThanSellPrice"), ref ProhibitLowerThanSellPrice))
-            UpdateConfig("ProhibitLowerThanSellPrice", ProhibitLowerThanSellPrice);
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoRetainerPriceAdjust-ProhibitLowerThanSellPrice"), ref ModuleConfig.ProhibitLowerThanSellPrice))
+            SaveConfig(ModuleConfig);
 
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoRetainerPriceAdjust-AdjustToLowestPriceWhenLower"), ref AdjustToLowestPriceWhenLower))
-            UpdateConfig("AdjustToLowestPriceWhenLower", AdjustToLowestPriceWhenLower);
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoRetainerPriceAdjust-AdjustToLowestPriceWhenLower"), ref ModuleConfig.AdjustToLowestPriceWhenLower))
+            SaveConfig(ModuleConfig);
     }
 
     public override void OverlayUI()
@@ -186,7 +164,8 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
         ImGui.Separator();
 
-        ConfigUI();
+        if (ImGui.CollapsingHeader(Service.Lang.GetText("ModuleConfig")))
+            ConfigUI();
     }
 
     // 出售品列表 (悬浮窗控制)
@@ -238,11 +217,6 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
                 TaskManager.Enqueue(ClickComparePrice);
                 break;
-            case AddonEvent.PreFinalize:
-                if (InterruptByConflictKey()) return;
-                if (TaskManager.NumQueuedTasks <= 1)
-                    TaskManager.Abort();
-                break;
         }
     }
 
@@ -259,15 +233,15 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
             TaskManager.Enqueue(() => ClickSpecificRetainer(index));
             TaskManager.Enqueue(ClickToEnterSellList);
-            TaskManager.DelayNext(1000);
+            TaskManager.DelayNext(500);
             TaskManager.Enqueue(() =>
             {
                 if (AddonRetainerSellList == null) return false;
 
-                for (var i = 0; i < marketItemCount; i++)
+                for (var i1 = 0; i1 < marketItemCount; i1++)
                 {
-                    var index = i;
-                    TaskManager.Insert(() => ClickSellingItem(index));
+                    var index1 = i1;
+                    TaskManager.Insert(() => ClickSellingItem(index1));
                 }
                 return true;
             });
@@ -441,7 +415,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             if (result.Count != 0)
             {
                 uint finalPrice;
-                if (SeparateNQAndHQ && IsCurrentItemHQ)
+                if (ModuleConfig.SeparateNQAndHQ && IsCurrentItemHQ)
                 {
                     finalPrice = result.Where(x => x.HQ).OrderByDescending(x => x.Price)
                                        .FirstOrDefault().Price;
@@ -475,7 +449,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             foreach (var item in listings)
             {
                 if (PlayerRetainers.Contains(item.SellingRetainerContentId)) continue;
-                if (SeparateNQAndHQ && IsCurrentItemHQ && !item.IsHqItem) continue;
+                if (ModuleConfig.SeparateNQAndHQ && IsCurrentItemHQ && !item.IsHqItem) continue;
                 if (item.UnitPrice <= 0) continue;
                 if (item.UnitPrice < currentMaxPrice) break;
                 currentMaxPrice = item.UnitPrice;
@@ -514,7 +488,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         var priceComponent = addon->AskingPrice;
 
         var originalPrice = ui->AtkValues[5].Int;
-        var modifiedPrice = currentMarketLowestPrice - PriceReduction;
+        var modifiedPrice = currentMarketLowestPrice - ModuleConfig.PriceReduction;
 
         // 价格不变
         if (modifiedPrice == originalPrice)
@@ -524,18 +498,18 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         }
 
         // 超过可接受的降价值
-        if (MaxPriceReduction != 0 && originalPrice - currentMarketLowestPrice > MaxPriceReduction)
+        if (ModuleConfig.MaxPriceReduction != 0 && originalPrice - currentMarketLowestPrice > ModuleConfig.MaxPriceReduction)
         {
             SendSkipPriceAdjustMessage(currentMarketLowestPrice, originalPrice,
                                        Service.Lang.GetText("AutoRetainerPriceAdjust-MaxPriceReduction"),
-                                       MaxPriceReduction);
+                                       ModuleConfig.MaxPriceReduction);
 
             OperateAndReturn(false);
             return true;
         }
 
         // 低于收购价格
-        if (ProhibitLowerThanSellPrice && ItemsSellPrice.TryGetValue(CurrentItemSearchItemID, out var npcSellPrice) && modifiedPrice < npcSellPrice)
+        if (ModuleConfig.ProhibitLowerThanSellPrice && ItemsSellPrice.TryGetValue(CurrentItemSearchItemID, out var npcSellPrice) && modifiedPrice < npcSellPrice)
         {
             SendSkipPriceAdjustMessage(currentMarketLowestPrice, originalPrice,
                                        Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice"),
@@ -546,18 +520,18 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         }
 
         // 低于最低价时改成最低价
-        if (AdjustToLowestPriceWhenLower && modifiedPrice < LowestPrice)
+        if (ModuleConfig.AdjustToLowestPriceWhenLower && modifiedPrice < ModuleConfig.LowestPrice)
         {
-            OperateAndReturn(true, LowestPrice);
+            OperateAndReturn(true, ModuleConfig.LowestPrice);
             return true;
         }
 
         // 低于最低价
-        if (modifiedPrice < LowestPrice)
+        if (modifiedPrice < ModuleConfig.LowestPrice)
         {
             SendSkipPriceAdjustMessage(currentMarketLowestPrice, originalPrice,
                                        Service.Lang.GetText("AutoRetainerPriceAdjust-LowestAcceptablePrice"),
-                                       LowestPrice);
+                                       ModuleConfig.LowestPrice);
 
             OperateAndReturn(false);
             return true;
