@@ -36,6 +36,7 @@ internal class vnavmeshIPC : DailyIPCBase
 
     private static ICallGateSubscriber<Vector3, bool, bool>? _pathfindAndMoveTo;
     private static ICallGateSubscriber<bool>? _pathfindInProgress;
+    private static ICallGateSubscriber<object>? _pathfindCancelAll;
 
     public override void Init()
     {
@@ -71,6 +72,7 @@ internal class vnavmeshIPC : DailyIPCBase
                 PI.GetIpcSubscriber<Vector3, bool, bool>($"{InternalName}.SimpleMove.PathfindAndMoveTo");
             _pathfindInProgress =
                 PI.GetIpcSubscriber<bool>($"{InternalName}.SimpleMove.PathfindInProgress");
+            _pathfindCancelAll = PI.GetIpcSubscriber<object>($"{InternalName}.Nav.PathfindCancelAll");
         }
         catch (Exception ex)
         {
@@ -240,5 +242,10 @@ internal class vnavmeshIPC : DailyIPCBase
     internal bool PathfindInProgress()
     {
         return Execute(() => _pathfindInProgress!.InvokeFunc());
+    }
+    
+    internal void CancelAllQueries()
+    {
+        Execute(_pathfindCancelAll!.InvokeAction);
     }
 }
