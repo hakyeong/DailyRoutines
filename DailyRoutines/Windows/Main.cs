@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Numerics;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -382,7 +383,7 @@ public class MainSettings
 
         ImGui.SameLine();
         ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedPink);
-        if (ImGui.Button("bilibili")) Util.OpenLink("https://www.bilibili.com/read/cv31823881/");
+        if (ImGui.Button("bilibili")) Util.OpenLink("https://space.bilibili.com/22008977");
         ImGui.PopStyleColor();
 
         ImGui.SameLine();
@@ -446,9 +447,7 @@ public class MainSettings
 
         ImGui.SameLine();
         if (ImGui.SmallButton(Service.Lang.GetText("Settings")))
-        {
             ImGui.OpenPopup("GameCalendarSettings");
-        }
 
         if (ImGui.BeginPopup("GameCalendarSettings"))
         {
@@ -503,7 +502,7 @@ public class MainSettings
                     ImGui.TextColored(ImGuiColors.DalamudOrange, "还有: ");
 
                     ImGui.SameLine();
-                    ImGui.Text($"{(activity.State is 0 ? activity.EndTime - DateTime.Now : activity.BeginTime - DateTime.Now).Days} 天");
+                    ImGui.Text($"{activity.DaysLeft} 天");
 
                     ImGui.TextColored(ImGuiColors.DalamudOrange, activity.State is 0 ? $"{Service.Lang.GetText("EndTime")}: " : $"{Service.Lang.GetText("StartTime")}: ");
 
@@ -669,7 +668,8 @@ public class MainSettings
                     Color = DarkenColor(HexToVector4(activity.color), 0.3f),
                     State = (currentTime < beginTime) ? 1U :
                             (currentTime <= endTime) ? 0U : 2U,
-                    DaysLeft = (currentTime <= endTime) ? (endTime - currentTime).Days : int.MaxValue
+                    DaysLeft = (currentTime < beginTime) ? (beginTime - DateTime.Now).Days :
+                               (currentTime <= endTime) ? (endTime - DateTime.Now).Days : int.MaxValue,
                 };
                 GameCalendars.Add(gameEvent);
             }
