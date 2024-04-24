@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Numerics;
-using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.IPC;
 using DailyRoutines.Managers;
@@ -16,7 +14,6 @@ using Dalamud.Interface.Colors;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using ECommons.Automation;
-using ECommons.GameFunctions;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
@@ -77,25 +74,6 @@ public unsafe class BetterFollow : DailyModuleBase
         "48 8B C4 48 89 58 ?? 48 89 70 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 99",
         DetourName = nameof(KnockBack))]
     private readonly Hook<KnockBackDelegate>? KnockBackHook;
-
-    private char KnockBack(ulong a1, ulong a2, ulong a3, float a4)
-    {
-        if (ModuleConfig.MoveType == MoveTypeList.Navmesh && _FollowStatus)
-        {
-            vnavmesh.PathStop();
-            vnavmesh.CancelAllQueries();
-            _FollowStatus = false;
-            var reFollowFlag = _enableReFollow;
-            _enableReFollow = false;
-            TaskManager.DelayNext(1000);
-            TaskManager.Enqueue(() =>
-            {
-                _FollowStatus = true;
-                _enableReFollow = reFollowFlag;
-            });
-        }
-        return KnockBackHook.Original(a1, a2, a3, 0.5f);
-    }
 
     [Signature(
         "40 53 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 8B D9 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 48 8B D0 48 8D 8B ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 48 8B 4C 24 ?? BA ?? ?? ?? ?? 41 B8 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B 8C 24 ?? ?? ?? ?? 48 33 CC E8 ?? ?? ?? ?? 48 81 C4 ?? ?? ?? ?? 5B C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 89 5C 24")]
@@ -525,6 +503,25 @@ public unsafe class BetterFollow : DailyModuleBase
         _LastFollowObjectStatus = true;
         _enableReFollow = true;
         _FollowStatus = true;
+    }
+    
+    private char KnockBack(ulong a1, ulong a2, ulong a3, float a4)
+    {
+        if (ModuleConfig.MoveType == MoveTypeList.Navmesh && _FollowStatus)
+        {
+            vnavmesh.PathStop();
+            vnavmesh.CancelAllQueries();
+            _FollowStatus = false;
+            var reFollowFlag = _enableReFollow;
+            _enableReFollow = false;
+            TaskManager.DelayNext(1000);
+            TaskManager.Enqueue(() =>
+            {
+                _FollowStatus = true;
+                _enableReFollow = reFollowFlag;
+            });
+        }
+        return KnockBackHook.Original(a1, a2, a3, 0.5f);
     }
 
     private enum MoveTypeList
