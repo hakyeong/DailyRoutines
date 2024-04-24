@@ -94,8 +94,12 @@ public class ModuleManager : IDailyManager
     public bool IsModuleEnabled(Type moduleType)
         => Modules.TryGetValue(moduleType, out var module) && module.Initialized;
 
-    public bool TryGetModule<T>(out DailyModuleBase? module) where T : DailyModuleBase
-        => Modules.TryGetValue(typeof(T), out module);
+    public bool TryGetModule<T>(out T? module) where T : DailyModuleBase
+    {
+        var state = Modules.TryGetValue(typeof(T), out var moduleBase);
+        module = (T?)moduleBase;
+        return state;
+    }
 
     private void Uninit()
     {
