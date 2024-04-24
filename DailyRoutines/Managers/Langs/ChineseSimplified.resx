@@ -1354,4 +1354,58 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoPlayerCommend-World" xml:space="preserve">
     <value>服务器</value>
   </data>
+  <data name="AutoDiscard-AddCommand" xml:space="preserve">
+    <value>添加 {0} 指令</value>
+  </data>
+  <data name="AutoDiscard-AddNewGroupInputNameHelp" xml:space="preserve">
+    <value>请输入新配置组名称, 不可重复</value>
+  </data>
+  <data name="AutoDiscard-CommandHelp" xml:space="preserve">
+    <value>运行指定的自动丢弃模块配置组</value>
+  </data>
+  <data name="AutoDiscard-CommandHelp1" xml:space="preserve">
+    <value>添加 {0} &lt;名称&gt; 指令, 通过传入唯一名称来运行指定的配置组</value>
+  </data>
+  <data name="AutoDiscard-DeleteWhenHoldCtrl" xml:space="preserve">
+    <value>删除 (按住 Ctrl)</value>
+  </data>
+  <data name="AutoDiscard-Discard" xml:space="preserve">
+    <value>丢弃</value>
+  </data>
+  <data name="AutoDiscard-ItemsOverview" xml:space="preserve">
+    <value>物品概览</value>
+  </data>
+  <data name="AutoDiscard-NoItemInGroupHelp" xml:space="preserve">
+    <value>无物品, 前去添加</value>
+  </data>
+  <data name="AutoDiscard-Sell" xml:space="preserve">
+    <value>出售</value>
+  </data>
+  <data name="AutoDiscardDescription" xml:space="preserve">
+    <value>启用并配置完毕后,允许快速丢弃/出售预设好中的一组物品</value>
+  </data>
+  <data name="AutoDiscardTitle" xml:space="preserve">
+    <value>自动丢弃物品</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="Confirm" xml:space="preserve">
+    <value>确定</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>复制</value>
+  </data>
+  <data name="Mode" xml:space="preserve">
+    <value>模式</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>名称</value>
+  </data>
+  <data name="Operation" xml:space="preserve">
+    <value>操作</value>
+  </data>
+  <data name="Run" xml:space="preserve">
+    <value>停止</value>
+  </data>
 </root>
