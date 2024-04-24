@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using DailyRoutines.Helpers;
@@ -31,15 +32,15 @@ public unsafe class NoAttackWrongMandragoras : DailyModuleBase
 
     public override void Init()
     {
-        Service.Hook.InitializeFromAttributes(this);
-        IsTargetableHook?.Enable();
-
         Mandragoras ??= LuminaCache.Get<BNpcName>()
-                               .Where(x => x.Singular.RawString.Contains("王后"))
-                               .Select(queen => new[] { queen.RowId - 4, queen.RowId - 3, queen.RowId - 2, queen.RowId - 1, queen.RowId })
-                               .ToList();
+                                   .Where(x => x.Singular.RawString.Contains("王后"))
+                                   .Select(queen => new[] { queen.RowId - 4, queen.RowId - 3, queen.RowId - 2, queen.RowId - 1, queen.RowId })
+                                   .ToList();
         AddConfig("OnlyInTreasureHunt", true);
         OnlyInTreasureHunt = GetConfig<bool>("OnlyInTreasureHunt");
+
+        Service.Hook.InitializeFromAttributes(this);
+        IsTargetableHook?.Enable();
     }
 
     public override void ConfigUI()
