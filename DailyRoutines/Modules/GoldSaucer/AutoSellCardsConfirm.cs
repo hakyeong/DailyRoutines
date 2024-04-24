@@ -9,6 +9,7 @@ using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Colors;
 using ECommons.Automation;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -57,7 +58,7 @@ public class AutoSellCardsConfirm : DailyModuleBase
 
         if (args.AddonName == "ShopCardDialog")
         {
-            AgentHelper.SendEvent(AgentId.TripleTriadCoinExchange, 1, 0, 1);
+            AddonHelper.Callback(addon, true, 0, addon->AtkValues[6].UInt);
             addon->FireCloseCallback();
             addon->Close(true);
             return;
@@ -77,34 +78,37 @@ public class AutoSellCardsConfirm : DailyModuleBase
 
     private unsafe bool? StartHandOver()
     {
-        if (Service.Gui.GetAddonByName("ShopCardDialog") != nint.Zero) return false;
-        if (TryGetAddonByName<AtkUnitBase>("TripleTriadCoinExchange", out var addon) && IsAddonAndNodesReady(addon))
+        if (!EzThrottler.Throttle("AutoSellCardsConfirm")) return false;
+
+        if (Service.Gui.GetAddonByName("ShopCardDialog") != nint.Zero)
         {
-            var cardsAmount = addon->AtkValues[1].Int;
-            if (cardsAmount is 0)
-            {
-                TaskManager?.Abort();
-                return true;
-            }
+            TaskManager.Abort();
+            return true;
+        }
+        if (!TryGetAddonByName<AtkUnitBase>("TripleTriadCoinExchange", out var addon) || !IsAddonAndNodesReady(addon)) return false;
 
-            var isCardInDeck = Convert.ToBoolean(addon->AtkValues[204].Byte);
-            if (!isCardInDeck)
-            {
-                var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoSellCardsConfirm-CurrentCardNotInDeckMessage")).Build();
-                Service.Chat.Print(message);
-
-                TaskManager?.Abort();
-                return true;
-            }
-
-            TaskManager.Enqueue(() => AddonHelper.Callback(addon, true, 0, 0, 0));
-            TaskManager.DelayNext(400);
-            TaskManager.Enqueue(StartHandOver);
-
+        var cardsAmount = addon->AtkValues[1].Int;
+        if (cardsAmount is 0)
+        {
+            TaskManager?.Abort();
             return true;
         }
 
-        return false;
+        var isCardInDeck = Convert.ToBoolean(addon->AtkValues[204].Byte);
+        if (!isCardInDeck)
+        {
+            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoSellCardsConfirm-CurrentCardNotInDeckMessage")).Build();
+            Service.Chat.Print(message);
+
+            TaskManager?.Abort();
+            return true;
+        }
+
+        TaskManager.Enqueue(() => AddonHelper.Callback(addon, true, 0, 0, 0));
+        TaskManager.DelayNext(100);
+        TaskManager.Enqueue(StartHandOver);
+
+        return true;
     }
 
     public override void Uninit()
