@@ -38,6 +38,7 @@ public class AutoRefreshPartyFinder : DailyModuleBase
         PFRefreshTimer ??= new Timer(1000);
         PFRefreshTimer.AutoReset = true;
         PFRefreshTimer.Elapsed += OnRefreshTimer;
+        cooldown = ConfigRefreshInterval;
 
         if (Service.Gui.GetAddonByName("LookingForGroup") != nint.Zero)
             OnAddonPF(AddonEvent.PostSetup, null);
@@ -63,10 +64,11 @@ public class AutoRefreshPartyFinder : DailyModuleBase
         {
             ConfigRefreshInterval = Math.Max(1, ConfigRefreshInterval);
             UpdateConfig("RefreshInterval", ConfigRefreshInterval);
+            cooldown = ConfigRefreshInterval;
 
             PFRefreshTimer.Stop();
             if (Service.Gui.GetAddonByName("LookingForGroup") != nint.Zero)
-            { 
+            {
                 PFRefreshTimer.Start();
                 cooldown = ConfigRefreshInterval;
             }
@@ -89,12 +91,16 @@ public class AutoRefreshPartyFinder : DailyModuleBase
         switch (type)
         {
             case AddonEvent.PostSetup:
+                cooldown = ConfigRefreshInterval;
                 PFRefreshTimer.Restart();
                 Overlay.IsOpen = true;
                 break;
             case AddonEvent.PostRefresh:
                 if (ConfigOnlyInactive)
+                {
+                    cooldown = ConfigRefreshInterval;
                     PFRefreshTimer.Restart();
+                }
                 break;
             case AddonEvent.PreFinalize:
                 PFRefreshTimer.Stop();
@@ -111,6 +117,7 @@ public class AutoRefreshPartyFinder : DailyModuleBase
                 PFRefreshTimer.Stop();
                 break;
             case AddonEvent.PreFinalize:
+                cooldown = ConfigRefreshInterval;
                 PFRefreshTimer.Restart();
                 break;
         }
@@ -118,7 +125,7 @@ public class AutoRefreshPartyFinder : DailyModuleBase
 
     private static unsafe void OnRefreshTimer(object? sender, ElapsedEventArgs e)
     {
-        if(cooldown > 1)
+        if (cooldown > 1)
         {
             cooldown--;
             return;
