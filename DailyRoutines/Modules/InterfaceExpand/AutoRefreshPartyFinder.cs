@@ -58,9 +58,10 @@ public class AutoRefreshPartyFinder : DailyModuleBase
         Overlay.Position = WindowPos;
 
         ImGui.BeginGroup();
-        ImGui.SetNextItemWidth(95f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputInt(Service.Lang.GetText("AutoRefreshPartyFinder-RefreshInterval", cooldown), ref ConfigRefreshInterval, 1,
-                           1, ImGuiInputTextFlags.EnterReturnsTrue))
+        ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
+        ImGui.InputInt(Service.Lang.GetText("AutoRefreshPartyFinder-RefreshInterval"), ref ConfigRefreshInterval);
+
+        if (ImGui.IsItemDeactivatedAfterEdit())
         {
             ConfigRefreshInterval = Math.Max(1, ConfigRefreshInterval);
             UpdateConfig("RefreshInterval", ConfigRefreshInterval);
@@ -73,6 +74,9 @@ public class AutoRefreshPartyFinder : DailyModuleBase
                 cooldown = ConfigRefreshInterval;
             }
         }
+
+        ImGui.SameLine();
+        ImGui.Text(Service.Lang.GetText("AutoRefreshPartyFinder-NextRefreshTime", cooldown));
 
         ImGui.SameLine();
         if (ImGui.Checkbox(Service.Lang.GetText("AutoRefreshPartyFinder-OnlyInactive"), ref ConfigOnlyInactive))
@@ -109,7 +113,7 @@ public class AutoRefreshPartyFinder : DailyModuleBase
         }
     }
 
-    private void OnAddonLFGD(AddonEvent type, AddonArgs? args)
+    private static void OnAddonLFGD(AddonEvent type, AddonArgs? args)
     {
         switch (type)
         {
@@ -132,7 +136,7 @@ public class AutoRefreshPartyFinder : DailyModuleBase
         }
 
         cooldown = ConfigRefreshInterval;
-        if (TryGetAddonByName<AtkUnitBase>("LookingForGroup", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("LookingForGroup", out var addon) && IsAddonAndNodesReady(addon))
         {
             AddonHelper.Callback(addon, true, 17);
             return;
