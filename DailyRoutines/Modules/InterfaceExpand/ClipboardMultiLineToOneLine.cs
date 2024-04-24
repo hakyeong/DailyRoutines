@@ -6,6 +6,7 @@ using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Client.System.String;
 
 namespace DailyRoutines.Modules;
 
@@ -13,7 +14,7 @@ namespace DailyRoutines.Modules;
                    ModuleCategories.Interface)]
 public unsafe class ClipboardMultiLineToOneLine : DailyModuleBase
 {
-    private delegate long GetClipboardDataDelegate(long a1);
+    private delegate nint GetClipboardDataDelegate(nint a1);
 
     [Signature("40 53 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 8B D9 BA",
                DetourName = nameof(GetClipboardDataDetour))]
@@ -40,7 +41,7 @@ public unsafe class ClipboardMultiLineToOneLine : DailyModuleBase
         };
     }
 
-    private long GetClipboardDataDetour(long a1)
+    private nint GetClipboardDataDetour(nint a1)
     {
         if (IsBlocked || Framework.Instance()->WindowInactive) return GetClipboardDataHook.Original(a1);
 
@@ -54,8 +55,7 @@ public unsafe class ClipboardMultiLineToOneLine : DailyModuleBase
                                        .Replace("\u000D\u000A", " ");
         if (modifiedText == originalText) return GetClipboardDataHook.Original(a1);
 
-        Clipboard.SetText(modifiedText);
-        return GetClipboardDataHook.Original(a1);
+        return (nint)Utf8String.FromString(modifiedText);
     }
 
     public override void Uninit()
