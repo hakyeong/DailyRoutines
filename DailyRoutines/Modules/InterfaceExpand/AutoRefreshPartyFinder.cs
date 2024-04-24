@@ -23,6 +23,7 @@ public class AutoRefreshPartyFinder : DailyModuleBase
     private static Vector2 WindowPos = new(1000);
 
     private static Timer? PFRefreshTimer;
+    private static int cooldown;
 
     public override void Init()
     {
@@ -34,15 +35,18 @@ public class AutoRefreshPartyFinder : DailyModuleBase
 
         Overlay ??= new Overlay(this);
 
-        PFRefreshTimer ??= new Timer(TimeSpan.FromSeconds(ConfigRefreshInterval));
+        PFRefreshTimer ??= new Timer(1000);
         PFRefreshTimer.AutoReset = true;
         PFRefreshTimer.Elapsed += OnRefreshTimer;
+        cooldown = ConfigRefreshInterval;
 
         if (Service.Gui.GetAddonByName("LookingForGroup") != nint.Zero)
             OnAddonPF(AddonEvent.PostSetup, null);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "LookingForGroup", OnAddonPF);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "LookingForGroup", OnAddonPF);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "LookingForGroup", OnAddonPF);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "LookingForGroupDetail", OnAddonLFGD);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "LookingForGroupDetail", OnAddonLFGD);
     }
 
     public override unsafe void OverlayUI()
@@ -54,17 +58,20 @@ public class AutoRefreshPartyFinder : DailyModuleBase
         Overlay.Position = WindowPos;
 
         ImGui.BeginGroup();
-        ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputInt(Service.Lang.GetText("AutoRefreshPartyFinder-RefreshInterval"), ref ConfigRefreshInterval, 1,
+        ImGui.SetNextItemWidth(95f * ImGuiHelpers.GlobalScale);
+        if (ImGui.InputInt(Service.Lang.GetText("AutoRefreshPartyFinder-RefreshInterval", cooldown), ref ConfigRefreshInterval, 1,
                            1, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ConfigRefreshInterval = Math.Max(1, ConfigRefreshInterval);
             UpdateConfig("RefreshInterval", ConfigRefreshInterval);
+            cooldown = ConfigRefreshInterval;
 
             PFRefreshTimer.Stop();
-            PFRefreshTimer.Interval = ConfigRefreshInterval * 1000;
             if (Service.Gui.GetAddonByName("LookingForGroup") != nint.Zero)
+            {
                 PFRefreshTimer.Start();
+                cooldown = ConfigRefreshInterval;
+            }
         }
 
         ImGui.SameLine();
@@ -84,12 +91,16 @@ public class AutoRefreshPartyFinder : DailyModuleBase
         switch (type)
         {
             case AddonEvent.PostSetup:
+                cooldown = ConfigRefreshInterval;
                 PFRefreshTimer.Restart();
                 Overlay.IsOpen = true;
                 break;
             case AddonEvent.PostRefresh:
                 if (ConfigOnlyInactive)
+                {
+                    cooldown = ConfigRefreshInterval;
                     PFRefreshTimer.Restart();
+                }
                 break;
             case AddonEvent.PreFinalize:
                 PFRefreshTimer.Stop();
@@ -98,8 +109,29 @@ public class AutoRefreshPartyFinder : DailyModuleBase
         }
     }
 
+    private void OnAddonLFGD(AddonEvent type, AddonArgs? args)
+    {
+        switch (type)
+        {
+            case AddonEvent.PostSetup:
+                PFRefreshTimer.Stop();
+                break;
+            case AddonEvent.PreFinalize:
+                cooldown = ConfigRefreshInterval;
+                PFRefreshTimer.Restart();
+                break;
+        }
+    }
+
     private static unsafe void OnRefreshTimer(object? sender, ElapsedEventArgs e)
     {
+        if (cooldown > 1)
+        {
+            cooldown--;
+            return;
+        }
+
+        cooldown = ConfigRefreshInterval;
         if (TryGetAddonByName<AtkUnitBase>("LookingForGroup", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
         {
             AddonHelper.Callback(addon, true, 17);
