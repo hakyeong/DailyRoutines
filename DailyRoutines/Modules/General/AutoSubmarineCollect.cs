@@ -4,13 +4,11 @@ using System.Text.RegularExpressions;
 using ClickLib;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
-using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Colors;
 using Dalamud.Memory;
@@ -43,7 +41,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "AirShipExplorationResult", OnExplorationResult);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectString", OnAddonSelectString);
 
-        Service.Chat.ChatMessage += OnErrorText;
+        Service.LogMessageManager.Register(OnLogMessages);
 
         RequisiteMaterialsName = LuminaCache.GetRow<Item>(10373).Name.RawString;
     }
@@ -106,22 +104,18 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         Click.SendClick("select_yes");
     }
 
-    // 报错处理
-    private void OnErrorText(
-        XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
+    private void OnLogMessages(uint logMessageID, ushort logKind)
     {
-        if (type != XivChatType.ErrorMessage) return;
-        if (!TaskManager.IsBusy) return;
-
-        var content = message.TextValue;
-        if (content.Contains("需要修理配件"))
+        switch (logMessageID)
         {
-            TaskManager.Abort();
-            TaskManager.Enqueue(ReadyToRepairSubmarines);
-            return;
+            case 4290:
+                TaskManager.Abort();
+                TaskManager.Enqueue(ReadyToRepairSubmarines);
+                break;
+            case 4276:
+                TaskManager.Abort();
+                break;
         }
-
-        if (content.Contains("没有修理所必需的")) TaskManager.Abort();
     }
 
     // 航程结果 -> 再次出发
@@ -273,8 +267,8 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
     {
         Service.AddonLifecycle.UnregisterListener(OnExplorationResult);
         Service.AddonLifecycle.UnregisterListener(AlwaysYes);
-        Service.Chat.ChatMessage -= OnErrorText;
         Service.AddonLifecycle.UnregisterListener(OnAddonSelectString);
+        Service.LogMessageManager.Unregister(OnLogMessages);
 
         base.Uninit();
     }
