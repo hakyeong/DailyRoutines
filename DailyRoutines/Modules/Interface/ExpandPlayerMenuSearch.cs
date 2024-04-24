@@ -45,7 +45,6 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
         TiebaEnabled = GetConfig<bool>("TiebaEnabled");
 
         Service.ContextMenu.OnMenuOpened += OnMenuOpen;
-        base.Init();
     }
 
     public override void ConfigUI()
