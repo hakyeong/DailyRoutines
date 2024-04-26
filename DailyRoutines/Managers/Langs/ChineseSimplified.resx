@@ -1414,4 +1414,16 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRefreshPartyFinder-NextRefreshTime" xml:space="preserve">
     <value>({0}秒)</value>
   </data>
+  <data name="AutoRetainerEntrustDups-AddCommand" xml:space="preserve">
+    <value>添加 /pdr {0} 指令 </value>
+  </data>
+  <data name="AutoRetainerEntrustDups-CommandHelp" xml:space="preserve">
+    <value>为所有雇员合并递交同类道具</value>
+  </data>
+  <data name="AutoRetainerEntrustDupsDescription" xml:space="preserve">
+    <value>打开雇员列表, 并点击开始后, 自动尝试为所有雇员合并递交同类道具</value>
+  </data>
+  <data name="AutoRetainerEntrustDupsTitle" xml:space="preserve">
+    <value>自动同类道具合并递交</value>
+  </data>
 </root>
