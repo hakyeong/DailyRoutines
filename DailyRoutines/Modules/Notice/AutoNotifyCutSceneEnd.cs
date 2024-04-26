@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.Numerics;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Notifications;
@@ -50,6 +49,8 @@ public class AutoNotifyCutSceneEnd : DailyModuleBase
         var isSBInCutScene = false;
         foreach (var member in Service.PartyList)
         {
+            if (member.GameObject == null) continue;
+
             var chara = (Character*)member.GameObject.Address;
             if (chara == null) continue;
             if (!Service.DutyState.IsDutyStarted && !member.GameObject.IsTargetable)
@@ -80,6 +81,8 @@ public class AutoNotifyCutSceneEnd : DailyModuleBase
 
         foreach (var member in Service.PartyList)
         {
+            if (member.GameObject == null) continue;
+
             var chara = (Character*)member.GameObject.Address;
             if (chara == null) continue;
             if (chara->CharacterData.OnlineStatus == 15) return false;
