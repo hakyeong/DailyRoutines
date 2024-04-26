@@ -1163,11 +1163,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
 (市场价: {2} / 原价:{3})
 已超过{4}: {5}, 跳过改价</value>
   </data>
-  <data name="NoAttackWrongMandragoras-OnlyInTreasureHunt" xml:space="preserve">
-    <value>仅在宝物库中启用</value>
-  </data>
   <data name="NoAttackWrongMandragorasDescription" xml:space="preserve">
-    <value>启用后, 若场上存在蔓德拉战队, 则禁止选中不符合当前击杀顺序的蔓德拉</value>
+    <value>在宝物库内, 若场上存在蔓德拉战队, 则禁止选中不符合当前击杀顺序的蔓德拉</value>
   </data>
   <data name="NoAttackWrongMandragorasTitle" xml:space="preserve">
     <value>强制按顺序击杀蔓德拉战队</value>
