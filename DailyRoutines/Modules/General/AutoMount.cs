@@ -98,6 +98,7 @@ public unsafe class AutoMount : DailyModuleBase
         if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 9) != 0) return !FadeMiddle->IsVisible;
         if (Flags.IsCasting || Flags.IsOnMount) return true;
 
+        TaskManager.DelayNext(100);
         TaskManager.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.GeneralAction, 9));
 
         return true;
