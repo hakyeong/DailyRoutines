@@ -50,7 +50,7 @@ public static class Flags
     public static bool BoundByDuty() => Service.Condition[ConditionFlag.BoundByDuty] ||
                                         Service.Condition[ConditionFlag.BoundByDuty56] ||
                                         Service.Condition[ConditionFlag.BoundByDuty95] ||
-                                        Service.Condition[ConditionFlag.BoundToDuty97];
+                                        Service.Condition[ConditionFlag.InDutyQueue];
 
     public static bool IsCasting => Service.Condition[ConditionFlag.Casting] || Service.Condition[ConditionFlag.Casting87];
     public static bool IsOnMount => Service.Condition[ConditionFlag.Mounted] || Service.Condition[ConditionFlag.Mounted2];
