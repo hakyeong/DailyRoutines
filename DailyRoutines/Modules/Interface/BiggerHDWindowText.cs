@@ -23,7 +23,7 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
     }
 
     private static readonly string[] TextInputWindows = ["LookingForGroupCondition", "ChatLog", "AOZNotebookFilterSettings",
-        "MountNoteBook", "MinionNoteBook", "ItemSearch", "PcSearchDetail", "Macro", "Emote", "LookingForGroupNameSearch", "InputString", "RecipeNote", "GatheringNote", "FishGuide2"];
+        "MountNoteBook", "MinionNoteBook", "ItemSearch", "PcSearchDetail", "Macro", "Emote", "LookingForGroupNameSearch", "InputString", "RecipeNote", "GatheringNote", "FishGuide2", "RetainerInputString"];
 
     private static readonly Dictionary<string, uint[]> TextInputWindowsNodes = [];
 
