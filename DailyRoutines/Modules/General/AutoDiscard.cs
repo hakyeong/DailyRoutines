@@ -11,6 +11,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using ECommons.Automation;
+using ECommons.DalamudServices;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -441,7 +442,8 @@ public unsafe class AutoDiscard : DailyModuleBase
             foreach (var fItem in foundItem)
             {
                 TaskManager.Enqueue(() => OpenInventoryItemContext(fItem));
-                TaskManager.Enqueue(() => ConfirmDiscard(group.Behaviour));
+                TaskManager.Enqueue(() => ClickContextMenu(group.Behaviour));
+                TaskManager.DelayNext(500);
             }
         }
     }
@@ -471,76 +473,76 @@ public unsafe class AutoDiscard : DailyModuleBase
         return foundItem.Count > 0;
     }
 
-    private bool OpenInventoryItemContext(InventoryItem item)
+    private static bool OpenInventoryItemContext(InventoryItem item)
     {
-        if (!EzThrottler.Throttle("AutoDiscard-DiscardInventoryItem", 100)) return false;
-
+        if (!EzThrottler.Throttle("AutoDiscard", 100)) return false;
         var agent = AgentInventoryContext.Instance();
         if (agent == null) return false;
 
-        var inventory0 = (AtkUnitBase*)Service.Gui.GetAddonByName("InventoryExpansion");
-        if (inventory0 == null) return false;
-
-        if (!TryGetAddonByName<AtkUnitBase>("ContextMenu", out var contextMenu) || !IsAddonAndNodesReady(contextMenu))
-        {
-            agent->OpenForItemSlot(item.Container, item.Slot, GetActiveInventoryAddonID());
-            TaskManager.InsertDelayNext(10);
-            return true;
-        }
-
-        return false;
+        agent->OpenForItemSlot(item.Container, item.Slot, GetActiveInventoryAddonID());
+        return true;
     }
 
-    private bool? ConfirmDiscard(DiscardBehaviour behaviour)
+    private bool? ClickContextMenu(DiscardBehaviour behaviour)
     {
-        if (!EzThrottler.Throttle("AutoDiscard-DiscardInventoryItem", 100)) return false;
+        if (!EzThrottler.Throttle("AutoDiscard", 100)) return false;
+        if (ContextMenu == null || !IsAddonAndNodesReady(ContextMenu)) return false;
 
-        if (ContextMenu != null && IsAddonAndNodesReady(ContextMenu))
+        switch (behaviour)
         {
-            switch (behaviour)
-            {
-                case DiscardBehaviour.Discard:
-                    if (!ClickHelper.ContextMenu("舍弃"))
+            case DiscardBehaviour.Discard:
+                if (!ClickHelper.ContextMenu("舍弃"))
+                {
+                    ContextMenu->Close(true);
+                    break;
+                }
+
+                TaskManager.DelayNextImmediate(20);
+                TaskManager.EnqueueImmediate(ConfirmDiscard);
+                break;
+            case DiscardBehaviour.Sell:
+                if ((TryGetAddonByName<AtkUnitBase>("RetainerGrid0", out var addonRetainerGrid) &&
+                     IsAddonAndNodesReady(addonRetainerGrid)) ||
+                    (TryGetAddonByName<AtkUnitBase>("RetainerSellList", out var addonRetainerSellList) &&
+                     IsAddonAndNodesReady(addonRetainerSellList)))
+                {
+                    if (!ClickHelper.ContextMenu("委托雇员出售物品"))
                     {
                         ContextMenu->Close(true);
-                        return true;
+                        Service.Chat.Print(
+                            new SeStringBuilder().Append(DRPrefix()).AddUiForeground(" 未找到可用的出售页面", 17).Build());
+                        TaskManager.Abort();
                     }
                     break;
-                case DiscardBehaviour.Sell:
-                    if ((TryGetAddonByName<AtkUnitBase>("RetainerGrid0", out var addonRetainerGrid) &&
-                         IsAddonAndNodesReady(addonRetainerGrid)) ||
-                        (TryGetAddonByName<AtkUnitBase>("RetainerSellList", out var addonRetainerSellList) &&
-                         IsAddonAndNodesReady(addonRetainerSellList)))
-                    {
-                        if (!ClickHelper.ContextMenu("委托雇员出售物品"))
-                        {
-                            ContextMenu->Close(true);
-                            Service.Chat.Print(
-                                new SeStringBuilder().Append(DRPrefix()).AddUiForeground(" 未找到可用的出售页面", 17).Build());
-                            TaskManager.Abort();
-                            return true;
-                        }
-                    }
-                    else if (TryGetAddonByName<AtkUnitBase>("Shop", out var addonShop) &&
-                             IsAddonAndNodesReady(addonShop))
-                    {
-                        if (!ClickHelper.ContextMenu("出售"))
-                        {
-                            ContextMenu->Close(true);
-                            Service.Chat.Print(
-                                new SeStringBuilder().Append(DRPrefix()).AddUiForeground(" 未找到可用的出售页面", 17).Build());
-                            TaskManager.Abort();
-                            return true;
-                        }
-                    }
-                    break;
-            }
+                }
 
-            return false;
+                if (TryGetAddonByName<AtkUnitBase>("Shop", out var addonShop) &&
+                    IsAddonAndNodesReady(addonShop))
+                {
+                    if (!ClickHelper.ContextMenu("出售"))
+                    {
+                        ContextMenu->Close(true);
+                        Service.Chat.Print(
+                            new SeStringBuilder().Append(DRPrefix()).AddUiForeground(" 未找到可用的出售页面", 17).Build());
+                        TaskManager.Abort();
+                    }
+                    break;
+                }
+
+                ContextMenu->Close(true);
+                Service.Chat.Print(
+                    new SeStringBuilder().Append(DRPrefix()).AddUiForeground(" 未找到可用的出售页面", 17).Build());
+                TaskManager.Abort();
+                break;
         }
 
+        return true;
+    }
 
-        if (SelectYesno == null) return false;
+    private static bool? ConfirmDiscard()
+    {
+        if (!EzThrottler.Throttle("AutoDiscard", 100)) return false;
+        if (SelectYesno == null || !IsAddonAndNodesReady(SelectYesno)) return false;
 
         var handler = new ClickSelectYesNo();
         if (SelectYesno->GetNodeById(4)->IsVisible) handler.Confirm();
