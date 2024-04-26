@@ -67,14 +67,6 @@ public unsafe class BetterFollow : DailyModuleBase
     [Signature("E8 ?? ?? ?? ?? EB ?? 48 81 C1 ?? ?? ?? ?? E8 ?? ?? ?? ?? EB", DetourName = nameof(FollowData))]
     private readonly Hook<FollowDataDelegate>? FollowDataHook;
 
-    // Hook
-    private delegate char KnockBackDelegate(ulong a1, ulong a2, ulong a3, float a4);
-
-    [Signature(
-        "48 8B C4 48 89 58 ?? 48 89 70 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 99",
-        DetourName = nameof(KnockBack))]
-    private readonly Hook<KnockBackDelegate>? KnockBackHook;
-
     [Signature(
         "40 53 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 8B D9 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 48 8B D0 48 8D 8B ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 48 8B 4C 24 ?? BA ?? ?? ?? ?? 41 B8 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B 8C 24 ?? ?? ?? ?? 48 33 CC E8 ?? ?? ?? ?? 48 81 C4 ?? ?? ?? ?? 5B C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 89 5C 24")]
     private readonly delegate* unmanaged<nint, uint, nint, nint, ulong> FollowStart;
@@ -113,7 +105,6 @@ public unsafe class BetterFollow : DailyModuleBase
 
         Service.Hook.InitializeFromAttributes(this);
         FollowDataHook?.Enable();
-        KnockBackHook?.Enable();
         vnavmesh ??= Service.IPCManager.Load<vnavmeshIPC>(this);
         if (vnavmesh == null) ModuleConfig.MoveType = MoveTypeList.System;
         Service.IPCManager.RegisterPluginChanged(OnPluginsChanged);
@@ -449,6 +440,7 @@ public unsafe class BetterFollow : DailyModuleBase
                 break;
             case MoveTypeList.Navmesh:
                 _FollowStatus = false;
+                vnavmesh.CancelAllQueries();
                 vnavmesh.PathStop();
                 break;
         }
@@ -503,25 +495,6 @@ public unsafe class BetterFollow : DailyModuleBase
         _LastFollowObjectStatus = true;
         _enableReFollow = true;
         _FollowStatus = true;
-    }
-    
-    private char KnockBack(ulong a1, ulong a2, ulong a3, float a4)
-    {
-        if (ModuleConfig.MoveType == MoveTypeList.Navmesh && _FollowStatus)
-        {
-            vnavmesh.PathStop();
-            vnavmesh.CancelAllQueries();
-            _FollowStatus = false;
-            var reFollowFlag = _enableReFollow;
-            _enableReFollow = false;
-            TaskManager.DelayNext(1000);
-            TaskManager.Enqueue(() =>
-            {
-                _FollowStatus = true;
-                _enableReFollow = reFollowFlag;
-            });
-        }
-        return KnockBackHook.Original(a1, a2, a3, 0.5f);
     }
 
     private enum MoveTypeList
