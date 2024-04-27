@@ -372,6 +372,9 @@ public class MainSettings
         {
             Service.Config.AllowAnonymousUpload ^= true;
             Service.Config.Save();
+
+            if (Service.Config.AllowAnonymousUpload)
+                Task.Run(() => OnlineStatsManager.UploadEntry(new OnlineStatsManager.ModulesState(OnlineStatsManager.GetEncryptedMachineCode())));
         }
 
         ImGuiOm.HelpMarker(Service.Lang.GetText("Settings-AllowAnonymousUploadHelp"), 25f);

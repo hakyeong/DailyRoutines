@@ -86,6 +86,7 @@ public class OnlineStatsManager : IDailyManager
         Client.DefaultRequestHeaders.Add("Prefer", "return=minimal");
 
         Service.ClientState.Login += OnLogin;
+        Task.Run(() => UploadEntry(new ModulesState(GetEncryptedMachineCode())));
     }
 
     public static async void UploadEntry(ModulesState entry)
