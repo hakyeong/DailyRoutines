@@ -19,3 +19,18 @@ public class CraftLeveClient : ExcelRow
         Text = parser.ReadColumn<SeString>(1);
     }
 }
+
+[Sheet("custom/004/HouFixCompanySubmarine_00447")]
+public class CompanySubmarine : ExcelRow
+{
+    public SeString? Name { get; set; }
+    public SeString? Text { get; set; }
+
+    public override void PopulateData(RowParser parser, GameData gameData, Language language)
+    {
+        base.PopulateData(parser, gameData, language);
+
+        Name = parser.ReadColumn<SeString>(0);
+        Text = parser.ReadColumn<SeString>(1);
+    }
+}
