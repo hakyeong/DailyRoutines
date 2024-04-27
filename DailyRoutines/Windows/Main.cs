@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Numerics;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -266,7 +265,6 @@ public class MainSettings
     private static string ConflictKeySearchString = string.Empty;
     private static readonly HttpClient client = new();
     private static int TotalDownloadCounts;
-    private static Version CurrentVersion = new();
     private static VersionInfo LatestVersionInfo = new();
     private static List<GameEvent> GameCalendars = [];
     private static readonly List<GameNews> GameNewsList = [];
@@ -421,9 +419,9 @@ public class MainSettings
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("CurrentVersion")}:");
 
         ImGui.SameLine();
-        ImGui.TextColored(CurrentVersion < LatestVersionInfo.Version ? ImGuiColors.DPSRed : ImGuiColors.DalamudWhite, $"{CurrentVersion}");
+        ImGui.TextColored(Plugin.Version < LatestVersionInfo.Version ? ImGuiColors.DPSRed : ImGuiColors.DalamudWhite, $"{Plugin.Version}");
 
-        if (CurrentVersion < LatestVersionInfo.Version)
+        if (Plugin.Version < LatestVersionInfo.Version)
             ImGuiOm.TooltipHover(Service.Lang.GetText("LowVersionWarning"));
 
         ImGui.SameLine();
@@ -591,8 +589,6 @@ public class MainSettings
             TotalDownloadCounts = await GetTotalDownloadsAsync();
             LatestVersionInfo = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
         });
-
-        CurrentVersion = GetCurrentVersion();
     }
 
     private static void OnLogin()
@@ -702,11 +698,6 @@ public class MainSettings
                 GameNewsList.Add(gameNews);
             }
         }
-    }
-
-    private static Version GetCurrentVersion()
-    {
-        return Assembly.GetExecutingAssembly().GetName().Version;
     }
 
     public static void Uninit()
