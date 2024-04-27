@@ -17,6 +17,7 @@ public class Configuration : IPluginConfiguration
     public VirtualKey ConflictKey { get; set; } = VirtualKey.SHIFT;
     public bool SendCalendarToChatWhenLogin { get; set; } = false;
     public bool IsHideOutdatedEvent { get; set; } = true;
+    public bool AllowAnonymousUpload { get; set; } = true;
     public Dictionary<string, bool> ModuleEnabled { get; set; } = [];
 
     [NonSerialized]

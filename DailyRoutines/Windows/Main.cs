@@ -363,6 +363,19 @@ public class MainSettings
         }
 
         ImGuiOm.HelpMarker(Service.Lang.GetText("ConflictKeyHelp"));
+
+        ImGuiOm.TextIcon(FontAwesomeIcon.Database, Service.Lang.GetText("Settings-AllowAnonymousUpload"));
+
+        ImGui.SameLine();
+        var allowState = Service.Config.AllowAnonymousUpload;
+        if (ImGui.Checkbox("###AllowAnonymousUpload", ref allowState))
+        {
+            Service.Config.AllowAnonymousUpload ^= true;
+            Service.Config.Save();
+        }
+
+        ImGuiOm.HelpMarker(Service.Lang.GetText("Settings-AllowAnonymousUploadHelp"), 25f);
+
         ImGui.EndGroup();
     }
 

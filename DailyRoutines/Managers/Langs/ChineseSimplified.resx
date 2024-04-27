@@ -1423,4 +1423,13 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRetainerEntrustDupsTitle" xml:space="preserve">
     <value>自动同类道具合并递交</value>
   </data>
+  <data name="Settings-AllowAnonymousUpload" xml:space="preserve">
+    <value>允许上传匿名数据</value>
+  </data>
+  <data name="Settings-AllowAnonymousUploadHelp" xml:space="preserve">
+    <value>勾选后, 将在每次登录时上传各模块启用情况的匿名数据
+注: 数据中不会包含你的区服用户名以及任何个人信息
+
+但允许上传可以帮助我们更好地改善整体功能与发布更新!</value>
+  </data>
 </root>
