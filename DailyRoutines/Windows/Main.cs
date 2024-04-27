@@ -452,6 +452,21 @@ public class MainSettings
             ImGui.Indent();
             ImGui.TextWrapped(LatestVersionInfo.Changelog);
             ImGui.Unindent();
+
+            if (ImGui.IsItemClicked())
+                ImGui.OpenPopup("###ChangelogImagePopup");
+        }
+
+        if (ImGui.BeginPopup("###ChangelogImagePopup"))
+        {
+            var imageState = ImageHelper
+                .TryGetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/Changelog.png", out var imageHandle);
+
+            if (imageState)
+                ImGui.Image(imageHandle.ImGuiHandle, imageHandle.Size * 0.8f);
+            else
+                ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
+            ImGui.EndPopup();
         }
     }
 
@@ -600,6 +615,7 @@ public class MainSettings
     {
         Task.Run(async () =>
         {
+            ImageHelper.TryGetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/Changelog.png", out _);
             await GetGameCalendar();
             await GetGameNews();
             TotalDownloadCounts = await GetTotalDownloadsAsync();
