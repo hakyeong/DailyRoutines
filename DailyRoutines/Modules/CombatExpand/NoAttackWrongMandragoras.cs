@@ -10,7 +10,6 @@ using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
 using ECommons.Throttlers;
-using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
@@ -28,31 +27,33 @@ public unsafe class NoAttackWrongMandragoras : DailyModuleBase
     // 水城, 运河, 运河深层, 运河神殿, 梦羽宝境, 梦羽宝殿, 惊奇, 育体
     private static readonly HashSet<uint> ValidZones = [558, 712, 725, 794, 879, 924, 1000, 1123];
 
-    private static bool OnlyInTreasureHunt;
-
     public override void Init()
     {
         Mandragoras ??= LuminaCache.Get<BNpcName>()
                                    .Where(x => x.Singular.RawString.Contains("王后"))
                                    .Select(queen => new[] { queen.RowId - 4, queen.RowId - 3, queen.RowId - 2, queen.RowId - 1, queen.RowId })
                                    .ToList();
-        AddConfig("OnlyInTreasureHunt", true);
-        OnlyInTreasureHunt = GetConfig<bool>("OnlyInTreasureHunt");
 
         Service.Hook.InitializeFromAttributes(this);
         IsTargetableHook?.Enable();
+
+        Service.ClientState.TerritoryChanged += OnZoneChanged;
+        if (ValidZones.Contains(Service.ClientState.TerritoryType))
+            OnZoneChanged(Service.ClientState.TerritoryType);
     }
 
-    public override void ConfigUI()
+    private void OnZoneChanged(ushort zone)
     {
-        if (ImGui.Checkbox(Service.Lang.GetText("NoAttackWrongMandragoras-OnlyInTreasureHunt"), ref OnlyInTreasureHunt))
-            UpdateConfig("OnlyInTreasureHunt", OnlyInTreasureHunt);
+        if (ValidZones.Contains(zone))
+            IsTargetableHook?.Enable();
+        else
+            IsTargetableHook?.Disable();
     }
 
     private byte IsTargetableDetour(GameObject* potentialTarget) 
     {
         var isTargetable = IsTargetableHook.Original(potentialTarget);
-        if (OnlyInTreasureHunt && !ValidZones.Contains(Service.ClientState.TerritoryType)) return isTargetable;
+        if (!ValidZones.Contains(Service.ClientState.TerritoryType) || Mandragoras == null) return isTargetable;
 
         if (EzThrottler.Throttle("NoAttackWrongMandragoras-Update", 100))
         {
@@ -84,5 +85,12 @@ public unsafe class NoAttackWrongMandragoras : DailyModuleBase
         }
 
         return isTargetable;
+    }
+
+    public override void Uninit()
+    {
+        Service.ClientState.TerritoryChanged -= OnZoneChanged;
+
+        base.Uninit();
     }
 }

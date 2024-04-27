@@ -120,7 +120,7 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
     private static bool? ExitDuty()
     {
         if (Service.Condition[ConditionFlag.WaitingForDutyFinder] || 
-            Service.Condition[ConditionFlag.BoundToDuty97] || Flags.BetweenAreas()) return false;
+            Service.Condition[ConditionFlag.InDutyQueue] || Flags.BetweenAreas()) return false;
 
         AbandonDuty(false);
         return true;

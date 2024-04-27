@@ -1,13 +1,15 @@
 using System;
 using System.Diagnostics;
-using System.Numerics;
+using System.Linq;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Notifications;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using ECommons.Automation;
+using Dalamud.Plugin.Services;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
@@ -15,20 +17,22 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoNotifyCutSceneEndTitle", "AutoNotifyCutSceneEndDescription", ModuleCategories.Notice)]
 public class AutoNotifyCutSceneEnd : DailyModuleBase
 {
-    private static bool ConfigOnlyNotifyWhenBackground;
+    private static bool OnlyNotifyWhenBackground;
+
     private static bool IsDutyEnd;
+    private static bool IsSomeoneInCutscene;
 
     private static Stopwatch? Stopwatch;
 
     public override void Init()
     {
-        TaskManager ??= new TaskManager { ShowDebug = false, TimeLimitMS = int.MaxValue, AbortOnTimeout = false };
         Stopwatch ??= new Stopwatch();
 
         AddConfig("OnlyNotifyWhenBackground", true);
-        ConfigOnlyNotifyWhenBackground = GetConfig<bool>("OnlyNotifyWhenBackground");
+        OnlyNotifyWhenBackground = GetConfig<bool>("OnlyNotifyWhenBackground");
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "_PartyList", OnPartyList);
+        Service.FrameworkManager.Register(OnUpdate);
         Service.DutyState.DutyCompleted += OnDutyComplete;
         Service.ClientState.TerritoryChanged += OnZoneChanged;
     }
@@ -39,91 +43,62 @@ public class AutoNotifyCutSceneEnd : DailyModuleBase
                                  "https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/AutoNotifyCutSceneEnd-1.png");
 
         if (ImGui.Checkbox(Service.Lang.GetText("OnlyNotifyWhenBackground"),
-                           ref ConfigOnlyNotifyWhenBackground))
-            UpdateConfig("OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
+                           ref OnlyNotifyWhenBackground))
+            UpdateConfig("OnlyNotifyWhenBackground", OnlyNotifyWhenBackground);
     }
 
-    private unsafe void OnPartyList(AddonEvent type, AddonArgs args)
+    private static unsafe void OnPartyList(AddonEvent type, AddonArgs args)
     {
-        if (TaskManager.IsBusy || Service.ClientState.IsPvP || !Flags.BoundByDuty() || IsDutyEnd) return;
+        if (IsSomeoneInCutscene || IsDutyEnd || Service.ClientState.IsPvP || !Flags.BoundByDuty()) return;
 
-        var isSBInCutScene = false;
-        foreach (var member in Service.PartyList)
-        {
-            var chara = (Character*)member.GameObject.Address;
-            if (chara == null) continue;
-            if (!Service.DutyState.IsDutyStarted && !member.GameObject.IsTargetable)
-            {
-                isSBInCutScene = false;
-                break;
-            }
-
-            if (chara->CharacterData.OnlineStatus == 15) isSBInCutScene = true;
-        }
+        var isSBInCutScene = Service.PartyList.Any(member => member.GameObject != null &&
+                                                             ((Character*)member.GameObject.Address)->CharacterData
+                                                             .OnlineStatus == 15);
 
         if (isSBInCutScene)
         {
             Stopwatch.Restart();
-            TaskManager.Enqueue(WaitAllMembersCutsceneEnd);
-            TaskManager.Enqueue(ShowNoticeMessage);
+            IsSomeoneInCutscene = true;
         }
     }
 
-    private unsafe bool? WaitAllMembersCutsceneEnd()
+    private static unsafe void OnUpdate(IFramework framework)
     {
-        if (IsDutyEnd)
-        {
-            Stopwatch.Reset();
-            TaskManager.Abort();
-            return true;
-        }
+        if (!IsSomeoneInCutscene) return;
+        if (!EzThrottler.Throttle("AutoNotifyCutSceneEnd")) return;
 
-        foreach (var member in Service.PartyList)
-        {
-            var chara = (Character*)member.GameObject.Address;
-            if (chara == null) continue;
-            if (chara->CharacterData.OnlineStatus == 15) return false;
-        }
+        var isSBInCutScene = Service.PartyList.Any(member => member.GameObject != null &&
+                                                             ((Character*)member.GameObject.Address)->CharacterData
+                                                             .OnlineStatus == 15);
+        if (isSBInCutScene) return;
+
+        IsSomeoneInCutscene = false;
 
         if (Stopwatch.Elapsed < TimeSpan.FromSeconds(4))
-        {
             Stopwatch.Reset();
-            TaskManager.Abort();
-        }
-
-        return true;
-    }
-
-    private static bool? ShowNoticeMessage()
-    {
-        if (ConfigOnlyNotifyWhenBackground)
+        else
         {
-            if (!HelpersOm.IsGameForeground())
+            if (!OnlyNotifyWhenBackground || (OnlyNotifyWhenBackground && Framework.Instance()->WindowInactive))
                 WinToast.Notify("", Service.Lang.GetText("AutoNotifyCutSceneEnd-NotificationMessage"));
-            return true;
         }
-
-        WinToast.Notify("", Service.Lang.GetText("AutoNotifyCutSceneEnd-NotificationMessage"));
-        return true;
     }
 
-    private void OnZoneChanged(ushort zone)
+    private static void OnZoneChanged(ushort zone)
     {
         Stopwatch.Reset();
-        TaskManager.Abort();
         IsDutyEnd = false;
     }
 
-    private void OnDutyComplete(object? sender, ushort duty)
+    private static void OnDutyComplete(object? sender, ushort duty)
     {
         Stopwatch.Reset();
-        TaskManager.Abort();
         IsDutyEnd = true;
     }
 
     public override void Uninit()
     {
         Stopwatch.Reset();
+        Stopwatch = null;
 
         Service.DutyState.DutyCompleted -= OnDutyComplete;
         Service.ClientState.TerritoryChanged -= OnZoneChanged;

@@ -1,6 +1,5 @@
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
@@ -15,7 +14,7 @@ public unsafe class AutoRefocus : DailyModuleBase
     private delegate void SetFocusTargetByObjectIDDelegate(TargetSystem* targetSystem, long objectID);
 
     [Signature("E8 ?? ?? ?? ?? BA 0C 00 00 00 48 8D 0D", DetourName = nameof(SetFocusTargetByObjectID))]
-    private static Hook<SetFocusTargetByObjectIDDelegate>? setFocusTargetByObjectIDHook;
+    private static Hook<SetFocusTargetByObjectIDDelegate>? SetFocusTargetByObjectIDHook;
 
     private static ulong? FocusTarget;
     private static bool IsNeedToRefocus;
@@ -23,9 +22,9 @@ public unsafe class AutoRefocus : DailyModuleBase
     public override void Init()
     {
         Service.Hook.InitializeFromAttributes(this);
-        setFocusTargetByObjectIDHook?.Enable();
+        SetFocusTargetByObjectIDHook?.Enable();
 
-        if (IsBoundByDuty()) OnZoneChange(Service.ClientState.TerritoryType);
+        if (Flags.BoundByDuty()) OnZoneChange(Service.ClientState.TerritoryType);
         Service.ClientState.TerritoryChanged += OnZoneChange;
         Service.FrameworkManager.Register(OnUpdate);
     }
@@ -38,11 +37,11 @@ public unsafe class AutoRefocus : DailyModuleBase
 
     private static void OnUpdate(IFramework framework)
     {
-        if (!IsNeedToRefocus) return;
-        if (EzThrottler.Throttle("AutoRefocus"))
+        if (!IsNeedToRefocus || FocusTarget == null) return;
+        if (EzThrottler.Throttle("AutoRefocus", 1000))
         {
-            if (FocusTarget != null && Service.Target.FocusTarget == null)
-                setFocusTargetByObjectIDHook.Original(TargetSystem.StaticAddressPointers.pInstance, (long)FocusTarget);
+            if (Service.Target.FocusTarget == null)
+                SetFocusTargetByObjectIDHook.Original(TargetSystem.StaticAddressPointers.pInstance, (long)FocusTarget);
         }
     }
 
@@ -56,13 +55,7 @@ public unsafe class AutoRefocus : DailyModuleBase
         else
             FocusTarget = Service.Target.Target.ObjectId;
 
-        setFocusTargetByObjectIDHook.Original(targetSystem, objectID);
-    }
-
-    public static bool IsBoundByDuty()
-    {
-        return Service.Condition[ConditionFlag.BoundByDuty] || Service.Condition[ConditionFlag.BoundByDuty56] ||
-               Service.Condition[ConditionFlag.BoundByDuty95];
+        SetFocusTargetByObjectIDHook.Original(targetSystem, objectID);
     }
 
     public override void Uninit()

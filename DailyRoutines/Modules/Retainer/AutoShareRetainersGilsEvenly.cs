@@ -1,6 +1,7 @@
 using System;
 using ClickLib;
 using ClickLib.Clicks;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
@@ -96,12 +97,12 @@ public unsafe class AutoShareRetainersGilsEvenly : DailyModuleBase
         // 点击指定雇员
         TaskManager.Enqueue(() => ClickSpecificRetainer(index));
         // 点击金币管理
-        TaskManager.Enqueue(() => Click.TrySendClick("select_string2"));
+        TaskManager.Enqueue(() => ClickHelper.SelectString("金币管理"));
         // 重新分配金币
         TaskManager.DelayNext(100);
         TaskManager.Enqueue(ReassignGils);
         // 回到雇员列表
-        TaskManager.Enqueue(() => Click.TrySendClick("select_string13"));
+        TaskManager.Enqueue(() => ClickHelper.SelectString("让雇员返回"));
     }
 
     private void EnqueueSingleRetainerMethodSecond(int index)
@@ -109,12 +110,12 @@ public unsafe class AutoShareRetainersGilsEvenly : DailyModuleBase
         // 点击指定雇员
         TaskManager.Enqueue(() => ClickSpecificRetainer(index));
         // 点击金币管理
-        TaskManager.Enqueue(() => Click.TrySendClick("select_string2"));
+        TaskManager.Enqueue(() => ClickHelper.SelectString("金币管理"));
         // 取出所有金币
         TaskManager.DelayNext(100);
         TaskManager.Enqueue(WithdrawAllGils);
         // 回到雇员列表
-        TaskManager.Enqueue(() => Click.TrySendClick("select_string13"));
+        TaskManager.Enqueue(() => ClickHelper.SelectString("让雇员返回"));
     }
 
     private static bool? ClickSpecificRetainer(int index)

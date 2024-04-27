@@ -55,7 +55,7 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
         {
             var retainerManager = RetainerManager.Instance();
             var serverTime = Framework.GetServerTime();
-            for (var i = 0; i < 10; i++)
+            for (var i = 0; i < retainerManager->GetRetainerCount(); i++)
             {
                 var retainerState = retainerManager->GetRetainerBySortedIndex((uint)i)->VentureComplete;
                 if (retainerState == 0) continue;
