@@ -21,7 +21,7 @@ public class OnlineStatsManager : IDailyManager
         public string Character = string.Empty;
 
         [JsonProperty("update_time")]
-        public string UpdateTime = DateTime.Now.ToString(CultureInfo.InvariantCulture);
+        public string UpdateTime = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss");
 
         [JsonProperty("version")]
         public string Version = Plugin.Version.ToString();
