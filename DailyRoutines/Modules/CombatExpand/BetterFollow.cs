@@ -34,7 +34,7 @@ public unsafe class BetterFollow : DailyModuleBase
         public bool AutoReFollow = true;
         public bool OnCombatOver = true;
         public bool OnDuty = true;
-        public bool ForcedFollow = false;
+        public bool ForcedFollow;
         public float Delay = 0.5f;
         public bool MountWhenFollowMount = true;
         public bool UnMountWhenFollowUnMount;
@@ -80,7 +80,7 @@ public unsafe class BetterFollow : DailyModuleBase
 
     public override void Init()
     {
-        ModuleConfig = LoadConfig<Config>() ?? new();
+        ModuleConfig = LoadConfig<Config>();
 
         #region Data
 
@@ -172,7 +172,10 @@ public unsafe class BetterFollow : DailyModuleBase
             ImGui.SetNextItemWidth(300f);
             ImGui.SliderInt("###BetterFollow-FollowDistance", ref ModuleConfig.FollowDistance, 1, 15);
             if (ImGui.IsItemDeactivatedAfterEdit())
+            {
+                vnavmesh?.PathSetTolerance(ModuleConfig.FollowDistance);
                 SaveConfig(ModuleConfig);
+            }
         }
 
         ImGui.Spacing();
@@ -351,7 +354,12 @@ public unsafe class BetterFollow : DailyModuleBase
         if (ModuleConfig.MoveType == MoveTypeList.Navmesh && _FollowStatus && followObject != null)
         {
             if (Vector3.Distance(Service.ClientState.LocalPlayer.Position, followObject.Position) <
-                ModuleConfig.FollowDistance) return;
+                ModuleConfig.FollowDistance)
+            {
+                vnavmesh.CancelAllQueries();
+                vnavmesh.PathStop();
+                return;
+            }
             if (Service.ClientState.LocalPlayer.IsCasting) return;
             if (!vnavmesh.NavIsReady()) return;
             if (vnavmesh.PathfindInProgress()) return;
