@@ -25,7 +25,14 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoSubmarineCollectTitle", "AutoSubmarineCollectDescription", ModuleCategories.General)]
 public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 {
-    private static AtkUnitBase* AddonSelectString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
+    private static AtkUnitBase* SelectString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
+    private static AtkUnitBase* SelectYesno => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectYesno");
+    // 航行结果
+    private static AtkUnitBase* AirShipExplorationResult => (AtkUnitBase*)Service.Gui.GetAddonByName("AirShipExplorationResult");
+    // 出发详情
+    private static AtkUnitBase* AirShipExplorationDetail => (AtkUnitBase*)Service.Gui.GetAddonByName("AirShipExplorationDetail");
+    private static AtkUnitBase* CompanyCraftSupply => (AtkUnitBase*)Service.Gui.GetAddonByName("CompanyCraftSupply");
+
 
     private static readonly HashSet<uint> CompanyWorkshopZones = [423, 424, 425, 653, 984];
     private static string RequisiteMaterialsName = string.Empty;
@@ -34,27 +41,27 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
     public override void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
+
         Overlay ??= new Overlay(this);
         Overlay.Flags |= ImGuiWindowFlags.NoMove;
+
+        RequisiteMaterialsName = LuminaCache.GetRow<Item>(10373).Name.RawString;
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", AlwaysYes);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "AirShipExplorationResult", OnExplorationResult);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectString", OnAddonSelectString);
-
         Service.LogMessageManager.Register(OnLogMessages);
-
-        RequisiteMaterialsName = LuminaCache.GetRow<Item>(10373).Name.RawString;
     }
 
     public override void OverlayUI()
     {
-        if (AddonSelectString == null)
+        if (SelectString == null)
         {
             Overlay.IsOpen = false;
             return;
         }
 
-        var pos = new Vector2(AddonSelectString->GetX() + 6, AddonSelectString->GetY() - ImGui.GetWindowSize().Y + 6);
+        var pos = new Vector2(SelectString->GetX() + 6, SelectString->GetY() - ImGui.GetWindowSize().Y + 6);
         ImGui.SetWindowPos(pos);
 
         ImGui.AlignTextToFramePadding();
@@ -85,57 +92,22 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         }
     }
 
-    private void OnAddonSelectString(AddonEvent type, AddonArgs args)
-    {
-        if (!EzThrottler.Throttle("AutoSubmarineCollectOverlay")) return;
-        if (!CompanyWorkshopZones.Contains(Service.ClientState.TerritoryType)) return;
-
-        Overlay.IsOpen = false;
-
-        if (AddonSelectString == null) return;
-        var title = MemoryHelper.ReadStringNullTerminated((nint)AddonSelectString->AtkValues[2].String);
-        if (string.IsNullOrWhiteSpace(title) || !title.Contains("请选择潜水艇")) return;
-        Overlay.IsOpen = true;
-    }
-
-    private void AlwaysYes(AddonEvent type, AddonArgs args)
-    {
-        if (!TaskManager.IsBusy) return;
-        Click.SendClick("select_yes");
-    }
-
-    private void OnLogMessages(uint logMessageID, ushort logKind)
-    {
-        switch (logMessageID)
-        {
-            case 4290:
-                TaskManager.Abort();
-                TaskManager.Enqueue(ReadyToRepairSubmarines);
-                break;
-            case 4276:
-                TaskManager.Abort();
-                break;
-        }
-    }
-
     // 航程结果 -> 再次出发
     private void OnExplorationResult(AddonEvent type, AddonArgs args)
     {
-        if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationResult", out var addon) &&
-            IsAddonAndNodesReady(addon))
-        {
-            AddonHelper.Callback(addon, true, 1);
+        if (AirShipExplorationResult == null || !IsAddonAndNodesReady(AirShipExplorationResult)) return;
 
-            if (TaskManager.IsBusy) addon->IsVisible = false;
-        }
+        AddonHelper.Callback(AirShipExplorationResult, true, 1);
+        if (TaskManager.IsBusy) AirShipExplorationResult->IsVisible = false;
     }
 
     private bool? GetSubmarineInfos()
     {
-        if (Service.Condition[ConditionFlag.OccupiedInCutSceneEvent] ||
-            Service.Condition[ConditionFlag.WatchingCutscene78]) return false;
+        if (!EzThrottler.Throttle("AutoSubmarineCollect-GetSubmarineInfos", 100)) return false;
+        // 还在看动画
+        if (Service.Condition[ConditionFlag.OccupiedInCutSceneEvent] || Service.Condition[ConditionFlag.WatchingCutscene78]) return false;
 
-        // 魔导机械修理材料/桶装青磷水不足
+        #region CheckNecessaryItems
         var inventoryManager = InventoryManager.Instance();
         if (inventoryManager->GetInventoryItemCount(10373) < 20)
         {
@@ -154,74 +126,79 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
             TaskManager.Abort();
             return true;
         }
+        #endregion
 
-        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonAndNodesReady(addon))
+        if (SelectString == null || !IsAddonAndNodesReady(SelectString)) return false;
+        if (!ClickHelper.SelectString("探索完成"))
         {
-            if (!TryScanSelectStringText(addon, "探索完成", out var index))
-            {
-                TaskManager.Abort();
-                return true;
-            }
-
-            if (!Click.TrySendClick($"select_string{index + 1}")) return false;
-
-            // 会有 Toast
-            TaskManager.DelayNext(2000);
-            TaskManager.Enqueue(CommenceSubmarineVoyage);
-
+            TaskManager.Abort();
             return true;
         }
 
-        return false;
+        TaskManager.DelayNext(2000);
+        TaskManager.Enqueue(CommenceSubmarineVoyage);
+
+        return true;
     }
 
     private bool? CommenceSubmarineVoyage()
     {
-        if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var addon) &&
-            IsAddonAndNodesReady(addon))
-        {
-            AddonHelper.Callback(addon, true, 0);
-            addon->Close(true);
+        if (!EzThrottler.Throttle("AutoSubmarineCollect-CommenceSubmarineVoyage", 100)) return false;
+        if (AirShipExplorationDetail == null || !IsAddonAndNodesReady(AirShipExplorationDetail)) return false;
 
-            // 一轮结束, 清理任务; 会有动画
-            TaskManager.Abort();
-            TaskManager.DelayNext(3000);
-            TaskManager.Enqueue(GetSubmarineInfos);
+        AddonHelper.Callback(AirShipExplorationDetail, true, 0);
+        AirShipExplorationDetail->Close(true);
 
-            return true;
-        }
+        TaskManager.Abort();
+        TaskManager.DelayNext(3000);
+        TaskManager.Enqueue(GetSubmarineInfos);
 
         return false;
     }
 
     private bool? ReadyToRepairSubmarines()
     {
-        if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var addon) &&
-            IsAddonAndNodesReady(addon))
+        if (!EzThrottler.Throttle("AutoSubmarineCollect-ReadyToRepairSubmarines", 100)) return false;
+        if (AirShipExplorationDetail != null)
         {
-            AddonHelper.Callback(addon, true, -1);
-            addon->Close(true);
+            AirShipExplorationDetail->Close(true);
+            return false;
         }
 
-        if (AddonSelectString == null || !IsAddonAndNodesReady(AddonSelectString)) return false;
-        if (!ClickHelper.SelectString("修理")) return false;
+        if (AirShipExplorationResult != null)
+        {
+            AirShipExplorationResult->Close(true);
+            return false;
+        }
 
-        TaskManager.Enqueue(() => AddonSelectString->Close(true));
-        TaskManager.Enqueue(RepairSubmarines);
+        if (CompanyCraftSupply != null && IsAddonAndNodesReady(CompanyCraftSupply))
+        {
+            TaskManager.Enqueue(RepairSubmarines);
+            return true;
+        }
 
-        return true;
+        if (SelectString != null && IsAddonAndNodesReady(SelectString))
+        {
+            if (!ClickHelper.SelectString("修理")) return false;
+
+            SelectString->Close(true);
+            TaskManager.Enqueue(RepairSubmarines);
+            return true;
+        }
+
+        return false;
     }
 
     private bool? RepairSubmarines()
     {
         if (!EzThrottler.Throttle("AutoSubmarineCollect-RepairSubmarines", 100)) return false;
-        if (Service.Gui.GetAddonByName("SelectYesno") != nint.Zero) return false;
-        if (TryGetAddonByName<AtkUnitBase>("CompanyCraftSupply", out var addon) &&
-            IsAddonAndNodesReady(addon))
+        if (SelectYesno != null) return false;
+
+        if (CompanyCraftSupply != null && IsAddonAndNodesReady(CompanyCraftSupply))
         {
             for (var i = 0; i < 4; i++)
             {
-                var endurance = addon->AtkValues[3 + (8 * i)].UInt;
+                var endurance = CompanyCraftSupply->AtkValues[3 + (8 * i)].UInt;
                 if (endurance <= 0)
                 {
                     AgentHelper.SendEvent(AgentId.SubmersibleParts, 0, 3, 0, i, 0, 0, 0);
@@ -230,8 +207,8 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
             }
 
             TaskManager.DelayNext(100);
-            TaskManager.Enqueue(() => AddonHelper.Callback(addon, true, 5));
-            TaskManager.Enqueue(() => addon->Close(true));
+            TaskManager.Enqueue(() => AddonHelper.Callback(CompanyCraftSupply, true, 5));
+            TaskManager.Enqueue(() => CompanyCraftSupply->Close(true));
 
             TaskManager.DelayNext(100);
             TaskManager.Enqueue(ClickPreviousVoyageLog);
@@ -244,8 +221,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
     private bool? ClickPreviousVoyageLog()
     {
-        if (TryGetAddonByName<AtkUnitBase>("AirShipExplorationDetail", out var detailAddon) &&
-            IsAddonAndNodesReady(detailAddon))
+        if (AirShipExplorationDetail != null && IsAddonAndNodesReady(AirShipExplorationDetail))
         {
             TaskManager.Abort();
             TaskManager.Enqueue(CommenceSubmarineVoyage);
@@ -253,14 +229,46 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
             return true;
         }
 
-        if (AddonSelectString == null || !IsAddonAndNodesReady(AddonSelectString)) return false;
+        if (SelectString == null || !IsAddonAndNodesReady(SelectString)) return false;
 
         if (!ClickHelper.SelectString("上次的远航报告")) return false;
-        AddonSelectString->Close(true);
 
         TaskManager.DelayNext(100);
         TaskManager.Enqueue(CommenceSubmarineVoyage);
         return true;
+    }
+
+    private void OnLogMessages(uint logMessageID, ushort logKind)
+    {
+        switch (logMessageID)
+        {
+            case 4290:
+                TaskManager.Abort();
+                TaskManager.Enqueue(ReadyToRepairSubmarines);
+                break;
+            case 4276:
+                TaskManager.Abort();
+                break;
+        }
+    }
+
+    private void OnAddonSelectString(AddonEvent type, AddonArgs args)
+    {
+        if (!EzThrottler.Throttle("AutoSubmarineCollectOverlay")) return;
+        if (!CompanyWorkshopZones.Contains(Service.ClientState.TerritoryType)) return;
+
+        Overlay.IsOpen = false;
+
+        if (SelectString == null) return;
+        var title = MemoryHelper.ReadStringNullTerminated((nint)SelectString->AtkValues[2].String);
+        if (string.IsNullOrWhiteSpace(title) || !title.Contains("请选择潜水艇")) return;
+        Overlay.IsOpen = true;
+    }
+
+    private void AlwaysYes(AddonEvent type, AddonArgs args)
+    {
+        if (!TaskManager.IsBusy) return;
+        Click.SendClick("select_yes");
     }
 
     public override void Uninit()

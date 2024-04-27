@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Numerics;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -266,7 +265,6 @@ public class MainSettings
     private static string ConflictKeySearchString = string.Empty;
     private static readonly HttpClient client = new();
     private static int TotalDownloadCounts;
-    private static Version CurrentVersion = new();
     private static VersionInfo LatestVersionInfo = new();
     private static List<GameEvent> GameCalendars = [];
     private static readonly List<GameNews> GameNewsList = [];
@@ -365,6 +363,22 @@ public class MainSettings
         }
 
         ImGuiOm.HelpMarker(Service.Lang.GetText("ConflictKeyHelp"));
+
+        ImGuiOm.TextIcon(FontAwesomeIcon.Database, Service.Lang.GetText("Settings-AllowAnonymousUpload"));
+
+        ImGui.SameLine();
+        var allowState = Service.Config.AllowAnonymousUpload;
+        if (ImGui.Checkbox("###AllowAnonymousUpload", ref allowState))
+        {
+            Service.Config.AllowAnonymousUpload ^= true;
+            Service.Config.Save();
+
+            if (Service.Config.AllowAnonymousUpload)
+                Task.Run(() => OnlineStatsManager.UploadEntry(new OnlineStatsManager.ModulesState(OnlineStatsManager.GetEncryptedMachineCode())));
+        }
+
+        ImGuiOm.HelpMarker(Service.Lang.GetText("Settings-AllowAnonymousUploadHelp"), 25f);
+
         ImGui.EndGroup();
     }
 
@@ -421,9 +435,9 @@ public class MainSettings
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("CurrentVersion")}:");
 
         ImGui.SameLine();
-        ImGui.TextColored(CurrentVersion < LatestVersionInfo.Version ? ImGuiColors.DPSRed : ImGuiColors.DalamudWhite, $"{CurrentVersion}");
+        ImGui.TextColored(Plugin.Version < LatestVersionInfo.Version ? ImGuiColors.DPSRed : ImGuiColors.DalamudWhite, $"{Plugin.Version}");
 
-        if (CurrentVersion < LatestVersionInfo.Version)
+        if (Plugin.Version < LatestVersionInfo.Version)
             ImGuiOm.TooltipHover(Service.Lang.GetText("LowVersionWarning"));
 
         ImGui.SameLine();
@@ -438,6 +452,21 @@ public class MainSettings
             ImGui.Indent();
             ImGui.TextWrapped(LatestVersionInfo.Changelog);
             ImGui.Unindent();
+
+            if (ImGui.IsItemClicked())
+                ImGui.OpenPopup("###ChangelogImagePopup");
+        }
+
+        if (ImGui.BeginPopup("###ChangelogImagePopup"))
+        {
+            var imageState = ImageHelper
+                .TryGetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/Changelog.png", out var imageHandle);
+
+            if (imageState)
+                ImGui.Image(imageHandle.ImGuiHandle, imageHandle.Size * 0.8f);
+            else
+                ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
+            ImGui.EndPopup();
         }
     }
 
@@ -586,13 +615,12 @@ public class MainSettings
     {
         Task.Run(async () =>
         {
+            ImageHelper.TryGetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/Changelog.png", out _);
             await GetGameCalendar();
             await GetGameNews();
             TotalDownloadCounts = await GetTotalDownloadsAsync();
             LatestVersionInfo = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
         });
-
-        CurrentVersion = GetCurrentVersion();
     }
 
     private static void OnLogin()
@@ -702,11 +730,6 @@ public class MainSettings
                 GameNewsList.Add(gameNews);
             }
         }
-    }
-
-    private static Version GetCurrentVersion()
-    {
-        return Assembly.GetExecutingAssembly().GetName().Version;
     }
 
     public static void Uninit()

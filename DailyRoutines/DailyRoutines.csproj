@@ -3,7 +3,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Authors>AtmoOmen</Authors>
-        <Version>0.4.1.0</Version>
+        <Version>0.4.2.0</Version>
         <Description>Help finish some boring daily tasks.</Description>
         <Copyright></Copyright>
         <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
@@ -57,6 +57,7 @@
     <ItemGroup>
         <PackageReference Include="DalamudPackager" Version="2.1.12" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
+        <PackageReference Include="System.Management" Version="8.0.0" />
         <PackageReference Include="TinyPinyin" Version="1.1.0" />
     </ItemGroup>
 

@@ -120,4 +120,5 @@ public class Service
     public static SigScanner SigScanner { get; private set; } = new();
     public static IPCManager IPCManager { get; private set; } = new();
     public static ModuleManager ModuleManager { get; private set; } = new();
+    public static OnlineStatsManager DataUploadManager { get; private set; } = new();
 }
