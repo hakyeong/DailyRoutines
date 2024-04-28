@@ -114,7 +114,7 @@ public unsafe class AutoDiscard : DailyModuleBase
         ModuleConfig = LoadConfig<Config>() ?? new();
 
         ItemNames ??= LuminaCache.Get<Item>()
-                                 .Where(x => !string.IsNullOrEmpty(x.Name.RawString))
+                                 .Where(x => !string.IsNullOrEmpty(x.Name.RawString) && x.ItemSortCategory.Row is not 3 and 4)
                                  .GroupBy(x => x.Name.RawString)
                                  .ToDictionary(x => x.Key, x => x.First());
         _ItemNames = ItemNames.Take(10).ToDictionary(x => x.Key, x => x.Value);
