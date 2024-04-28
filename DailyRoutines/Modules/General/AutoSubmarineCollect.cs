@@ -135,6 +135,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
             return true;
         }
 
+        TaskManager.Abort();
         TaskManager.DelayNext(2000);
         TaskManager.Enqueue(CommenceSubmarineVoyage);
 
@@ -149,7 +150,6 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         AddonHelper.Callback(AirShipExplorationDetail, true, 0);
         AirShipExplorationDetail->Close(true);
 
-        TaskManager.Abort();
         TaskManager.DelayNext(3000);
         TaskManager.Enqueue(GetSubmarineInfos);
 
@@ -194,29 +194,25 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         if (!EzThrottler.Throttle("AutoSubmarineCollect-RepairSubmarines", 100)) return false;
         if (SelectYesno != null) return false;
 
-        if (CompanyCraftSupply != null && IsAddonAndNodesReady(CompanyCraftSupply))
+        if (CompanyCraftSupply == null || !IsAddonAndNodesReady(CompanyCraftSupply)) return false;
+
+        for (var i = 0; i < 4; i++)
         {
-            for (var i = 0; i < 4; i++)
+            var endurance = CompanyCraftSupply->AtkValues[3 + (8 * i)].UInt;
+            if (endurance <= 0)
             {
-                var endurance = CompanyCraftSupply->AtkValues[3 + (8 * i)].UInt;
-                if (endurance <= 0)
-                {
-                    AgentHelper.SendEvent(AgentId.SubmersibleParts, 0, 3, 0, i, 0, 0, 0);
-                    return false;
-                }
+                AgentHelper.SendEvent(AgentId.SubmersibleParts, 0, 3, 0, i, 0, 0, 0);
+                return false;
             }
-
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(() => AddonHelper.Callback(CompanyCraftSupply, true, 5));
-            TaskManager.Enqueue(() => CompanyCraftSupply->Close(true));
-
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(ClickPreviousVoyageLog);
-
-            return true;
         }
 
-        return false;
+        TaskManager.DelayNext(100);
+        TaskManager.Enqueue(() => AddonHelper.Callback(CompanyCraftSupply, true, 5));
+
+        TaskManager.DelayNext(100);
+        TaskManager.Enqueue(ClickPreviousVoyageLog);
+
+        return true;
     }
 
     private bool? ClickPreviousVoyageLog()
