@@ -40,6 +40,12 @@ namespace DailyRoutines.Modules;
 public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 {
     #region 预定义
+    private static readonly InventoryType[] InventoryTypes =
+    [
+        InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3,
+        InventoryType.Inventory4
+    ];
+
     public enum AdjustBehavior
     {
         固定值,
@@ -278,7 +284,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         // 出售详情
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSell", OnRetainerSell);
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = true };
         Overlay ??= new Overlay(this);
 
         Service.Hook.InitializeFromAttributes(this);
@@ -519,11 +525,13 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             }
 
             ImGui.SameLine();
+            ImGui.BeginDisabled(itemConfig.ItemID == 0);
             if (ImGuiOm.ButtonIcon("ObtainBuyingPrice", FontAwesomeIcon.Store, "获取收购价格"))
             {
                 itemConfig.PriceMinimum = Math.Max(1, (int)itemBuyingPrice);
                 SaveConfig(ModuleConfig);
             }
+            ImGui.EndDisabled();
 
             var originalExpected = itemConfig.PriceExpected;
             ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
@@ -677,11 +685,12 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             TaskManager.Enqueue(() =>
             {
                 if (RetainerSellList == null) return false;
-
+                
                 for (var i1 = 0; i1 < marketItemCount; i1++)
                 {
                     var index1 = i1;
                     TaskManager.Insert(() => ClickSellingItem(index1));
+                    TaskManager.InsertDelayNext(500);
                 }
                 return true;
             });
@@ -710,6 +719,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         {
             var index = i;
             TaskManager.Enqueue(() => ClickSellingItem(index));
+            TaskManager.DelayNext(500);
         }
     }
 
@@ -811,7 +821,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         if (TryGetPriceCache(CurrentItem.ItemID, CurrentItem.IsHQ, out _))
         {
             ItemSearchResult->Close(true);
-            TaskManager.EnqueueImmediate(FillLowestPrice);
+            TaskManager.EnqueueImmediate(FillPrice);
 
             return true;
         }
@@ -872,12 +882,12 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             ItemHistory->Close(true);
             ItemSearchResult->Close(true);
 
-            TaskManager.EnqueueImmediate(FillLowestPrice);
+            TaskManager.EnqueueImmediate(FillPrice);
         }
     }
 
     // 填入最低价格
-    private bool? FillLowestPrice()
+    private bool? FillPrice()
     {
         if (InterruptByConflictKey()) return true;
 
@@ -979,7 +989,6 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
                 OperateAndReturn(false);
                 return;
             }
-
             switch (behavior)
             {
                 case AbortBehavior.改价至最小值:
@@ -991,14 +1000,15 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
                 case AbortBehavior.收回至雇员:
                     if (CurrentItemIndex != -1)
                     {
+                        var copyIndex = CurrentItemIndex;
                         TaskManager.EnqueueImmediate(() =>
                         {
                             if (RetainerSellList == null || !IsAddonAndNodesReady(RetainerSellList)) return false;
-
-                            AgentHelper.SendEvent(AgentId.Retainer, 3, 0, CurrentItemIndex, 1);
-                            return true;
+                            AddonHelper.Callback(RetainerSellList, true, 0, copyIndex, 1);
+                            return TryGetAddonByName<AtkUnitBase>("ContextMenu", out var cm) && IsAddonAndNodesReady(cm);
                         });
 
+                        TaskManager.DelayNextImmediate(50);
                         TaskManager.EnqueueImmediate(() => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(958).Text.RawString));
                     }
                     OperateAndReturn(false);
@@ -1006,15 +1016,43 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
                 case AbortBehavior.收回至背包:
                     if (CurrentItemIndex != -1)
                     {
+                        var copyIndex = CurrentItemIndex;
+                        TaskManager.EnqueueImmediate(() =>
+                        {
+                            if (RetainerSellList == null || !IsAddonAndNodesReady(RetainerSellList)) return false;
+                            AddonHelper.Callback(RetainerSellList, true, 0, copyIndex, 1);
+                            return TryGetAddonByName<AtkUnitBase>("ContextMenu", out var cm) && IsAddonAndNodesReady(cm);
+                        });
+
+                        TaskManager.DelayNextImmediate(50);
+                        TaskManager.EnqueueImmediate(() => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(976).Text.RawString));
+                    }
+                    OperateAndReturn(false);
+                    break;
+                case AbortBehavior.出售至系统商店:
+                    if (CurrentItemIndex != -1)
+                    {
                         TaskManager.EnqueueImmediate(() =>
                         {
                             if (RetainerSellList == null || !IsAddonAndNodesReady(RetainerSellList)) return false;
 
-                            AgentHelper.SendEvent(AgentId.Retainer, 3, 0, CurrentItemIndex, 1);
+                            AddonHelper.Callback(RetainerSellList, true, 0, CurrentItemIndex, 1);
                             return true;
                         });
 
                         TaskManager.EnqueueImmediate(() => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(976).Text.RawString));
+                        TaskManager.DelayNextImmediate(500);
+                        TaskManager.EnqueueImmediate(() =>
+                        {
+                            if (!TrySearchItemInInventory(CurrentItem.ItemID, CurrentItem.IsHQ, out var foundItem) || 
+                                foundItem.Count <= 0) return true;
+
+                            TaskManager.EnqueueImmediate(() => OpenInventoryItemContext(foundItem[0]));
+                            TaskManager.EnqueueImmediate(() => ClickHelper.ContextMenu(
+                                                             LuminaCache.GetRow<Addon>(5480).Text.RawString));
+
+                            return true;
+                        });
                     }
                     OperateAndReturn(false);
                     break;
@@ -1042,6 +1080,57 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
                                                currentMarketPrice, originalPrice, rReason, threshold);
 
         Service.Chat.Print(ssb.Append(prefix).Append(message).Build());
+    }
+
+    private static bool TrySearchItemInInventory(uint itemID, bool isHQ, out List<InventoryItem> foundItem)
+    {
+        foundItem = [];
+        if (Service.Gui.GetAddonByName("InventoryExpansion") == nint.Zero) return false;
+        var inventoryManager = InventoryManager.Instance();
+        if (inventoryManager == null) return false;
+
+        foreach (var type in InventoryTypes)
+        {
+            var container = inventoryManager->GetInventoryContainer(type);
+            if (container == null) return false;
+
+            for (var i = 0; i < container->Size; i++)
+            {
+                var slot = container->GetInventorySlot(i);
+                if (slot->ItemID == itemID && (!isHQ || (isHQ && slot->Flags.HasFlag(InventoryItem.ItemFlags.HQ))))
+                    foundItem.Add(*slot);
+            }
+        }
+
+        return foundItem.Count > 0;
+    }
+
+    private static bool OpenInventoryItemContext(InventoryItem item)
+    {
+        if (!EzThrottler.Throttle("AutoDiscard", 100)) return false;
+        var agent = AgentInventoryContext.Instance();
+        if (agent == null) return false;
+
+        agent->OpenForItemSlot(item.Container, item.Slot, GetActiveInventoryAddonID());
+        return true;
+    }
+
+    private static uint GetActiveInventoryAddonID()
+    {
+        var inventory0 = (AtkUnitBase*)Service.Gui.GetAddonByName("Inventory");
+        if (inventory0 == null) return 0;
+
+        var inventory1 = (AtkUnitBase*)Service.Gui.GetAddonByName("InventoryLarge");
+        if (inventory1 == null) return 0;
+
+        var inventory2 = (AtkUnitBase*)Service.Gui.GetAddonByName("InventoryExpansion");
+        if (inventory2 == null) return 0;
+
+        if (IsAddonAndNodesReady(inventory0)) return inventory0->ID;
+        if (IsAddonAndNodesReady(inventory1)) return inventory1->ID;
+        if (IsAddonAndNodesReady(inventory2)) return inventory2->ID;
+
+        return 0;
     }
 
     private static void ResetCurrentItemStats()
