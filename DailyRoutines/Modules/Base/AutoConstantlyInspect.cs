@@ -6,7 +6,6 @@ using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Internal.Notifications;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
@@ -20,9 +19,17 @@ public class AutoConstantlyInspect : DailyModuleBase
 
     public override void ConfigUI() => ConflictKeyText();
 
-    private unsafe void OnAddon(AddonEvent type, AddonArgs args)
+    private static unsafe void OnAddon(AddonEvent type, AddonArgs args)
     {
-        InterruptByConflictKey();
+        if (Service.KeyState[Service.Config.ConflictKey])
+        {
+            Service.DalamudNotice.AddNotification(new()
+            {
+                Content = Service.Lang.GetText("ConflictKey-InterruptMessage"), Title = "Daily Routines",
+                Type = NotificationType.Success
+            });
+            return;
+        }
 
         var addon = (AtkUnitBase*)args.Addon;
         if (addon == null) return;
