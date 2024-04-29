@@ -682,27 +682,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRetainerPriceAdjust-AdjustForRetainers" xml:space="preserve">
     <value>改价 (所有雇员)</value>
   </data>
-  <data name="AutoRetainerPriceAdjust-LowestAcceptablePrice" xml:space="preserve">
-    <value>最低可接受价格</value>
-  </data>
-  <data name="AutoRetainerPriceAdjust-MaxPriceReduction" xml:space="preserve">
-    <value>最大可接受降价值</value>
-  </data>
-  <data name="AutoRetainerPriceAdjust-MaxPriceReductionInputHelp" xml:space="preserve">
-    <value>设置为 0 以禁用</value>
-  </data>
-  <data name="AutoRetainerPriceAdjust-SeparateNQAndHQ" xml:space="preserve">
-    <value>区分 HQ 和 NQ 物品</value>
-  </data>
-  <data name="AutoRetainerPriceAdjust-SeparateNQAndHQHelp" xml:space="preserve">
-    <value>勾选则代表, 若出售物品为 HQ, 则只获取市场上 HQ 物品的价格
-如若出售物品中无 HQ, 则取 NQ 商品价格</value>
-  </data>
-  <data name="AutoRetainerPriceAdjust-SinglePriceReductionValue" xml:space="preserve">
-    <value>单次压价值</value>
-  </data>
   <data name="AutoRetainerPriceAdjustDescription" xml:space="preserve">
-    <value>打开雇员出售列表后, 自动将所有出售商品价格改为当前市场最低价格减去指定值
+    <value>启用并点击开始后, 自动为指定范围的出售物品完成改价
 出售物品时, 自动获取当前市场最低价并完成出售
 (前置模块: 自动刷新市场搜索结果)</value>
   </data>
@@ -1155,22 +1136,11 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoHolmgangSelfTitle" xml:space="preserve">
     <value>自动死斗自身</value>
   </data>
-  <data name="AutoRetainerPriceAdjust-ProhibitLowerThanSellPrice" xml:space="preserve">
-    <value>禁止低于收购价格</value>
-  </data>
-  <data name="AutoRetainerPriceAdjust-SkipAdjustMessage" xml:space="preserve">
-    <value>物品:{0} (雇员: {1})
-(市场价: {2} / 原价:{3})
-已超过{4}: {5}, 跳过改价</value>
-  </data>
   <data name="NoAttackWrongMandragorasDescription" xml:space="preserve">
     <value>在宝物库内, 若场上存在蔓德拉战队, 则禁止选中不符合当前击杀顺序的蔓德拉</value>
   </data>
   <data name="NoAttackWrongMandragorasTitle" xml:space="preserve">
     <value>强制按顺序击杀蔓德拉战队</value>
-  </data>
-  <data name="AutoRetainerPriceAdjust-AdjustToLowestPriceWhenLower" xml:space="preserve">
-    <value>低于最低价时改成最低价</value>
   </data>
   <data name="ClipboardMultiLineToOneLineDescription" xml:space="preserve">
     <value>在游戏内粘贴文本时, 强制将多行文本转成单行, 以方便游戏内编辑发送</value>
@@ -1431,5 +1401,49 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
 注: 数据中不会包含你的区服用户名以及任何个人信息
 
 但允许上传可以帮助我们更好地改善整体功能与发布更新!</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-CommonItemPreset" xml:space="preserve">
+    <value>通用物品配置</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-ConductAbortBehavior" xml:space="preserve">
+    <value>执行意外情况行为逻辑: {0}</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-DetectAbortCondition" xml:space="preserve">
+    <value>物品: {0} (雇员: {1})
+检测到意外情况: {2}</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-NoPriceDataFound" xml:space="preserve">
+    <value>物品: {0} (雇员: {1}) 未找到任何出售数据, 已跳过</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-ObtainBuyingPrice" xml:space="preserve">
+    <value>获取收购价格</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-OpenUniversalis" xml:space="preserve">
+    <value>打开 Universalis</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-PercentageReduction" xml:space="preserve">
+    <value>单次降价幅度</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-PriceAdjustSuccessfully" xml:space="preserve">
+    <value>物品: {0} (雇员: {1}) 改价成功:
+原价: {2} ——&gt; 现价: {3}</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-PriceExpected" xml:space="preserve">
+    <value>预期价格</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-PriceMaxReduction" xml:space="preserve">
+    <value>可接受降价值</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-PriceMinimum" xml:space="preserve">
+    <value>最低可接受价格</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-SendProcessMessage" xml:space="preserve">
+    <value>发送改价过程详情消息</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-ValueReduction" xml:space="preserve">
+    <value>单次降价值</value>
+  </data>
+  <data name="HQ" xml:space="preserve">
+    <value>高品质</value>
   </data>
 </root>
