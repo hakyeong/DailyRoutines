@@ -79,7 +79,6 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
                 if (gearset->ID != i) continue;
                 if (gearset->ClassJob > 18)
                 {
-                    Service.Log.Debug("测试3");
                     Chat.Instance.SendMessage($"/gearset change {gearset->ID + 1}");
                     return true;
                 }
