@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Management;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,7 +29,7 @@ public class OnlineStatsManager : IDailyManager
         [JsonProperty("enabled_modules")]
         public string[] EnabledModules = Service.ModuleManager.Modules
                                                 .Where(x => x.Value.Initialized)
-                                                .Select(x => x.Key.Name).ToArray();
+                                                .Select(x => Service.Lang.GetText(x.Key.GetCustomAttribute<ModuleDescriptionAttribute>()?.TitleKey ?? "DevModuleTitle")).ToArray();
 
         [JsonProperty("all_modules_amount")]
         public uint AllModulesAmount = (uint)Service.ModuleManager.Modules.Count;
