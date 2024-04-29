@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Windows.Forms;
 using ClickLib;
 using ClickLib.Clicks;
 using DailyRoutines.Helpers;
@@ -23,6 +26,7 @@ using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using Dalamud.Utility.Signatures;
 using ECommons.Automation;
+using ECommons.Configuration;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -364,6 +368,17 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             if (ImGuiOm.ButtonIcon("AddNewConfig", FontAwesomeIcon.Plus, Service.Lang.GetText("Add")))
                 ImGui.OpenPopup("AddNewPreset");
 
+            ImGui.SameLine();
+            if (ImGuiOm.ButtonIcon("ImportConfig", FontAwesomeIcon.FileImport, Service.Lang.GetText("AutoRetainerPriceAdjust-ImportFromClipboard")))
+            {
+                var itemConfig = ImportItemConfigFromClipboard();
+                if (itemConfig != null)
+                {
+                    var itemKey = new ItemKey(itemConfig.ItemID, itemConfig.IsHQ).ToString();
+                    ModuleConfig.ItemConfigs[itemKey] = itemConfig;
+                }
+            }
+
             if (ImGui.BeginPopup("AddNewPreset"))
             {
                 ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
@@ -415,9 +430,12 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
                 if (ImGui.Selectable($"{itemConfig.Value.ItemName} {(itemConfig.Value.IsHQ ? "(HQ)" : "")}"))
                     SelectedItemConfig = itemConfig.Value;
 
-                if (itemConfig.Value.ItemID != 0)
+                if (ImGui.BeginPopupContextItem($"{itemConfig.Value}_{itemConfig.Key}_{itemConfig.Value.ItemID}"))
                 {
-                    if (ImGui.BeginPopupContextItem($"{itemConfig.Value}"))
+                    if (ImGui.Selectable(Service.Lang.GetText("AutoRetainerPriceAdjust-ExportToClipboard")))
+                        ExportItemConfigToClipboard(itemConfig.Value);
+
+                    if (itemConfig.Value.ItemID != 0)
                     {
                         if (ImGui.Selectable(Service.Lang.GetText("Delete")))
                         {
@@ -426,8 +444,8 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
                             SelectedItemConfig = null;
                         }
-                        ImGui.EndPopup();
                     }
+                    ImGui.EndPopup();
                 }
 
                 if (itemConfig.Value is { ItemID: 0, IsHQ: true })
@@ -1117,6 +1135,46 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     #endregion
 
     #region Helpers
+
+    private static void ExportItemConfigToClipboard(ItemConfig config)
+    {
+        try
+        {
+            var json = JsonSerializer.Serialize(config);
+            var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+
+            Clipboard.SetText(base64);
+            Service.Chat.Print(new SeStringBuilder().Append(DRPrefix()).Append($" 已成功导出 {config.ItemName} {(config.IsHQ ? "(HQ) " : "")}的配置至剪贴板").Build());
+        }
+        catch (Exception ex)
+        {
+            Service.Chat.PrintError($"导出至剪贴板错误: {ex.Message}");
+        }
+    }
+
+    private static ItemConfig? ImportItemConfigFromClipboard()
+    {
+        try
+        {
+            var base64 = Clipboard.GetText();
+
+            if (!string.IsNullOrEmpty(base64))
+            {
+                var json = Encoding.UTF8.GetString(Convert.FromBase64String(base64));
+                var config = JsonSerializer.Deserialize<ItemConfig>(json);
+                if (config != null)
+                    Service.Chat.Print(new SeStringBuilder().Append(DRPrefix()).Append($" 已成功导入 {config.ItemName} {(config.IsHQ ? "(HQ) " : "")}的配置").Build());
+                return config;
+            }
+        }
+        catch (Exception ex)
+        {
+            Service.Chat.PrintError($"从剪贴板导入配置时失败: {ex.Message}");
+        }
+
+        return null;
+    }
+
     private static bool TrySearchItemInInventory(uint itemID, bool isHQ, out List<InventoryItem> foundItem)
     {
         foundItem = [];

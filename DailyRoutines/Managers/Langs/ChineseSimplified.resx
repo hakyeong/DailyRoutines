@@ -1453,4 +1453,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoFCWSDeliverTitle" xml:space="preserve">
     <value>自动部队合建交纳素材</value>
   </data>
+  <data name="AutoRetainerPriceAdjust-ExportToClipboard" xml:space="preserve">
+    <value>导出至剪贴板</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-ImportFromClipboard" xml:space="preserve">
+    <value>从剪贴板导入</value>
+  </data>
 </root>
