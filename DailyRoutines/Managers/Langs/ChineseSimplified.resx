@@ -1457,6 +1457,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>从剪贴板导入</value>
   </data>
   <data name="ExpandPlayerMenuSearch-RisingStoneSearchHelp" xml:space="preserve">
-    <value />
+    <value>必须要先在浏览器登录石之家才能正常使用此功能</value>
   </data>
 </root>
