@@ -125,6 +125,8 @@ public class CommandManager : IDailyManager
         var spiltedArgs = args.Split(' ', 2);
         if (SubPDRArgs.TryGetValue(spiltedArgs[0], out var commandInfo))
             commandInfo.Handler(spiltedArgs[0], spiltedArgs.Length > 1 ? spiltedArgs[1] : "");
+        else
+            Service.Chat.PrintError($"“{spiltedArgs[0]}”出现问题：该命令不存在。");
     }
 
     private void OnSubSearch(string command, string args)
