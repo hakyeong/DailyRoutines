@@ -844,7 +844,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     // 获取市场数据
     private bool? ObtainMarketData()
     {
-        if (!EzThrottler.Throttle("AutoRetainerPriceAdjust-ObtainMarketData")) return false;
+        if (!EzThrottler.Throttle("AutoRetainerPriceAdjust-ObtainMarketData", 1000)) return false;
         if (ItemSearchResult == null || !IsAddonAndNodesReady(ItemSearchResult)) return false;
         if (InfoItemSearch->SearchItemId == 0) return false;
         CurrentItem.ItemID = InfoItemSearch->SearchItemId;
