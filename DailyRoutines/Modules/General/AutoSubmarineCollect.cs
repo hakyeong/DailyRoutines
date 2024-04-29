@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text.RegularExpressions;
@@ -165,6 +166,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         AddonHelper.Callback(AirShipExplorationDetail, true, 0);
         AirShipExplorationDetail->Close(true);
 
+        TaskManager.Abort();
         TaskManager.DelayNext(3000);
         TaskManager.Enqueue(GetSubmarineInfos);
 
@@ -254,8 +256,9 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         switch (logMessageID)
         {
             case 4290:
-                TaskManager.Abort();
-                TaskManager.Enqueue(ReadyToRepairSubmarines);
+                Service.Framework.RunOnTick(TaskManager.Abort, TimeSpan.FromMilliseconds(500));
+                Service.Framework.RunOnTick(() => TaskManager.Enqueue(ReadyToRepairSubmarines),
+                                            TimeSpan.FromMilliseconds(1000));
                 break;
             case 4276:
                 TaskManager.Abort();
