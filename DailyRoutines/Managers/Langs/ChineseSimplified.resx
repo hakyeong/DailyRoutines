@@ -1446,4 +1446,11 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="HQ" xml:space="preserve">
     <value>高品质</value>
   </data>
+  <data name="AutoFCWSDeliverDescription" xml:space="preserve">
+    <value>打开提供素材界面, 并点击开始后, 自动交纳当前所有可用素材
+(前置模块: 自动选择并递交物品) </value>
+  </data>
+  <data name="AutoFCWSDeliverTitle" xml:space="preserve">
+    <value>自动部队合建交纳素材</value>
+  </data>
 </root>
