@@ -185,9 +185,6 @@
   <data name="AutoCutSceneSkipTitle" xml:space="preserve">
     <value>自动跳过过场动画</value>
   </data>
-  <data name="AutoDance-AutoFinish" xml:space="preserve">
-    <value>自动使用 标准/技巧舞步结束</value>
-  </data>
   <data name="AutoDanceDescription" xml:space="preserve">
     <value>使用舞者技能标准/技巧舞步时, 自动使用对应的舞步技能</value>
   </data>
