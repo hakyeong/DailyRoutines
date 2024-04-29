@@ -1456,4 +1456,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRetainerPriceAdjust-ImportFromClipboard" xml:space="preserve">
     <value>从剪贴板导入</value>
   </data>
+  <data name="ExpandPlayerMenuSearch-RisingStoneSearchHelp" xml:space="preserve">
+    <value />
+  </data>
 </root>
