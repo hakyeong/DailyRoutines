@@ -15,7 +15,6 @@ using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Network.Structures;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
@@ -33,6 +32,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using Microsoft.Extensions.Caching.Memory;
+using SeStringBuilder = Dalamud.Game.Text.SeStringHandling.SeStringBuilder;
 
 namespace DailyRoutines.Modules;
 
@@ -871,6 +871,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         }
 
         var listing = InfoItemSearch->Listings.ToArray();
+        if (listing[0].ItemId != CurrentItem.ItemID) return false;
 
         var minPrice = listing
                        .Where(x => !PlayerRetainers.Contains(x.SellingRetainerContentId) &&
@@ -1001,7 +1002,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             var priceComponent = addon->AskingPrice;
             var handler = new ClickRetainerSell();
 
-            if (isConfirm)
+            if (isConfirm && price != 0 && origPrice != price)
             {
                 if (ModuleConfig.SendProcessMessage)
                 {
@@ -1021,7 +1022,8 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         {
             if (ModuleConfig.SendProcessMessage)
             {
-                var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-ConductAbortBehavior", behavior);
+                var behaviorMessage = new SeStringBuilder().AddUiForeground(behavior.ToString(), 67).Build();
+                var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-ConductAbortBehavior", behaviorMessage);
                 Service.Chat.Print(message);
             }
 
@@ -1107,8 +1109,8 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
         void NotifyAbortCondition(AbortCondition condition)
         {
             if (!ModuleConfig.SendProcessMessage) return;
-            var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-DetectAbortCondition", itemPayload,
-                                                   retainerName, condition);
+            var conditionMessage = new SeStringBuilder().AddUiForeground(condition.ToString(), 60).Build();
+            var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-DetectAbortCondition", itemPayload, retainerName, conditionMessage);
             Service.Chat.Print(new SeStringBuilder().Append(DRPrefix()).Append(message).Build());
         }
     }
