@@ -10,6 +10,8 @@ using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using TaskManager = ECommons.Automation.TaskManager;
 using DailyRoutines.Helpers;
+using ECommons.Automation;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 
 namespace DailyRoutines.Modules;
 
@@ -40,9 +42,7 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
 
     private void OnCommand(string command, string arguments)
     {
-        if (Flags.BoundByDuty() || !UIState.IsInstanceContentUnlocked(4) ||
-            Service.ClientState.LocalPlayer == null ||
-            Service.ClientState.LocalPlayer.ClassJob.Id is >= 8 and <= 18) return;
+        if (Flags.BoundByDuty() || !UIState.IsInstanceContentUnlocked(4)) return;
 
         TaskManager.Abort();
         EnqueueARound();
@@ -50,11 +50,43 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
 
     private void EnqueueARound()
     {
+        TaskManager.Enqueue(CheckAndSwitchJob);
         TaskManager.Enqueue(OpenContentsFinder);
         TaskManager.Enqueue(CancelSelectedContents);
         TaskManager.Enqueue(SelectDuty);
         TaskManager.Enqueue(CommenceDuty);
         TaskManager.Enqueue(ExitDuty);
+    }
+
+    private bool? CheckAndSwitchJob()
+    {
+        var localPlayer = Service.ClientState.LocalPlayer;
+        if (localPlayer == null)
+        {
+            TaskManager.Abort();
+            return true;
+        }
+
+        if (localPlayer.ClassJob.Id is >= 8 and <= 18)
+        {
+            var gearsetModule = RaptureGearsetModule.Instance();
+            for (var i = 0; i < 100; i++)
+            {
+                var gearset = gearsetModule->GetGearset(i);
+                if (gearset == null) continue;
+                if (!gearset->Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists)) continue;
+                if (gearset->Flags.HasFlag(RaptureGearsetModule.GearsetFlag.MainHandMissing)) continue;
+                if (gearset->ID != i) continue;
+                if (gearset->ClassJob > 18)
+                {
+                    Service.Log.Debug("测试3");
+                    Chat.Instance.SendMessage($"/gearset change {gearset->ID + 1}");
+                    return true;
+                }
+            }
+        }
+
+        return true;
     }
 
     private static bool? OpenContentsFinder()
@@ -125,7 +157,6 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
             !IsAddonAndNodesReady(addon)) return false;
 
         ClickContentsFinderConfirm.Using((nint)addon).Commence();
-        ;
         return true;
     }
 
