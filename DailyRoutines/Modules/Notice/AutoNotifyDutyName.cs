@@ -31,7 +31,8 @@ public class AutoNotifyDutyName : DailyModuleBase
         var contentName = content.Name.RawString;
 
         var message = new SeStringBuilder().Append(DRPrefix()).Append(" ")
-                                           .Append(Service.Lang.GetSeString("AutoNotifyDutyName-NoticeMessage", contentName)).Build();
+                                           .Append(Service.Lang.GetSeString(
+                                                       "AutoNotifyDutyName-NoticeMessage", contentName)).Build();
         Service.Chat.Print(message);
         if (ConfigSendWindowsToast) WinToast.Notify(contentName, contentName);
     }

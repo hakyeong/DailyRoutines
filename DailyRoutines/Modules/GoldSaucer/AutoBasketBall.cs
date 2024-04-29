@@ -21,7 +21,6 @@ public class AutoBasketBall : DailyModuleBase
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "BasketBall", OnAddonSetup);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "BasketBall", OnAddonSetup);
-
     }
 
     public override void ConfigUI()

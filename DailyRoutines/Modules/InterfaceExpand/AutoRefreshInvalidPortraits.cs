@@ -15,7 +15,8 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoRefreshInvalidPortraitsTitle", "AutoRefreshInvalidPortraitsDescription", ModuleCategories.InterfaceExpand)]
+[ModuleDescription("AutoRefreshInvalidPortraitsTitle", "AutoRefreshInvalidPortraitsDescription",
+                   ModuleCategories.InterfaceExpand)]
 public unsafe class AutoRefreshInvalidPortraits : DailyModuleBase
 {
     public override void Init()

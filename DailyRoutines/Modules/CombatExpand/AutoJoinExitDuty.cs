@@ -19,22 +19,30 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
     private static AtkUnitBase* ContentsFinder => (AtkUnitBase*)Service.Gui.GetAddonByName("ContentsFinder");
 
     private const string AbandonDutySig = "E8 ?? ?? ?? ?? 48 8B 43 28 B1 01";
+
     private delegate void AbandonDutyDelagte(bool a1);
+
     private static AbandonDutyDelagte? AbandonDuty;
 
     public override void Init()
     {
-        AbandonDuty ??= Marshal.GetDelegateForFunctionPointer<AbandonDutyDelagte>(Service.SigScanner.ScanText(AbandonDutySig));
+        AbandonDuty ??=
+            Marshal.GetDelegateForFunctionPointer<AbandonDutyDelagte>(Service.SigScanner.ScanText(AbandonDutySig));
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
-        Service.CommandManager.AddSubCommand("joinexitduty", 
-                                     new CommandInfo(OnCommand) { HelpMessage = Service.Lang.GetText("AutoJoinExitDutyTitle"), ShowInHelp = true });
+        Service.CommandManager.AddSubCommand("joinexitduty",
+                                             new CommandInfo(OnCommand)
+                                             {
+                                                 HelpMessage = Service.Lang.GetText("AutoJoinExitDutyTitle"),
+                                                 ShowInHelp = true
+                                             });
     }
 
     private void OnCommand(string command, string arguments)
     {
         if (Flags.BoundByDuty() || !UIState.IsInstanceContentUnlocked(4) ||
-            Service.ClientState.LocalPlayer == null || Service.ClientState.LocalPlayer.ClassJob.Id is >= 8 and <= 18) return;
+            Service.ClientState.LocalPlayer == null ||
+            Service.ClientState.LocalPlayer.ClassJob.Id is >= 8 and <= 18) return;
 
         TaskManager.Abort();
         EnqueueARound();
@@ -101,6 +109,7 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
             AddonHelper.Callback(ContentsFinder, true, 12, 0);
             return true;
         }
+
         return false;
     }
 
@@ -111,15 +120,18 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
             TaskManager.InsertDelayNext(500);
             return true;
         }
-        if (!TryGetAddonByName<AtkUnitBase>("ContentsFinderConfirm", out var addon) || !IsAddonAndNodesReady(addon)) return false;
 
-        ClickContentsFinderConfirm.Using((nint)addon).Commence();;
+        if (!TryGetAddonByName<AtkUnitBase>("ContentsFinderConfirm", out var addon) ||
+            !IsAddonAndNodesReady(addon)) return false;
+
+        ClickContentsFinderConfirm.Using((nint)addon).Commence();
+        ;
         return true;
     }
 
     private static bool? ExitDuty()
     {
-        if (Service.Condition[ConditionFlag.WaitingForDutyFinder] || 
+        if (Service.Condition[ConditionFlag.WaitingForDutyFinder] ||
             Service.Condition[ConditionFlag.InDutyQueue] || Flags.BetweenAreas()) return false;
 
         AbandonDuty(false);

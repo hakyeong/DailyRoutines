@@ -36,14 +36,23 @@ public unsafe class AutoRetainerEntrustDups : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerItemTransferProgress", OnAddon);
 
         if (IsEnableCommand)
-            Service.CommandManager.AddSubCommand(Command, new CommandInfo(OnCommand) { ShowInHelp = true, HelpMessage = Service.Lang.GetText("AutoRetainerEntrustDups-CommandHelp") });
+            Service.CommandManager.AddSubCommand(
+                Command,
+                new CommandInfo(OnCommand)
+                    { ShowInHelp = true, HelpMessage = Service.Lang.GetText("AutoRetainerEntrustDups-CommandHelp") });
     }
 
     public override void ConfigUI()
     {
         if (ImGui.Checkbox(Service.Lang.GetText("AutoRetainerEntrustDups-AddCommand", Command), ref IsEnableCommand))
         {
-            if (IsEnableCommand) Service.CommandManager.AddSubCommand(Command, new CommandInfo(OnCommand) { ShowInHelp = true, HelpMessage = Service.Lang.GetText("AutoRetainerEntrustDups-CommandHelp") });
+            if (IsEnableCommand)
+                Service.CommandManager.AddSubCommand(
+                    Command,
+                    new CommandInfo(OnCommand)
+                    {
+                        ShowInHelp = true, HelpMessage = Service.Lang.GetText("AutoRetainerEntrustDups-CommandHelp")
+                    });
             else Service.CommandManager.RemoveSubCommand(Command);
             UpdateConfig(nameof(IsEnableCommand), IsEnableCommand);
         }
@@ -65,10 +74,7 @@ public unsafe class AutoRetainerEntrustDups : DailyModuleBase
         if (RetainerList == null) return;
 
         var retainerManager = RetainerManager.Instance();
-        for (var i = 0; i < retainerManager->GetRetainerCount(); i++)
-        {
-            EnqueueSingleRetainer(i);
-        }
+        for (var i = 0; i < retainerManager->GetRetainerCount(); i++) EnqueueSingleRetainer(i);
     }
 
     private void EnqueueSingleRetainer(int index)
@@ -98,7 +104,7 @@ public unsafe class AutoRetainerEntrustDups : DailyModuleBase
     private static bool? WaitForEntrustFinishing()
     {
         if (!EzThrottler.Throttle("AutoRetainerEntrustDups", 100)) return false;
-        if (!TryGetAddonByName<AtkUnitBase>("RetainerItemTransferProgress", out var addon) || 
+        if (!TryGetAddonByName<AtkUnitBase>("RetainerItemTransferProgress", out var addon) ||
             !IsAddonAndNodesReady(addon)) return false;
 
         var progressText = MemoryHelper.ReadSeStringNullTerminated((nint)addon->AtkValues[0].String).ExtractText();

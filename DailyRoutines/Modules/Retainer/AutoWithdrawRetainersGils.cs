@@ -66,7 +66,8 @@ public unsafe class AutoWithdrawRetainersGils : DailyModuleBase
 
     private static bool? ClickSpecificRetainer(int index)
     {
-        if (!TryGetAddonByName<AtkUnitBase>("RetainerList", out var addon) || !IsAddonAndNodesReady(addon)) return false;
+        if (!TryGetAddonByName<AtkUnitBase>("RetainerList", out var addon) || !IsAddonAndNodesReady(addon))
+            return false;
         ClickRetainerList.Using((nint)addon).Retainer(index);
         return true;
     }

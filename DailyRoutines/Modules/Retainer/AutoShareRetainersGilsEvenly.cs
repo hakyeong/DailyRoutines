@@ -120,7 +120,7 @@ public unsafe class AutoShareRetainersGilsEvenly : DailyModuleBase
 
     private static bool? ClickSpecificRetainer(int index)
     {
-        if (TryGetAddonByName<AtkUnitBase>("RetainerList", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("RetainerList", out var addon) && IsAddonAndNodesReady(addon))
         {
             var handler = new ClickRetainerList();
             handler.Retainer(index);
@@ -132,7 +132,7 @@ public unsafe class AutoShareRetainersGilsEvenly : DailyModuleBase
 
     private static bool? ReassignGils()
     {
-        if (TryGetAddonByName<AtkUnitBase>("Bank", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("Bank", out var addon) && IsAddonAndNodesReady(addon))
         {
             var retainerGils = addon->AtkValues[6].Int;
             var handler = new ClickBank();
@@ -165,7 +165,7 @@ public unsafe class AutoShareRetainersGilsEvenly : DailyModuleBase
 
     private static bool? WithdrawAllGils()
     {
-        if (TryGetAddonByName<AtkUnitBase>("Bank", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("Bank", out var addon) && IsAddonAndNodesReady(addon))
         {
             var retainerGils = addon->AtkValues[6].Int;
             var handler = new ClickBank();

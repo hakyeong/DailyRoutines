@@ -65,7 +65,8 @@ public unsafe class AutoLeveQuests : DailyModuleBase
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
-        if (ImGui.BeginCombo("##SelectedLeve", SelectedLeve == null ? "" : $"{SelectedLeve.Name.RawString}", ImGuiComboFlags.HeightLarge))
+        if (ImGui.BeginCombo("##SelectedLeve", SelectedLeve == null ? "" : $"{SelectedLeve.Name.RawString}",
+                             ImGuiComboFlags.HeightLarge))
         {
             if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-GetAreaLeveData"))) GetMapLeveQuests();
 
@@ -84,7 +85,8 @@ public unsafe class AutoLeveQuests : DailyModuleBase
                         !leve.Value.RowId.ToString().Contains(SearchString))
                         continue;
 
-                    if (ImGui.Selectable($"{leve.Value.ClassJobCategory.Value.Name.RawString}{leve.Value.Name.RawString[leve.Value.Name.RawString.IndexOf('：')..]} ({leve.Value.RowId})"))
+                    if (ImGui.Selectable(
+                            $"{leve.Value.ClassJobCategory.Value.Name.RawString}{leve.Value.Name.RawString[leve.Value.Name.RawString.IndexOf('：')..]} ({leve.Value.RowId})"))
                         SelectedLeve = leve.Value;
 
                     ImGui.Separator();
@@ -155,7 +157,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
     private static bool? InteractWithMete()
     {
         var continueToSubmit = LuminaCache.GetRow<CraftLeveClient>(1).Text.RawString;
-        if (SelectString != null && IsAddonAndNodesReady(SelectString) && 
+        if (SelectString != null && IsAddonAndNodesReady(SelectString) &&
             TryScanSelectStringText(SelectString, continueToSubmit, out _))
         {
             ClickHelper.SelectString(continueToSubmit);

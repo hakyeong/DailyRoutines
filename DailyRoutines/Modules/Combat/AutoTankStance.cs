@@ -40,9 +40,9 @@ public class AutoTankStance : DailyModuleBase
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
 
         ContentsWithOneTank ??= PresetData.Contents
-                                       .Where(x => (uint)x.Value.ContentMemberType.Value.TanksPerParty == 1)
-                                       .Select(x => x.Key)
-                                       .ToHashSet();
+                                          .Where(x => (uint)x.Value.ContentMemberType.Value.TanksPerParty == 1)
+                                          .Select(x => x.Key)
+                                          .ToHashSet();
 
         Service.ClientState.TerritoryChanged += OnZoneChanged;
         Service.DutyState.DutyRecommenced += OnDutyRecommenced;
@@ -76,7 +76,7 @@ public class AutoTankStance : DailyModuleBase
 
     private static unsafe bool? CheckCurrentJob()
     {
-        if (TryGetAddonByName<AtkUnitBase>("NowLoading", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("NowLoading", out var addon) && IsAddonAndNodesReady(addon))
             return false;
 
         var player = Service.ClientState.LocalPlayer;

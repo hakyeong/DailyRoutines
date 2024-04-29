@@ -24,6 +24,7 @@ public unsafe class AutoMount : DailyModuleBase
     public override void Init()
     {
         #region Config
+
         AddConfig("MountWhenZoneChange", true);
         MountWhenZoneChange = GetConfig<bool>("MountWhenZoneChange");
 
@@ -32,6 +33,7 @@ public unsafe class AutoMount : DailyModuleBase
 
         AddConfig("MountWhenCombatEnd", true);
         MountWhenCombatEnd = GetConfig<bool>("MountWhenCombatEnd");
+
         #endregion
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = false };
@@ -65,8 +67,9 @@ public unsafe class AutoMount : DailyModuleBase
         switch (flag)
         {
             case ConditionFlag.Gathering when !value && MountWhenGatherEnd:
-            case ConditionFlag.InCombat when !value && MountWhenCombatEnd && !Service.ClientState.IsPvP && 
-                                             (FateManager.Instance()->CurrentFate == null || FateManager.Instance()->CurrentFate->Progress == 100):
+            case ConditionFlag.InCombat when !value && MountWhenCombatEnd && !Service.ClientState.IsPvP &&
+                                             (FateManager.Instance()->CurrentFate == null ||
+                                              FateManager.Instance()->CurrentFate->Progress == 100):
                 TaskManager.Abort();
 
                 TaskManager.DelayNext(500);

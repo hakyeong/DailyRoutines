@@ -17,7 +17,10 @@ public class AutoConstantlyInspect : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "ItemInspectionResult", OnAddon);
     }
 
-    public override void ConfigUI() => ConflictKeyText();
+    public override void ConfigUI()
+    {
+        ConflictKeyText();
+    }
 
     private static unsafe void OnAddon(AddonEvent type, AddonArgs args)
     {

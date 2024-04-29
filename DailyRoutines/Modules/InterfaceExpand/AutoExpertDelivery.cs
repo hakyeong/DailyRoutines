@@ -25,9 +25,11 @@ namespace DailyRoutines.Modules;
 public unsafe class AutoExpertDelivery : DailyModuleBase
 {
     private delegate byte AtkUnitBaseCloseDelegate(AtkUnitBase* unitBase, byte a2);
+
     private static AtkUnitBaseCloseDelegate? AtkUnitBaseClose;
 
-    private static AtkUnitBase* AddonGrandCompanySupplyList => (AtkUnitBase*)Service.Gui.GetAddonByName("GrandCompanySupplyList");
+    private static AtkUnitBase* AddonGrandCompanySupplyList =>
+        (AtkUnitBase*)Service.Gui.GetAddonByName("GrandCompanySupplyList");
 
     private static HashSet<uint> HQItems = [];
 
@@ -47,7 +49,9 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         AddConfig("SkipWhenHQ", ConfigSkipWhenHQ);
         ConfigSkipWhenHQ = GetConfig<bool>("SkipWhenHQ");
 
-        AtkUnitBaseClose ??= Marshal.GetDelegateForFunctionPointer<AtkUnitBaseCloseDelegate>(Service.SigScanner.ScanText("40 53 48 83 EC 50 81 A1"));
+        AtkUnitBaseClose ??=
+            Marshal.GetDelegateForFunctionPointer<AtkUnitBaseCloseDelegate>(
+                Service.SigScanner.ScanText("40 53 48 83 EC 50 81 A1"));
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = true };
         Overlay ??= new Overlay(this);

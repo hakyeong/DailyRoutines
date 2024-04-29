@@ -36,7 +36,7 @@ public unsafe class AutoDiscard : DailyModuleBase
         public HashSet<uint> Items { get; set; } = [];
         public DiscardBehaviour Behaviour { get; set; } = DiscardBehaviour.Discard;
 
-        public DiscardItemsGroup(){ }
+        public DiscardItemsGroup() { }
 
         public DiscardItemsGroup(string name)
         {
@@ -63,10 +63,7 @@ public unsafe class AutoDiscard : DailyModuleBase
 
         public static bool operator ==(DiscardItemsGroup? lhs, DiscardItemsGroup? rhs)
         {
-            if (lhs is null)
-            {
-                return rhs is null;
-            }
+            if (lhs is null) return rhs is null;
             return lhs.Equals(rhs);
         }
 
@@ -114,7 +111,7 @@ public unsafe class AutoDiscard : DailyModuleBase
         ModuleConfig = LoadConfig<Config>() ?? new();
 
         ItemNames ??= LuminaCache.Get<Item>()
-                                 .Where(x => !string.IsNullOrEmpty(x.Name.RawString) && 
+                                 .Where(x => !string.IsNullOrEmpty(x.Name.RawString) &&
                                              x.ItemSortCategory.Row != 3 && x.ItemSortCategory.Row != 4)
                                  .GroupBy(x => x.Name.RawString)
                                  .ToDictionary(x => x.Key, x => x.First());
@@ -123,21 +120,33 @@ public unsafe class AutoDiscard : DailyModuleBase
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
         if (ModuleConfig.EnableCommand)
-            Service.CommandManager.AddCommand(ModuleCommand, 
-                                              new CommandInfo(OnCommand) 
-                                              { HelpMessage = Service.Lang.GetText("AutoDiscard-CommandHelp"), ShowInHelp = true });
+        {
+            Service.CommandManager.AddCommand(ModuleCommand,
+                                              new CommandInfo(OnCommand)
+                                              {
+                                                  HelpMessage = Service.Lang.GetText("AutoDiscard-CommandHelp"),
+                                                  ShowInHelp = true
+                                              });
+        }
     }
 
     public override void ConfigUI()
     {
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoDiscard-AddCommand", ModuleCommand), ref ModuleConfig.EnableCommand))
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoDiscard-AddCommand", ModuleCommand),
+                           ref ModuleConfig.EnableCommand))
         {
             if (ModuleConfig.EnableCommand)
-                Service.CommandManager.AddCommand(ModuleCommand, 
-                                                  new CommandInfo(OnCommand) 
-                                                      { HelpMessage = Service.Lang.GetText("AutoDiscard-CommandHelp"), ShowInHelp = true });
+            {
+                Service.CommandManager.AddCommand(ModuleCommand,
+                                                  new CommandInfo(OnCommand)
+                                                  {
+                                                      HelpMessage = Service.Lang.GetText("AutoDiscard-CommandHelp"),
+                                                      ShowInHelp = true
+                                                  });
+            }
             else
                 Service.CommandManager.RemoveCommand(ModuleCommand);
+
             SaveConfig(ModuleConfig);
         }
 
@@ -146,7 +155,8 @@ public unsafe class AutoDiscard : DailyModuleBase
         if (ImGui.BeginTable("DiscardGroupTable", 5, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg))
         {
             var orderColumnWidth = ImGui.CalcTextSize((ModuleConfig.DiscardGroups.Count + 1).ToString()).X + 24;
-            ImGui.TableSetupColumn("Order", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize, orderColumnWidth);
+            ImGui.TableSetupColumn("Order", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize,
+                                   orderColumnWidth);
             ImGui.TableSetupColumn("UniqueName", ImGuiTableColumnFlags.None, 20);
             ImGui.TableSetupColumn("Items", ImGuiTableColumnFlags.None, 60);
             ImGui.TableSetupColumn("Behaviour", ImGuiTableColumnFlags.None, 20);
@@ -194,6 +204,7 @@ public unsafe class AutoDiscard : DailyModuleBase
     }
 
     #region Table
+
     private void OrderHeader()
     {
         if (ImGuiOm.SelectableIconCentered("AddNewGroup", FontAwesomeIcon.Plus))
@@ -202,7 +213,9 @@ public unsafe class AutoDiscard : DailyModuleBase
         if (ImGui.BeginPopup("AddNewGroupPopup", ImGuiWindowFlags.AlwaysAutoResize))
         {
             ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
-            ImGui.InputTextWithHint("###NewGroupNameInput", Service.Lang.GetText("AutoDiscard-AddNewGroupInputNameHelp"), ref NewGroupNameInput, 100);
+            ImGui.InputTextWithHint("###NewGroupNameInput",
+                                    Service.Lang.GetText("AutoDiscard-AddNewGroupInputNameHelp"), ref NewGroupNameInput,
+                                    100);
 
             if (ImGui.Button(Service.Lang.GetText("Confirm")))
             {
@@ -239,13 +252,17 @@ public unsafe class AutoDiscard : DailyModuleBase
         if (ImGui.BeginPopup("EditGroupPopup", ImGuiWindowFlags.AlwaysAutoResize))
         {
             ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
-            ImGui.InputTextWithHint("###EditGroupNameInput", Service.Lang.GetText("AutoDiscard-AddNewGroupInputNameHelp"), ref EditGroupNameInput, 100);
+            ImGui.InputTextWithHint("###EditGroupNameInput",
+                                    Service.Lang.GetText("AutoDiscard-AddNewGroupInputNameHelp"),
+                                    ref EditGroupNameInput, 100);
 
             if (ImGui.Button(Service.Lang.GetText("Confirm")))
             {
-                if (!string.IsNullOrWhiteSpace(EditGroupNameInput) && !ModuleConfig.DiscardGroups.Contains(new(EditGroupNameInput)))
+                if (!string.IsNullOrWhiteSpace(EditGroupNameInput) &&
+                    !ModuleConfig.DiscardGroups.Contains(new(EditGroupNameInput)))
                 {
-                    ModuleConfig.DiscardGroups.FirstOrDefault(x => x.UniqueName == group.UniqueName).UniqueName = EditGroupNameInput;
+                    ModuleConfig.DiscardGroups.FirstOrDefault(x => x.UniqueName == group.UniqueName).UniqueName =
+                        EditGroupNameInput;
 
                     SaveConfig(ModuleConfig);
                     EditGroupNameInput = string.Empty;
@@ -260,6 +277,7 @@ public unsafe class AutoDiscard : DailyModuleBase
 
             ImGui.EndPopup();
         }
+
         ImGui.PopID();
     }
 
@@ -275,13 +293,16 @@ public unsafe class AutoDiscard : DailyModuleBase
             ImGui.BeginGroup();
             foreach (var item in group.Items.TakeLast(10))
             {
-                ImGui.Image(ImageHelper.GetIcon(LuminaCache.GetRow<Item>(item).Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(20f));
+                ImGui.Image(ImageHelper.GetIcon(LuminaCache.GetRow<Item>(item).Icon).ImGuiHandle,
+                            ImGuiHelpers.ScaledVector2(20f));
                 ImGui.SameLine();
             }
+
             ImGui.EndGroup();
         }
         else
             ImGui.Text(Service.Lang.GetText("AutoDiscard-NoItemInGroupHelp"));
+
         ImGui.EndGroup();
 
         if (ImGui.IsItemClicked())
@@ -293,16 +314,20 @@ public unsafe class AutoDiscard : DailyModuleBase
             if (ImGui.BeginChild("SelectedItemChild", leftChildSize, true))
             {
                 ImGui.SetNextItemWidth(-1f);
-                ImGui.InputTextWithHint("###SelectedItemSearchInput", Service.Lang.GetText("PleaseSearch"), ref SelectedItemSearchInput, 100);
+                ImGui.InputTextWithHint("###SelectedItemSearchInput", Service.Lang.GetText("PleaseSearch"),
+                                        ref SelectedItemSearchInput, 100);
 
                 ImGui.Separator();
                 foreach (var item in group.Items)
                 {
                     var specificItem = LuminaCache.GetRow<Item>(item);
-                    if (!string.IsNullOrWhiteSpace(SelectedItemSearchInput) && 
-                        !specificItem.Name.RawString.Contains(SelectedItemSearchInput, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (!string.IsNullOrWhiteSpace(SelectedItemSearchInput) &&
+                        !specificItem.Name.RawString.Contains(SelectedItemSearchInput,
+                                                              StringComparison.OrdinalIgnoreCase)) continue;
 
-                    if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(specificItem.Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(24f), specificItem.Name.RawString, false, ImGuiSelectableFlags.DontClosePopups))
+                    if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(specificItem.Icon).ImGuiHandle,
+                                                        ImGuiHelpers.ScaledVector2(24f), specificItem.Name.RawString,
+                                                        false, ImGuiSelectableFlags.DontClosePopups))
                         group.Items.Remove(specificItem.RowId);
                 }
 
@@ -311,7 +336,7 @@ public unsafe class AutoDiscard : DailyModuleBase
 
             ImGui.SameLine();
             ImGui.BeginGroup();
-            ImGui.SetCursorPosY(ImGui.GetContentRegionAvail().Y / 2 -  24f);
+            ImGui.SetCursorPosY((ImGui.GetContentRegionAvail().Y / 2) - 24f);
             ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0));
             ImGui.BeginDisabled();
             ImGuiOm.ButtonIcon("DecoExchangeIcon", FontAwesomeIcon.ExchangeAlt);
@@ -323,28 +348,30 @@ public unsafe class AutoDiscard : DailyModuleBase
             if (ImGui.BeginChild("SearchItemChild", leftChildSize, true))
             {
                 ImGui.SetNextItemWidth(-1f);
-                ImGui.InputTextWithHint("###GameItemSearchInput", Service.Lang.GetText("PleaseSearch"), ref ItemSearchInput, 100);
+                ImGui.InputTextWithHint("###GameItemSearchInput", Service.Lang.GetText("PleaseSearch"),
+                                        ref ItemSearchInput, 100);
 
                 if (ImGui.IsItemDeactivatedAfterEdit())
                 {
                     if (!string.IsNullOrWhiteSpace(ItemSearchInput) && ItemSearchInput.Length > 1)
                     {
-                        _ItemNames = ItemNames.Where(x => x.Key.Contains(ItemSearchInput, StringComparison.OrdinalIgnoreCase))
-                                              .ToDictionary(x => x.Key, x => x.Value);
+                        _ItemNames = ItemNames
+                                     .Where(x => x.Key.Contains(ItemSearchInput, StringComparison.OrdinalIgnoreCase))
+                                     .ToDictionary(x => x.Key, x => x.Value);
                     }
                 }
 
                 ImGui.Separator();
                 foreach (var (itemName, item) in _ItemNames)
-                {
-                    if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(item.Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(24f), itemName,
-                                                        group.Items.Contains(item.RowId), ImGuiSelectableFlags.DontClosePopups))
+                    if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(item.Icon).ImGuiHandle,
+                                                        ImGuiHelpers.ScaledVector2(24f), itemName,
+                                                        group.Items.Contains(item.RowId),
+                                                        ImGuiSelectableFlags.DontClosePopups))
                     {
                         if (!group.Items.Remove(item.RowId))
                             group.Items.Add(item.RowId);
                         SaveConfig(ModuleConfig);
                     }
-                }
 
                 ImGui.EndChild();
             }
@@ -369,6 +396,7 @@ public unsafe class AutoDiscard : DailyModuleBase
 
             ImGui.SameLine();
         }
+
         ImGui.PopID();
     }
 
@@ -401,7 +429,8 @@ public unsafe class AutoDiscard : DailyModuleBase
         }
 
         ImGui.SameLine();
-        if (ImGuiOm.ButtonIcon($"Delete_{index}", FontAwesomeIcon.TrashAlt, Service.Lang.GetText("AutoDiscard-DeleteWhenHoldCtrl")))
+        if (ImGuiOm.ButtonIcon($"Delete_{index}", FontAwesomeIcon.TrashAlt,
+                               Service.Lang.GetText("AutoDiscard-DeleteWhenHoldCtrl")))
         {
             if (ImGui.IsKeyDown(ImGuiKey.LeftCtrl))
             {
@@ -409,9 +438,11 @@ public unsafe class AutoDiscard : DailyModuleBase
                 SaveConfig(ModuleConfig);
             }
         }
+
         ImGui.EndDisabled();
         ImGui.PopID();
     }
+
     #endregion
 
     private void OnCommand(string command, string arguments)
@@ -464,10 +495,7 @@ public unsafe class AutoDiscard : DailyModuleBase
             for (var i = 0; i < container->Size; i++)
             {
                 var slot = container->GetInventorySlot(i);
-                if (slot->ItemID == itemID)
-                {
-                    foundItem.Add(*slot);
-                }
+                if (slot->ItemID == itemID) foundItem.Add(*slot);
             }
         }
 
@@ -514,6 +542,7 @@ public unsafe class AutoDiscard : DailyModuleBase
                             new SeStringBuilder().Append(DRPrefix()).AddUiForeground(" 未找到可用的出售页面", 17).Build());
                         TaskManager.Abort();
                     }
+
                     break;
                 }
 
@@ -527,6 +556,7 @@ public unsafe class AutoDiscard : DailyModuleBase
                             new SeStringBuilder().Append(DRPrefix()).AddUiForeground(" 未找到可用的出售页面", 17).Build());
                         TaskManager.Abort();
                     }
+
                     break;
                 }
 
@@ -581,16 +611,10 @@ public unsafe class AutoDiscard : DailyModuleBase
         var counter = 0;
         var numberPart = string.Empty;
         foreach (var c in baseName.Reverse())
-        {
             if (char.IsDigit(c))
-            {
                 numberPart = c + numberPart;
-            }
             else
-            {
                 break;
-            }
-        }
 
         if (numberPart.Length > 0)
         {

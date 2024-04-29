@@ -343,8 +343,11 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
             var gameObj = (GameObject*)obj.Address;
             if (ConfigOnlyDisplayInViewRange)
+            {
                 if (!TargetSystem.Instance()->IsObjectInViewRange(gameObj))
                     continue;
+            }
+
             var objDistance = GetGameDistanceFromObject(localPlayer, gameObj);
             var verticalDistance = localPlayerY - gameObj->Position.Y;
             if (objDistance > 10 || verticalDistance > 4) continue;

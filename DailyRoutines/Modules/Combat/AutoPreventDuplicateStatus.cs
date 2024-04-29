@@ -154,7 +154,8 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
         AddConfig("EnabledActions", new Dictionary<uint, bool>());
         ConfigEnabledActions = GetConfig<Dictionary<uint, bool>>("EnabledActions");
 
-        DuplicateActions.Keys.Except(ConfigEnabledActions.Keys).ToList().ForEach(key => ConfigEnabledActions[key] = true);
+        DuplicateActions.Keys.Except(ConfigEnabledActions.Keys).ToList()
+                        .ForEach(key => ConfigEnabledActions[key] = true);
         ConfigEnabledActions.Keys.Except(DuplicateActions.Keys).ToList()
                             .ForEach(key => ConfigEnabledActions.Remove(key));
 
@@ -250,11 +251,20 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
                 break;
             case DetectType.Target:
                 if (Service.Target.Target != null && Service.Target.Target is BattleChara)
-                    statusManager = ((FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara*)Service.Target.Target.Address)
+                {
+                    statusManager =
+                        ((FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara*)Service.Target.Target.Address)
                         ->GetStatusManager;
+                }
+
                 if (Service.Target.Target == null && targetID == 0xE000_0000)
-                    statusManager = ((FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara*)Service.ClientState.LocalPlayer.Address)
+                {
+                    statusManager =
+                        ((FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara*)Service.ClientState.LocalPlayer
+                                .Address)
                         ->GetStatusManager;
+                }
+
                 break;
         }
 
@@ -264,8 +274,10 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
             {
                 foreach (var secondStatus in info.SecondStatusID)
                     if (statusManager->HasStatus(secondStatus))
+                    {
                         return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6,
                                                           a7);
+                    }
             }
 
             foreach (var status in info.StatusID)

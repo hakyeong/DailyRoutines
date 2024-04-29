@@ -121,7 +121,7 @@ public class AutoNotifyMessages : DailyModuleBase
 
         var locState = ChatTypesLoc.TryGetValue(type, out var prefix);
         var isSendByOwn = sender.ExtractText().Contains(Service.ClientState.LocalPlayer?.Name.ExtractText());
-        if ((!ConfigOnlyNotifyWhenBackground || !HelpersOm.IsGameForeground()) &&
+        if ((!ConfigOnlyNotifyWhenBackground || !IsGameForeground()) &&
             !(ConfigBlockOwnMessages && isSendByOwn))
             WinToast.Notify($"[{(locState ? prefix : type)}]  {sender.ExtractText()}", message.ExtractText());
     }

@@ -30,10 +30,11 @@ public unsafe class AutoDismount : DailyModuleBase
         Service.Hook.InitializeFromAttributes(this);
         useActionSelfHook =
             Service.Hook.HookFromAddress<UseActionSelfDelegate>((nint)ActionManager.MemberFunctionPointers.UseAction,
-                                                    UseActionSelf);
+                                                                UseActionSelf);
 
         TargetSelfOrAreaActions ??=
-            PresetData.PlayerActions.Where(x => x.Value.CanTargetSelf || x.Value.TargetArea).Select(x => x.Key).ToHashSet();
+            PresetData.PlayerActions.Where(x => x.Value.CanTargetSelf || x.Value.TargetArea).Select(x => x.Key)
+                      .ToHashSet();
 
         Service.Condition.ConditionChange += OnConditionChanged;
 
@@ -60,7 +61,8 @@ public unsafe class AutoDismount : DailyModuleBase
         {
             useActionSelfHook.Original(actionManager, 5, 9, 0);
             TaskManager.Enqueue(
-                () => ActionManager.Instance()->UseAction((ActionType)actionType, actionId, actionTarget, a5, a6, a7, a8));
+                () => ActionManager.Instance()->UseAction((ActionType)actionType, actionId, actionTarget, a5, a6, a7,
+                                                          a8));
         }
 
         return useActionSelfHook.Original(actionManager, actionType, actionId, actionTarget, a5, a6, a7, a8);
@@ -93,7 +95,8 @@ public unsafe class AutoDismount : DailyModuleBase
             {
                 var localPlayer = (GameObject*)Service.ClientState.LocalPlayer.Address;
                 // 562 - 看不到目标; 566 - 目标在射程外
-                if (ActionManager.GetActionInRangeOrLoS(actionId, localPlayer, actionObject) is 562 or 566) return false;
+                if (ActionManager.GetActionInRangeOrLoS(actionId, localPlayer, actionObject) is 562 or 566)
+                    return false;
 
                 // 无法对目标使用技能
                 if (!ActionManager.CanUseActionOnTarget(actionId, actionObject)) return false;

@@ -15,7 +15,10 @@ public class AutoTalkSkip : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreDraw, "Talk", OnAddonDraw);
     }
 
-    public override void ConfigUI() => ConflictKeyText();
+    public override void ConfigUI()
+    {
+        ConflictKeyText();
+    }
 
     private static void OnAddonDraw(AddonEvent type, AddonArgs args)
     {

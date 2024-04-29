@@ -16,6 +16,7 @@ public unsafe class AutoDance : DailyModuleBase
     private delegate bool UseActionSelfDelegate(
         ActionManager* actionManager, uint actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
         uint a5 = 0, uint a6 = 0, void* a7 = null);
+
     private Hook<UseActionSelfDelegate>? useActionSelfHook;
 
     private static bool IsAutoFinish;
@@ -44,7 +45,7 @@ public unsafe class AutoDance : DailyModuleBase
         void* a7)
     {
         var gauge = Service.JobGauges.Get<DNCGauge>();
-        if ((ActionType)actionType is ActionType.Action && actionID is 15997 or 15998 && 
+        if ((ActionType)actionType is ActionType.Action && actionID is 15997 or 15998 &&
             ActionManager.Instance()->GetActionStatus(ActionType.Action, actionID) == 0 && !gauge.IsDancing)
         {
             TaskManager.Enqueue(() => gauge.IsDancing);
@@ -54,9 +55,15 @@ public unsafe class AutoDance : DailyModuleBase
         return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
     }
 
-    private bool? DanceStandardStep() => DanceStep(false);
+    private bool? DanceStandardStep()
+    {
+        return DanceStep(false);
+    }
 
-    private bool? DanceTechnicalStep()  => DanceStep(true);
+    private bool? DanceTechnicalStep()
+    {
+        return DanceStep(true);
+    }
 
     private bool? DanceStep(bool isTechnicalStep)
     {
@@ -80,7 +87,8 @@ public unsafe class AutoDance : DailyModuleBase
 
         if (IsAutoFinish)
         {
-            TaskManager.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.Action, isTechnicalStep ? 15998U : 15997U));
+            TaskManager.Enqueue(
+                () => ActionManager.Instance()->UseAction(ActionType.Action, isTechnicalStep ? 15998U : 15997U));
             return true;
         }
 

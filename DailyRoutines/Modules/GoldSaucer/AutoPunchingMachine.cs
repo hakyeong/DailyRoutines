@@ -22,7 +22,10 @@ public class AutoPunchingMachine : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "PunchingMachine", OnAddonSetup);
     }
 
-    public override void ConfigUI() => ConflictKeyText();
+    public override void ConfigUI()
+    {
+        ConflictKeyText();
+    }
 
     private void OnAddonSetup(AddonEvent type, AddonArgs args)
     {

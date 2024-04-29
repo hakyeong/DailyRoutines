@@ -25,7 +25,10 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
 
-    public override void ConfigUI() => ConflictKeyText();
+    public override void ConfigUI()
+    {
+        ConflictKeyText();
+    }
 
     private void OnRetainerList(AddonEvent type, AddonArgs args)
     {
@@ -40,9 +43,11 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
             case AddonEvent.PostUpdate:
                 if (EzThrottler.Throttle("AutoRetainerCollect-AFK", 5000))
                 {
-                    if (InterruptByConflictKey() || TaskManager.IsBusy || !IsAddonAndNodesReady((AtkUnitBase*)args.Addon)) return;
+                    if (InterruptByConflictKey() || TaskManager.IsBusy ||
+                        !IsAddonAndNodesReady((AtkUnitBase*)args.Addon)) return;
                     Service.Framework.RunOnTick(CheckAndEnqueueCollects, TimeSpan.FromSeconds(1));
                 }
+
                 break;
             case AddonEvent.PreFinalize:
                 Service.AddonLifecycle.UnregisterListener(AddonEvent.PostUpdate, "RetainerList", OnRetainerList);
@@ -83,7 +88,8 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
     {
         if (InterruptByConflictKey()) return true;
 
-        if (TryGetAddonByName<AddonRetainerList>("RetainerList", out var addon) && IsAddonAndNodesReady(&addon->AtkUnitBase))
+        if (TryGetAddonByName<AddonRetainerList>("RetainerList", out var addon) &&
+            IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
             var handler = new ClickRetainerList();
             handler.Retainer(index);
@@ -99,7 +105,8 @@ public unsafe class AutoRetainerCollect : DailyModuleBase
 
         if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonReady(addon))
         {
-            if (!TryScanSelectStringText(addon, "返回", out var returnIndex) || !TryScanSelectStringText(addon, "结束", out var index))
+            if (!TryScanSelectStringText(addon, "返回", out var returnIndex) ||
+                !TryScanSelectStringText(addon, "结束", out var index))
             {
                 TaskManager.Abort();
                 if (returnIndex != -1) TaskManager.Enqueue(() => Click.TrySendClick($"select_string{returnIndex + 1}"));

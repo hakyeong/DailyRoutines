@@ -56,6 +56,7 @@ public class AutoNoviceNetwork : DailyModuleBase
             TryTimes = 0;
             TaskManager.Enqueue(EnqueueARound);
         }
+
         ImGui.EndDisabled();
 
         ImGui.SameLine();
@@ -70,10 +71,9 @@ public class AutoNoviceNetwork : DailyModuleBase
         ImGui.TextWrapped(TryTimes.ToString());
         ImGui.PopStyleColor();
 
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoNoviceNetwork-TryJoinWhenInactive"), ref ConfigIsTryJoinWhenInactive))
-        {
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoNoviceNetwork-TryJoinWhenInactive"),
+                           ref ConfigIsTryJoinWhenInactive))
             UpdateConfig("IsTryJoinWhenInactive", ConfigIsTryJoinWhenInactive);
-        }
 
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoNoviceNetwork-TryJoinWhenInactiveHelp"));
 
@@ -82,20 +82,19 @@ public class AutoNoviceNetwork : DailyModuleBase
 
         ImGui.SameLine();
         ImGui.TextColored(IsInNoviceNetwork ? ImGuiColors.HealerGreen : ImGuiColors.DPSRed,
-                          IsInNoviceNetwork ? Service.Lang.GetText("AutoNoviceNetwork-HaveJoined") : Service.Lang.GetText("AutoNoviceNetwork-HaveNotJoined"));
+                          IsInNoviceNetwork
+                              ? Service.Lang.GetText("AutoNoviceNetwork-HaveJoined")
+                              : Service.Lang.GetText("AutoNoviceNetwork-HaveNotJoined"));
 
         ImGui.SameLine();
-        if (ImGui.SmallButton(Service.Lang.GetText("Refresh")))
-        {
-            IsInNoviceNetwork = false;
-        }
+        if (ImGui.SmallButton(Service.Lang.GetText("Refresh"))) IsInNoviceNetwork = false;
     }
 
     private unsafe void ClickYesButton(AddonEvent type, AddonArgs args)
     {
         if (!TaskManager.IsBusy) return;
         if (TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
+            IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
             if (addon->PromptText->NodeText.ExtractText().Contains("新人频道"))
                 Click.SendClick("select_yes");

@@ -57,7 +57,7 @@ public unsafe class AutoDeleteLetters : DailyModuleBase
 
     public bool? RightClickLetter()
     {
-        if (TryGetAddonByName<AtkUnitBase>("LetterList", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("LetterList", out var addon) && IsAddonAndNodesReady(addon))
         {
             if (!int.TryParse(addon->GetTextNodeById(23)->NodeText.ExtractText().Split('/')[0],
                               out var currentLetters) || currentLetters == 0)
@@ -80,9 +80,9 @@ public unsafe class AutoDeleteLetters : DailyModuleBase
 
     public bool? ClickDeleteEntry()
     {
-        if (TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && IsAddonAndNodesReady(addon))
         {
-            if (!HelpersOm.TryScanContextMenuText(addon, "删除", out var index)) return false;
+            if (!TryScanContextMenuText(addon, "删除", out var index)) return false;
 
             AddonHelper.Callback(addon, true, 0, index, 0, 0, 0);
 

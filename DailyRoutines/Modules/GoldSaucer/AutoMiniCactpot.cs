@@ -88,30 +88,29 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
 
                 // 线
                 for (var i = 0; i < TotalLanes; i++)
-                {
                     if (solution[i])
                     {
                         var index = i;
                         TaskManager.Enqueue(() => ClickLaneNode(addon, index));
                     }
-                }
             }
             else
             {
                 // 点
                 for (var i = 0; i < TotalNumbers; i++)
-                {
                     if (solution[i])
                     {
                         TaskManager.Enqueue(() => ClickGameNode(addon, i));
                         break;
                     }
-                }
             }
         }
     }
 
-    private static int[] GetGameState(AddonLotteryDaily* addon) => Enumerable.Range(0, TotalNumbers).Select(i => addon->GameNumbers[i]).ToArray();
+    private static int[] GetGameState(AddonLotteryDaily* addon)
+    {
+        return Enumerable.Range(0, TotalNumbers).Select(i => addon->GameNumbers[i]).ToArray();
+    }
 
     private static bool? ClickGameNode(AddonLotteryDaily* addon, int i)
     {
@@ -139,7 +138,8 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
     private static bool? ClickConfirm()
     {
         if (!EzThrottler.Throttle("AutoMiniCactpot", 50)) return false;
-        if (!TryGetAddonByName<AtkUnitBase>("LotteryDaily", out var addon) || !IsAddonAndNodesReady(addon)) return false;
+        if (!TryGetAddonByName<AtkUnitBase>("LotteryDaily", out var addon) || !IsAddonAndNodesReady(addon))
+            return false;
 
         ClickLotteryDaily.Using((nint)addon).Confirm(SelectedLineNumber3D4);
         return true;
@@ -148,7 +148,8 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
     private static bool? ClickExit()
     {
         if (!EzThrottler.Throttle("AutoMiniCactpot", 50)) return false;
-        if (!TryGetAddonByName<AtkUnitBase>("LotteryDaily", out var addon) || !IsAddonAndNodesReady(addon)) return false;
+        if (!TryGetAddonByName<AtkUnitBase>("LotteryDaily", out var addon) || !IsAddonAndNodesReady(addon))
+            return false;
 
         ClickLotteryDaily.Using((nint)addon).Exit();
         addon->Close(true);

@@ -14,7 +14,8 @@ using Timer = System.Timers.Timer;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoRefreshPartyFinderTitle", "AutoRefreshPartyFinderDescription", ModuleCategories.InterfaceExpand)]
+[ModuleDescription("AutoRefreshPartyFinderTitle", "AutoRefreshPartyFinderDescription",
+                   ModuleCategories.InterfaceExpand)]
 public class AutoRefreshPartyFinder : DailyModuleBase
 {
     private static int ConfigRefreshInterval = 10; // 秒
@@ -105,6 +106,7 @@ public class AutoRefreshPartyFinder : DailyModuleBase
                     cooldown = ConfigRefreshInterval;
                     PFRefreshTimer.Restart();
                 }
+
                 break;
             case AddonEvent.PreFinalize:
                 PFRefreshTimer.Stop();
@@ -154,6 +156,7 @@ public class AutoRefreshPartyFinder : DailyModuleBase
             PFRefreshTimer.Elapsed -= OnRefreshTimer;
             PFRefreshTimer.Stop();
         }
+
         PFRefreshTimer?.Dispose();
         PFRefreshTimer = null;
 

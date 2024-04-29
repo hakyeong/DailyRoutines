@@ -201,7 +201,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
                 _LastItem = itemCollector;
                 if (SearchCollectorByGlamour)
                     _LastGlamourItem = PresetData.TryGetGear(glamourId, out var glamourItem) ? glamourItem : _LastItem;
-                
+
                 args.AddMenuItem(CollectorItem);
             }
 
@@ -349,16 +349,12 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
     private static void OnCollector(MenuItemClickedArgs args)
     {
         if (args.AddonName == "MiragePrismPrismBoxCrystallize" &&
-            TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+            TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && IsAddonAndNodesReady(addon))
         {
-            if (HelpersOm.TryScanContextMenuText(addon, "投影到当前装备上", out var index))
-            {
+            if (TryScanContextMenuText(addon, "投影到当前装备上", out var index))
                 Util.OpenLink(string.Format(CollectorUrl, _LastPrismBoxItem.Name));
-            }
             else
-            {
                 Util.OpenLink(string.Format(CollectorUrl, _LastItem.Name));
-            }
 
             return;
         }
@@ -372,16 +368,12 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
     private static void OnWiki(MenuItemClickedArgs args)
     {
         if (args.AddonName == "MiragePrismPrismBoxCrystallize" &&
-            TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+            TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && IsAddonAndNodesReady(addon))
         {
-            if (HelpersOm.TryScanContextMenuText(addon, "投影到当前装备上", out var index))
-            {
+            if (TryScanContextMenuText(addon, "投影到当前装备上", out var index))
                 Util.OpenLink(string.Format(CollectorUrl, _LastPrismBoxItem.Name));
-            }
             else
-            {
                 Util.OpenLink(string.Format(CollectorUrl, _LastItem.Name));
-            }
 
             return;
         }

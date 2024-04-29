@@ -50,4 +50,3 @@ public class CutsceneAddressResolver : BaseAddressResolver
         Offset2 = sig.ScanText("74 18 8B D7 48 8D 0D");
     }
 }
-

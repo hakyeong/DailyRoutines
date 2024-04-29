@@ -65,10 +65,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
 
         public static bool operator ==(PlayerInfo? lhs, PlayerInfo? rhs)
         {
-            if (lhs is null)
-            {
-                return rhs is null;
-            }
+            if (lhs is null) return rhs is null;
             return lhs.Equals(rhs);
         }
 
@@ -104,10 +101,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
 
         public static bool operator ==(ContentInfo? lhs, ContentInfo? rhs)
         {
-            if (lhs is null)
-            {
-                return rhs is null;
-            }
+            if (lhs is null) return rhs is null;
             return lhs.Equals(rhs);
         }
 
@@ -150,7 +144,9 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
-        if (ImGui.BeginCombo("###BlacklistPlayerInfoCombo", Service.Lang.GetText("AutoPlayerCommend-BlacklistPlayersAmount", ModuleConfig.BlacklistPlayers.Count), ImGuiComboFlags.HeightLarge))
+        if (ImGui.BeginCombo("###BlacklistPlayerInfoCombo",
+                             Service.Lang.GetText("AutoPlayerCommend-BlacklistPlayersAmount",
+                                                  ModuleConfig.BlacklistPlayers.Count), ImGuiComboFlags.HeightLarge))
         {
             ImGui.BeginGroup();
             ImGui.AlignTextToFramePadding();
@@ -178,9 +174,12 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
             }
 
             ImGui.SameLine();
-            if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Sync, Service.Lang.GetText("AutoPlayerCommend-SyncBlacklist")))
+            if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Sync,
+                                                   Service.Lang.GetText("AutoPlayerCommend-SyncBlacklist")))
             {
-                var blacklist = GetBlacklistInfo((InfoProxyBlacklist*)InfoModule.Instance()->GetInfoProxyById(InfoProxyId.Blacklist));
+                var blacklist =
+                    GetBlacklistInfo(
+                        (InfoProxyBlacklist*)InfoModule.Instance()->GetInfoProxyById(InfoProxyId.Blacklist));
                 foreach (var player in blacklist)
                     ModuleConfig.BlacklistPlayers.Add(player);
 
@@ -204,6 +203,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
                         ModuleConfig.BlacklistPlayers.Remove(player);
                         SaveConfig(ModuleConfig);
                     }
+
                     ImGui.EndPopup();
                 }
             }
@@ -216,7 +216,9 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
-        if (ImGui.BeginCombo("###BlacklistContentsCombo", Service.Lang.GetText("AutoPlayerCommend-BlacklistContentsAmount", ModuleConfig.BlacklistContents.Count)))
+        if (ImGui.BeginCombo("###BlacklistContentsCombo",
+                             Service.Lang.GetText("AutoPlayerCommend-BlacklistContentsAmount",
+                                                  ModuleConfig.BlacklistContents.Count)))
         {
             ImGui.AlignTextToFramePadding();
             ImGui.Text($"{Service.Lang.GetText("AutoPlayerCommend-Content")}:");
@@ -230,7 +232,8 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
             {
                 if (SelectedContent != null)
                 {
-                    var info = new ContentInfo { ContentID = SelectedContent.RowId, TerritoryID = SelectedContent.TerritoryType.Row };
+                    var info = new ContentInfo
+                        { ContentID = SelectedContent.RowId, TerritoryID = SelectedContent.TerritoryType.Row };
                     if (ModuleConfig.BlacklistContents.Add(info))
                         SaveConfig(ModuleConfig);
                 }
@@ -244,10 +247,12 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
                 if (!LuminaCache.TryGetRow<ContentFinderCondition>(contentInfo.ContentID, out var content)) continue;
                 ImGui.Selectable($"{content.Name.RawString}");
 
-                if (ImGui.BeginPopupContextItem($"DeleteBlacklistContent_{contentInfo.ContentID}_{contentInfo.TerritoryID}"))
+                if (ImGui.BeginPopupContextItem(
+                        $"DeleteBlacklistContent_{contentInfo.ContentID}_{contentInfo.TerritoryID}"))
                 {
                     if (ImGui.Selectable(Service.Lang.GetText("Delete")))
-                        if (ModuleConfig.BlacklistContents.Remove(contentInfo)) SaveConfig(ModuleConfig);
+                        if (ModuleConfig.BlacklistContents.Remove(contentInfo))
+                            SaveConfig(ModuleConfig);
                     ImGui.EndPopup();
                 }
             }
@@ -296,23 +301,25 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
 
         if (allies.Count == 0) return;
         var playersToCommend = allies
-                                     .OrderByDescending(player => player.Role == localPlayerInfo.Role)
-                                     .ThenByDescending(player =>
-                                     {
-                                         return localPlayerInfo.Role switch
-                                         {
-                                             PlayerRole.Tank or PlayerRole.Healer => player.Role is PlayerRole.Tank or PlayerRole.Healer
-                                                 ? 1 : 0,
-                                             PlayerRole.DPS => player.Role switch
-                                             {
-                                                 PlayerRole.DPS => 3,
-                                                 PlayerRole.Healer => 2,
-                                                 PlayerRole.Tank => 1,
-                                                 _ => 0
-                                             },
-                                             _ => 0
-                                         };
-                                     });
+                               .OrderByDescending(player => player.Role == localPlayerInfo.Role)
+                               .ThenByDescending(player =>
+                               {
+                                   return localPlayerInfo.Role switch
+                                   {
+                                       PlayerRole.Tank or PlayerRole.Healer => player.Role is PlayerRole.Tank
+                                                                                   or PlayerRole.Healer
+                                                                                   ? 1
+                                                                                   : 0,
+                                       PlayerRole.DPS => player.Role switch
+                                       {
+                                           PlayerRole.DPS => 3,
+                                           PlayerRole.Healer => 2,
+                                           PlayerRole.Tank => 1,
+                                           _ => 0
+                                       },
+                                       _ => 0
+                                   };
+                               });
 
         if (TryGetAddonByName<AtkUnitBase>(addonName, out var addon) && IsAddonAndNodesReady(addon))
         {
@@ -326,7 +333,11 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
                         {
                             AddonHelper.Callback(addon, true, callbackIndex, i);
                             var job = LuminaCache.GetRow<ClassJob>(player.JobID);
-                            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoPlayerCommend-NoticeMessage", job.ToBitmapFontIcon(), job.Name.RawString, player.PlayerName)).Build();
+                            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ")
+                                                               .Append(Service.Lang.GetSeString(
+                                                                           "AutoPlayerCommend-NoticeMessage",
+                                                                           job.ToBitmapFontIcon(), job.Name.RawString,
+                                                                           player.PlayerName)).Build();
                             Service.Chat.Print(message);
                             return;
                         }

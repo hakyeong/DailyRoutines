@@ -26,11 +26,17 @@ namespace DailyRoutines.Modules;
 public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 {
     private static AtkUnitBase* SelectString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
+
     private static AtkUnitBase* SelectYesno => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectYesno");
+
     // 航行结果
-    private static AtkUnitBase* AirShipExplorationResult => (AtkUnitBase*)Service.Gui.GetAddonByName("AirShipExplorationResult");
+    private static AtkUnitBase* AirShipExplorationResult =>
+        (AtkUnitBase*)Service.Gui.GetAddonByName("AirShipExplorationResult");
+
     // 出发详情
-    private static AtkUnitBase* AirShipExplorationDetail => (AtkUnitBase*)Service.Gui.GetAddonByName("AirShipExplorationDetail");
+    private static AtkUnitBase* AirShipExplorationDetail =>
+        (AtkUnitBase*)Service.Gui.GetAddonByName("AirShipExplorationDetail");
+
     private static AtkUnitBase* CompanyCraftSupply => (AtkUnitBase*)Service.Gui.GetAddonByName("CompanyCraftSupply");
 
 
@@ -105,13 +111,18 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
     {
         if (!EzThrottler.Throttle("AutoSubmarineCollect-GetSubmarineInfos", 100)) return false;
         // 还在看动画
-        if (Service.Condition[ConditionFlag.OccupiedInCutSceneEvent] || Service.Condition[ConditionFlag.WatchingCutscene78]) return false;
+        if (Service.Condition[ConditionFlag.OccupiedInCutSceneEvent] ||
+            Service.Condition[ConditionFlag.WatchingCutscene78]) return false;
 
         #region CheckNecessaryItems
+
         var inventoryManager = InventoryManager.Instance();
         if (inventoryManager->GetInventoryItemCount(10373) < 20)
         {
-            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoSubmarineCollect-LackSpecificItems", SeString.CreateItemLink(10373))).Build();
+            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ")
+                                               .Append(Service.Lang.GetSeString(
+                                                           "AutoSubmarineCollect-LackSpecificItems",
+                                                           SeString.CreateItemLink(10373))).Build();
             Service.Chat.Print(message);
 
             TaskManager.Abort();
@@ -120,12 +131,16 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
         if (inventoryManager->GetInventoryItemCount(10155) < 15)
         {
-            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoSubmarineCollect-LackSpecificItems", SeString.CreateItemLink(10155))).Build();
+            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ")
+                                               .Append(Service.Lang.GetSeString(
+                                                           "AutoSubmarineCollect-LackSpecificItems",
+                                                           SeString.CreateItemLink(10155))).Build();
             Service.Chat.Print(message);
 
             TaskManager.Abort();
             return true;
         }
+
         #endregion
 
         if (SelectString == null || !IsAddonAndNodesReady(SelectString)) return false;

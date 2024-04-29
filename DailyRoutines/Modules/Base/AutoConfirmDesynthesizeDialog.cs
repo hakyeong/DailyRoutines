@@ -7,7 +7,8 @@ using FFXIVClientStructs.FFXIV.Client.UI;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoConfirmDesynthesizeDialogTitle", "AutoConfirmDesynthesizeDialogDescription", ModuleCategories.Base)]
+[ModuleDescription("AutoConfirmDesynthesizeDialogTitle", "AutoConfirmDesynthesizeDialogDescription",
+                   ModuleCategories.Base)]
 public unsafe class AutoConfirmDesynthesizeDialog : DailyModuleBase
 {
     public override void Init()

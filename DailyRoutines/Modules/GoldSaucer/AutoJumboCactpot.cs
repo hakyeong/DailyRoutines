@@ -52,13 +52,11 @@ public class AutoJumboCactpot : DailyModuleBase
         if (ImGui.BeginCombo(Service.Lang.GetText("AutoJumboCactpot-NumberMode"), NumberModeLoc[NumberMode]))
         {
             foreach (var modePair in NumberModeLoc)
-            {
                 if (ImGui.Selectable(modePair.Value, modePair.Key == NumberMode))
                 {
                     NumberMode = modePair.Key;
                     UpdateConfig("NumberMode", NumberMode);
                 }
-            }
 
             ImGui.EndCombo();
         }
@@ -118,7 +116,7 @@ public class AutoJumboCactpot : DailyModuleBase
     public override void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddon);
-        
+
         base.Uninit();
     }
 }

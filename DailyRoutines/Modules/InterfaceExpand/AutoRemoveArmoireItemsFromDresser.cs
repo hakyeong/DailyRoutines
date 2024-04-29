@@ -20,16 +20,17 @@ namespace DailyRoutines.Modules;
                    ModuleCategories.InterfaceExpand)]
 public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
 {
-    private static AtkUnitBase* AddonMiragePrismPrismBox => (AtkUnitBase*)Service.Gui.GetAddonByName("MiragePrismPrismBox");
+    private static AtkUnitBase* AddonMiragePrismPrismBox =>
+        (AtkUnitBase*)Service.Gui.GetAddonByName("MiragePrismPrismBox");
 
     private static HashSet<uint>? ArmoireAvailableItems;
 
     public override void Init()
     {
         ArmoireAvailableItems ??= LuminaCache.Get<Cabinet>()
-                                         .Where(x => x.Category.Value.RowId is >= 1 and <= 11)
-                                         .Select(x => x.Item.Value.RowId)
-                                         .ToHashSet();
+                                             .Where(x => x.Category.Value.RowId is >= 1 and <= 11)
+                                             .Select(x => x.Item.Value.RowId)
+                                             .ToHashSet();
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = true };
         Overlay ??= new Overlay(this);
@@ -47,6 +48,7 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
             TaskManager.DelayNext(20);
             TaskManager.Enqueue(TryRemoveItem);
         }
+
         ImGui.EndDisabled();
 
         ImGui.SameLine();
@@ -78,7 +80,7 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
             if (ArmoireAvailableItems.Contains(currentItemID))
             {
                 AddonHelper.Callback(AddonMiragePrismPrismBox, true, 3U, i);
-                
+
                 TaskManager.Enqueue(ClickRestoreItem);
                 return true;
             }

@@ -93,7 +93,8 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
-        if (ImGui.BeginCombo("###Seeds", SelectedSeed == 0 ? string.Empty : Seeds[SelectedSeed].Name.ExtractText(), ImGuiComboFlags.HeightLarge))
+        if (ImGui.BeginCombo("###Seeds", SelectedSeed == 0 ? string.Empty : Seeds[SelectedSeed].Name.ExtractText(),
+                             ImGuiComboFlags.HeightLarge))
         {
             ImGui.InputTextWithHint("###SearchSeedInput", Service.Lang.GetText("PleaseSearch"),
                                     ref searchFilterSeed, 100);
@@ -101,7 +102,8 @@ public unsafe class AutoGardensWork : DailyModuleBase
             foreach (var item in Seeds)
             {
                 var itemName = item.Value.Name.ExtractText();
-                if (!string.IsNullOrWhiteSpace(searchFilterSeed) && !itemName.Contains(searchFilterSeed, StringComparison.OrdinalIgnoreCase)) continue;
+                if (!string.IsNullOrWhiteSpace(searchFilterSeed) &&
+                    !itemName.Contains(searchFilterSeed, StringComparison.OrdinalIgnoreCase)) continue;
 
                 if (ImGui.Selectable($"{itemName}", SelectedSeed == item.Key))
                 {
@@ -121,7 +123,8 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
-        if (ImGui.BeginCombo("###Soils", SelectedSoil == 0 ? string.Empty : Soils[SelectedSoil].Name.ExtractText(), ImGuiComboFlags.HeightLarge))
+        if (ImGui.BeginCombo("###Soils", SelectedSoil == 0 ? string.Empty : Soils[SelectedSoil].Name.ExtractText(),
+                             ImGuiComboFlags.HeightLarge))
         {
             foreach (var item in Soils)
             {
@@ -137,6 +140,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
             ImGui.EndCombo();
         }
+
         ImGui.PopID();
 
         // 自动收获
@@ -163,7 +167,10 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
-        if (ImGui.BeginCombo("###Fertilizer", SelectedFertilizer == 0 ? string.Empty : Fertilizers[SelectedFertilizer].Name.ExtractText(), ImGuiComboFlags.HeightLarge))
+        if (ImGui.BeginCombo("###Fertilizer",
+                             SelectedFertilizer == 0
+                                 ? string.Empty
+                                 : Fertilizers[SelectedFertilizer].Name.ExtractText(), ImGuiComboFlags.HeightLarge))
         {
             foreach (var item in Fertilizers)
             {
@@ -207,7 +214,8 @@ public unsafe class AutoGardensWork : DailyModuleBase
     {
         if (SelectedSeed == 0 || SelectedSoil == 0) return;
         var inventoryManager = InventoryManager.Instance();
-        if (inventoryManager->GetInventoryItemCount(SelectedSeed) == 0 || inventoryManager->GetInventoryItemCount(SelectedSoil) == 0) return;
+        if (inventoryManager->GetInventoryItemCount(SelectedSeed) == 0 ||
+            inventoryManager->GetInventoryItemCount(SelectedSoil) == 0) return;
 
         TaskManager.EnqueueImmediate(() => AgentHelper.SendEvent(AgentId.HousingPlant, 0, 2, 0U, 0, 0, 1U));
 
@@ -237,7 +245,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
         foreach (var objID in Gardens)
         {
             var gameObj = GetGameObjectFromObjectID(objID);
-            var objDistance = HelpersOm.GetGameDistanceFromObject(localPlayer, gameObj);
+            var objDistance = GetGameDistanceFromObject(localPlayer, gameObj);
             if (objDistance > 2.5) continue;
 
             TaskManager.Enqueue(() => InteractWithGarden(gameObj));
@@ -255,7 +263,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
         foreach (var objID in Gardens)
         {
             var gameObj = GetGameObjectFromObjectID(objID);
-            var objDistance = HelpersOm.GetGameDistanceFromObject(localPlayer, gameObj);
+            var objDistance = GetGameDistanceFromObject(localPlayer, gameObj);
             if (objDistance > 2.5) continue;
 
             TaskManager.Enqueue(() => InteractWithGarden(gameObj));
@@ -273,7 +281,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
         foreach (var objID in Gardens)
         {
             var gameObj = GetGameObjectFromObjectID(objID);
-            var objDistance = HelpersOm.GetGameDistanceFromObject(localPlayer, gameObj);
+            var objDistance = GetGameDistanceFromObject(localPlayer, gameObj);
             if (objDistance > 2.5) continue;
 
             TaskManager.Enqueue(() => InteractWithGarden(gameObj));
@@ -292,7 +300,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
         foreach (var objID in Gardens)
         {
             var gameObj = GetGameObjectFromObjectID(objID);
-            var objDistance = HelpersOm.GetGameDistanceFromObject(localPlayer, gameObj);
+            var objDistance = GetGameDistanceFromObject(localPlayer, gameObj);
             if (objDistance > 2.5) continue;
 
             TaskManager.Enqueue(() => InteractWithGarden(gameObj));
@@ -306,10 +314,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
     private static void ObtainGardensAround()
     {
         var tempSet = new HashSet<uint>();
-        foreach (var obj in Service.ObjectTable.Where(x => x.DataId == 2003757))
-        {
-            tempSet.Add(obj.ObjectId);
-        }
+        foreach (var obj in Service.ObjectTable.Where(x => x.DataId == 2003757)) tempSet.Add(obj.ObjectId);
 
         Gardens = [.. tempSet];
     }
@@ -325,9 +330,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         if (inventory->IsVisible || inventoryLarge->IsVisible || inventoryExpansion->IsVisible ||
             !Service.Condition[ConditionFlag.OccupiedInQuestEvent])
-        {
             return true;
-        }
 
         return false;
     }
@@ -336,10 +339,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
     {
         if (Service.Gui.GetAddonByName("SelectString") != nint.Zero) return false;
 
-        if (!Service.Condition[ConditionFlag.OccupiedInQuestEvent])
-        {
-            return true;
-        }
+        if (!Service.Condition[ConditionFlag.OccupiedInQuestEvent]) return true;
 
         if (SelectedFertilizer == 0)
         {
@@ -356,13 +356,12 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         InventoryType? foundType = null;
         foreach (var type in InventoryTypes)
-        {
             if (inventoryManager->GetItemCountInContainer(SelectedFertilizer, type) != 0)
             {
                 foundType = type;
                 break;
             }
-        }
+
         if (foundType == null) return false;
 
         var container = inventoryManager->GetInventoryContainer((InventoryType)foundType);
@@ -378,6 +377,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
                 break;
             }
         }
+
         if (foundSlot == null) return false;
 
         var agentInventory = AgentModule.Instance()->GetAgentByInternalId(AgentId.Inventory);
@@ -395,9 +395,9 @@ public unsafe class AutoGardensWork : DailyModuleBase
     {
         if (!Service.Condition[ConditionFlag.OccupiedInQuestEvent]) return true;
 
-        if (TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && IsAddonAndNodesReady(addon))
         {
-            if (!HelpersOm.TryScanContextMenuText(addon, text, out var index))
+            if (!TryScanContextMenuText(addon, text, out var index))
             {
                 addon->FireCloseCallback();
                 addon->Close(true);
@@ -413,7 +413,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
     private bool? FillContextMenu(string itemNameToSelect)
     {
         if (!TryGetAddonByName<AtkUnitBase>("ContextIconMenu", out var addon) ||
-            !HelpersOm.IsAddonAndNodesReady(addon)) return false;
+            !IsAddonAndNodesReady(addon)) return false;
 
         var validAtkValuesCount = addon->AtkValuesCount - 11;
         if (validAtkValuesCount % 6 != 0) return false;
@@ -421,8 +421,9 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         for (var i = 0; i < entryAmount; i++)
         {
-            var iconID = addon->AtkValues[11 + i * 6].UInt;
-            var itemName = MemoryHelper.ReadSeStringNullTerminated((nint)addon->AtkValues[13 + i * 6].String).ExtractText();
+            var iconID = addon->AtkValues[11 + (i * 6)].UInt;
+            var itemName = MemoryHelper.ReadSeStringNullTerminated((nint)addon->AtkValues[13 + (i * 6)].String)
+                                       .ExtractText();
 
             if (itemName == itemNameToSelect)
             {
@@ -448,12 +449,12 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
     private static bool? ClickEntryByText(string text)
     {
-        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonAndNodesReady(addon))
         {
             var content = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[2].String);
-            if (!HelpersOm.TryScanSelectStringText(addon, text, out var index))
+            if (!TryScanSelectStringText(addon, text, out var index))
             {
-                HelpersOm.TryScanSelectStringText(addon, "取消", out index);
+                TryScanSelectStringText(addon, "取消", out index);
                 return Click.TrySendClick($"select_string{index + 1}");
             }
 

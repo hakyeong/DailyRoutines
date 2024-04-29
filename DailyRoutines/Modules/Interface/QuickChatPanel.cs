@@ -126,9 +126,9 @@ public unsafe class QuickChatPanel : DailyModuleBase
             tempSeIconList.Add((char)seIconChar);
         SeIconChars = [.. tempSeIconList];
         ItemNames ??= LuminaCache.Get<Item>()
-                             .Where(x => !string.IsNullOrEmpty(x.Name.RawString))
-                             .GroupBy(x => x.Name.RawString)
-                             .ToDictionary(x => x.Key, x => x.First());
+                                 .Where(x => !string.IsNullOrEmpty(x.Name.RawString))
+                                 .GroupBy(x => x.Name.RawString)
+                                 .ToDictionary(x => x.Key, x => x.First());
 
         _ItemNames = ItemNames.Take(10).ToDictionary(x => x.Key, x => x.Value);
 
@@ -702,7 +702,8 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 var collisionNode = AddonChatLog->GetNodeById(15);
                 if (textInputNode == null || collisionNode == null) return;
 
-                ButtonPos = new Vector2(textInputNode->X + textInputNode->Width - ConfigButtonSize - 6, textInputNode->Y - 3) + ConfigButtonOffset;
+                ButtonPos = new Vector2(textInputNode->X + textInputNode->Width - ConfigButtonSize - 6,
+                                        textInputNode->Y - 3) + ConfigButtonOffset;
 
                 AtkResNode* iconNode = null;
                 for (var i = 0; i < AddonChatLog->UldManager.NodeListCount; i++)
@@ -714,7 +715,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                         break;
                     }
                 }
-                
+
                 if (iconNode is null)
                     MakeIconNode(10001, ButtonPos, ConfigButtonIcon);
                 else
@@ -724,12 +725,12 @@ public unsafe class QuickChatPanel : DailyModuleBase
                     iconNode->SetWidth(ConfigButtonSize);
                     ((AtkImageNode*)iconNode)->LoadIconTexture(ConfigButtonIcon, 0);
                 }
+
                 break;
             case AddonEvent.PreFinalize:
                 FreeNode();
                 break;
         }
-        
     }
 
     private void MakeIconNode(uint nodeId, Vector2 position, int icon)
@@ -752,7 +753,8 @@ public unsafe class QuickChatPanel : DailyModuleBase
         imageNode->AtkResNode.NodeFlags |= NodeFlags.RespondToMouse | NodeFlags.EmitsEvents | NodeFlags.HasCollision;
         AddonChatLog->UpdateCollisionNodeList(true);
         MouseClickHandle ??=
-            Service.AddonEvent.AddEvent((nint)AddonChatLog, (nint)(&imageNode->AtkResNode), AddonEventType.MouseClick, OnEvent);
+            Service.AddonEvent.AddEvent((nint)AddonChatLog, (nint)(&imageNode->AtkResNode), AddonEventType.MouseClick,
+                                        OnEvent);
     }
 
     private void OnEvent(AddonEventType atkEventType, IntPtr atkUnitBase, IntPtr atkResNode)
