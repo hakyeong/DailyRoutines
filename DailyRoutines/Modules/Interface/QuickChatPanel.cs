@@ -9,6 +9,7 @@ using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Events;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
@@ -18,6 +19,7 @@ using Dalamud.Interface.Utility;
 using ECommons.Automation;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Client.UI.Shell;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -433,9 +435,10 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
         if (ImGui.BeginTabBar("###QuickChatPanel", ImGuiTabBarFlags.Reorderable))
         {
+            // 消息
             if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-Messages")))
             {
-                var maxTextWidth = 200f;
+                var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
                 if (ImGui.BeginChild("MessagesChild", ImGui.GetContentRegionAvail(), false))
                 {
                     PresetFont.Axis14.Push();
@@ -491,9 +494,10 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 ImGui.EndTabItem();
             }
 
+            // 宏
             if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-Macro")))
             {
-                var maxTextWidth = 200f;
+                var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
                 if (ImGui.BeginChild("MacroChild", ImGui.GetContentRegionAvail(), false))
                 {
                     PresetFont.Axis14.Push();
@@ -582,9 +586,38 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 ImGui.EndTabItem();
             }
 
+            // 系统音
+            if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-SystemSound")))
+            {
+                var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
+                PresetFont.Axis14.Push();
+                ImGui.SetWindowFontScale(ConfigFontScale);
+                ImGui.BeginGroup();
+                for (var i = 1U; i < 17U; i++)
+                {
+                    ImGuiOm.SelectableCentered($"        {(i > 9 ? "" : "  ")}<se.{i}>          ###PlaySound{i}");
+
+                    if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
+                        UIModule.PlayChatSoundEffect(i);
+                    if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                        Chat.Instance.SendMessage($"<se.{i}><se.{i}>");
+
+                    ImGuiOm.TooltipHover(Service.Lang.GetText("QuickChatPanel-SystemSoundHelp"));
+                }
+                ImGui.EndGroup();
+                maxTextWidth = ImGui.GetItemRectSize().X;
+                ImGui.SetWindowFontScale(1f);
+                PresetFont.Axis14.Pop();
+
+                ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
+                                        ConfigOverlayHeight * ImGuiHelpers.GlobalScale));
+                ImGui.EndTabItem();
+            }
+
+            // 游戏物品
             if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-GameItems")))
             {
-                var maxTextWidth = 200f;
+                var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
                 if (ImGui.BeginChild("GameItemChild", ImGui.GetContentRegionAvail(), false))
                 {
                     PresetFont.Axis14.Push();
@@ -617,7 +650,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                             Service.Chat.Print(new SeStringBuilder().AddItemLink(item.RowId).Build());
                     }
 
-                    maxTextWidth = ImGui.CalcTextSize(longestText).X + 100f;
+                    maxTextWidth = ImGui.CalcTextSize(longestText).X + 200f * ImGuiHelpers.GlobalScale;
 
                     ImGui.SetWindowFontScale(1f);
                     PresetFont.Axis14.Pop();
@@ -630,9 +663,10 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 ImGui.EndTabItem();
             }
 
+            // 特殊物品符号
             if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-SpecialIconChar")))
             {
-                var maxTextWidth = 200f;
+                var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
                 if (ImGui.BeginChild("SeIconChild", ImGui.GetContentRegionAvail(), false))
                 {
                     PresetFont.Axis14.Push();
