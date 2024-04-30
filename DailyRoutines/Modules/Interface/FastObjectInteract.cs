@@ -104,8 +104,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     private static readonly Dictionary<nint, ObjectWaitSelected> ObjectsWaitSelected = [];
 
-    private static ObjectWaitSelected? CurrentHoverObject;
-
     public override void Init()
     {
         ModuleConfig = LoadConfig<Config>() ?? new();
@@ -294,13 +292,10 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
             }
             else
             {
-                ImGui.PushStyleVar(ImGuiStyleVar.Alpha, !interactState ? 0.5f : 1f);
+                ImGui.BeginDisabled(!interactState);
                 if (ButtonText(kvp.Key.ToString(), kvp.Value.Name) && interactState)
                     InteractWithObject(kvp.Value.GameObject, kvp.Value.Kind);
-                ImGui.PopStyleVar();
-
-                if (ImGui.IsItemHovered())
-                    CurrentHoverObject ??= kvp.Value;
+                ImGui.EndDisabled();
 
                 if (ImGui.BeginPopupContextItem($"{kvp.Value.Name}"))
                 {
@@ -318,21 +313,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         ImGui.EndGroup();
 
         WindowWidth = Math.Max(ModuleConfig.MinButtonWidth, ImGui.GetItemRectSize().X);
-
-        if (ImGui.IsAnyItemHovered() && CurrentHoverObject != null && ObjectsWaitSelected.ContainsValue(CurrentHoverObject))
-        {
-            var originalPos = ImGui.GetCursorScreenPos();
-            var currentPos = ImGui.GetMousePos();
-
-            ImGui.SetCursorScreenPos(currentPos - new Vector2(64, 12));
-            ImGui.SetItemDefaultFocus();
-            if (ButtonText("HoveredButtonOverlap", CurrentHoverObject.Name))
-                InteractWithObject(CurrentHoverObject.GameObject, CurrentHoverObject.Kind);
-            ImGui.SetCursorScreenPos(originalPos);
-        }
-
-        if (!ImGui.IsAnyItemHovered())
-            CurrentHoverObject = null;
 
         PresetFont.Axis14.Pop();
     }

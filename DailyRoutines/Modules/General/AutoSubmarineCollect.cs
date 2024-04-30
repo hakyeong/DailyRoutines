@@ -225,8 +225,6 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
         TaskManager.DelayNext(100);
         TaskManager.Enqueue(() => AddonHelper.Callback(CompanyCraftSupply, true, 5));
-
-        TaskManager.DelayNext(100);
         TaskManager.Enqueue(ClickPreviousVoyageLog);
 
         return true;
@@ -258,7 +256,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
             case 4290:
                 Service.Framework.RunOnTick(TaskManager.Abort, TimeSpan.FromMilliseconds(500));
                 Service.Framework.RunOnTick(() => TaskManager.Enqueue(ReadyToRepairSubmarines),
-                                            TimeSpan.FromMilliseconds(1000));
+                                            TimeSpan.FromMilliseconds(600));
                 break;
             case 4276:
                 TaskManager.Abort();
