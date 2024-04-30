@@ -1465,4 +1465,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="QuickChatPanel-SystemSoundHelp" xml:space="preserve">
     <value>左键试听, 右键发送</value>
   </data>
+  <data name="AutoCutSceneSkip-ProhibitSkippingUnseenCutscene" xml:space="preserve">
+    <value>禁止跳过未观看过的过场动画</value>
+  </data>
 </root>
