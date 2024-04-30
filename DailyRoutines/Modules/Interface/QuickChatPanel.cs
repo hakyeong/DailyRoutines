@@ -72,6 +72,21 @@ public unsafe class QuickChatPanel : DailyModuleBase
         { MacroDisplayMode.Buttons, Service.Lang.GetText("QuickChatPanel-Buttons") }
     };
 
+    private class Config : ModuleConfiguration
+    {
+        public readonly List<string> SavedMessages = [];
+        public readonly List<SavedMacro> SavedMacros = [];
+        public readonly Dictionary<uint, string> SoundEffectNotes = [];
+        public float FontScale = 1.5f;
+        public Vector2 ButtonOffset = new(0);
+        public ushort ButtonSize = 48;
+        public int ButtonIcon = 46;
+        public float OverlayHeight = 250f;
+        public MacroDisplayMode OverlayMacroDisplayMode = MacroDisplayMode.Buttons;
+    }
+
+    private static Config ModuleConfig = null!;
+
     private static char[] SeIconChars = [];
     private static Vector2 ButtonPos = new(0);
     private const float DefaultOverlayWidth = 300f;
@@ -82,46 +97,19 @@ public unsafe class QuickChatPanel : DailyModuleBase
     private static Dictionary<string, Item>? ItemNames;
     private static Dictionary<string, Item> _ItemNames = [];
 
-    private static List<string> ConfigSavedMessages = [];
-    private static List<SavedMacro> ConfigSavedMacros = [];
-    private static float ConfigFontScale = 1.5f;
-    private static Vector2 ConfigButtonOffset = new(0);
-    private static ushort ConfigButtonSize = 48;
-    private static int ConfigButtonIcon = 46;
-    private static float ConfigOverlayHeight = 250f;
-    private static MacroDisplayMode ConfigOverlayMacroDisplayMode = MacroDisplayMode.Buttons;
-
     private static AtkUnitBase* AddonChatLog => (AtkUnitBase*)Service.Gui.GetAddonByName("ChatLog");
 
     public override void Init()
     {
-        #region Config Init
+        ModuleConfig = LoadConfig<Config>() ?? new();
 
-        AddConfig("SavedMessages", ConfigSavedMessages);
-        ConfigSavedMessages = GetConfig<List<string>>("SavedMessages");
+        if (ModuleConfig.SoundEffectNotes.Count <= 0)
+        {
+            for (var i = 1U; i < 17; i++)
+                ModuleConfig.SoundEffectNotes[i] = $"<se.{i}>";
 
-        AddConfig("SavedMacros", ConfigSavedMacros);
-        ConfigSavedMacros = GetConfig<List<SavedMacro>>("SavedMacros");
-
-        AddConfig("FontScale", 1.5f);
-        ConfigFontScale = GetConfig<float>("FontScale");
-
-        AddConfig("ButtonOffset", ConfigButtonOffset);
-        ConfigButtonOffset = GetConfig<Vector2>("ButtonOffset");
-
-        AddConfig("ButtonSize", ConfigButtonSize);
-        ConfigButtonSize = GetConfig<ushort>("ButtonSize");
-
-        AddConfig("ButtonIcon", ConfigButtonIcon);
-        ConfigButtonIcon = GetConfig<int>("ButtonIcon");
-
-        AddConfig("OverlayHeight", ConfigOverlayHeight);
-        ConfigOverlayHeight = GetConfig<float>("OverlayHeight");
-
-        AddConfig("OverlayMacroDisplayMode", ConfigOverlayMacroDisplayMode);
-        ConfigOverlayMacroDisplayMode = GetConfig<MacroDisplayMode>("OverlayMacroDisplayMode");
-
-        #endregion
+            SaveConfig(ModuleConfig);
+        }
 
         var tempSeIconList = new List<char>();
         foreach (SeIconChar seIconChar in Enum.GetValues(typeof(SeIconChar)))
@@ -157,6 +145,9 @@ public unsafe class QuickChatPanel : DailyModuleBase
         ImGui.AlignTextToFramePadding();
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("QuickChatPanel-Macro")}:");
 
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("QuickChatPanel-SystemSound")}:");
+
         ImGui.Spacing();
 
         ImGui.AlignTextToFramePadding();
@@ -186,39 +177,33 @@ public unsafe class QuickChatPanel : DailyModuleBase
         // 右半边
         ImGui.BeginGroup();
         ImGui.SetNextItemWidth(240f * ImGuiHelpers.GlobalScale);
-        if (ImGui.BeginCombo("###MessagesCombo",
-                             Service.Lang.GetText("QuickChatPanel-SavedMessagesAmountText", ConfigSavedMessages.Count)))
+        if (ImGui.BeginCombo("###MessagesCombo", Service.Lang.GetText("QuickChatPanel-SavedMessagesAmountText", ModuleConfig.SavedMessages.Count)))
         {
             ImGui.InputText("###MessageToSaveInput", ref MessageInput, 1000);
+
             ImGui.SameLine();
             if (ImGuiOm.ButtonIcon("###MessagesInputAdd", FontAwesomeIcon.Plus))
             {
-                if (ConfigSavedMessages.Contains(MessageInput)) return;
-                ConfigSavedMessages.Add(MessageInput);
-
-                UpdateConfig("SavedMessages", ConfigSavedMessages);
+                if (!ModuleConfig.SavedMessages.Contains(MessageInput))
+                {
+                    ModuleConfig.SavedMessages.Add(MessageInput);
+                    SaveConfig(ModuleConfig);
+                }
             }
 
-            if (ConfigSavedMessages.Count > 0) ImGui.Separator();
+            if (ModuleConfig.SavedMessages.Count > 0) ImGui.Separator();
 
-            var messagesToDelete = new List<string>();
-            foreach (var message in ConfigSavedMessages)
+            foreach (var message in ModuleConfig.SavedMessages.ToList())
             {
                 ImGuiOm.ButtonSelectable(message);
 
                 if (ImGui.BeginPopupContextItem())
                 {
                     if (ImGuiOm.ButtonSelectable(Service.Lang.GetText("Delete")))
-                        messagesToDelete.Add(message);
+                        ModuleConfig.SavedMessages.Remove(message);
 
                     ImGui.EndPopup();
                 }
-            }
-
-            if (messagesToDelete.Count > 0)
-            {
-                messagesToDelete.ForEach(x => ConfigSavedMessages.Remove(x));
-                UpdateConfig("SavedMessages", ConfigSavedMessages);
             }
 
             ImGui.EndCombo();
@@ -226,195 +211,171 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
         ImGui.SetNextItemWidth(240f * ImGuiHelpers.GlobalScale);
         if (ImGui.BeginCombo("###MacroCombo",
-                             Service.Lang.GetText("QuickChatPanel-SavedMacrosAmountText", ConfigSavedMacros.Count),
+                             Service.Lang.GetText("QuickChatPanel-SavedMacrosAmountText", ModuleConfig.SavedMacros.Count),
                              ImGuiComboFlags.HeightLargest))
         {
-            var module = RaptureMacroModule.Instance();
-            var leftChildSize = new Vector2(200 * ImGuiHelpers.GlobalScale, 300 * ImGuiHelpers.GlobalScale);
-            if (ImGui.BeginChild("IndividualMacroComboSelect", leftChildSize))
-            {
-                ImGui.Text(Service.Lang.GetText("QuickChatPanel-IndividualMacros"));
-                ImGui.Separator();
-
-                var individualSpan = module->IndividualSpan;
-                for (var i = 0; i < individualSpan.Length; i++)
-                {
-                    var macro = individualSpan.GetPointer(i);
-                    if (macro == null) continue;
-
-                    var name = macro->Name.ExtractText();
-                    var icon = ImageHelper.GetIcon(macro->IconId);
-                    if (string.IsNullOrEmpty(name) || icon == null) continue;
-
-                    var currentSavedMacro = (*macro).ToSavedMacro();
-                    currentSavedMacro.Position = i;
-                    currentSavedMacro.Category = 0;
-
-                    ImGui.PushID($"{currentSavedMacro.Category}-{currentSavedMacro.Position}");
-                    if (ImGuiOm.SelectableImageWithText(icon.ImGuiHandle, new(24), name,
-                                                        ConfigSavedMacros.Contains(currentSavedMacro),
-                                                        ImGuiSelectableFlags.DontClosePopups))
-                    {
-                        if (!ConfigSavedMacros.Remove(currentSavedMacro))
-                        {
-                            ConfigSavedMacros.Add(currentSavedMacro);
-                            UpdateConfig("SavedMacros", ConfigSavedMacros);
-                        }
-                    }
-
-                    if (ConfigSavedMacros.Contains(currentSavedMacro) && ImGui.BeginPopupContextItem())
-                    {
-                        ImGui.TextColored(ImGuiColors.DalamudOrange,
-                                          $"{Service.Lang.GetText("QuickChatPanel-LastUpdateTime")}:");
-
-                        ImGui.SameLine();
-                        ImGui.Text(
-                            $"{ConfigSavedMacros.FirstOrDefault(x => x.Category == 0 && x.Position == i)?.LastUpdateTime}");
-
-                        ImGui.Separator();
-
-                        if (ImGuiOm.SelectableTextCentered(Service.Lang.GetText("Refresh")))
-                        {
-                            var currentIndex = ConfigSavedMacros.IndexOf(currentSavedMacro);
-                            if (currentIndex != -1)
-                            {
-                                ConfigSavedMacros[currentIndex] = currentSavedMacro;
-                                UpdateConfig("SavedMacros", ConfigSavedMacros);
-                            }
-                        }
-
-                        ImGui.EndPopup();
-                    }
-
-                    ImGui.PopID();
-                }
-
-                ImGui.EndChild();
-            }
+            DrawMacroChild(true);
 
             ImGui.SameLine();
-            if (ImGui.BeginChild("SharedMacroComboSelect", leftChildSize))
+            DrawMacroChild(false);
+
+            ImGui.EndCombo();
+        }
+
+        ImGui.SetNextItemWidth(240f * ImGuiHelpers.GlobalScale);
+        if (ImGui.BeginCombo("###SoundEffectNoteEditCombo", "", ImGuiComboFlags.HeightLarge))
+        {
+            foreach (var seNote in ModuleConfig.SoundEffectNotes)
             {
-                ImGui.Text(Service.Lang.GetText("QuickChatPanel-SharedMacros"));
-                ImGui.Separator();
+                ImGui.PushID($"{seNote.Key}");
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text($"<se.{seNote.Key}>{(seNote.Key < 10 ? "  " : "")}");
 
-                var individualSpan = module->SharedSpan;
-                for (var i = 0; i < individualSpan.Length; i++)
-                {
-                    var macro = individualSpan.GetPointer(i);
-                    if (macro == null) continue;
+                ImGui.SameLine();
+                ImGui.Text("——>");
 
-                    var name = macro->Name.ExtractText();
-                    var icon = ImageHelper.GetIcon(macro->IconId);
-                    if (string.IsNullOrEmpty(name) || icon == null) continue;
+                var note = seNote.Value;
+                ImGui.SameLine();
+                ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+                if (ImGui.InputText("", ref note, 32))
+                    ModuleConfig.SoundEffectNotes[seNote.Key] = note;
 
-                    var currentSavedMacro = (*macro).ToSavedMacro();
-                    currentSavedMacro.Position = i;
-                    currentSavedMacro.Category = 1;
+                if (ImGui.IsItemDeactivatedAfterEdit())
+                    SaveConfig(ModuleConfig);
 
-                    ImGui.PushID($"{currentSavedMacro.Category}-{currentSavedMacro.Position}");
-                    if (ImGuiOm.SelectableImageWithText(icon.ImGuiHandle, new(24), name,
-                                                        ConfigSavedMacros.Contains(currentSavedMacro),
-                                                        ImGuiSelectableFlags.DontClosePopups))
-                    {
-                        if (!ConfigSavedMacros.Remove(currentSavedMacro))
-                        {
-                            ConfigSavedMacros.Add(currentSavedMacro);
-                            UpdateConfig("SavedMacros", ConfigSavedMacros);
-                        }
-                    }
-
-                    if (ConfigSavedMacros.Contains(currentSavedMacro) && ImGui.BeginPopupContextItem())
-                    {
-                        ImGui.TextColored(ImGuiColors.DalamudOrange,
-                                          $"{Service.Lang.GetText("QuickChatPanel-LastUpdateTime")}:");
-
-                        ImGui.SameLine();
-                        ImGui.Text(
-                            $"{ConfigSavedMacros.FirstOrDefault(x => x.Category == 1 && x.Position == i)?.LastUpdateTime}");
-
-                        ImGui.Separator();
-
-                        if (ImGuiOm.SelectableTextCentered(Service.Lang.GetText("Refresh")))
-                        {
-                            if (ConfigSavedMacros.Remove(currentSavedMacro))
-                            {
-                                ConfigSavedMacros.Add(currentSavedMacro);
-                                UpdateConfig("SavedMacros", ConfigSavedMacros);
-                            }
-                        }
-
-                        ImGui.EndPopup();
-                    }
-
-                    ImGui.PopID();
-                }
-
-                ImGui.EndChild();
+                ImGui.PopID();
             }
-
             ImGui.EndCombo();
         }
 
         ImGui.Spacing();
 
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputFloat2("###ButtonOffsetInput", ref ConfigButtonOffset, "%.1f",
-                              ImGuiInputTextFlags.EnterReturnsTrue))
-            UpdateConfig("ButtonOffset", ConfigButtonOffset);
+        ImGui.InputFloat2("###ButtonOffsetInput", ref ModuleConfig.ButtonOffset, "%.1f");
+        if (ImGui.IsItemDeactivatedAfterEdit())
+            SaveConfig(ModuleConfig);
 
         ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
-        var intConfigButtonSize = (int)ConfigButtonSize;
-        if (ImGui.InputInt("###ButtonSizeInput", ref intConfigButtonSize, 0, 0, ImGuiInputTextFlags.EnterReturnsTrue))
+        var intConfigButtonSize = (int)ModuleConfig.ButtonSize;
+        ImGui.InputInt("###ButtonSizeInput", ref intConfigButtonSize, 0, 0);
+        if (ImGui.IsItemDeactivatedAfterEdit())
         {
-            ConfigButtonSize = (ushort)Math.Clamp(intConfigButtonSize, 1, 65535);
-            UpdateConfig("ButtonSize", ConfigButtonSize);
+            ModuleConfig.ButtonSize = (ushort)Math.Clamp(intConfigButtonSize, 1, 65536);
+            SaveConfig(ModuleConfig);
         }
 
         ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputInt("###ButtonIconInput", ref ConfigButtonIcon, 0, 0, ImGuiInputTextFlags.EnterReturnsTrue))
+        ImGui.InputInt("###ButtonIconInput", ref ModuleConfig.ButtonIcon, 0, 0);
+        if (ImGui.IsItemDeactivatedAfterEdit())
         {
-            ConfigButtonIcon = Math.Max(ConfigButtonIcon, 1);
-            UpdateConfig("ButtonIcon", ConfigButtonIcon);
+            ModuleConfig.ButtonIcon = Math.Max(ModuleConfig.ButtonIcon, 1);
+            SaveConfig(ModuleConfig);
         }
 
         ImGui.SameLine();
-        if (ImGuiOm.ButtonIcon("OpenIconBrowser", FontAwesomeIcon.Search,
-                               Service.Lang.GetText("QuickChatPanel-OpenIconBrowser")))
+        if (ImGuiOm.ButtonIcon("OpenIconBrowser", FontAwesomeIcon.Search, Service.Lang.GetText("QuickChatPanel-OpenIconBrowser")))
             Chat.Instance.SendMessage("/xldata icon");
 
         ImGui.Spacing();
 
         ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputFloat("###FontScaleInput", ref ConfigFontScale, 0, 0, "%.1f",
-                             ImGuiInputTextFlags.EnterReturnsTrue))
+        ImGui.InputFloat("###FontScaleInput", ref ModuleConfig.FontScale, 0, 0, "%.1f");
+        if (ImGui.IsItemDeactivatedAfterEdit())
         {
-            ConfigFontScale = (float)Math.Clamp(ConfigFontScale, 0.1, 10f);
-            UpdateConfig("FontScale", ConfigFontScale);
+            ModuleConfig.FontScale = (float)Math.Clamp(ModuleConfig.FontScale, 0.1, 10f);
+            SaveConfig(ModuleConfig);
         }
 
         ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputFloat("###OverlayHeightInput", ref ConfigOverlayHeight, 0, 0, "%.1f",
-                             ImGuiInputTextFlags.EnterReturnsTrue))
+        ImGui.InputFloat("###OverlayHeightInput", ref ModuleConfig.OverlayHeight, 0, 0, "%.1f");
+        if (ImGui.IsItemDeactivatedAfterEdit())
         {
-            ConfigOverlayHeight = Math.Clamp(ConfigOverlayHeight, 100f, 10000f);
-            UpdateConfig("OverlayHeight", ConfigOverlayHeight);
+            ModuleConfig.OverlayHeight = Math.Clamp(ModuleConfig.OverlayHeight, 100f, 10000f);
+            SaveConfig(ModuleConfig);
         }
 
         ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
-        if (ImGui.BeginCombo("###OverlayMacroDisplayModeCombo", MacroDisplayModeLoc[ConfigOverlayMacroDisplayMode]))
+        if (ImGui.BeginCombo("###OverlayMacroDisplayModeCombo", MacroDisplayModeLoc[ModuleConfig.OverlayMacroDisplayMode]))
         {
             foreach (MacroDisplayMode mode in Enum.GetValues(typeof(MacroDisplayMode)))
-                if (ImGui.Selectable(MacroDisplayModeLoc[mode], mode == ConfigOverlayMacroDisplayMode))
+                if (ImGui.Selectable(MacroDisplayModeLoc[mode], mode == ModuleConfig.OverlayMacroDisplayMode))
                 {
-                    ConfigOverlayMacroDisplayMode = mode;
-                    UpdateConfig("OverlayMacroDisplayMode", ConfigOverlayMacroDisplayMode);
+                    ModuleConfig.OverlayMacroDisplayMode = mode;
+                    SaveConfig(ModuleConfig);
                 }
 
             ImGui.EndCombo();
         }
 
         ImGui.EndGroup();
+
+        return;
+
+        void DrawMacroChild(bool isIndividual)
+        {
+            var childSize = new Vector2(200 * ImGuiHelpers.GlobalScale, 300 * ImGuiHelpers.GlobalScale);
+            var module = RaptureMacroModule.Instance();
+            if (ImGui.BeginChild($"{(isIndividual ? "Individual" : "Shared")}MacroSelectChild", childSize))
+            {
+                ImGui.Text(Service.Lang.GetText($"QuickChatPanel-{(isIndividual ? "Individual" : "Shared")}Macros"));
+                ImGui.Separator();
+
+                var span = isIndividual ? module->IndividualSpan : module->SharedSpan;
+                for (var i = 0; i < span.Length; i++)
+                {
+                    var macro = span.GetPointer(i);
+                    if (macro == null) continue;
+
+                    var name = macro->Name.ExtractText();
+                    var icon = ImageHelper.GetIcon(macro->IconId);
+                    if (string.IsNullOrEmpty(name) || icon == null) continue;
+
+                    var currentSavedMacro = (*macro).ToSavedMacro();
+                    currentSavedMacro.Position = i;
+                    currentSavedMacro.Category = isIndividual ? 0U : 1U;
+
+                    ImGui.PushID($"{currentSavedMacro.Category}-{currentSavedMacro.Position}");
+                    if (ImGuiOm.SelectableImageWithText(icon.ImGuiHandle, new(24), name,
+                                                        ModuleConfig.SavedMacros.Contains(currentSavedMacro),
+                                                        ImGuiSelectableFlags.DontClosePopups))
+                    {
+                        if (!ModuleConfig.SavedMacros.Remove(currentSavedMacro))
+                        {
+                            ModuleConfig.SavedMacros.Add(currentSavedMacro);
+                            SaveConfig(ModuleConfig);
+                        }
+                    }
+
+                    if (ModuleConfig.SavedMacros.Contains(currentSavedMacro) && ImGui.BeginPopupContextItem())
+                    {
+                        ImGui.TextColored(ImGuiColors.DalamudOrange,
+                                          $"{Service.Lang.GetText("QuickChatPanel-LastUpdateTime")}:");
+
+                        ImGui.SameLine();
+                        var i1 = i;
+                        ImGui.Text($"{ModuleConfig.SavedMacros.Find(x => x.Equals(currentSavedMacro))?.LastUpdateTime}");
+
+                        ImGui.Separator();
+
+                        if (ImGuiOm.SelectableTextCentered(Service.Lang.GetText("Refresh")))
+                        {
+                            var currentIndex = ModuleConfig.SavedMacros.IndexOf(currentSavedMacro);
+                            if (currentIndex != -1)
+                            {
+                                ModuleConfig.SavedMacros[currentIndex] = currentSavedMacro;
+                                SaveConfig(ModuleConfig);
+                            }
+                        }
+
+                        ImGui.EndPopup();
+                    }
+
+                    ImGui.PopID();
+                }
+
+                ImGui.EndChild();
+            }
+        }
     }
 
     public override void OverlayUI()
@@ -429,7 +390,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
         if (textInputNode == null) return;
 
         var buttonPos = new Vector2(textInputNode->X + textInputNode->Width, textInputNode->ScreenY) +
-                        ConfigButtonOffset;
+                        ModuleConfig.ButtonOffset;
 
         ImGui.SetWindowPos(buttonPos with { Y = buttonPos.Y - ImGui.GetWindowSize().Y - 5 });
 
@@ -442,10 +403,10 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 if (ImGui.BeginChild("MessagesChild", ImGui.GetContentRegionAvail(), false))
                 {
                     PresetFont.Axis14.Push();
-                    ImGui.SetWindowFontScale(ConfigFontScale);
-                    for (var i = 0; i < ConfigSavedMessages.Count; i++)
+                    ImGui.SetWindowFontScale(ModuleConfig.FontScale);
+                    for (var i = 0; i < ModuleConfig.SavedMessages.Count; i++)
                     {
-                        var message = ConfigSavedMessages[i];
+                        var message = ModuleConfig.SavedMessages[i];
 
                         var textWidth = ImGui.CalcTextSize(message).X;
                         maxTextWidth = Math.Max(textWidth + 64, maxTextWidth);
@@ -480,7 +441,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
                         ImGuiOm.TooltipHover(Service.Lang.GetText("QuickChatPanel-SendMessageHelp"));
 
-                        if (i != ConfigSavedMessages.Count - 1)
+                        if (i != ModuleConfig.SavedMessages.Count - 1)
                             ImGui.Separator();
                     }
 
@@ -490,7 +451,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 }
 
                 ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
-                                        ConfigOverlayHeight * ImGuiHelpers.GlobalScale));
+                                        ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
                 ImGui.EndTabItem();
             }
 
@@ -501,17 +462,17 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 if (ImGui.BeginChild("MacroChild", ImGui.GetContentRegionAvail(), false))
                 {
                     PresetFont.Axis14.Push();
-                    ImGui.SetWindowFontScale(ConfigFontScale);
+                    ImGui.SetWindowFontScale(ModuleConfig.FontScale);
                     ImGui.BeginGroup();
-                    for (var i = 0; i < ConfigSavedMacros.Count; i++)
+                    for (var i = 0; i < ModuleConfig.SavedMacros.Count; i++)
                     {
-                        var macro = ConfigSavedMacros[i];
+                        var macro = ModuleConfig.SavedMacros[i];
 
                         var name = macro.Name;
                         var icon = ImageHelper.GetIcon(macro.IconID);
                         if (string.IsNullOrEmpty(name) || icon == null) continue;
 
-                        switch (ConfigOverlayMacroDisplayMode)
+                        switch (ModuleConfig.OverlayMacroDisplayMode)
                         {
                             case MacroDisplayMode.List:
                                 if (ImGuiOm.SelectableImageWithText(icon.ImGuiHandle, new(24), name, false))
@@ -555,10 +516,10 @@ public unsafe class QuickChatPanel : DailyModuleBase
                             }
                         }
 
-                        switch (ConfigOverlayMacroDisplayMode)
+                        switch (ModuleConfig.OverlayMacroDisplayMode)
                         {
                             case MacroDisplayMode.List:
-                                if (i != ConfigSavedMacros.Count - 1)
+                                if (i != ModuleConfig.SavedMacros.Count - 1)
                                     ImGui.Separator();
                                 break;
                             case MacroDisplayMode.Buttons:
@@ -566,7 +527,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                                 else
                                 {
                                     ImGui.SameLine();
-                                    ImGui.Dummy(new(20 * ConfigFontScale));
+                                    ImGui.Dummy(new(20 * ModuleConfig.FontScale));
                                 }
 
                                 break;
@@ -582,7 +543,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 }
 
                 ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
-                                        ConfigOverlayHeight * ImGuiHelpers.GlobalScale));
+                                        ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
                 ImGui.EndTabItem();
             }
 
@@ -591,26 +552,27 @@ public unsafe class QuickChatPanel : DailyModuleBase
             {
                 var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
                 PresetFont.Axis14.Push();
-                ImGui.SetWindowFontScale(ConfigFontScale);
+                ImGui.SetWindowFontScale(ModuleConfig.FontScale);
                 ImGui.BeginGroup();
-                for (var i = 1U; i < 17U; i++)
+                foreach (var seNote in ModuleConfig.SoundEffectNotes)
                 {
-                    ImGuiOm.SelectableCentered($"        {(i > 9 ? "" : "  ")}<se.{i}>          ###PlaySound{i}");
+                    ImGuiOm.ButtonSelectable($"{seNote.Value}###PlaySound{seNote.Key}");
 
                     if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
-                        UIModule.PlayChatSoundEffect(i);
+                        UIModule.PlayChatSoundEffect(seNote.Key);
                     if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
-                        Chat.Instance.SendMessage($"<se.{i}><se.{i}>");
+                        Chat.Instance.SendMessage($"<se.{seNote.Key}><se.{seNote.Key}>");
 
                     ImGuiOm.TooltipHover(Service.Lang.GetText("QuickChatPanel-SystemSoundHelp"));
                 }
+
                 ImGui.EndGroup();
                 maxTextWidth = ImGui.GetItemRectSize().X;
                 ImGui.SetWindowFontScale(1f);
                 PresetFont.Axis14.Pop();
 
                 ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
-                                        ConfigOverlayHeight * ImGuiHelpers.GlobalScale));
+                                        ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
                 ImGui.EndTabItem();
             }
 
@@ -621,7 +583,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 if (ImGui.BeginChild("GameItemChild", ImGui.GetContentRegionAvail(), false))
                 {
                     PresetFont.Axis14.Push();
-                    ImGui.SetWindowFontScale(ConfigFontScale);
+                    ImGui.SetWindowFontScale(ModuleConfig.FontScale);
 
                     ImGui.SetNextItemWidth(-1f);
                     ImGui.InputTextWithHint("###GameItemSearchInput", Service.Lang.GetText("PleaseSearch"),
@@ -658,7 +620,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 }
 
                 ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
-                                        ConfigOverlayHeight * ImGuiHelpers.GlobalScale));
+                                        ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
 
                 ImGui.EndTabItem();
             }
@@ -670,14 +632,14 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 if (ImGui.BeginChild("SeIconChild", ImGui.GetContentRegionAvail(), false))
                 {
                     PresetFont.Axis14.Push();
-                    ImGui.SetWindowFontScale(ConfigFontScale);
+                    ImGui.SetWindowFontScale(ModuleConfig.FontScale);
 
                     ImGui.BeginGroup();
                     for (var i = 0; i < SeIconChars.Length; i++)
                     {
                         var icon = SeIconChars[i];
 
-                        if (ImGui.Button($"{icon}", new(48 * ConfigFontScale))) ImGui.SetClipboardText(icon.ToString());
+                        if (ImGui.Button($"{icon}", new(48 * ModuleConfig.FontScale))) ImGui.SetClipboardText(icon.ToString());
 
                         ImGuiOm.TooltipHover($"0x{(int)icon:X4}");
 
@@ -685,7 +647,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                         else
                         {
                             ImGui.SameLine();
-                            ImGui.Dummy(new(20 * ConfigFontScale));
+                            ImGui.Dummy(new(20 * ModuleConfig.FontScale));
                         }
                     }
 
@@ -698,7 +660,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 }
 
                 ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
-                                        ConfigOverlayHeight * ImGuiHelpers.GlobalScale));
+                                        ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
                 ImGui.EndTabItem();
             }
 
@@ -736,8 +698,8 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 var collisionNode = AddonChatLog->GetNodeById(15);
                 if (textInputNode == null || collisionNode == null) return;
 
-                ButtonPos = new Vector2(textInputNode->X + textInputNode->Width - ConfigButtonSize - 6,
-                                        textInputNode->Y - 3) + ConfigButtonOffset;
+                ButtonPos = new Vector2(textInputNode->X + textInputNode->Width - ModuleConfig.ButtonSize - 6,
+                                        textInputNode->Y - 3) + ModuleConfig.ButtonOffset;
 
                 AtkResNode* iconNode = null;
                 for (var i = 0; i < AddonChatLog->UldManager.NodeListCount; i++)
@@ -751,13 +713,13 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 }
 
                 if (iconNode is null)
-                    MakeIconNode(10001, ButtonPos, ConfigButtonIcon);
+                    MakeIconNode(10001, ButtonPos, ModuleConfig.ButtonIcon);
                 else
                 {
                     iconNode->SetPositionFloat(ButtonPos.X, ButtonPos.Y);
-                    iconNode->SetHeight(ConfigButtonSize);
-                    iconNode->SetWidth(ConfigButtonSize);
-                    ((AtkImageNode*)iconNode)->LoadIconTexture(ConfigButtonIcon, 0);
+                    iconNode->SetHeight(ModuleConfig.ButtonSize);
+                    iconNode->SetWidth(ModuleConfig.ButtonSize);
+                    ((AtkImageNode*)iconNode)->LoadIconTexture(ModuleConfig.ButtonIcon, 0);
                 }
 
                 break;
@@ -778,8 +740,8 @@ public unsafe class QuickChatPanel : DailyModuleBase
         imageNode->LoadIconTexture(icon, 0);
         imageNode->AtkResNode.ToggleVisibility(true);
 
-        imageNode->AtkResNode.SetWidth(ConfigButtonSize);
-        imageNode->AtkResNode.SetHeight(ConfigButtonSize);
+        imageNode->AtkResNode.SetWidth(ModuleConfig.ButtonSize);
+        imageNode->AtkResNode.SetHeight(ModuleConfig.ButtonSize);
         imageNode->AtkResNode.SetPositionShort((short)position.X, (short)position.Y);
 
         AddonHelper.LinkNodeAtEnd((AtkResNode*)imageNode, AddonChatLog);
@@ -843,23 +805,23 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
     private void SwapMacros(int index1, int index2)
     {
-        (ConfigSavedMacros[index1], ConfigSavedMacros[index2]) = (ConfigSavedMacros[index2], ConfigSavedMacros[index1]);
+        (ModuleConfig.SavedMacros[index1], ModuleConfig.SavedMacros[index2]) = (ModuleConfig.SavedMacros[index2], ModuleConfig.SavedMacros[index1]);
 
         TaskManager.Abort();
 
         TaskManager.DelayNext(500);
-        TaskManager.Enqueue(() => { UpdateConfig("SavedMacros", ConfigSavedMacros); });
+        TaskManager.Enqueue(() => { SaveConfig(ModuleConfig); });
     }
 
     private void SwapMessages(int index1, int index2)
     {
-        (ConfigSavedMessages[index1], ConfigSavedMessages[index2]) =
-            (ConfigSavedMessages[index2], ConfigSavedMessages[index1]);
+        (ModuleConfig.SavedMessages[index1], ModuleConfig.SavedMessages[index2]) =
+            (ModuleConfig.SavedMessages[index2], ModuleConfig.SavedMessages[index1]);
 
         TaskManager.Abort();
 
         TaskManager.DelayNext(500);
-        TaskManager.Enqueue(() => { UpdateConfig("SavedMessages", ConfigSavedMessages); });
+        TaskManager.Enqueue(() => { SaveConfig(ModuleConfig); });
     }
 
     public override void Uninit()
