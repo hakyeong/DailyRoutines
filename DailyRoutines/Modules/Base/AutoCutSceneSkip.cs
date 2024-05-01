@@ -23,6 +23,7 @@ public class AutoCutSceneSkip : DailyModuleBase
     private delegate nint GetCutSceneRowDelegate(uint row);
     [Signature("48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 44 8B C1 BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 75 ?? 48 83 C4 ?? C3 48 8B 00 48 83 C4 ?? C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 8B 05 ?? ?? ?? ?? BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E9 ?? ?? ?? ?? CC CC CC CC CC CC CC CC 48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 44 8B C1 BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 75 ?? 48 83 C4 ?? C3 48 8B 00 48 83 C4 ?? C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 8B 05 ?? ?? ?? ?? BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E9 ?? ?? ?? ?? CC CC CC CC CC CC CC CC 48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 44 8B CA", DetourName = nameof(GetCutSceneRowDetour))]
     private readonly Hook<GetCutSceneRowDelegate>? GetCutSceneRowHook;
+
     private uint CurrentCutscene;
     private bool ProhibitSkippingUnseenCutscene;
 
@@ -47,13 +48,16 @@ public class AutoCutSceneSkip : DailyModuleBase
         if (ImGui.Checkbox(Service.Lang.GetText("AutoCutSceneSkip-ProhibitSkippingUnseenCutscene"),
                            ref ProhibitSkippingUnseenCutscene))
             UpdateConfig(nameof(ProhibitSkippingUnseenCutscene), ProhibitSkippingUnseenCutscene);
+
+        ImGuiOm.HelpMarker(Service.Lang.GetText("AutoCutSceneSkip-ProhibitSkippingUnseenCutsceneHelp"));
     }
 
     private unsafe void CutsceneHandleInputDetour(nint a1)
     {
         if (ProhibitSkippingUnseenCutscene && CurrentCutscene != 0)
         {
-            if (!UIState.Instance()->IsCutsceneSeen(CurrentCutscene))
+            if (LuminaCache.GetRow<CutsceneWorkIndex>(CurrentCutscene).WorkIndex != 0 &&
+                !UIState.Instance()->IsCutsceneSeen(CurrentCutscene))
             {
                 CutsceneHandleInputHook.Original(a1);
                 return;

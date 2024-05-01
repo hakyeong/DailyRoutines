@@ -1468,6 +1468,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoCutSceneSkip-ProhibitSkippingUnseenCutscene" xml:space="preserve">
     <value>禁止跳过未观看过的过场动画</value>
   </data>
+  <data name="AutoCutSceneSkip-ProhibitSkippingUnseenCutsceneHelp" xml:space="preserve">
+    <value>客户端仅会记录少部分过场剧情的观看历史, 因此该功能准确性较低</value>
+  </data>
   <data name="Example" xml:space="preserve">
     <value>例</value>
   </data>
