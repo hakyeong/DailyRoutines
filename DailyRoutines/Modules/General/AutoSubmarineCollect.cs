@@ -254,9 +254,9 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         switch (logMessageID)
         {
             case 4290:
-                Service.Framework.RunOnTick(TaskManager.Abort, TimeSpan.FromMilliseconds(500));
+                Service.Framework.RunOnTick(TaskManager.Abort, TimeSpan.FromMilliseconds(200));
                 Service.Framework.RunOnTick(() => TaskManager.Enqueue(ReadyToRepairSubmarines),
-                                            TimeSpan.FromMilliseconds(600));
+                                            TimeSpan.FromMilliseconds(210));
                 break;
             case 4276:
                 TaskManager.Abort();
