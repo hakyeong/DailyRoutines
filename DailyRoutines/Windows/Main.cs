@@ -450,15 +450,6 @@ public class MainSettings
                 $"{Service.Lang.GetText("Changelog", LatestVersionInfo.PublishTime.ToShortDateString())}:"))
         {
             ImGui.Indent();
-            ImGui.TextWrapped(LatestVersionInfo.Changelog);
-            ImGui.Unindent();
-
-            if (ImGui.IsItemClicked())
-                ImGui.OpenPopup("###ChangelogImagePopup");
-        }
-
-        if (ImGui.BeginPopup("###ChangelogImagePopup"))
-        {
             var imageState = ImageHelper
                 .TryGetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/Changelog.png", out var imageHandle);
 
@@ -466,7 +457,7 @@ public class MainSettings
                 ImGui.Image(imageHandle.ImGuiHandle, imageHandle.Size * 0.8f);
             else
                 ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
-            ImGui.EndPopup();
+            ImGui.Unindent();
         }
     }
 
