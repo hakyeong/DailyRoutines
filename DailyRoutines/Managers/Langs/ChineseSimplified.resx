@@ -1501,4 +1501,13 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Target" xml:space="preserve">
     <value>目标</value>
   </data>
+  <data name="BetterBlueSetLoad-ApplyPreset" xml:space="preserve">
+    <value>应用预设 {0}</value>
+  </data>
+  <data name="BetterBlueSetLoadDescription" xml:space="preserve">
+    <value>启用后, 在青魔法书界面新增按钮, 允许你在不解除以太复制等状态的情况下切换技能组</value>
+  </data>
+  <data name="BetterBlueSetLoadTitle" xml:space="preserve">
+    <value>更好的青魔法技能组读取</value>
+  </data>
 </root>
