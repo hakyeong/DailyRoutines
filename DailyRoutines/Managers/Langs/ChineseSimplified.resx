@@ -1468,4 +1468,34 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoCutSceneSkip-ProhibitSkippingUnseenCutscene" xml:space="preserve">
     <value>禁止跳过未观看过的过场动画</value>
   </data>
+  <data name="Example" xml:space="preserve">
+    <value>例</value>
+  </data>
+  <data name="Job" xml:space="preserve">
+    <value>职业</value>
+  </data>
+  <data name="Level" xml:space="preserve">
+    <value>等级</value>
+  </data>
+  <data name="PlayerTargetInfoExpand-CompanyTag" xml:space="preserve">
+    <value>部队名称</value>
+  </data>
+  <data name="PlayerTargetInfoExpand-FocusTarget" xml:space="preserve">
+    <value>焦点目标</value>
+  </data>
+  <data name="PlayerTargetInfoExpand-OnlineStatus" xml:space="preserve">
+    <value>在线状态</value>
+  </data>
+  <data name="PlayerTargetInfoExpand-TargetsTarget" xml:space="preserve">
+    <value>目标的目标</value>
+  </data>
+  <data name="PlayerTargetInfoExpandDescription" xml:space="preserve">
+    <value>启用后, 允许你自定义目标情报中所能显示的信息</value>
+  </data>
+  <data name="PlayerTargetInfoExpandTitle" xml:space="preserve">
+    <value>玩家目标情报扩展</value>
+  </data>
+  <data name="Target" xml:space="preserve">
+    <value>目标</value>
+  </data>
 </root>
