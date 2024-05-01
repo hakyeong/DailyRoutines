@@ -41,7 +41,7 @@ using SeStringBuilder = Dalamud.Game.Text.SeStringHandling.SeStringBuilder;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoRetainerPriceAdjustTitle", "AutoRetainerPriceAdjustDescription", ModuleCategories.Retainer)]
-public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
+public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
 {
     #region 预定义
     private static readonly InventoryType[] InventoryTypes =
@@ -844,7 +844,7 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
     // 获取市场数据
     private bool? ObtainMarketData()
     {
-        if (!EzThrottler.Throttle("AutoRetainerPriceAdjust-ObtainMarketData", 1000)) return false;
+        if (!EzThrottler.Throttle("AutoRetainerPriceAdjust-ObtainMarketData")) return false;
         if (ItemSearchResult == null || !IsAddonAndNodesReady(ItemSearchResult)) return false;
         if (InfoItemSearch->SearchItemId == 0) return false;
         CurrentItem.ItemID = InfoItemSearch->SearchItemId;
@@ -857,14 +857,15 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
             return true;
         }
 
-        if (ItemHistory == null) AddonHelper.Callback(ItemSearchResult, true, 0);
-        if (!IsAddonAndNodesReady(ItemHistory)) return false;
-
         if (ItemHistoryList == null)
         {
             InfoItemSearch->RequestData();
             return false;
         }
+
+        // 主要起 Throttler 的作用, 本身不必要
+        if (ItemHistory == null) AddonHelper.Callback(ItemSearchResult, true, 0);
+        if (!IsAddonAndNodesReady(ItemHistory)) return false;
 
         // 市场结果为空
         if (InfoItemSearch->ListingCount == 0)
@@ -913,7 +914,6 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
         void CloseAndEnqueue()
         {
-            ItemHistory->Close(true);
             ItemSearchResult->Close(true);
 
             TaskManager.EnqueueImmediate(FillPrice);
@@ -1309,7 +1309,4 @@ public unsafe partial class AutoRetainerPriceAdjust : DailyModuleBase
 
         base.Uninit();
     }
-
-    [GeneratedRegex("[^0-9]")]
-    private static partial Regex AutoRetainerPriceAdjustRegex();
 }
