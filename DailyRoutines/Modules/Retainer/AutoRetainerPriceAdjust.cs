@@ -22,6 +22,7 @@ using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
+using Dalamud.Memory;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using Dalamud.Utility.Signatures;
@@ -250,9 +251,13 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
     }
     private static Config ModuleConfig = null!;
 
-    private delegate nint MarketboardHistoryDelegate(nint a1, nint packetData);
+    private delegate nint MarketboardPacketDelegate(nint a1, nint packetData);
     [Signature("40 53 48 83 EC ?? 48 8B 0D ?? ?? ?? ?? 48 8B DA E8 ?? ?? ?? ?? 48 85 C0 74 ?? 4C 8B 00 48 8B C8 41 FF 90 ?? ?? ?? ?? 48 8B C8 BA ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 74 ?? 48 8D 53 ?? 41 B8 ?? ?? ?? ?? 48 8B C8 48 83 C4 ?? 5B E9 ?? ?? ?? ?? 48 83 C4 ?? 5B C3 CC CC CC CC CC CC CC CC CC CC 40 53", DetourName = nameof(MarketboardHistorDetour))]
-    private readonly Hook<MarketboardHistoryDelegate>? MarketboardHistoryHook;
+    private readonly Hook<MarketboardPacketDelegate>? MarketboardHistoryHook;
+
+    private delegate nint InfoProxyItemSearchAddPageDelegate(byte* a1, byte* a2);
+    [Signature("48 89 5C 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 0F B6 82 ?? ?? ?? ?? 48 8B FA 48 8B D9 38 41 19 74 54", DetourName = nameof(InfoProxyItemSearchAddPageDetour))]
+    private readonly Hook<InfoProxyItemSearchAddPageDelegate>? InfoProxyItemSearchAddPageHook;
 
     private static Dictionary<string, Item>? ItemNames;
     private static Dictionary<string, Item> _ItemNames = [];
@@ -269,6 +274,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
     private static ItemKey? CurrentItem;
     private static int CurrentItemIndex = -1;
     private static List<MarketBoardHistory.MarketBoardHistoryListing>? ItemHistoryList;
+    private static List<MarketBoardCurrentOfferings.MarketBoardItemListing>? ItemSearchList;
 
     private static readonly HashSet<ulong> PlayerRetainers = [];
 
@@ -296,11 +302,12 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         // 出售详情
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSell", OnRetainerSell);
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = true };
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
         Overlay ??= new Overlay(this);
 
         Service.Hook.InitializeFromAttributes(this);
         MarketboardHistoryHook?.Enable();
+        InfoProxyItemSearchAddPageHook?.Enable();
     }
 
     #region UI
@@ -820,23 +827,32 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         if (InterruptByConflictKey()) return true;
         if (!ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(6948).Text.RawString)) return false;
 
-        TaskManager.EnqueueImmediate(ClickComparePrice);
+        TaskManager.EnqueueImmediate(ObtainItemData);
         return true;
     }
 
-    // 点击比价按钮
-    private bool? ClickComparePrice()
+    // 获取物品数据
+    private bool? ObtainItemData()
     {
         if (InterruptByConflictKey()) return true;
-
         if (!TryGetAddonByName<AtkUnitBase>("RetainerSell", out var addon) || !IsAddonAndNodesReady(addon)) return false;
 
+        var itemNameText = MemoryHelper.ReadSeStringNullTerminated((nint)addon->AtkValues[1].String).TextValue;
+        if (string.IsNullOrWhiteSpace(itemNameText)) return false;
+
+        var itemName = itemNameText.TrimEnd(''); // HQ 符号
+        if (!ItemNames.TryGetValue(itemName, out var item))
+        {
+            Service.Chat.PrintError("获取物品信息失败", "Daily Routines");
+            TaskManager.Abort();
+            return true;
+        }
+
         CurrentItem ??= new();
-        CurrentItem.IsHQ = Marshal.PtrToStringUTF8((nint)addon->AtkValues[1].String).Contains(''); // HQ 符号
+        CurrentItem.ItemID = item.RowId;
+        CurrentItem.IsHQ = itemNameText.Contains(''); // HQ 符号
+        InfoItemSearch->SearchItemId = CurrentItem.ItemID;
 
-        ClickRetainerSell.Using((nint)addon).ComparePrice();
-
-        TaskManager.DelayNextImmediate(1000);
         TaskManager.EnqueueImmediate(ObtainMarketData);
         return true;
     }
@@ -845,15 +861,16 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
     private bool? ObtainMarketData()
     {
         if (!EzThrottler.Throttle("AutoRetainerPriceAdjust-ObtainMarketData")) return false;
-        if (ItemSearchResult == null || !IsAddonAndNodesReady(ItemSearchResult)) return false;
-        if (InfoItemSearch->SearchItemId == 0) return false;
-        CurrentItem.ItemID = InfoItemSearch->SearchItemId;
+        if (InfoItemSearch->SearchItemId == 0)
+        {
+            Service.Chat.PrintError("获取物品信息失败", "Daily Routines");
+            TaskManager.Abort();
+            return true;
+        }
 
         if (TryGetPriceCache(CurrentItem.ItemID, CurrentItem.IsHQ, out _))
         {
-            ItemSearchResult->Close(true);
             TaskManager.EnqueueImmediate(FillPrice);
-
             return true;
         }
 
@@ -863,61 +880,59 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
             return false;
         }
 
-        // 主要起 Throttler 的作用, 本身不必要
-        if (ItemHistory == null) AddonHelper.Callback(ItemSearchResult, true, 0);
-        if (!IsAddonAndNodesReady(ItemHistory)) return false;
+        TaskManager.DelayNextImmediate(1000);
+        TaskManager.EnqueueImmediate(ParseMarketData);
+        return true;
+    }
 
+    private bool? ParseMarketData()
+    {
         // 市场结果为空
-        if (InfoItemSearch->ListingCount == 0)
+        if (ItemSearchList is not { Count: > 0 })
         {
             // 历史结果为空
             if (ItemHistoryList.Count <= 0)
             {
-                CloseAndEnqueue();
+                TaskManager.EnqueueImmediate(FillPrice);
                 return true;
             }
 
             var maxPrice = ItemHistoryList.DefaultIfEmpty().Max(x => x.SalePrice);
-            var maxHQPrice = ItemHistoryList.Where(x => x is { IsHq: true, OnMannequin: false }).Max(x => x.SalePrice);
+            var maxHQPrice = ItemHistoryList.Where(x => x is { IsHq: true, OnMannequin: false }).DefaultIfEmpty()
+                                            .Max(x => x.SalePrice);
 
             if (maxPrice != 0)
                 SetPriceCache(CurrentItem.ItemID, false, maxPrice);
             if (maxHQPrice != 0)
                 SetPriceCache(CurrentItem.ItemID, true, maxHQPrice);
 
-            CloseAndEnqueue();
+            TaskManager.EnqueueImmediate(FillPrice);
             return true;
         }
 
-        var listing = InfoItemSearch->Listings.ToArray();
-        if (listing[0].ItemId != CurrentItem.ItemID) return false;
+        var nqItemsList = ItemSearchList
+                          .Where(x => !PlayerRetainers.Contains(x.RetainerId) &&
+                                      x is { PricePerUnit: > 0, OnMannequin: false })
+                          .ToList();
+        var minPrice = nqItemsList.Count != 0
+                           ? nqItemsList.Min(x => x.PricePerUnit)
+                           : 0;
 
-        var minPrice = listing
-                       .Where(x => !PlayerRetainers.Contains(x.SellingRetainerContentId) &&
-                                   x is { UnitPrice: > 0, IsHqItem: false })
-                       .DefaultIfEmpty()
-                       .Min(x => x.UnitPrice);
-        var minHQPrice = listing
-                         .Where(x => !PlayerRetainers.Contains(x.SellingRetainerContentId) &&
-                                     x is { UnitPrice: > 0, IsHqItem: true })
-                         .DefaultIfEmpty()
-                         .Min(x => x.UnitPrice);
+        var hqItemsList = ItemSearchList
+                             .Where(x => !PlayerRetainers.Contains(x.RetainerId) &&
+                                         x is { PricePerUnit: > 0, IsHq: true, OnMannequin: false })
+                             .ToList();
+        var minHQPrice = hqItemsList.Count != 0
+                             ? hqItemsList.Min(x => x.PricePerUnit)
+                             : 0;
 
         if (minPrice > 0)
             SetPriceCache(CurrentItem.ItemID, false, minPrice);
         if (minHQPrice > 0)
             SetPriceCache(CurrentItem.ItemID, true, minHQPrice);
 
-
-        CloseAndEnqueue();
+        TaskManager.EnqueueImmediate(FillPrice);
         return true;
-
-        void CloseAndEnqueue()
-        {
-            ItemSearchResult->Close(true);
-
-            TaskManager.EnqueueImmediate(FillPrice);
-        }
     }
 
     // 填入最低价格
@@ -1233,6 +1248,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         InfoItemSearch->ClearData();
 
         ItemHistoryList = null;
+        ItemSearchList = null;
         CurrentItem = null;
         CurrentItemIndex = -1;
     }
@@ -1245,6 +1261,16 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         var data = MarketBoardHistory.Read(packetData);
         ItemHistoryList ??= data.HistoryListings;
         return MarketboardHistoryHook.Original(a1, packetData);
+    }
+
+    // 当前市场数据获取
+    private nint InfoProxyItemSearchAddPageDetour(byte* a1, byte* packetData)
+    {
+        ItemSearchList ??= [];
+        var data = MarketBoardCurrentOfferings.Read((nint)packetData);
+        ItemSearchList.AddRange(data.ItemListings);
+
+        return InfoProxyItemSearchAddPageHook.Original(a1, packetData);
     }
 
     // 出售品列表 (悬浮窗控制)
@@ -1293,7 +1319,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
                 if (InterruptByConflictKey()) return;
                 if (TaskManager.IsBusy) return;
 
-                TaskManager.Enqueue(ClickComparePrice);
+                TaskManager.Enqueue(ObtainItemData);
                 break;
         }
     }
