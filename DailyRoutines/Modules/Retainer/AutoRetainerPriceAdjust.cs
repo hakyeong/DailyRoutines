@@ -316,6 +316,9 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
                            ref ModuleConfig.SendProcessMessage))
             SaveConfig(ModuleConfig);
 
+        if (ImGui.Button(Service.Lang.GetText("AutoRetainerPriceAdjust-ClearPriceCache")))
+            Cache.Clear();
+
         ItemConfigSelector();
 
         ImGui.SameLine();
@@ -838,7 +841,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         var itemName = itemNameText.TrimEnd(''); // HQ 符号
         if (!ItemNames.TryGetValue(itemName, out var item))
         {
-            Service.Chat.PrintError("获取物品信息失败", "Daily Routines");
+            Service.Chat.PrintError(Service.Lang.GetText("AutoRetainerPriceAdjust-FailObtainItemInfo"), "Daily Routines");
             TaskManager.Abort();
             return true;
         }
@@ -858,7 +861,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         if (!EzThrottler.Throttle("AutoRetainerPriceAdjust-ObtainMarketData")) return false;
         if (InfoItemSearch->SearchItemId == 0)
         {
-            Service.Chat.PrintError("获取物品信息失败", "Daily Routines");
+            Service.Chat.PrintError(Service.Lang.GetText("AutoRetainerPriceAdjust-FailObtainItemInfo"), "Daily Routines");
             TaskManager.Abort();
             return true;
         }
@@ -1256,6 +1259,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         if (ItemHistoryList == null)
         {
             ItemHistoryList = [];
+            InfoItemSearch->ClearData();
             InfoItemSearch->RequestData();
         }
 
@@ -1270,6 +1274,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         if (ItemSearchList == null)
         {
             ItemSearchList = [];
+            InfoItemSearch->ClearData();
             InfoItemSearch->RequestData();
         }
         var data = MarketBoardCurrentOfferings.Read((nint)packetData);

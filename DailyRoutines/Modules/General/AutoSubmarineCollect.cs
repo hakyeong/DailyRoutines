@@ -223,7 +223,6 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
             }
         }
 
-        TaskManager.DelayNext(100);
         TaskManager.Enqueue(() => AddonHelper.Callback(CompanyCraftSupply, true, 5));
         TaskManager.Enqueue(ClickPreviousVoyageLog);
 

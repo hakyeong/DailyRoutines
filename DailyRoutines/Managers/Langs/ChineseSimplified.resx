@@ -1509,4 +1509,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="BetterBlueSetLoadTitle" xml:space="preserve">
     <value>更好的青魔法技能组读取</value>
   </data>
+  <data name="AutoRetainerPriceAdjust-ClearPriceCache" xml:space="preserve">
+    <value>清除价格缓存</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-FailObtainItemInfo" xml:space="preserve">
+    <value>获取物品信息失败</value>
+  </data>
 </root>
