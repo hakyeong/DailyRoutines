@@ -1,4 +1,3 @@
-using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud;
@@ -6,7 +5,7 @@ using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Client.UI.Info;
 
 namespace DailyRoutines.Modules;
 
@@ -65,7 +64,7 @@ public unsafe class AutoRefreshMarketSearchResult : DailyModuleBase
     {
         if (!TryGetAddonByName<AddonItemSearchResult>("ItemSearchResult", out var addonItemSearchResult)) return;
         if (!AddonItemSearchResultThrottled(addonItemSearchResult)) return;
-        AgentHelper.SendEvent(AgentId.ItemSearch, 2, 0, 0);
+        ((InfoProxyItemSearch*)InfoModule.Instance()->GetInfoProxyById(InfoProxyId.ItemSearch))->RequestData();
     }
 
     private static bool AddonItemSearchResultThrottled(AddonItemSearchResult* addon)
