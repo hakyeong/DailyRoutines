@@ -5,7 +5,6 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using ClickLib;
 using ClickLib.Clicks;
@@ -17,7 +16,6 @@ using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Network.Structures;
-using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
@@ -27,7 +25,6 @@ using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using Dalamud.Utility.Signatures;
 using ECommons.Automation;
-using ECommons.Configuration;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -737,7 +734,6 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
                 {
                     var index1 = i1;
                     TaskManager.Insert(() => ClickSellingItem(index1));
-                    TaskManager.InsertDelayNext(500);
                 }
                 return true;
             });
@@ -766,7 +762,6 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         {
             var index = i;
             TaskManager.Enqueue(() => ClickSellingItem(index));
-            TaskManager.DelayNext(500);
         }
     }
 

@@ -681,8 +681,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoRetainerPriceAdjustDescription" xml:space="preserve">
     <value>启用并点击开始后, 自动为指定范围的出售物品完成改价
-出售物品时, 自动获取当前市场最低价并完成出售
-(前置模块: 自动刷新市场搜索结果)</value>
+出售物品时, 自动获取当前市场最低价并完成出售</value>
   </data>
   <data name="AutoRetainerPriceAdjustTitle" xml:space="preserve">
     <value>自动雇员改价</value>
