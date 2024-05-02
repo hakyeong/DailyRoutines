@@ -1512,7 +1512,13 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRetainerPriceAdjust-ClearPriceCache" xml:space="preserve">
     <value>清除价格缓存</value>
   </data>
+  <data name="AutoRetainerPriceAdjust-ClearPriceCacheHelp" xml:space="preserve">
+    <value>单项价格缓存会在 5 分钟后自动过期, 如无意外无需手动清除</value>
+  </data>
   <data name="AutoRetainerPriceAdjust-FailObtainItemInfo" xml:space="preserve">
     <value>获取物品信息失败</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-OperationDelay" xml:space="preserve">
+    <value>操作延迟 (毫秒)</value>
   </data>
 </root>

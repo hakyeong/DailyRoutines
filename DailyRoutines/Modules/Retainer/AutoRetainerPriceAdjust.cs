@@ -245,6 +245,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         };
 
         public bool SendProcessMessage = true;
+        public int OperationDelay = 0;
     }
     private static Config ModuleConfig = null!;
 
@@ -312,13 +313,6 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
     {
         ConflictKeyText();
 
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoRetainerPriceAdjust-SendProcessMessage"),
-                           ref ModuleConfig.SendProcessMessage))
-            SaveConfig(ModuleConfig);
-
-        if (ImGui.Button(Service.Lang.GetText("AutoRetainerPriceAdjust-ClearPriceCache")))
-            Cache.Clear();
-
         ItemConfigSelector();
 
         ImGui.SameLine();
@@ -364,6 +358,22 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
         ImGui.PopID();
         ImGui.EndDisabled();
+
+        ImGui.Dummy(new(6f * ImGuiHelpers.GlobalScale));
+
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoRetainerPriceAdjust-SendProcessMessage"),
+                           ref ModuleConfig.SendProcessMessage))
+            SaveConfig(ModuleConfig);
+
+        ImGui.SetNextItemWidth(50f * ImGuiHelpers.GlobalScale);
+        ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-OperationDelay"),
+                       ref ModuleConfig.OperationDelay, 0, 0);
+        if (ImGui.IsItemDeactivatedAfterEdit())
+            SaveConfig(ModuleConfig);
+
+        if (ImGui.Selectable(Service.Lang.GetText("AutoRetainerPriceAdjust-ClearPriceCache")))
+            Cache.Clear();
+        ImGuiOm.TooltipHover(Service.Lang.GetText("AutoRetainerPriceAdjust-ClearPriceCacheHelp"));
     }
 
     private void ItemConfigSelector()
@@ -737,6 +747,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
                 {
                     var index1 = i1;
                     TaskManager.Insert(() => ClickSellingItem(index1));
+                    if (ModuleConfig.OperationDelay > 0) TaskManager.InsertDelayNext(ModuleConfig.OperationDelay); 
                 }
                 return true;
             });
@@ -765,6 +776,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         {
             var index = i;
             TaskManager.Enqueue(() => ClickSellingItem(index));
+            if (ModuleConfig.OperationDelay > 0) TaskManager.DelayNext(ModuleConfig.OperationDelay);
         }
     }
 
