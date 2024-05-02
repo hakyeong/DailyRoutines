@@ -1258,15 +1258,25 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
     // 历史交易数据获取
     private nint MarketboardHistorDetour(nint a1, nint packetData)
     {
+        if (ItemHistoryList == null)
+        {
+            ItemHistoryList = [];
+            InfoItemSearch->RequestData();
+        }
+
         var data = MarketBoardHistory.Read(packetData);
-        ItemHistoryList ??= data.HistoryListings;
+        ItemHistoryList = data.HistoryListings;
         return MarketboardHistoryHook.Original(a1, packetData);
     }
 
     // 当前市场数据获取
     private nint InfoProxyItemSearchAddPageDetour(byte* a1, byte* packetData)
     {
-        ItemSearchList ??= [];
+        if (ItemSearchList == null)
+        {
+            ItemSearchList = [];
+            InfoItemSearch->RequestData();
+        }
         var data = MarketBoardCurrentOfferings.Read((nint)packetData);
         ItemSearchList.AddRange(data.ItemListings);
 
