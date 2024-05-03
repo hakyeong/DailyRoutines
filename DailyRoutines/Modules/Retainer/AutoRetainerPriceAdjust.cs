@@ -57,11 +57,11 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
     [Flags]
     public enum AbortCondition
     {
-        无 = 0,
-        低于最小值 = 1,
-        低于预期值 = 2,
-        低于收购价 = 4,
-        大于可接受降价值 = 5
+        无 = 1,
+        低于最小值 = 2,
+        低于预期值 = 4,
+        低于收购价 = 8,
+        大于可接受降价值 = 16
     }
 
     public enum AbortBehavior
@@ -285,8 +285,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
                                   .ToDictionary(x => x.RowId, x => x.PriceLow);
 
         ItemNames ??= LuminaCache.Get<Item>()
-                                 .Where(x => !string.IsNullOrEmpty(x.Name.RawString) &&
-                                             x.ItemSortCategory.Row != 3 && x.ItemSortCategory.Row != 4)
+                                 .Where(x => !string.IsNullOrEmpty(x.Name.RawString))
                                  .GroupBy(x => x.Name.RawString)
                                  .ToDictionary(x => x.Key, x => x.First());
         _ItemNames = ItemNames.Take(10).ToDictionary(x => x.Key, x => x.Value);
