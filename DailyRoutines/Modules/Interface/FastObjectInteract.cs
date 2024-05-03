@@ -93,6 +93,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         { ObjectKind.Ornament, "时尚配饰 (不建议)" }
     };
     private static Dictionary<uint, string>? ENpcTitles;
+    private static HashSet<uint>? ImportantENPC;
     private const string ENPCTiltleText = "[{0}] {1}";
 
     private static Config ModuleConfig = null!;
@@ -111,6 +112,10 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         ENpcTitles ??= LuminaCache.Get<ENpcResident>()
                                   .Where(x => x.Unknown10 && !string.IsNullOrWhiteSpace(x.Title.RawString))
                                   .ToDictionary(x => x.RowId, x => x.Title.RawString);
+        ImportantENPC ??= LuminaCache.Get<ENpcResident>()
+                                     .Where(x => x.Unknown10)
+                                     .Select(x => x.RowId)
+                                     .ToHashSet();
 
         Service.FrameworkManager.Register(OnUpdate);
 
@@ -338,7 +343,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
             var objKind = obj.ObjectKind;
             if (!ModuleConfig.SelectedKinds.Contains(objKind)) continue;
-            if (objKind == ObjectKind.EventNpc && !ENpcTitles.ContainsKey(obj.DataId)) continue;
+            if (objKind == ObjectKind.EventNpc && !ImportantENPC.Contains(obj.DataId)) continue;
 
             var objName = obj.Name.ExtractText();
             if (ModuleConfig.BlacklistKeys.Contains(objName)) continue;
