@@ -60,7 +60,7 @@ public class AutoRefreshPartyFinder : DailyModuleBase
 
         ImGui.BeginGroup();
         ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
-        ImGui.InputInt(Service.Lang.GetText("AutoRefreshPartyFinder-RefreshInterval"), ref ConfigRefreshInterval);
+        ImGui.InputInt("##input", ref ConfigRefreshInterval, 0, 0);
 
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
@@ -77,7 +77,7 @@ public class AutoRefreshPartyFinder : DailyModuleBase
         }
 
         ImGui.SameLine();
-        ImGui.Text(Service.Lang.GetText("AutoRefreshPartyFinder-NextRefreshTime", cooldown));
+        ImGui.Text(Service.Lang.GetText("AutoRefreshPartyFinder-RefreshInterval", cooldown));
 
         ImGui.SameLine();
         if (ImGui.Checkbox(Service.Lang.GetText("AutoRefreshPartyFinder-OnlyInactive"), ref ConfigOnlyInactive))

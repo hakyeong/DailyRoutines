@@ -630,7 +630,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>仅未操作状态下</value>
   </data>
   <data name="AutoRefreshPartyFinder-RefreshInterval" xml:space="preserve">
-    <value>刷新间隔</value>
+    <value>刷新间隔({0}秒)</value>
   </data>
   <data name="AutoRefreshPartyFinderDescription" xml:space="preserve">
     <value>打开队员招募后, 每经过固定间隔时间时, 自动刷新一次招募板</value>
@@ -1373,9 +1373,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="Run" xml:space="preserve">
     <value>停止</value>
-  </data>
-  <data name="AutoRefreshPartyFinder-NextRefreshTime" xml:space="preserve">
-    <value>({0}秒)</value>
   </data>
   <data name="AutoRetainerEntrustDups-AddCommand" xml:space="preserve">
     <value>添加 /pdr {0} 指令 </value>
