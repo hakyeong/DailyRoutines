@@ -10,6 +10,8 @@ using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using TaskManager = ECommons.Automation.TaskManager;
 using DailyRoutines.Helpers;
+using ECommons.Automation;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 
 namespace DailyRoutines.Modules;
 
@@ -19,22 +21,28 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
     private static AtkUnitBase* ContentsFinder => (AtkUnitBase*)Service.Gui.GetAddonByName("ContentsFinder");
 
     private const string AbandonDutySig = "E8 ?? ?? ?? ?? 48 8B 43 28 B1 01";
+
     private delegate void AbandonDutyDelagte(bool a1);
+
     private static AbandonDutyDelagte? AbandonDuty;
 
     public override void Init()
     {
-        AbandonDuty ??= Marshal.GetDelegateForFunctionPointer<AbandonDutyDelagte>(Service.SigScanner.ScanText(AbandonDutySig));
+        AbandonDuty ??=
+            Marshal.GetDelegateForFunctionPointer<AbandonDutyDelagte>(Service.SigScanner.ScanText(AbandonDutySig));
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
-        Service.CommandManager.AddSubCommand("joinexitduty", 
-                                     new CommandInfo(OnCommand) { HelpMessage = Service.Lang.GetText("AutoJoinExitDutyTitle"), ShowInHelp = true });
+        Service.CommandManager.AddSubCommand("joinexitduty",
+                                             new CommandInfo(OnCommand)
+                                             {
+                                                 HelpMessage = Service.Lang.GetText("AutoJoinExitDutyTitle"),
+                                                 ShowInHelp = true
+                                             });
     }
 
     private void OnCommand(string command, string arguments)
     {
-        if (Flags.BoundByDuty() || !UIState.IsInstanceContentUnlocked(4) ||
-            Service.ClientState.LocalPlayer == null || Service.ClientState.LocalPlayer.ClassJob.Id is >= 8 and <= 18) return;
+        if (Flags.BoundByDuty() || !UIState.IsInstanceContentUnlocked(4)) return;
 
         TaskManager.Abort();
         EnqueueARound();
@@ -42,11 +50,42 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
 
     private void EnqueueARound()
     {
+        TaskManager.Enqueue(CheckAndSwitchJob);
         TaskManager.Enqueue(OpenContentsFinder);
         TaskManager.Enqueue(CancelSelectedContents);
         TaskManager.Enqueue(SelectDuty);
         TaskManager.Enqueue(CommenceDuty);
         TaskManager.Enqueue(ExitDuty);
+    }
+
+    private bool? CheckAndSwitchJob()
+    {
+        var localPlayer = Service.ClientState.LocalPlayer;
+        if (localPlayer == null)
+        {
+            TaskManager.Abort();
+            return true;
+        }
+
+        if (localPlayer.ClassJob.Id is >= 8 and <= 18)
+        {
+            var gearsetModule = RaptureGearsetModule.Instance();
+            for (var i = 0; i < 100; i++)
+            {
+                var gearset = gearsetModule->GetGearset(i);
+                if (gearset == null) continue;
+                if (!gearset->Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists)) continue;
+                if (gearset->Flags.HasFlag(RaptureGearsetModule.GearsetFlag.MainHandMissing)) continue;
+                if (gearset->ID != i) continue;
+                if (gearset->ClassJob > 18)
+                {
+                    Chat.Instance.SendMessage($"/gearset change {gearset->ID + 1}");
+                    return true;
+                }
+            }
+        }
+
+        return true;
     }
 
     private static bool? OpenContentsFinder()
@@ -101,6 +140,7 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
             AddonHelper.Callback(ContentsFinder, true, 12, 0);
             return true;
         }
+
         return false;
     }
 
@@ -111,15 +151,17 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
             TaskManager.InsertDelayNext(500);
             return true;
         }
-        if (!TryGetAddonByName<AtkUnitBase>("ContentsFinderConfirm", out var addon) || !IsAddonAndNodesReady(addon)) return false;
 
-        ClickContentsFinderConfirm.Using((nint)addon).Commence();;
+        if (!TryGetAddonByName<AtkUnitBase>("ContentsFinderConfirm", out var addon) ||
+            !IsAddonAndNodesReady(addon)) return false;
+
+        ClickContentsFinderConfirm.Using((nint)addon).Commence();
         return true;
     }
 
     private static bool? ExitDuty()
     {
-        if (Service.Condition[ConditionFlag.WaitingForDutyFinder] || 
+        if (Service.Condition[ConditionFlag.WaitingForDutyFinder] ||
             Service.Condition[ConditionFlag.InDutyQueue] || Flags.BetweenAreas()) return false;
 
         AbandonDuty(false);

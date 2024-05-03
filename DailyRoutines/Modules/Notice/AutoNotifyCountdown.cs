@@ -41,17 +41,16 @@ public class AutoNotifyCountdown : DailyModuleBase
             UpdateConfig("OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
     }
 
-    private static void OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
+    private static void OnChatMessage(
+        XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
-        if (ConfigOnlyNotifyWhenBackground && HelpersOm.IsGameForeground()) return;
+        if (ConfigOnlyNotifyWhenBackground && IsGameForeground()) return;
         var uintType = (uint)type;
         if (uintType != 185) return;
-            
+
         var msg = message.TextValue;
         if (Countdown.All(s => msg.Contains(msg)))
-        {
             WinToast.Notify(Service.Lang.GetText("AutoNotifyCountdown-NotificationTitle"), message.ExtractText());
-        }
     }
 
     public override void Uninit()

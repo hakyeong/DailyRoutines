@@ -15,7 +15,8 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 // 硬编码领域大神
-[ModuleDescription("AutoMarkAetherCurrentsTitle", "AutoMarkAetherCurrentsDescription", ModuleCategories.InterfaceExpand)]
+[ModuleDescription("AutoMarkAetherCurrentsTitle", "AutoMarkAetherCurrentsDescription",
+                   ModuleCategories.InterfaceExpand)]
 public class AutoMarkAetherCurrents : DailyModuleBase
 {
     private class AetherCurrent(uint index, Vector3 pos)
@@ -258,13 +259,15 @@ public class AutoMarkAetherCurrents : DailyModuleBase
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("AutoMarkAetherCurrents-RemoveAllWaymarks")))
         {
-            for (var i = 0; i < 8; i++) FieldMarkerHelper.Remove((FieldMarkerHelper.FieldMarkerPoint)i);
+            for (var i = 0; i < 8; i++)
+                FieldMarkerHelper.Remove((FieldMarkerHelper.FieldMarkerPoint)i);
         }
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("AutoMarkAetherCurrents-RemoveSelectedAC")))
         {
-            foreach (var zoneCurrents in SelectedAetherCurrents) zoneCurrents.Value.Clear();
+            foreach (var zoneCurrents in SelectedAetherCurrents)
+                zoneCurrents.Value.Clear();
         }
 
         ImGui.Separator();

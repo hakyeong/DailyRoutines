@@ -37,6 +37,7 @@ public class AutoRequestItemSubmit : DailyModuleBase
         if (ImGui.Checkbox("递交优质道具", ref ConfigIsSubmitHQItem))
             UpdateConfig("IsSubmitHQItem", ConfigIsSubmitHQItem);
     }
+
     private void OnAddonRequest(AddonEvent type, AddonArgs args)
     {
         if (Service.KeyState[Service.Config.ConflictKey])
@@ -70,7 +71,7 @@ public class AutoRequestItemSubmit : DailyModuleBase
     {
         if (!ConfigIsSubmitHQItem) return;
         if (TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
+            IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
             var text = addon->PromptText->NodeText.ExtractText();
             if (text != null && text.Contains("优质"))
@@ -124,7 +125,7 @@ public class AutoRequestItemSubmit : DailyModuleBase
     private static unsafe void ClickHandOver()
     {
         if (TryGetAddonByName<AddonRequest>("Request", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(&addon->AtkUnitBase))
+            IsAddonAndNodesReady(&addon->AtkUnitBase))
         {
             var handler = new ClickRequest();
             handler.HandOver();

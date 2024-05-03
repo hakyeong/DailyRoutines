@@ -1,11 +1,9 @@
-using System.Collections.Generic;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.JobGauge.Types;
 using Dalamud.Hooking;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using ImGuiNET;
 using TaskManager = ECommons.Automation.TaskManager;
 
 namespace DailyRoutines.Modules;
@@ -16,9 +14,8 @@ public unsafe class AutoDance : DailyModuleBase
     private delegate bool UseActionSelfDelegate(
         ActionManager* actionManager, uint actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
         uint a5 = 0, uint a6 = 0, void* a7 = null);
-    private Hook<UseActionSelfDelegate>? useActionSelfHook;
 
-    private static bool IsAutoFinish;
+    private Hook<UseActionSelfDelegate>? useActionSelfHook;
 
     public override void Init()
     {
@@ -28,23 +25,13 @@ public unsafe class AutoDance : DailyModuleBase
         useActionSelfHook?.Enable();
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
-
-        AddConfig("IsAutoFinish", IsAutoFinish);
-        IsAutoFinish = GetConfig<bool>("IsAutoFinish");
-    }
-
-    public override void ConfigUI()
-    {
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoDance-AutoFinish"), ref IsAutoFinish))
-            UpdateConfig("IsAutoFinish", IsAutoFinish);
     }
 
     private bool UseActionSelf(
-        ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6,
-        void* a7)
+        ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6, void* a7)
     {
         var gauge = Service.JobGauges.Get<DNCGauge>();
-        if ((ActionType)actionType is ActionType.Action && actionID is 15997 or 15998 && 
+        if ((ActionType)actionType is ActionType.Action && actionID is 15997 or 15998 &&
             ActionManager.Instance()->GetActionStatus(ActionType.Action, actionID) == 0 && !gauge.IsDancing)
         {
             TaskManager.Enqueue(() => gauge.IsDancing);
@@ -56,7 +43,7 @@ public unsafe class AutoDance : DailyModuleBase
 
     private bool? DanceStandardStep() => DanceStep(false);
 
-    private bool? DanceTechnicalStep()  => DanceStep(true);
+    private bool? DanceTechnicalStep() => DanceStep(true);
 
     private bool? DanceStep(bool isTechnicalStep)
     {
@@ -76,12 +63,6 @@ public unsafe class AutoDance : DailyModuleBase
                 TaskManager.Enqueue(() => DanceStep(isTechnicalStep));
                 return true;
             }
-        }
-
-        if (IsAutoFinish)
-        {
-            TaskManager.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.Action, isTechnicalStep ? 15998U : 15997U));
-            return true;
         }
 
         return false;

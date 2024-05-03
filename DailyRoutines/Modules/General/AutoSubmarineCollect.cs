@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text.RegularExpressions;
@@ -26,11 +27,17 @@ namespace DailyRoutines.Modules;
 public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 {
     private static AtkUnitBase* SelectString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
+
     private static AtkUnitBase* SelectYesno => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectYesno");
+
     // 航行结果
-    private static AtkUnitBase* AirShipExplorationResult => (AtkUnitBase*)Service.Gui.GetAddonByName("AirShipExplorationResult");
+    private static AtkUnitBase* AirShipExplorationResult =>
+        (AtkUnitBase*)Service.Gui.GetAddonByName("AirShipExplorationResult");
+
     // 出发详情
-    private static AtkUnitBase* AirShipExplorationDetail => (AtkUnitBase*)Service.Gui.GetAddonByName("AirShipExplorationDetail");
+    private static AtkUnitBase* AirShipExplorationDetail =>
+        (AtkUnitBase*)Service.Gui.GetAddonByName("AirShipExplorationDetail");
+
     private static AtkUnitBase* CompanyCraftSupply => (AtkUnitBase*)Service.Gui.GetAddonByName("CompanyCraftSupply");
 
 
@@ -105,13 +112,18 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
     {
         if (!EzThrottler.Throttle("AutoSubmarineCollect-GetSubmarineInfos", 100)) return false;
         // 还在看动画
-        if (Service.Condition[ConditionFlag.OccupiedInCutSceneEvent] || Service.Condition[ConditionFlag.WatchingCutscene78]) return false;
+        if (Service.Condition[ConditionFlag.OccupiedInCutSceneEvent] ||
+            Service.Condition[ConditionFlag.WatchingCutscene78]) return false;
 
         #region CheckNecessaryItems
+
         var inventoryManager = InventoryManager.Instance();
         if (inventoryManager->GetInventoryItemCount(10373) < 20)
         {
-            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoSubmarineCollect-LackSpecificItems", SeString.CreateItemLink(10373))).Build();
+            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ")
+                                               .Append(Service.Lang.GetSeString(
+                                                           "AutoSubmarineCollect-LackSpecificItems",
+                                                           SeString.CreateItemLink(10373))).Build();
             Service.Chat.Print(message);
 
             TaskManager.Abort();
@@ -120,12 +132,16 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
         if (inventoryManager->GetInventoryItemCount(10155) < 15)
         {
-            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoSubmarineCollect-LackSpecificItems", SeString.CreateItemLink(10155))).Build();
+            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ")
+                                               .Append(Service.Lang.GetSeString(
+                                                           "AutoSubmarineCollect-LackSpecificItems",
+                                                           SeString.CreateItemLink(10155))).Build();
             Service.Chat.Print(message);
 
             TaskManager.Abort();
             return true;
         }
+
         #endregion
 
         if (SelectString == null || !IsAddonAndNodesReady(SelectString)) return false;
@@ -135,6 +151,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
             return true;
         }
 
+        TaskManager.Abort();
         TaskManager.DelayNext(2000);
         TaskManager.Enqueue(CommenceSubmarineVoyage);
 
@@ -194,29 +211,22 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         if (!EzThrottler.Throttle("AutoSubmarineCollect-RepairSubmarines", 100)) return false;
         if (SelectYesno != null) return false;
 
-        if (CompanyCraftSupply != null && IsAddonAndNodesReady(CompanyCraftSupply))
+        if (CompanyCraftSupply == null || !IsAddonAndNodesReady(CompanyCraftSupply)) return false;
+
+        for (var i = 0; i < 4; i++)
         {
-            for (var i = 0; i < 4; i++)
+            var endurance = CompanyCraftSupply->AtkValues[3 + (8 * i)].UInt;
+            if (endurance <= 0)
             {
-                var endurance = CompanyCraftSupply->AtkValues[3 + (8 * i)].UInt;
-                if (endurance <= 0)
-                {
-                    AgentHelper.SendEvent(AgentId.SubmersibleParts, 0, 3, 0, i, 0, 0, 0);
-                    return false;
-                }
+                AgentHelper.SendEvent(AgentId.SubmersibleParts, 0, 3, 0, i, 0, 0, 0);
+                return false;
             }
-
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(() => AddonHelper.Callback(CompanyCraftSupply, true, 5));
-            TaskManager.Enqueue(() => CompanyCraftSupply->Close(true));
-
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(ClickPreviousVoyageLog);
-
-            return true;
         }
 
-        return false;
+        TaskManager.Enqueue(() => AddonHelper.Callback(CompanyCraftSupply, true, 5));
+        TaskManager.Enqueue(ClickPreviousVoyageLog);
+
+        return true;
     }
 
     private bool? ClickPreviousVoyageLog()
@@ -243,8 +253,9 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         switch (logMessageID)
         {
             case 4290:
-                TaskManager.Abort();
-                TaskManager.Enqueue(ReadyToRepairSubmarines);
+                Service.Framework.RunOnTick(TaskManager.Abort, TimeSpan.FromMilliseconds(200));
+                Service.Framework.RunOnTick(() => TaskManager.Enqueue(ReadyToRepairSubmarines),
+                                            TimeSpan.FromMilliseconds(210));
                 break;
             case 4276:
                 TaskManager.Abort();

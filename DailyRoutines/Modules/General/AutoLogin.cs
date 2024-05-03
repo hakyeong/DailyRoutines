@@ -47,10 +47,7 @@ public class AutoLogin : DailyModuleBase
 
         public static bool operator ==(LoginInfo? lhs, LoginInfo? rhs)
         {
-            if (lhs is null)
-            {
-                return rhs is null;
-            }
+            if (lhs is null) return rhs is null;
             return lhs.Equals(rhs);
         }
 
@@ -69,8 +66,9 @@ public class AutoLogin : DailyModuleBase
     private static readonly Dictionary<BehaviourMode, string> BehaviourModeLoc = new()
     {
         { BehaviourMode.Once, Service.Lang.GetText("AutoLogin-Once") },
-        { BehaviourMode.Repeat, Service.Lang.GetText("AutoLogin-Repeat") },
+        { BehaviourMode.Repeat, Service.Lang.GetText("AutoLogin-Repeat") }
     };
+
     private static bool HasLoginOnce;
     private static string WorldSearchInput = string.Empty;
     private static World? SelectedWorld;
@@ -91,8 +89,11 @@ public class AutoLogin : DailyModuleBase
         Mode = GetConfig<BehaviourMode>("Mode");
 
         Worlds ??= LuminaCache.Get<World>()
-                          .Where(x => x.DataCenter.Value.Region == 5 && !string.IsNullOrWhiteSpace(x.Name.RawString) && !string.IsNullOrWhiteSpace(x.InternalName.RawString) && IsChineseString(x.Name.RawString))
-                          .ToDictionary(x => x.RowId, x => x);
+                              .Where(x => x.DataCenter.Value.Region == 5 &&
+                                          !string.IsNullOrWhiteSpace(x.Name.RawString) &&
+                                          !string.IsNullOrWhiteSpace(x.InternalName.RawString) &&
+                                          IsChineseString(x.Name.RawString))
+                              .ToDictionary(x => x.RowId, x => x);
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = false };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "_TitleMenu", OnTitleMenu);
@@ -107,7 +108,9 @@ public class AutoLogin : DailyModuleBase
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
-        if (ImGui.BeginCombo("###LoginInfosCombo", Service.Lang.GetText("AutoLogin-SavedLoginInfosAmount", LoginInfos.Count), ImGuiComboFlags.HeightLarge))
+        if (ImGui.BeginCombo("###LoginInfosCombo",
+                             Service.Lang.GetText("AutoLogin-SavedLoginInfosAmount", LoginInfos.Count),
+                             ImGuiComboFlags.HeightLarge))
         {
             ImGui.BeginGroup();
             // 服务器选择
@@ -131,7 +134,8 @@ public class AutoLogin : DailyModuleBase
 
             ImGui.SameLine();
             ImGui.SetNextItemWidth(120f * ImGuiHelpers.GlobalScale);
-            if (ImGui.InputInt("##AutoLogin-EnterCharaIndex", ref SelectedCharaIndex, 0, 0, ImGuiInputTextFlags.EnterReturnsTrue))
+            if (ImGui.InputInt("##AutoLogin-EnterCharaIndex", ref SelectedCharaIndex, 0, 0,
+                               ImGuiInputTextFlags.EnterReturnsTrue))
                 SelectedCharaIndex = Math.Clamp(SelectedCharaIndex, 0, 8);
             ImGuiOm.TooltipHover(Service.Lang.GetText("AutoLogin-CharaIndexInputTooltip"));
             ImGui.EndGroup();
@@ -149,6 +153,7 @@ public class AutoLogin : DailyModuleBase
                 LoginInfos.Add(info);
                 UpdateConfig("LoginInfos", LoginInfos);
             }
+
             ImGuiOm.TooltipHover(Service.Lang.GetText("AutoLogin-LoginInfoOrderHelp"));
 
             ImGui.Separator();
@@ -160,13 +165,16 @@ public class AutoLogin : DailyModuleBase
                 var world = LuminaCache.GetRow<World>(info.WorldID);
 
                 ImGui.PushStyleColor(ImGuiCol.Text, i % 2 == 0 ? ImGuiColors.TankBlue : ImGuiColors.DalamudWhite);
-                ImGui.Selectable($"{i + 1}. {Service.Lang.GetText("AutoLogin-LoginInfoDisplayText", world.Name.RawString, world.DataCenter.Value.Name.RawString, info.CharaIndex)}");
+                ImGui.Selectable(
+                    $"{i + 1}. {Service.Lang.GetText("AutoLogin-LoginInfoDisplayText", world.Name.RawString, world.DataCenter.Value.Name.RawString, info.CharaIndex)}");
                 ImGui.PopStyleColor();
 
                 if (ImGui.BeginDragDropSource())
                 {
                     if (ImGui.SetDragDropPayload("LoginInfoReorder", nint.Zero, 0)) _dropIndex = i;
-                    ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("AutoLogin-LoginInfoDisplayText", world.Name.RawString, world.DataCenter.Value.Name.RawString, info.CharaIndex));
+                    ImGui.TextColored(ImGuiColors.DalamudYellow,
+                                      Service.Lang.GetText("AutoLogin-LoginInfoDisplayText", world.Name.RawString,
+                                                           world.DataCenter.Value.Name.RawString, info.CharaIndex));
                     ImGui.EndDragDropSource();
                 }
 
@@ -188,6 +196,7 @@ public class AutoLogin : DailyModuleBase
                         LoginInfos.Remove(info);
                         UpdateConfig("LoginInfos", LoginInfos);
                     }
+
                     ImGui.EndPopup();
                 }
 
@@ -205,13 +214,12 @@ public class AutoLogin : DailyModuleBase
         if (ImGui.BeginCombo("###BehaviourModeCombo", BehaviourModeLoc[Mode]))
         {
             foreach (var mode in BehaviourModeLoc)
-            {
                 if (ImGui.Selectable(mode.Value, mode.Key == Mode))
                 {
                     Mode = mode.Key;
                     UpdateConfig("Mode", Mode);
                 }
-            }
+
             ImGui.EndCombo();
         }
 
@@ -221,13 +229,13 @@ public class AutoLogin : DailyModuleBase
             ImGui.Text($"{Service.Lang.GetText("AutoLogin-LoginState")}:");
 
             ImGui.SameLine();
-            ImGui.TextColored(HasLoginOnce ? ImGuiColors.HealerGreen : ImGuiColors.DPSRed, HasLoginOnce ? Service.Lang.GetText("AutoLogin-LoginOnce") : Service.Lang.GetText("AutoLogin-HaveNotLogin"));
+            ImGui.TextColored(HasLoginOnce ? ImGuiColors.HealerGreen : ImGuiColors.DPSRed,
+                              HasLoginOnce
+                                  ? Service.Lang.GetText("AutoLogin-LoginOnce")
+                                  : Service.Lang.GetText("AutoLogin-HaveNotLogin"));
 
             ImGui.SameLine();
-            if (ImGui.SmallButton(Service.Lang.GetText("Refresh")))
-            {
-                HasLoginOnce = false;
-            }
+            if (ImGui.SmallButton(Service.Lang.GetText("Refresh"))) HasLoginOnce = false;
         }
     }
 
@@ -259,8 +267,9 @@ public class AutoLogin : DailyModuleBase
         var agent = AgentLobby.Instance();
         if (agent == null) return false;
 
-        if (!TryGetAddonByName<AtkUnitBase>("_CharaSelectListMenu", out var addon) || !IsAddonAndNodesReady(addon)) return false;
-        
+        if (!TryGetAddonByName<AtkUnitBase>("_CharaSelectListMenu", out var addon) ||
+            !IsAddonAndNodesReady(addon)) return false;
+
         if (agent->WorldId == 0) return false;
         var requestedLoginInfo = LoginInfos[infoIndex];
         if (agent->WorldId == requestedLoginInfo.WorldID)

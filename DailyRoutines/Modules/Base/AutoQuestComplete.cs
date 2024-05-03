@@ -19,7 +19,10 @@ public class AutoQuestComplete : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "JournalResult", OnAddonSetup);
     }
 
-    public override void ConfigUI() => ConflictKeyText();
+    public override void ConfigUI()
+    {
+        ConflictKeyText();
+    }
 
     private unsafe void OnAddonSetup(AddonEvent type, AddonArgs args)
     {

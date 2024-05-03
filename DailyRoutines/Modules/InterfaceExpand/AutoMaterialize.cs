@@ -76,7 +76,7 @@ public class AutoMaterialize : DailyModuleBase
         }
 
         if (IsOccupied()) return false;
-        if (TryGetAddonByName<AtkUnitBase>("Materialize", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("Materialize", out var addon) && IsAddonAndNodesReady(addon))
         {
             var firstItemData = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[3].String);
             if (string.IsNullOrEmpty(firstItemData))

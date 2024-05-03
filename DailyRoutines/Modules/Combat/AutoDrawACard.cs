@@ -32,7 +32,7 @@ public class AutoDrawACard : DailyModuleBase
 
     private static unsafe bool? CheckCurrentJob()
     {
-        if (TryGetAddonByName<AtkUnitBase>("NowLoading", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+        if (TryGetAddonByName<AtkUnitBase>("NowLoading", out var addon) && IsAddonAndNodesReady(addon))
             return false;
 
         var player = Service.ClientState.LocalPlayer;

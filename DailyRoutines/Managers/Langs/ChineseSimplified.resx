@@ -185,9 +185,6 @@
   <data name="AutoCutSceneSkipTitle" xml:space="preserve">
     <value>自动跳过过场动画</value>
   </data>
-  <data name="AutoDance-AutoFinish" xml:space="preserve">
-    <value>自动使用 标准/技巧舞步结束</value>
-  </data>
   <data name="AutoDanceDescription" xml:space="preserve">
     <value>使用舞者技能标准/技巧舞步时, 自动使用对应的舞步技能</value>
   </data>
@@ -682,29 +679,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRetainerPriceAdjust-AdjustForRetainers" xml:space="preserve">
     <value>改价 (所有雇员)</value>
   </data>
-  <data name="AutoRetainerPriceAdjust-LowestAcceptablePrice" xml:space="preserve">
-    <value>最低可接受价格</value>
-  </data>
-  <data name="AutoRetainerPriceAdjust-MaxPriceReduction" xml:space="preserve">
-    <value>最大可接受降价值</value>
-  </data>
-  <data name="AutoRetainerPriceAdjust-MaxPriceReductionInputHelp" xml:space="preserve">
-    <value>设置为 0 以禁用</value>
-  </data>
-  <data name="AutoRetainerPriceAdjust-SeparateNQAndHQ" xml:space="preserve">
-    <value>区分 HQ 和 NQ 物品</value>
-  </data>
-  <data name="AutoRetainerPriceAdjust-SeparateNQAndHQHelp" xml:space="preserve">
-    <value>勾选则代表, 若出售物品为 HQ, 则只获取市场上 HQ 物品的价格
-如若出售物品中无 HQ, 则取 NQ 商品价格</value>
-  </data>
-  <data name="AutoRetainerPriceAdjust-SinglePriceReductionValue" xml:space="preserve">
-    <value>单次压价值</value>
-  </data>
   <data name="AutoRetainerPriceAdjustDescription" xml:space="preserve">
-    <value>打开雇员出售列表后, 自动将所有出售商品价格改为当前市场最低价格减去指定值
-出售物品时, 自动获取当前市场最低价并完成出售
-(前置模块: 自动刷新市场搜索结果)</value>
+    <value>启用并点击开始后, 自动为指定范围的出售物品完成改价
+出售物品时, 自动获取当前市场最低价并完成出售</value>
   </data>
   <data name="AutoRetainerPriceAdjustTitle" xml:space="preserve">
     <value>自动雇员改价</value>
@@ -1155,22 +1132,11 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoHolmgangSelfTitle" xml:space="preserve">
     <value>自动死斗自身</value>
   </data>
-  <data name="AutoRetainerPriceAdjust-ProhibitLowerThanSellPrice" xml:space="preserve">
-    <value>禁止低于收购价格</value>
-  </data>
-  <data name="AutoRetainerPriceAdjust-SkipAdjustMessage" xml:space="preserve">
-    <value>物品:{0} (雇员: {1})
-(市场价: {2} / 原价:{3})
-已超过{4}: {5}, 跳过改价</value>
-  </data>
   <data name="NoAttackWrongMandragorasDescription" xml:space="preserve">
     <value>在宝物库内, 若场上存在蔓德拉战队, 则禁止选中不符合当前击杀顺序的蔓德拉</value>
   </data>
   <data name="NoAttackWrongMandragorasTitle" xml:space="preserve">
     <value>强制按顺序击杀蔓德拉战队</value>
-  </data>
-  <data name="AutoRetainerPriceAdjust-AdjustToLowestPriceWhenLower" xml:space="preserve">
-    <value>低于最低价时改成最低价</value>
   </data>
   <data name="ClipboardMultiLineToOneLineDescription" xml:space="preserve">
     <value>在游戏内粘贴文本时, 强制将多行文本转成单行, 以方便游戏内编辑发送</value>
@@ -1431,5 +1397,128 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
 注: 数据中不会包含你的区服用户名以及任何个人信息
 
 但允许上传可以帮助我们更好地改善整体功能与发布更新!</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-CommonItemPreset" xml:space="preserve">
+    <value>通用物品配置</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-ConductAbortBehavior" xml:space="preserve">
+    <value>执行意外情况行为逻辑: {0}</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-DetectAbortCondition" xml:space="preserve">
+    <value>物品: {0} (雇员: {1})
+检测到意外情况: {2}</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-NoPriceDataFound" xml:space="preserve">
+    <value>物品: {0} (雇员: {1}) 未找到任何出售数据, 已跳过</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-ObtainBuyingPrice" xml:space="preserve">
+    <value>获取收购价格</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-OpenUniversalis" xml:space="preserve">
+    <value>打开 Universalis</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-PercentageReduction" xml:space="preserve">
+    <value>单次降价幅度</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-PriceAdjustSuccessfully" xml:space="preserve">
+    <value>物品: {0} (雇员: {1}) 改价成功:
+原价: {2} ——&gt; 现价: {3}</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-PriceExpected" xml:space="preserve">
+    <value>预期价格</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-PriceMaxReduction" xml:space="preserve">
+    <value>可接受降价值</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-PriceMinimum" xml:space="preserve">
+    <value>最低可接受价格</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-SendProcessMessage" xml:space="preserve">
+    <value>发送改价过程详情消息</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-ValueReduction" xml:space="preserve">
+    <value>单次降价值</value>
+  </data>
+  <data name="HQ" xml:space="preserve">
+    <value>高品质</value>
+  </data>
+  <data name="AutoFCWSDeliverDescription" xml:space="preserve">
+    <value>打开提供素材界面, 并点击开始后, 自动交纳当前所有可用素材
+(前置模块: 自动选择并递交物品) </value>
+  </data>
+  <data name="AutoFCWSDeliverTitle" xml:space="preserve">
+    <value>自动部队合建交纳素材</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-ExportToClipboard" xml:space="preserve">
+    <value>导出至剪贴板</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-ImportFromClipboard" xml:space="preserve">
+    <value>从剪贴板导入</value>
+  </data>
+  <data name="ExpandPlayerMenuSearch-RisingStoneSearchHelp" xml:space="preserve">
+    <value>必须要先在浏览器登录石之家才能正常使用此功能</value>
+  </data>
+  <data name="QuickChatPanel-SystemSound" xml:space="preserve">
+    <value>系统音</value>
+  </data>
+  <data name="QuickChatPanel-SystemSoundHelp" xml:space="preserve">
+    <value>左键试听, 右键发送</value>
+  </data>
+  <data name="AutoCutSceneSkip-ProhibitSkippingUnseenCutscene" xml:space="preserve">
+    <value>禁止跳过未观看过的过场动画</value>
+  </data>
+  <data name="AutoCutSceneSkip-ProhibitSkippingUnseenCutsceneHelp" xml:space="preserve">
+    <value>客户端仅会记录少部分过场剧情的观看历史, 因此该功能准确性较低</value>
+  </data>
+  <data name="Example" xml:space="preserve">
+    <value>例</value>
+  </data>
+  <data name="Job" xml:space="preserve">
+    <value>职业</value>
+  </data>
+  <data name="Level" xml:space="preserve">
+    <value>等级</value>
+  </data>
+  <data name="PlayerTargetInfoExpand-CompanyTag" xml:space="preserve">
+    <value>部队名称</value>
+  </data>
+  <data name="PlayerTargetInfoExpand-FocusTarget" xml:space="preserve">
+    <value>焦点目标</value>
+  </data>
+  <data name="PlayerTargetInfoExpand-OnlineStatus" xml:space="preserve">
+    <value>在线状态</value>
+  </data>
+  <data name="PlayerTargetInfoExpand-TargetsTarget" xml:space="preserve">
+    <value>目标的目标</value>
+  </data>
+  <data name="PlayerTargetInfoExpandDescription" xml:space="preserve">
+    <value>启用后, 允许你自定义目标情报中所能显示的信息</value>
+  </data>
+  <data name="PlayerTargetInfoExpandTitle" xml:space="preserve">
+    <value>玩家目标情报扩展</value>
+  </data>
+  <data name="Target" xml:space="preserve">
+    <value>目标</value>
+  </data>
+  <data name="BetterBlueSetLoad-ApplyPreset" xml:space="preserve">
+    <value>应用预设 {0}</value>
+  </data>
+  <data name="BetterBlueSetLoadDescription" xml:space="preserve">
+    <value>启用后, 在青魔法书界面新增按钮, 允许你在不解除以太复制等状态的情况下切换技能组</value>
+  </data>
+  <data name="BetterBlueSetLoadTitle" xml:space="preserve">
+    <value>更好的青魔法技能组读取</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-ClearPriceCache" xml:space="preserve">
+    <value>清除价格缓存</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-ClearPriceCacheHelp" xml:space="preserve">
+    <value>单项价格缓存会在 5 分钟后自动过期, 如无意外无需手动清除</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-FailObtainItemInfo" xml:space="preserve">
+    <value>获取物品信息失败</value>
+  </data>
+  <data name="AutoRetainerPriceAdjust-OperationDelay" xml:space="preserve">
+    <value>操作延迟 (毫秒)</value>
   </data>
 </root>

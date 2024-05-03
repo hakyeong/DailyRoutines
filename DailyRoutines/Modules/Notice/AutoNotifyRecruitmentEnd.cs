@@ -15,14 +15,16 @@ public class AutoNotifyRecruitmentEnd : DailyModuleBase
         Service.Chat.ChatMessage += OnChatMessage;
     }
 
-    private static void OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
+    private static void OnChatMessage(
+        XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
         if (type != XivChatType.SystemMessage) return;
         if (Flags.BoundByDuty()) return;
 
         var content = message.ExtractText();
 
-        if (!content.StartsWith("招募队员结束") && !content.Contains("Party recruitment ended") && !content.Contains("パーティ募集の人数を満たしたため終了します。")) return;
+        if (!content.StartsWith("招募队员结束") && !content.Contains("Party recruitment ended") &&
+            !content.Contains("パーティ募集の人数を満たしたため終了します。")) return;
 
         var title = "";
         if (content.StartsWith("招募队员结束"))
@@ -49,10 +51,7 @@ public class AutoNotifyRecruitmentEnd : DailyModuleBase
             title = parts[0];
         }
 
-        if (content.Contains("パーティ募集の人数を満たしたため終了します。"))
-        {
-            title = content;
-        }
+        if (content.Contains("パーティ募集の人数を満たしたため終了します。")) title = content;
 
         WinToast.Notify(title, title);
     }

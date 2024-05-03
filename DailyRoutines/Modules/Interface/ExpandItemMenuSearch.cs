@@ -7,10 +7,10 @@ using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Game.Text;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using ECommons.Automation;
-using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -23,6 +23,28 @@ namespace DailyRoutines.Modules;
 public unsafe class ExpandItemMenuSearch : DailyModuleBase
 {
     public override string? Author { get; set; } = "HSS";
+
+    private static readonly MenuItem CollectorItem = new()
+    {
+        IsEnabled = true,
+        IsReturn = false,
+        UseDefaultPrefix = true,
+        Name = new SeStringBuilder().Append(DRPrefix()).Append(Service.Lang.GetText("ExpandItemMenuSearch-CollectorSearch")).Build(),
+        OnClicked = OnCollector,
+        IsSubmenu = false,
+        PrefixColor = 34
+    };
+
+    private static readonly MenuItem WikiItem = new()
+    {
+        IsEnabled = true,
+        IsReturn = false,
+        UseDefaultPrefix = true,
+        Name = new SeStringBuilder().Append(DRPrefix()).Append(Service.Lang.GetText("ExpandItemMenuSearch-WikiSearch")).Build(),
+        OnClicked = OnWiki,
+        IsSubmenu = false,
+        PrefixColor = 34
+    };
 
     private static Item? _LastItem;
     private static Item? _LastPrismBoxItem;
@@ -201,7 +223,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
                 _LastItem = itemCollector;
                 if (SearchCollectorByGlamour)
                     _LastGlamourItem = PresetData.TryGetGear(glamourId, out var glamourItem) ? glamourItem : _LastItem;
-                
+
                 args.AddMenuItem(CollectorItem);
             }
 
@@ -322,43 +344,15 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
         }
     }
 
-
-    private static readonly MenuItem CollectorItem = new()
-    {
-        IsEnabled = true,
-        IsReturn = false,
-        Prefix = SeIconChar.BoxedLetterD,
-        Name = RPrefix(Service.Lang.GetText("ExpandItemMenuSearch-CollectorSearch")),
-        OnClicked = OnCollector,
-        IsSubmenu = false,
-        PrefixColor = 34
-    };
-
-    private static readonly MenuItem WikiItem = new()
-    {
-        IsEnabled = true,
-        IsReturn = false,
-        PrefixChar = 'D',
-        Name = RPrefix(Service.Lang.GetText("ExpandItemMenuSearch-WikiSearch")),
-        OnClicked = OnWiki,
-        IsSubmenu = false,
-        PrefixColor = 34
-    };
-
-
     private static void OnCollector(MenuItemClickedArgs args)
     {
         if (args.AddonName == "MiragePrismPrismBoxCrystallize" &&
-            TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+            TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && IsAddonAndNodesReady(addon))
         {
-            if (HelpersOm.TryScanContextMenuText(addon, "投影到当前装备上", out var index))
-            {
+            if (TryScanContextMenuText(addon, "投影到当前装备上", out var index))
                 Util.OpenLink(string.Format(CollectorUrl, _LastPrismBoxItem.Name));
-            }
             else
-            {
                 Util.OpenLink(string.Format(CollectorUrl, _LastItem.Name));
-            }
 
             return;
         }
@@ -372,16 +366,12 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
     private static void OnWiki(MenuItemClickedArgs args)
     {
         if (args.AddonName == "MiragePrismPrismBoxCrystallize" &&
-            TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && HelpersOm.IsAddonAndNodesReady(addon))
+            TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && IsAddonAndNodesReady(addon))
         {
-            if (HelpersOm.TryScanContextMenuText(addon, "投影到当前装备上", out var index))
-            {
+            if (TryScanContextMenuText(addon, "投影到当前装备上", out var index))
                 Util.OpenLink(string.Format(CollectorUrl, _LastPrismBoxItem.Name));
-            }
             else
-            {
                 Util.OpenLink(string.Format(CollectorUrl, _LastItem.Name));
-            }
 
             return;
         }

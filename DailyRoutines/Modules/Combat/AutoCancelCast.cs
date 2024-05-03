@@ -30,8 +30,8 @@ public unsafe class AutoCancelCast : DailyModuleBase
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
         TargetAreaActions ??= LuminaCache.Get<Action>()
-                                     .Where(x => x.TargetArea)
-                                     .Select(x => x.RowId).ToHashSet();
+                                         .Where(x => x.TargetArea)
+                                         .Select(x => x.RowId).ToHashSet();
     }
 
     private void OnConditionChanged(ConditionFlag flag, bool value)

@@ -70,7 +70,9 @@ public unsafe class AutoPlayCards : DailyModuleBase
         }
     }
 
-    private bool UseActionSelf(ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6, void* a7)
+    private bool UseActionSelf(
+        ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6,
+        void* a7)
     {
         if (actionType != 1 || actionID != 17055)
             return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
@@ -82,12 +84,15 @@ public unsafe class AutoPlayCards : DailyModuleBase
             return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
 
         var indices = Enumerable.Range(0, Service.PartyList.Count)
-                                .Where(i => Service.PartyList[i].GameObject != null && 
-                                            Service.PartyList[i].GameObject.IsValid() && 
-                                            Service.PartyList[i].GameObject.IsTargetable && 
+                                .Where(i => Service.PartyList[i].GameObject != null &&
+                                            Service.PartyList[i].GameObject.IsValid() &&
+                                            Service.PartyList[i].GameObject.IsTargetable &&
                                             !Service.PartyList[i].GameObject.IsDead &&
-                                            !Service.PartyList[i].Statuses.Any(s => CardStatuses.Contains(s.StatusId)) && 
-                                            GetGameDistanceFromObject((GameObject*)localPlayer.Address, (GameObject*)Service.PartyList[i].GameObject.Address) <= 30)
+                                            !Service.PartyList[i].Statuses
+                                                    .Any(s => CardStatuses.Contains(s.StatusId)) &&
+                                            GetGameDistanceFromObject((GameObject*)localPlayer.Address,
+                                                                      (GameObject*)Service.PartyList[i].GameObject
+                                                                          .Address) <= 30)
                                 .ToList();
 
         PartyMember? member = null;
@@ -100,13 +105,17 @@ public unsafe class AutoPlayCards : DailyModuleBase
                 (indices[i], indices[j]) = (indices[j], indices[i]);
             }
 
-            var firstSortedIndex = 
+            var firstSortedIndex =
                 indices.OrderByDescending(index => Service.PartyList[index].ClassJob.GameData.Role is 2 or 3 ? 1 : 0)
                        .ThenByDescending(index =>
-                         Service.PartyList[index].ClassJob.GameData.Role is 1 or 2 ? 
-                            cardInfo.IsMelee ? 1 : 0 :
-                            cardInfo.IsMelee ? 0 : 1
-            ).First();
+                                             Service.PartyList[index].ClassJob.GameData.Role is 1 or 2
+                                                 ?
+                                                 cardInfo.IsMelee ? 1 : 0
+                                                 :
+                                                 cardInfo.IsMelee
+                                                     ? 0
+                                                     : 1
+                       ).First();
 
             member = Service.PartyList[firstSortedIndex];
         }
@@ -120,7 +129,14 @@ public unsafe class AutoPlayCards : DailyModuleBase
             string jobNameText = member.ClassJob.GameData.Name.ExtractText(),
                    memberNameText = member.Name.ExtractText();
 
-            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoPlayCards-Message", UseAantonomasia ? cardInfo.IsMelee ? Service.Lang.GetText("AutoPlayCards-MeleeCard") : Service.Lang.GetText("AutoPlayCards-RangeCard") : cardInfo.Name, member.ClassJob.GameData.ToBitmapFontIcon(), jobNameText, memberNameText)).Build();
+            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(
+                Service.Lang.GetSeString("AutoPlayCards-Message",
+                                         UseAantonomasia
+                                             ? cardInfo.IsMelee
+                                                   ? Service.Lang.GetText("AutoPlayCards-MeleeCard")
+                                                   : Service.Lang.GetText("AutoPlayCards-RangeCard")
+                                             : cardInfo.Name, member.ClassJob.GameData.ToBitmapFontIcon(), jobNameText,
+                                         memberNameText)).Build();
             Service.Chat.Print(message);
         }
 

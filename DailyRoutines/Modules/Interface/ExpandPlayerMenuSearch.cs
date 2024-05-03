@@ -4,12 +4,14 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Gui.ContextMenu;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
 using Newtonsoft.Json;
+
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("ExpandPlayerMenuSearchTitle", "ExpandPlayerMenuSearchDescription", ModuleCategories.Interface)]
@@ -21,9 +23,44 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
         public string World { get; set; } = null!;
     }
 
+
+    private static readonly MenuItem RisingStoneItem = new()
+    {
+        IsEnabled = true,
+        IsReturn = false,
+        UseDefaultPrefix = true,
+        Name = new SeStringBuilder().Append(DRPrefix()).Append(Service.Lang.GetText("ExpandPlayerMenuSearch-RisingStoneSearch")).Build(),
+        OnClicked = OnClickRisingStone,
+        IsSubmenu = false,
+        PrefixColor = 34
+    };
+
+    private static readonly MenuItem FFLogsItem = new()
+    {
+        IsEnabled = true,
+        IsReturn = false,
+        UseDefaultPrefix = true,
+        Name = new SeStringBuilder().Append(DRPrefix()).Append(Service.Lang.GetText("ExpandPlayerMenuSearch-FFLogsSearch")).Build(),
+        OnClicked = OnClickFFLogs,
+        IsSubmenu = false,
+        PrefixColor = 34
+    };
+
+    private static readonly MenuItem TiebaItem = new()
+    {
+        IsEnabled = true,
+        IsReturn = false,
+        UseDefaultPrefix = true,
+        Name = new SeStringBuilder().Append(DRPrefix()).Append(Service.Lang.GetText("ExpandPlayerMenuSearch-TiebaSearch")).Build(),
+        OnClicked = OnClickTieba,
+        IsSubmenu = false,
+        PrefixColor = 34
+    };
+
     private static readonly HttpClient client = new();
 
-    private const string RisingStoneSearchAPI = "https://apiff14risingstones.web.sdo.com/api/common/search?type=6&keywords={0}&page={1}&limit=50";
+    private const string RisingStoneSearchAPI =
+        "https://apiff14risingstones.web.sdo.com/api/common/search?type=6&keywords={0}&page={1}&limit=50";
     private const string RisingStonePlayerInfo = "https://ff14risingstones.web.sdo.com/pc/index.html#/me/info?uuid={0}";
     private const string FFLogsSearch = "https://cn.fflogs.com/character/CN/{0}/{1}";
     private const string TiebaSearch = "https://tieba.baidu.com/f/search/res?ie=utf-8&kw=ff14&qw={0}";
@@ -49,8 +86,12 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
 
     public override void ConfigUI()
     {
-        if (ImGui.Checkbox(Service.Lang.GetText("ExpandPlayerMenuSearch-RisingStoneSearch"), ref RisingStoneEnabled))
+        if (ImGui.Checkbox(Service.Lang.GetText("ExpandPlayerMenuSearch-RisingStoneSearch"),
+                           ref RisingStoneEnabled))
             UpdateConfig("RisingStoneEnabled", RisingStoneEnabled);
+
+        ImGuiOm.HelpMarker(Service.Lang.GetText("ExpandPlayerMenuSearch-RisingStoneSearchHelp"));
+
         if (ImGui.Checkbox(Service.Lang.GetText("ExpandPlayerMenuSearch-FFLogsSearch"), ref FFLogsEnabled))
             UpdateConfig("FFLogsEnabled", FFLogsEnabled);
         if (ImGui.Checkbox(Service.Lang.GetText("ExpandPlayerMenuSearch-TiebaSearch"), ref TiebaEnabled))
@@ -66,39 +107,6 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
         if (FFLogsEnabled) args.AddMenuItem(FFLogsItem);
         if (TiebaEnabled) args.AddMenuItem(TiebaItem);
     }
-
-    private static readonly MenuItem RisingStoneItem = new()
-    {
-        IsEnabled = true,
-        IsReturn = false,
-        PrefixChar = 'D',
-        Name = RPrefix(Service.Lang.GetText("ExpandPlayerMenuSearch-RisingStoneSearch")),
-        OnClicked = OnClickRisingStone,
-        IsSubmenu = false,
-        PrefixColor = 34,
-    };
-
-    private static readonly MenuItem FFLogsItem = new()
-    {
-        IsEnabled = true,
-        IsReturn = false,
-        PrefixChar = 'D',
-        Name = RPrefix(Service.Lang.GetText("ExpandPlayerMenuSearch-FFLogsSearch")),
-        OnClicked = OnClickFFLogs,
-        IsSubmenu = false,
-        PrefixColor = 34,
-    };
-
-    private static readonly MenuItem TiebaItem = new()
-    {
-        IsEnabled = true,
-        IsReturn = false,
-        PrefixChar = 'D',
-        Name = RPrefix(Service.Lang.GetText("ExpandPlayerMenuSearch-TiebaSearch")),
-        OnClicked = OnClickTieba,
-        IsSubmenu = false,
-        PrefixColor = 34,
-    };
 
     private static void OnClickRisingStone(MenuItemClickedArgs args)
     {
@@ -118,12 +126,15 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
 
                 if (result.data.Count == 0)
                 {
-                    Service.DalamudNotice.AddNotification(new Notification { Content = Service.Lang.GetText("ExpandPlayerMenuSearch-RisingStoneInfoNotFound"), Type = NotificationType.Error });
+                    Service.DalamudNotice.AddNotification(new Notification
+                    {
+                        Content = Service.Lang.GetText("ExpandPlayerMenuSearch-RisingStoneInfoNotFound"),
+                        Type = NotificationType.Error
+                    });
                     break;
                 }
 
                 foreach (var player in result.data)
-                {
                     if (player.character_name == _TargetChara.Name && player.group_name == _TargetChara.World)
                     {
                         var uuid = player.uuid;
@@ -131,11 +142,14 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
                         isFound = true;
                         break;
                     }
-                }
 
                 if (!isFound)
                 {
-                    Service.DalamudNotice.AddNotification(new Notification { Content = Service.Lang.GetText("ExpandPlayerMenuSearch-NextPageMessage", 0), Type = NotificationType.Info});
+                    Service.DalamudNotice.AddNotification(new Notification
+                    {
+                        Content = Service.Lang.GetText("ExpandPlayerMenuSearch-NextPageMessage", 0),
+                        Type = NotificationType.Info
+                    });
                     await Task.Delay(delayBetweenRequests);
                     page++;
                 }
@@ -165,7 +179,8 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
 
         var judgeCriteria0 = menuTarget.TargetCharacter != null;
         var judgeCriteria1 = !string.IsNullOrWhiteSpace(menuTarget.TargetName) &&
-                             menuTarget.TargetHomeWorld.GameData != null && menuTarget.TargetHomeWorld.GameData.RowId != 0;
+                             menuTarget.TargetHomeWorld.GameData != null &&
+                             menuTarget.TargetHomeWorld.GameData.RowId != 0;
         var judgeCriteria2 = menuTarget.TargetObject is Character && judgeCriteria1;
 
         switch (args.AddonName)
@@ -173,7 +188,8 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
             default:
                 return false;
             case "BlackList":
-                var agentBlackList = (AgentBlacklist*)AgentModule.Instance()->GetAgentByInternalId(AgentId.SocialBlacklist);
+                var agentBlackList =
+                    (AgentBlacklist*)AgentModule.Instance()->GetAgentByInternalId(AgentId.SocialBlacklist);
                 if ((nint)agentBlackList != nint.Zero && agentBlackList->AgentInterface.IsAgentActive())
                 {
                     var playerName = agentBlackList->SelectedPlayerName.ExtractText();
@@ -212,7 +228,8 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
             else if (menuTarget.TargetObject is Character chara && judgeCriteria1)
                 _TargetChara = chara.ToCharacterSearchInfo();
             else if (judgeCriteria1)
-                _TargetChara = new() { Name = menuTarget.TargetName, World = menuTarget.TargetHomeWorld.GameData.Name.RawString };
+                _TargetChara = new()
+                    { Name = menuTarget.TargetName, World = menuTarget.TargetHomeWorld.GameData.Name.RawString };
             return judgeCriteria0 || judgeCriteria2 || judgeCriteria1;
         }
     }

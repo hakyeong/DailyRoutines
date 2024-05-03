@@ -22,8 +22,12 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
         public byte? TextFlag2 { get; set; }
     }
 
-    private static readonly string[] TextInputWindows = ["LookingForGroupCondition", "ChatLog", "AOZNotebookFilterSettings",
-        "MountNoteBook", "MinionNoteBook", "ItemSearch", "PcSearchDetail", "Macro", "Emote", "LookingForGroupNameSearch", "InputString", "RecipeNote", "GatheringNote", "FishGuide2", "RetainerInputString"];
+    private static readonly string[] TextInputWindows =
+    [
+        "LookingForGroupCondition", "ChatLog", "AOZNotebookFilterSettings",
+        "MountNoteBook", "MinionNoteBook", "ItemSearch", "PcSearchDetail", "Macro", "Emote",
+        "LookingForGroupNameSearch", "InputString", "RecipeNote", "GatheringNote", "FishGuide2", "RetainerInputString"
+    ];
 
     private static readonly Dictionary<string, uint[]> TextInputWindowsNodes = [];
 
@@ -77,10 +81,7 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
 
             if (!TryScanTextInputComponent(addon, out var nodeID)) continue;
 
-            foreach (var id in nodeID)
-            {
-                ModifyTextInputComponent(addon, id, true);
-            }
+            foreach (var id in nodeID) ModifyTextInputComponent(addon, id, true);
         }
     }
 
@@ -151,11 +152,9 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
             var objectInfo = (AtkUldComponentInfo*)componentInfo.Objects;
             if (objectInfo == null) continue;
 
-            if (objectInfo->ComponentType == ComponentType.TextInput)
-            {
-                nodeIDList.Add(node->NodeID);
-            }
+            if (objectInfo->ComponentType == ComponentType.TextInput) nodeIDList.Add(node->NodeID);
         }
+
         nodeID = [.. nodeIDList];
         TextInputWindowsNodes[addonName] = nodeID;
 
@@ -181,10 +180,7 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
             if (addon == null) continue;
             if (!TryScanTextInputComponent(addon, out var nodeID)) continue;
 
-            foreach (var id in nodeID)
-            {
-                ModifyTextInputComponent(addon, id, false);
-            }
+            foreach (var id in nodeID) ModifyTextInputComponent(addon, id, false);
         }
 
         base.Uninit();

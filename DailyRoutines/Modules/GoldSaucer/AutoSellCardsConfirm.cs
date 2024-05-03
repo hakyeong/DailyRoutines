@@ -85,7 +85,9 @@ public class AutoSellCardsConfirm : DailyModuleBase
             TaskManager.Abort();
             return true;
         }
-        if (!TryGetAddonByName<AtkUnitBase>("TripleTriadCoinExchange", out var addon) || !IsAddonAndNodesReady(addon)) return false;
+
+        if (!TryGetAddonByName<AtkUnitBase>("TripleTriadCoinExchange", out var addon) ||
+            !IsAddonAndNodesReady(addon)) return false;
 
         var cardsAmount = addon->AtkValues[1].Int;
         if (cardsAmount is 0)
@@ -97,7 +99,9 @@ public class AutoSellCardsConfirm : DailyModuleBase
         var isCardInDeck = Convert.ToBoolean(addon->AtkValues[204].Byte);
         if (!isCardInDeck)
         {
-            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(Service.Lang.GetSeString("AutoSellCardsConfirm-CurrentCardNotInDeckMessage")).Build();
+            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ")
+                                               .Append(Service.Lang.GetSeString(
+                                                           "AutoSellCardsConfirm-CurrentCardNotInDeckMessage")).Build();
             Service.Chat.Print(message);
 
             TaskManager?.Abort();

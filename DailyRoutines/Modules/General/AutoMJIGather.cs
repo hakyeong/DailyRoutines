@@ -26,6 +26,7 @@ namespace DailyRoutines.Modules;
 public class AutoMJIGather : DailyModuleBase
 {
     #region StaticStatisitics
+
     private class AutoMJIGatherGroup
     {
         public bool Enabled { get; set; }
@@ -185,9 +186,7 @@ public class AutoMJIGather : DailyModuleBase
                                              .ToList();
 
             if (QueuedGatheringList.Count != 0 && QueuedGatheringList.Count > 10)
-            {
                 Gather(QueuedGatheringList);
-            }
             else
                 Service.Chat.PrintError(Service.Lang.GetText("AutoMJIGather-InsufficientGatherNodes"));
         }
@@ -196,10 +195,7 @@ public class AutoMJIGather : DailyModuleBase
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop")))
-        {
-            TaskManager.Abort();
-        }
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
 
         ImGui.Text(Service.Lang.GetText("AutoMJIGather-GatherProcessInfo",
                                         QueuedGatheringList.Count == 0 ? 0 : CurrentGatherIndex + 1,
@@ -270,10 +266,10 @@ public class AutoMJIGather : DailyModuleBase
     {
         if (MJIManager.Instance()->CurrentMode == 1) return true;
 
-        if (TryGetAddonByName<AtkUnitBase>("MJIHud", out var hud) && HelpersOm.IsAddonAndNodesReady(hud))
+        if (TryGetAddonByName<AtkUnitBase>("MJIHud", out var hud) && IsAddonAndNodesReady(hud))
         {
             AddonHelper.Callback(hud, true, 11, 0);
-            if (TryGetAddonByName<AtkUnitBase>("ContextIconMenu", out var menu) && HelpersOm.IsAddonAndNodesReady(menu))
+            if (TryGetAddonByName<AtkUnitBase>("ContextIconMenu", out var menu) && IsAddonAndNodesReady(menu))
             {
                 AddonHelper.Callback(menu, true, 0, 1, 82043, 0, 0);
                 TaskManager.Enqueue(CloseContextIconMenu);
@@ -286,7 +282,7 @@ public class AutoMJIGather : DailyModuleBase
 
     private static unsafe bool? CloseContextIconMenu()
     {
-        if (TryGetAddonByName<AtkUnitBase>("ContextIconMenu", out var menu) && HelpersOm.IsAddonAndNodesReady(menu))
+        if (TryGetAddonByName<AtkUnitBase>("ContextIconMenu", out var menu) && IsAddonAndNodesReady(menu))
         {
             AddonHelper.Callback(menu, true, -1);
             menu->Close(true);
@@ -325,7 +321,7 @@ public class AutoMJIGather : DailyModuleBase
 
         var nearObjects = Service.ObjectTable
                                  .Where(x => x.ObjectKind is ObjectKind.CardStand &&
-                                             HelpersOm.GetGameDistanceFromObject(
+                                             GetGameDistanceFromObject(
                                                  (GameObject*)Service.ClientState.LocalPlayer.Address,
                                                  (GameObject*)x.Address) <= 2).ToArray();
         if (!nearObjects.Any())

@@ -36,22 +36,24 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
 
         ImGui.Spacing();
         ImGui.Text($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NumText")}{lastLeve}");
-        ImGui.Text($"{Service.Lang.GetText("AutoNotifyLeveUpdate-FullTimeText")}{finishTime.ToLocalTime().ToString(CultureInfo.CurrentCulture)}");
-        ImGui.Text($"{Service.Lang.GetText("AutoNotifyLeveUpdate-UpdateTimeText")}{nextLeveCheck.ToLocalTime().ToString(CultureInfo.CurrentCulture)}");
+        ImGui.Text(
+            $"{Service.Lang.GetText("AutoNotifyLeveUpdate-FullTimeText")}{finishTime.ToLocalTime().ToString(CultureInfo.CurrentCulture)}");
+        ImGui.Text(
+            $"{Service.Lang.GetText("AutoNotifyLeveUpdate-UpdateTimeText")}{nextLeveCheck.ToLocalTime().ToString(CultureInfo.CurrentCulture)}");
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoNotifyLeveUpdate-OnChatMessageConfig"),
                            ref OnChatMessage))
             UpdateConfig("OnChatMessage", OnChatMessage);
 
         ImGui.PushItemWidth(300f);
-        ImGui.SliderInt(Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationThreshold"), ref NotificationThreshold, 1, 100);
+        ImGui.SliderInt(Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationThreshold"), ref NotificationThreshold,
+                        1, 100);
         ImGui.PopItemWidth();
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
             lastLeve = 0;
             UpdateConfig("NotificationThreshold", NotificationThreshold);
         }
-        
     }
 
     private static void OnFrameworkLeve(IFramework _)
@@ -67,7 +69,7 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
             lastLeve = QuestManager.Instance()->NumLeveAllowances;
             nextLeveCheck = MathNextTime(NowUtc);
             finishTime = MathFinishTime(leveAllowances, NowUtc);
-            
+
             if (leveAllowances >= NotificationThreshold && decreasing)
             {
                 if (OnChatMessage)
@@ -79,9 +81,9 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
                 }
 
                 WinToast.Notify($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationTitle")}",
-                                      $"{Service.Lang.GetText("AutoNotifyLeveUpdate-NumText")}{leveAllowances}" +
-                                      $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-FullTimeText")}{finishTime.ToLocalTime().ToString(CultureInfo.CurrentCulture)}" +
-                                      $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-UpdateTimeText")}{nextLeveCheck.ToLocalTime().ToString(CultureInfo.CurrentCulture)}");
+                                $"{Service.Lang.GetText("AutoNotifyLeveUpdate-NumText")}{leveAllowances}" +
+                                $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-FullTimeText")}{finishTime.ToLocalTime().ToString(CultureInfo.CurrentCulture)}" +
+                                $"\n {Service.Lang.GetText("AutoNotifyLeveUpdate-UpdateTimeText")}{nextLeveCheck.ToLocalTime().ToString(CultureInfo.CurrentCulture)}");
             }
         }
     }
@@ -89,29 +91,20 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
     private static DateTime MathNextTime(DateTime NowUtc)
     {
         if (NowUtc.Hour >= 12)
-        {
             return new DateTime(NowUtc.Year, NowUtc.Month, NowUtc.Day + 1, 0, 0, 0, DateTimeKind.Utc);
-        }
         else
-        {
             return new DateTime(NowUtc.Year, NowUtc.Month, NowUtc.Day, 12, 0, 0, DateTimeKind.Utc);
-        }
     }
 
 
     private static DateTime MathFinishTime(int num, DateTime NowUtc)
     {
-        if (num >= 100)
-        {
-            return NowUtc;
-        }
+        if (num >= 100) return NowUtc;
         var requiredIncrements = 100 - num;
         var requiredPeriods = requiredIncrements / 3;
-        if (requiredIncrements % 3 > 0)
-        {
-            requiredPeriods++;
-        }
-        var lastIncrementTimeUtc = new DateTime(NowUtc.Year, NowUtc.Month, NowUtc.Day, NowUtc.Hour >= 12 ? 12 : 0, 0, 0, DateTimeKind.Utc);
+        if (requiredIncrements % 3 > 0) requiredPeriods++;
+        var lastIncrementTimeUtc = new DateTime(NowUtc.Year, NowUtc.Month, NowUtc.Day, NowUtc.Hour >= 12 ? 12 : 0, 0, 0,
+                                                DateTimeKind.Utc);
         return lastIncrementTimeUtc.AddHours(12 * requiredPeriods);
     }
 }

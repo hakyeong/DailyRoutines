@@ -20,7 +20,9 @@ public abstract class DailyModuleBase
     public virtual string? Author { get; set; }
     protected TaskManager? TaskManager { get; set; }
     protected Overlay? Overlay { get; set; }
-    protected string ModuleConfigFile => Path.Join(Service.PluginInterface.GetPluginConfigDirectory(), $"{GetType().Name}.json");
+
+    protected string ModuleConfigFile =>
+        Path.Join(Service.PluginInterface.GetPluginConfigDirectory(), $"{GetType().Name}.json");
 
     public virtual void Init() { }
 
@@ -28,78 +30,83 @@ public abstract class DailyModuleBase
 
     public virtual void OverlayUI() { }
 
-    protected T LoadConfig<T>() where T : ModuleConfiguration => LoadConfig<T>(GetType().Name);
-
-    protected T LoadConfig<T>(string key) where T : ModuleConfiguration 
+    protected T LoadConfig<T>() where T : ModuleConfiguration
     {
-        try 
+        return LoadConfig<T>(GetType().Name);
+    }
+
+    protected T LoadConfig<T>(string key) where T : ModuleConfiguration
+    {
+        try
         {
             var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
             var configFile = Path.Combine(configDirectory, key + ".json");
             if (!File.Exists(configFile)) return default;
             var jsonString = File.ReadAllText(configFile);
             return JsonConvert.DeserializeObject<T>(jsonString);
-        } 
-        catch (Exception ex) 
+        }
+        catch (Exception ex)
         {
             Service.Log.Error($"Failed to load config for module: {key}");
             Service.Log.Error(ex.StackTrace);
             return default;
         }
     }
-    
-    private object LoadConfig(Type T, string key) 
+
+    private object LoadConfig(Type T, string key)
     {
-        if (!T.IsSubclassOf(typeof(ModuleConfiguration))) 
+        if (!T.IsSubclassOf(typeof(ModuleConfiguration)))
             throw new Exception($"{T} is not a ModuleConfiguration class.");
-        try 
+        try
         {
             var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
             var configFile = Path.Combine(configDirectory, key + ".json");
             if (!File.Exists(configFile)) return default;
             var jsonString = File.ReadAllText(configFile);
             return JsonConvert.DeserializeObject(jsonString, T);
-        } 
-        catch (Exception ex) 
+        }
+        catch (Exception ex)
         {
             Service.Log.Error($"Failed to load config for module: {key}");
             Service.Log.Error(ex.StackTrace);
             return default;
         }
     }
-    
-    protected void SaveConfig<T>(T config) where T : ModuleConfiguration 
+
+    protected void SaveConfig<T>(T config) where T : ModuleConfiguration
     {
-        try 
+        try
         {
             var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
             var configFile = Path.Combine(configDirectory, GetType().Name + ".json");
             var jsonString = JsonConvert.SerializeObject(config, Formatting.Indented);
 
             File.WriteAllText(configFile, jsonString);
-        } 
-        catch (Exception ex) 
+        }
+        catch (Exception ex)
         {
             Service.Log.Error($"Failed to load config for module: {GetType().Name}");
             Service.Log.Error(ex.StackTrace);
         }
     }
-    
-    private void SaveConfig(object config) 
+
+    private void SaveConfig(object config)
     {
-        try 
+        try
         {
-            if (!config.GetType().IsSubclassOf(typeof(ModuleConfiguration))) 
+            if (!config.GetType().IsSubclassOf(typeof(ModuleConfiguration)))
             {
-                Service.Log.Error($"Failed to save Config: {config.GetType().Name} is not a subclass of ModuleConfiguration.");
+                Service.Log.Error(
+                    $"Failed to save Config: {config.GetType().Name} is not a subclass of ModuleConfiguration.");
                 return;
             }
+
             var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
             var configFile = Path.Combine(configDirectory, GetType().Name + ".json");
             var jsonString = JsonConvert.SerializeObject(config, Formatting.Indented);
             File.WriteAllText(configFile, jsonString);
-        } 
-        catch (Exception ex) 
+        }
+        catch (Exception ex)
         {
             Service.Log.Error($"Failed to load config for module: {GetType().Name}");
             Service.Log.Error(ex.StackTrace);
@@ -278,8 +285,8 @@ public abstract class DailyModuleBase
 
         var derivedInstance = GetType();
         // 字段
-        foreach (var field in derivedInstance.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static))
-        {
+        foreach (var field in derivedInstance.GetFields(BindingFlags.Instance | BindingFlags.NonPublic |
+                                                        BindingFlags.Public | BindingFlags.Static))
             if (field.FieldType.IsGenericType && field.FieldType.GetGenericTypeDefinition() == typeof(Hook<>))
             {
                 var hookInstance = field.GetValue(this);
@@ -292,16 +299,13 @@ public abstract class DailyModuleBase
                     field.SetValue(this, null);
                 }
             }
-        }
+
         // 函数
-        foreach (var method in derivedInstance.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance))
-        {
+        foreach (var method in derivedInstance.GetMethods(BindingFlags.NonPublic | BindingFlags.Public |
+                                                          BindingFlags.Instance))
             if (method.ReturnType == typeof(void) &&
                 method.GetParameters().Length == 1 &&
                 method.GetParameters()[0].ParameterType == typeof(IFramework))
-            {
                 Service.FrameworkManager.Unregister(method);
-            }
-        }
     }
 }

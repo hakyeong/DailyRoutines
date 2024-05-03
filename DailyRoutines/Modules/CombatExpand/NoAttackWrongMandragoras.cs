@@ -15,15 +15,20 @@ using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("NoAttackWrongMandragorasTitle", "NoAttackWrongMandragorasDescription", ModuleCategories.CombatExpand)]
+[ModuleDescription("NoAttackWrongMandragorasTitle", "NoAttackWrongMandragorasDescription",
+                   ModuleCategories.CombatExpand)]
 public unsafe class NoAttackWrongMandragoras : DailyModuleBase
 {
     private delegate byte IsTargetableDelegate(GameObject* gameObj);
-    [Signature("40 53 48 83 EC 20 F3 0F 10 89 ?? ?? ?? ?? 0F 57 C0 0F 2E C8 48 8B D9 7A 0A", DetourName = nameof(IsTargetableDetour))]
+
+    [Signature("40 53 48 83 EC 20 F3 0F 10 89 ?? ?? ?? ?? 0F 57 C0 0F 2E C8 48 8B D9 7A 0A",
+               DetourName = nameof(IsTargetableDetour))]
     private readonly Hook<IsTargetableDelegate>? IsTargetableHook;
 
     private static List<uint[]>? Mandragoras;
+
     private static readonly List<BattleNpc> ValidBattleNPCs = [];
+
     // 水城, 运河, 运河深层, 运河神殿, 梦羽宝境, 梦羽宝殿, 惊奇, 育体
     private static readonly HashSet<uint> ValidZones = [558, 712, 725, 794, 879, 924, 1000, 1123];
 
@@ -31,7 +36,10 @@ public unsafe class NoAttackWrongMandragoras : DailyModuleBase
     {
         Mandragoras ??= LuminaCache.Get<BNpcName>()
                                    .Where(x => x.Singular.RawString.Contains("王后"))
-                                   .Select(queen => new[] { queen.RowId - 4, queen.RowId - 3, queen.RowId - 2, queen.RowId - 1, queen.RowId })
+                                   .Select(queen => new[]
+                                   {
+                                       queen.RowId - 4, queen.RowId - 3, queen.RowId - 2, queen.RowId - 1, queen.RowId
+                                   })
                                    .ToList();
 
         Service.Hook.InitializeFromAttributes(this);
@@ -50,7 +58,7 @@ public unsafe class NoAttackWrongMandragoras : DailyModuleBase
             IsTargetableHook?.Disable();
     }
 
-    private byte IsTargetableDetour(GameObject* potentialTarget) 
+    private byte IsTargetableDetour(GameObject* potentialTarget)
     {
         var isTargetable = IsTargetableHook.Original(potentialTarget);
         if (!ValidZones.Contains(Service.ClientState.TerritoryType) || Mandragoras == null) return isTargetable;
@@ -75,7 +83,9 @@ public unsafe class NoAttackWrongMandragoras : DailyModuleBase
             {
                 for (var i = index - 1; i > -1; i--)
                 {
-                    var mandragora = ValidBattleNPCs.FirstOrDefault(x => ((GameObject*)x.Address)->GetNpcID() == mandragoraSeries[i]);
+                    var mandragora =
+                        ValidBattleNPCs.FirstOrDefault(
+                            x => ((GameObject*)x.Address)->GetNpcID() == mandragoraSeries[i]);
                     if (mandragora != null && !mandragora.IsDead && mandragora.IsValid())
                         return 0;
                 }

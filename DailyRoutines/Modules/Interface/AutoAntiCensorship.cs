@@ -24,10 +24,17 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoAntiCensorshipTitle", "AutoAntiCensorshipDescription", ModuleCategories.Interface)]
 public unsafe class AutoAntiCensorship : DailyModuleBase
 {
+    private enum State
+    {
+        OutsideTag,
+        InsideTag
+    }
+
     [Signature("E8 ?? ?? ?? ?? 48 8B C3 48 83 C4 ?? 5B C3 CC CC CC CC CC CC CC 48 83 EC")]
     private readonly delegate* unmanaged <nint, Utf8String*, void> GetFilteredUtf8String;
 
-    [Signature("E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? 48 8B 89 ?? ?? ?? ?? 48 85 C9 74 ?? 48 8B D3 E8 ?? ?? ?? ?? 48 8B C3")]
+    [Signature(
+        "E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? 48 8B 89 ?? ?? ?? ?? 48 85 C9 74 ?? 48 8B D3 E8 ?? ?? ?? ?? 48 8B C3")]
     private readonly delegate* unmanaged <long, long, long> LocalMessageDisplayHandler;
 
     [Signature("E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? 48 8B 81 ?? ?? ?? ?? 48 85 C0 74 ?? 48 8B D3")]
@@ -46,12 +53,16 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
     private static Hook<ProcessSendedChatDelegate>? ProcessSendedChatHook;
 
     private delegate long PartyFinderMessageDisplayDelegate(long a1, long a2);
+
     [Signature("48 89 5C 24 ?? 57 48 83 EC ?? 48 8D 99 ?? ?? ?? ?? 48 8B F9 48 8B CB E8",
                DetourName = nameof(PartyFinderMessageDisplayDetour))]
     private static Hook<PartyFinderMessageDisplayDelegate>? PartyFinderMessageDisplayHook;
 
     private delegate char LookingForGroupConditionReceiveEventDelegate(long a1, long a2);
-    [Signature("48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ?? ?? ?? ?? B8 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 2B E0 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 48 8B D9", DetourName = nameof(LookingForGroupConditionReceiveEventDetour))]
+
+    [Signature(
+        "48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ?? ?? ?? ?? B8 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 2B E0 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 48 8B D9",
+        DetourName = nameof(LookingForGroupConditionReceiveEventDetour))]
     private static Hook<LookingForGroupConditionReceiveEventDelegate>? LookingForGroupConditionReceiveEventHook;
 
     private static readonly char[] SpecialChars =
@@ -203,59 +214,90 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
         text = ReplaceSpecialChars(text, false);
 
         StringBuilder tempResult = new(text.Length);
-        bool isCensored;
-        do
+        var isCensored = true;
+
+        while (isCensored)
         {
             isCensored = false;
             var processedText = GetFilteredString(text);
             tempResult.Clear();
 
+
+            var state = State.OutsideTag;
             for (var i = 0; i < processedText.Length;)
             {
-                if (processedText[i] == '<')
+                switch (state)
                 {
-                    var end = processedText.IndexOf('>', i + 1);
-                    if (end != -1)
-                    {
-                        tempResult.Append(text.AsSpan(i, end - i + 1));
-                        i = end + 1;
-                        continue;
-                    }
-                }
-                else if (processedText[i] == '*')
-                {
-                    isCensored = true;
-                    var start = i;
-                    while (++i < processedText.Length && processedText[i] == '*') ;
-
-                    var length = i - start;
-                    if (length == 1 && IsChineseCharacter(text[start]))
-                    {
-                        var pinyin = PinyinHelper.GetPinyin(text[start].ToString()).ToLower();
-                        var filteredPinyin = GetFilteredString(pinyin);
-                        tempResult.Append(pinyin != filteredPinyin ? InsertDots(pinyin) : pinyin);
-                    }
-                    else
-                    {
-                        for (var j = 0; j < length; j++)
+                    case State.OutsideTag:
+                        if (processedText[i] == '<')
                         {
-                            tempResult.Append(text[start + j]);
-                            if (j < length - 1) tempResult.Append('.');
+                            state = State.InsideTag;
+                            var end = processedText.IndexOf('>', i);
+                            if (end != -1)
+                            {
+                                tempResult.Append(text.AsSpan(i, end - i + 1));
+                                i = end + 1;
+                            }
+                            else
+                            {
+                                tempResult.Append(text.AsSpan(i));
+                                i = processedText.Length;
+                            }
                         }
-                    }
-                }
-                else
-                {
-                    tempResult.Append(processedText[i++]);
+                        else if (processedText[i] == '*')
+                        {
+                            isCensored = true;
+                            var start = i;
+                            while (++i < processedText.Length && processedText[i] == '*') ;
+
+                            var length = i - start;
+                            if (length == 1 && IsChineseCharacter(text[start]))
+                            {
+                                var pinyin = PinyinHelper.GetPinyin(text[start].ToString()).ToLower();
+                                var filteredPinyin = GetFilteredString(pinyin);
+                                tempResult.Append(pinyin != filteredPinyin ? InsertDots(pinyin) : pinyin);
+                            }
+                            else
+                            {
+                                for (var j = 0; j < length; j++)
+                                {
+                                    tempResult.Append(text[start + j]);
+                                    if (j < length - 1) tempResult.Append('.');
+                                }
+                            }
+                        }
+                        else
+                        {
+                            tempResult.Append(processedText[i++]);
+                        }
+
+                        break;
+
+                    case State.InsideTag:
+                        var endTag = processedText.IndexOf('>', i);
+                        if (endTag != -1)
+                        {
+                            tempResult.Append(text.AsSpan(i, endTag - i + 1));
+                            i = endTag + 1;
+                            state = State.OutsideTag;
+                        }
+                        else
+                        {
+                            tempResult.Append(text.AsSpan(i));
+                            i = processedText.Length;
+                            state = State.OutsideTag;
+                        }
+
+                        break;
                 }
             }
 
             text = tempResult.ToString();
         }
-        while (isCensored);
 
         return ReplaceSpecialChars(text, true);
     }
+
 
     public static string ReplaceSpecialChars(string input, bool IsReversed)
     {

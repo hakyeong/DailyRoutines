@@ -14,13 +14,15 @@ public class AutoNotifyReadyCheck : DailyModuleBase
         Service.Chat.ChatMessage += OnChatMessage;
     }
 
-    private static void OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
+    private static void OnChatMessage(
+        XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
         var uintType = (uint)type;
         if (uintType != 57 && uintType != 313 && uintType != 569) return;
 
         var content = message.ExtractText();
-        if (!content.Contains("发起了准备确认") && !content.Contains(" a ready check") && !content.Contains("レディチェックを開始しました")) return;
+        if (!content.Contains("发起了准备确认") && !content.Contains(" a ready check") &&
+            !content.Contains("レディチェックを開始しました")) return;
 
         content = content.Trim('。');
         content = content.Trim('.');

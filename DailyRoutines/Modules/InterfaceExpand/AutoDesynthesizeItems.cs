@@ -68,7 +68,7 @@ public unsafe class AutoDesynthesizeItems : DailyModuleBase
     {
         if (IsOccupied()) return false;
         if (TryGetAddonByName<AtkUnitBase>("SalvageItemSelector", out var addon) &&
-            HelpersOm.IsAddonAndNodesReady(addon))
+            IsAddonAndNodesReady(addon))
         {
             var itemAmount = addon->AtkValues[9].Int;
             if (itemAmount == 0)
