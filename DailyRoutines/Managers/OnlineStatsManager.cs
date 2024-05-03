@@ -126,9 +126,9 @@ public class OnlineStatsManager : IDailyManager
     {
         var tasks = new List<Task<string>>(HardwareClasses.Length);
 
-        for (int i = 0; i < HardwareClasses.Length; i++)
+        for (var i = 0; i < HardwareClasses.Length; i++)
         {
-            int index = i; // Capture the index for the lambda expression
+            var index = i;
             tasks.Add(Task.Run(() => GetSingleHardwareValue(Properties[index], HardwareClasses[index], Conditions[index])));
         }
 
