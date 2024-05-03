@@ -5,8 +5,10 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Hooking;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
+using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -22,14 +24,10 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
         public byte? TextFlag2 { get; set; }
     }
 
-    private static readonly string[] TextInputWindows =
-    [
-        "LookingForGroupCondition", "ChatLog", "AOZNotebookFilterSettings",
-        "MountNoteBook", "MinionNoteBook", "ItemSearch", "PcSearchDetail", "Macro", "Emote",
-        "LookingForGroupNameSearch", "InputString", "RecipeNote", "GatheringNote", "FishGuide2", "RetainerInputString"
-    ];
-
-    private static readonly Dictionary<string, uint[]> TextInputWindowsNodes = [];
+    private delegate nint TextInputReceiveEventDelegate
+        (AtkComponentTextInput* component, ushort eventCase, uint a3, nint a4, ushort* a5);
+    [Signature("40 55 53 56 57 41 56 48 8D AC 24 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 48 8B 9D", DetourName = nameof(TextInputReceiveEventDetour))]
+    private static Hook<TextInputReceiveEventDelegate>? TextInputReceiveEventHook;
 
     private static readonly Dictionary<string, TextNodeInfo> TextWindows = new()
     {
@@ -40,11 +38,13 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
 
     public override void Init()
     {
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, TextInputWindows, OnTextInputAddon);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, TextWindows.Keys, OnTextAddon);
-
         AddConfig("FontScale", FontScale);
         FontScale = GetConfig<float>("FontScale");
+
+        Service.Hook.InitializeFromAttributes(this);
+        TextInputReceiveEventHook?.Enable();
+
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, TextWindows.Keys, OnTextAddon);
     }
 
     public override void ConfigUI()
@@ -54,11 +54,11 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputFloat("###FontScaleInput", ref FontScale, 0, 0, "%.1f",
-                             ImGuiInputTextFlags.EnterReturnsTrue))
+        ImGui.InputFloat("###FontScaleInput", ref FontScale, 0, 0, "%.1f");
+        if (ImGui.IsItemDeactivatedAfterEdit())
         {
             FontScale = (float)Math.Clamp(FontScale, 0.1, 5f);
-            UpdateConfig("FontScale", FontScale);
+            UpdateConfig(nameof(FontScale), FontScale);
         }
     }
 
@@ -72,33 +72,25 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
         ModifyTextNode(addon, info.NodeID, true);
     }
 
-    private static void OnTextInputAddon(AddonEvent type, AddonArgs? args)
+    private static nint TextInputReceiveEventDetour
+        (AtkComponentTextInput* component, ushort eventCase, uint a3, nint a4, ushort* a5)
     {
-        foreach (var window in TextInputWindows)
-        {
-            var addon = (AtkUnitBase*)Service.Gui.GetAddonByName(window);
-            if (addon == null) continue;
+        var original = TextInputReceiveEventHook.Original(component, eventCase, a3, a4, a5);
+        
+        if (eventCase == 9)
+            ModifyTextInputComponent(component);
 
-            if (!TryScanTextInputComponent(addon, out var nodeID)) continue;
-
-            foreach (var id in nodeID) ModifyTextInputComponent(addon, id, true);
-        }
+        return original;
     }
 
-    private static void ModifyTextInputComponent(AtkUnitBase* addon, uint nodeID, bool isAdd)
+    private static void ModifyTextInputComponent(AtkComponentTextInput* component)
     {
-        if (addon == null) return;
+        if (component == null) return;
 
-        var textInputNode = addon->GetNodeById(nodeID);
-        if (textInputNode == null) return;
-
-        var imeBackground = textInputNode->GetComponent()->UldManager.SearchNodeById(4);
+        var imeBackground = component->AtkComponentInputBase.AtkComponentBase.UldManager.SearchNodeById(4);
         if (imeBackground == null) return;
 
-        if (isAdd)
-            imeBackground->SetScale(FontScale, FontScale);
-        else
-            imeBackground->SetScale(1.5f, 1.5f);
+        imeBackground->SetScale(FontScale, FontScale);
     }
 
     private static void ModifyTextNode(AtkUnitBase* addon, uint nodeID, bool isAdd)
@@ -125,45 +117,8 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
         }
     }
 
-    private static bool TryScanTextInputComponent(AtkUnitBase* addon, out uint[] nodeID)
-    {
-        var addonName = Marshal.PtrToStringUTF8((nint)addon->Name);
-        if (TextInputWindowsNodes.TryGetValue(addonName, out var nodes))
-        {
-            nodeID = nodes;
-            return true;
-        }
-
-        nodeID = [];
-
-        if (addon == null) return false;
-
-        var nodeList = addon->UldManager.NodeList;
-
-        var nodeIDList = new List<uint>();
-        for (var i = 0; i < addon->UldManager.NodeListCount; i++)
-        {
-            var node = nodeList[i];
-            if (node == null) continue;
-            if ((int)node->Type <= 1000) continue;
-
-            var compNode = (AtkComponentNode*)node;
-            var componentInfo = compNode->Component->UldManager;
-            var objectInfo = (AtkUldComponentInfo*)componentInfo.Objects;
-            if (objectInfo == null) continue;
-
-            if (objectInfo->ComponentType == ComponentType.TextInput) nodeIDList.Add(node->NodeID);
-        }
-
-        nodeID = [.. nodeIDList];
-        TextInputWindowsNodes[addonName] = nodeID;
-
-        return nodeIDList.Count > 0;
-    }
-
     public override void Uninit()
     {
-        Service.AddonLifecycle.UnregisterListener(OnTextInputAddon);
         Service.AddonLifecycle.UnregisterListener(OnTextAddon);
 
         foreach (var window in TextWindows)
@@ -172,15 +127,6 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
             if (addon == null) continue;
 
             ModifyTextNode(addon, window.Value.NodeID, false);
-        }
-
-        foreach (var window in TextInputWindows)
-        {
-            var addon = (AtkUnitBase*)Service.Gui.GetAddonByName(window);
-            if (addon == null) continue;
-            if (!TryScanTextInputComponent(addon, out var nodeID)) continue;
-
-            foreach (var id in nodeID) ModifyTextInputComponent(addon, id, false);
         }
 
         base.Uninit();
