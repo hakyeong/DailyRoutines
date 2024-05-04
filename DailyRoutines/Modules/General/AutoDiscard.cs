@@ -160,7 +160,7 @@ public unsafe class AutoDiscard : DailyModuleBase
             ImGui.TableSetupColumn("UniqueName", ImGuiTableColumnFlags.None, 20);
             ImGui.TableSetupColumn("Items", ImGuiTableColumnFlags.None, 60);
             ImGui.TableSetupColumn("Behaviour", ImGuiTableColumnFlags.None, 20);
-            ImGui.TableSetupColumn("Operations", ImGuiTableColumnFlags.None, 30);
+            ImGui.TableSetupColumn("Operations", ImGuiTableColumnFlags.WidthFixed, 150);
 
             ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
 
@@ -348,16 +348,14 @@ public unsafe class AutoDiscard : DailyModuleBase
             if (ImGui.BeginChild("SearchItemChild", leftChildSize, true))
             {
                 ImGui.SetNextItemWidth(-1f);
-                ImGui.InputTextWithHint("###GameItemSearchInput", Service.Lang.GetText("PleaseSearch"),
-                                        ref ItemSearchInput, 100);
-
-                if (ImGui.IsItemDeactivatedAfterEdit())
+                if (ImGui.InputTextWithHint("###GameItemSearchInput", Service.Lang.GetText("PleaseSearch"), ref ItemSearchInput, 100))
                 {
-                    if (!string.IsNullOrWhiteSpace(ItemSearchInput) && ItemSearchInput.Length > 1)
+                    if (!string.IsNullOrWhiteSpace(ItemSearchInput))
                     {
-                        _ItemNames = ItemNames
-                                     .Where(x => x.Key.Contains(ItemSearchInput, StringComparison.OrdinalIgnoreCase))
-                                     .ToDictionary(x => x.Key, x => x.Value);
+                        _ItemNames = ItemNames.Where(x => x.Key.Contains(ItemSearchInput, StringComparison.OrdinalIgnoreCase))
+                                              .OrderBy(x => !x.Key.StartsWith(ItemSearchInput))
+                                              .Take(100)
+                                              .ToDictionary(x => x.Key, x => x.Value);
                     }
                 }
 
