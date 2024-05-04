@@ -15,6 +15,7 @@ public class PresetData
     public static Dictionary<uint, Item>? Gears { get; private set; }
     public static Dictionary<uint, Item>? Dyes { get; private set; } // 不包含特制
     public static Dictionary<uint, World>? CNWorlds { get; private set; }
+    public static Dictionary<uint, TerritoryType>? Zones { get; private set; }
 
     public static void Init()
     {
@@ -44,6 +45,11 @@ public class PresetData
         CNWorlds ??= LuminaCache.Get<World>()
                                 .Where(x => x.DataCenter.Value.Region == 5 && !string.IsNullOrWhiteSpace(x.Name.RawString) && !string.IsNullOrWhiteSpace(x.InternalName.RawString) && Utils.IsChineseString(x.Name.RawString))
                                 .ToDictionary(x => x.RowId, x => x);
+
+        Zones ??= LuminaCache.Get<TerritoryType>()
+                             .Where(x => !(string.IsNullOrWhiteSpace(x.Name.RawString) || x.PlaceNameIcon <= 0 ||
+                                           x.PlaceNameRegionIcon <= 0))
+                             .ToDictionary(x => x.RowId, x => x);
     }
 
     public static bool TryGetPlayerActions(uint rowID, out Action action)
@@ -63,4 +69,7 @@ public class PresetData
 
     public static bool TryGetCNWorld(uint rowID, out World world)
         => CNWorlds.TryGetValue(rowID, out world);
+
+    public static bool TryGetZone(uint rowID, out TerritoryType zone)
+        => Zones.TryGetValue(rowID, out zone);
 }
