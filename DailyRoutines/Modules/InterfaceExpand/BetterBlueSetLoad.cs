@@ -71,8 +71,6 @@ public unsafe class BetterBlueSetLoad : DailyModuleBase
                 {
                     CompareAndApply((int)i - 4);
                     CompareAndApply((int)i - 4);
-                    var i1 = i;
-                    // Service.Framework.RunOnTick(() => CompareAndApply((int)i1 - 4), TimeSpan.FromMilliseconds(100));
                 }
                     
                 ImGui.End();
