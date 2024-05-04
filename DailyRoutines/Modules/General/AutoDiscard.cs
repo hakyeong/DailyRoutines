@@ -160,7 +160,7 @@ public unsafe class AutoDiscard : DailyModuleBase
             ImGui.TableSetupColumn("UniqueName", ImGuiTableColumnFlags.None, 20);
             ImGui.TableSetupColumn("Items", ImGuiTableColumnFlags.None, 60);
             ImGui.TableSetupColumn("Behaviour", ImGuiTableColumnFlags.None, 20);
-            ImGui.TableSetupColumn("Operations", ImGuiTableColumnFlags.None, 30);
+            ImGui.TableSetupColumn("Operations", ImGuiTableColumnFlags.WidthFixed, 150);
 
             ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
 
