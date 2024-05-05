@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -10,7 +11,7 @@ using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
-using ECommons.Automation;
+using Dalamud.Plugin.Services;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -24,16 +25,8 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoExpertDeliveryTitle", "AutoExpertDeliveryDescription", ModuleCategories.InterfaceExpand)]
 public unsafe class AutoExpertDelivery : DailyModuleBase
 {
-    private delegate byte AtkUnitBaseCloseDelegate(AtkUnitBase* unitBase, byte a2);
-
-    private static AtkUnitBaseCloseDelegate? AtkUnitBaseClose;
-
     private static AtkUnitBase* AddonGrandCompanySupplyList =>
         (AtkUnitBase*)Service.Gui.GetAddonByName("GrandCompanySupplyList");
-
-    private static HashSet<uint> HQItems = [];
-
-    private static bool ConfigSkipWhenHQ;
 
     private static readonly List<InventoryType> ValidInventoryTypes =
     [
@@ -43,20 +36,20 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         InventoryType.ArmoryNeck, InventoryType.ArmoryWrist, InventoryType.ArmoryRings, InventoryType.ArmoryMainHand,
         InventoryType.ArmoryOffHand
     ];
+    private static HashSet<uint> HQItems = [];
+
+    private static bool SkipWhenHQ;
+    private static DateTime? _LastUpdate;
 
     public override void Init()
     {
-        AddConfig("SkipWhenHQ", ConfigSkipWhenHQ);
-        ConfigSkipWhenHQ = GetConfig<bool>("SkipWhenHQ");
+        AddConfig(nameof(SkipWhenHQ), SkipWhenHQ);
+        SkipWhenHQ = GetConfig<bool>("SkipWhenHQ");
 
-        AtkUnitBaseClose ??=
-            Marshal.GetDelegateForFunctionPointer<AtkUnitBaseCloseDelegate>(
-                Service.SigScanner.ScanText("40 53 48 83 EC 50 81 A1"));
+        _LastUpdate ??= DateTime.Now;
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = true };
         Overlay ??= new Overlay(this);
 
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", AlwaysYes);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "GrandCompanySupplyList", OnAddonSupplyList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "GrandCompanySupplyList", OnAddonSupplyList);
     }
@@ -73,61 +66,38 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
         ImGui.Separator();
 
-        ImGui.BeginDisabled(TaskManager.IsBusy);
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoExpertDelivery-SkipHQ"), ref ConfigSkipWhenHQ))
-            UpdateConfig("SkipWhenHQ", ConfigSkipWhenHQ);
+        ImGui.BeginDisabled(DateTime.Now - _LastUpdate <= TimeSpan.FromSeconds(1));
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoExpertDelivery-SkipHQ"), ref SkipWhenHQ))
+            UpdateConfig("SkipWhenHQ", SkipWhenHQ);
 
-        if (ImGui.Button(Service.Lang.GetText("Start"))) EnqueueAllItems();
+        if (ImGui.Button(Service.Lang.GetText("Start"))) Service.FrameworkManager.Register(OnUpdate);
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) Service.FrameworkManager.Unregister(OnUpdate);
     }
 
-    private void OnAddonSupplyList(AddonEvent type, AddonArgs args)
+    private static void OnUpdate(IFramework framework)
     {
-        Overlay.IsOpen = type switch
-        {
-            AddonEvent.PostSetup => true,
-            AddonEvent.PreFinalize => false,
-            _ => Overlay.IsOpen
-        };
+        if (!EzThrottler.Throttle("AutoExpertDelivery", 100)) return;
+        _LastUpdate = framework.LastUpdate;
+
+        // 点击确认提交页面
+        ConfirmRewardUI();
+
+        // 检查是否即将超限
+        CheckIfToReachCap();
+
+        // 点击确认提交 HQ 物品
+        ConfirmHQItemUI();
+
+        // 点击列表物品
+        ClickListUI();
     }
 
-    private void AlwaysYes(AddonEvent type, AddonArgs args)
+    private static void CheckIfToReachCap()
     {
-        if (!TaskManager.IsBusy) return;
-        Click.SendClick("select_yes");
-    }
-
-    private void EnqueueAllItems()
-    {
-        if (AddonGrandCompanySupplyList == null) return;
-
-        ClickGrandCompanySupplyList.Using((nint)AddonGrandCompanySupplyList).ExpertDelivery();
-
-        var listCount = ((AddonGrandCompanySupplyList*)AddonGrandCompanySupplyList)->ExpertDeliveryList->ListLength;
-        if (listCount == 0) return;
-
-        if (ConfigSkipWhenHQ)
-        {
-            HQItems.Clear();
-            HQItems = InventoryScanner(ValidInventoryTypes);
-        }
-
-        for (var i = 0; i < listCount; i++)
-        {
-            var index = i;
-            TaskManager.Enqueue(CheckIfReachTheCap);
-            TaskManager.Enqueue(ClickItem);
-            TaskManager.Enqueue(ClickHandIn);
-            TaskManager.Enqueue(() => Service.Log.Debug($"第 {index} 轮已结束"));
-        }
-    }
-
-    private bool? CheckIfReachTheCap()
-    {
-        if (AddonGrandCompanySupplyList == null || !IsAddonAndNodesReady(AddonGrandCompanySupplyList)) return false;
+        if (AddonGrandCompanySupplyList == null || !IsAddonAndNodesReady(AddonGrandCompanySupplyList)) return;
 
         var parts = Marshal.PtrToStringUTF8((nint)AtkStage.GetSingleton()->GetStringArrayData()[32]->StringArray[2])
                            .Split('/');
@@ -137,8 +107,8 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         if ((GrandCompany)grandCompany == GrandCompany.None)
         {
             Service.Log.Debug("玩家当前不属于任一大国防联军, 已停止");
-            TaskManager.Abort();
-            return true;
+            Service.FrameworkManager.Unregister(OnUpdate);
+            return;
         }
 
         var companySeals = InventoryManager.Instance()->GetCompanySeals(grandCompany);
@@ -147,65 +117,54 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         if (firstItemAmount + companySeals > capAmount)
         {
             Service.Log.Debug("军票即将超限, 已停止");
-            TaskManager.Abort();
+            Service.FrameworkManager.Unregister(OnUpdate);
         }
-
-        return true;
     }
 
-    private bool? ClickItem()
+    private static void ConfirmRewardUI()
     {
-        if (!EzThrottler.Throttle("AutoExpertDelivery", 100)) return false;
-
-        if (Service.Gui.GetAddonByName("GrandCompanySupplyReward") != nint.Zero) return false;
-        if (Service.Gui.GetAddonByName("SelectYesno") != nint.Zero) return false;
-
-        if (TryGetAddonByName<AddonGrandCompanySupplyList>("GrandCompanySupplyList", out var addon) &&
-            IsAddonAndNodesReady(&addon->AtkUnitBase))
-        {
-            var handler = new ClickGrandCompanySupplyList();
-            if (ConfigSkipWhenHQ)
-            {
-                var onlyHQLeft = true;
-                for (var i = 0; i < addon->ExpertDeliveryList->ListLength; i++)
-                {
-                    var itemID = addon->AtkUnitBase.AtkValues[i + 425].UInt;
-                    var isHQItem = HQItems.Contains(itemID);
-                    if (isHQItem) continue;
-
-                    handler.ItemEntry(i);
-                    onlyHQLeft = false;
-                    break;
-                }
-
-                if (onlyHQLeft) TaskManager.Abort();
-            }
-            else
-                handler.ItemEntry(0);
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private static bool? ClickHandIn()
-    {
-        if (!EzThrottler.Throttle("AutoExpertDelivery", 100)) return false;
-
-        if (Service.Gui.GetAddonByName("SelectYesno") != nint.Zero) return false;
+        if (!TryGetAddonByName<AtkUnitBase>("GrandCompanySupplyReward", out var addon) || !IsAddonAndNodesReady(addon))
+            return;
         if (AddonGrandCompanySupplyList != null && IsAddonAndNodesReady(AddonGrandCompanySupplyList))
-            CloseAddon(AddonGrandCompanySupplyList);
+            AddonGrandCompanySupplyList->Close(false);
 
-        if (TryGetAddonByName<AtkUnitBase>("GrandCompanySupplyReward", out var addon) &&
-            IsAddonAndNodesReady(addon))
+        ClickGrandCompanySupplyReward.Using((nint)addon).Deliver();
+    }
+
+    private static void ConfirmHQItemUI()
+    {
+        if (!TryGetAddonByName<AtkUnitBase>("SelectYesno", out var addon) || !IsAddonAndNodesReady(addon)) return;
+        Click.SendClick(SkipWhenHQ ? "select_no" : "select_yes");
+    }
+
+    private static void ClickListUI()
+    {
+        if (AddonGrandCompanySupplyList == null || !IsAddonAndNodesReady(AddonGrandCompanySupplyList)) return;
+
+        var addon = (AddonGrandCompanySupplyList*)AddonGrandCompanySupplyList;
+        var handler = new ClickGrandCompanySupplyList();
+        handler.ExpertDelivery();
+        if (SkipWhenHQ)
         {
-            ClickGrandCompanySupplyReward.Using((nint)addon).Deliver();
+            HQItems ??= InventoryScanner(ValidInventoryTypes);
 
-            return true;
+            var onlyHQLeft = true;
+            for (var i = 0; i < addon->ExpertDeliveryList->ListLength; i++)
+            {
+                var itemID = addon->AtkUnitBase.AtkValues[i + 425].UInt;
+                var isHQItem = HQItems.Contains(itemID);
+                if (isHQItem) continue;
+
+                handler.ItemEntry(i);
+                onlyHQLeft = false;
+                break;
+            }
+
+            if (onlyHQLeft)
+                Service.FrameworkManager.Unregister(OnUpdate);
         }
-
-        return false;
+        else
+            handler.ItemEntry(0);
     }
 
     public static HashSet<uint> InventoryScanner(IEnumerable<InventoryType> inventories)
@@ -228,7 +187,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
                 var item = slot->ItemID;
                 if (item == 0) continue;
 
-                if ((slot->Flags & InventoryItem.ItemFlags.HQ) == 0) continue;
+                if (!slot->Flags.HasFlag(InventoryItem.ItemFlags.HQ)) continue;
 
                 list.Add(item);
             }
@@ -237,14 +196,18 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         return list;
     }
 
-    public static void CloseAddon(AtkUnitBase* atkUnitBase, bool unknownBool = false)
+    private void OnAddonSupplyList(AddonEvent type, AddonArgs args)
     {
-        AtkUnitBaseClose(atkUnitBase, (byte)(unknownBool ? 1 : 0));
+        Overlay.IsOpen = type switch
+        {
+            AddonEvent.PostSetup => true,
+            AddonEvent.PreFinalize => false,
+            _ => Overlay.IsOpen
+        };
     }
 
     public override void Uninit()
     {
-        Service.AddonLifecycle.UnregisterListener(AlwaysYes);
         Service.AddonLifecycle.UnregisterListener(OnAddonSupplyList);
 
         base.Uninit();
