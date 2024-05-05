@@ -211,14 +211,6 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
         _LastItem = null;
         _LastGlamourItem = null;
 
-        if (args.Target is MenuTargetDefault targetDefault &&
-            (targetDefault.TargetCharacter != null ||
-             targetDefault.TargetContentId > 0 ||
-             targetDefault.TargetObject != null ||
-             targetDefault.TargetObjectId > 0 ||
-             string.IsNullOrWhiteSpace(targetDefault.TargetName)))
-            return;
-
         if (args.Target is MenuTargetInventory { TargetItem: not null } inventoryTarget)
         {
             var itemId = inventoryTarget.TargetItem.Value.ItemId;
@@ -316,7 +308,22 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
                 if (SearchCollector) args.AddMenuItem(CollectorItem);
                 if (SearchWiki) args.AddMenuItem(WikiItem);
                 break;
-            default:
+            case "InclusionShop":
+            case "CollectablesShop":
+            case "FreeCompanyExchange":
+            case "ShopExchangeCurrency":
+            case "ShopExchangeItem":
+            case "FreeCompanyCreditShop":
+            case "Shop":
+            case "SkyIslandExchange":
+            case "TripleTriadCoinExchange":
+            case "FreeCompanyChest":
+            case "MJIDisposeShop":
+            case "GrandCompanyExchange":
+            case "ReconstructionBuyback":
+            case "ShopExchangeCoin":
+            case "ItemSearch":
+            case "GrandCompanySupplyList":
                 if (_LastDetailItemID <= 0) return;
 
                 if (SearchCollector && PresetData.Gears.TryGetValue((uint)_LastDetailItemID, out _))
