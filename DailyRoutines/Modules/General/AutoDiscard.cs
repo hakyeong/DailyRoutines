@@ -599,7 +599,7 @@ public unsafe class AutoDiscard : DailyModuleBase
         return 0;
     }
 
-    public string GenerateUniqueName(string baseName)
+    private static string GenerateUniqueName(string baseName)
     {
         var existingNames = ModuleConfig.DiscardGroups.Select(x => x.UniqueName).ToHashSet();
 
