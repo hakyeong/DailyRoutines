@@ -239,6 +239,8 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
 
         switch (args.AddonName)
         {
+            case null:
+                return;
             case "ChatLog":
             {
                 var agent = Service.Gui.FindAgentInterface("ChatLog");
