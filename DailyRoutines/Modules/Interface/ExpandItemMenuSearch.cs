@@ -211,6 +211,14 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
         _LastItem = null;
         _LastGlamourItem = null;
 
+        if (args.Target is MenuTargetDefault targetDefault &&
+            (targetDefault.TargetCharacter != null ||
+             targetDefault.TargetContentId > 0 ||
+             targetDefault.TargetObject != null ||
+             targetDefault.TargetObjectId > 0 ||
+             string.IsNullOrWhiteSpace(targetDefault.TargetName)))
+            return;
+
         if (args.Target is MenuTargetInventory { TargetItem: not null } inventoryTarget)
         {
             var itemId = inventoryTarget.TargetItem.Value.ItemId;
