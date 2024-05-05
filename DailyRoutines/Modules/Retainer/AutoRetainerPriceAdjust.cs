@@ -253,6 +253,10 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
     [Signature("40 53 48 83 EC ?? 48 8B 0D ?? ?? ?? ?? 48 8B DA E8 ?? ?? ?? ?? 48 85 C0 74 ?? 4C 8B 00 48 8B C8 41 FF 90 ?? ?? ?? ?? 48 8B C8 BA ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 74 ?? 48 8D 53 ?? 41 B8 ?? ?? ?? ?? 48 8B C8 48 83 C4 ?? 5B E9 ?? ?? ?? ?? 48 83 C4 ?? 5B C3 CC CC CC CC CC CC CC CC CC CC 40 53", DetourName = nameof(MarketboardHistorDetour))]
     private readonly Hook<MarketboardPacketDelegate>? MarketboardHistoryHook;
 
+    private delegate nint MarketboardOfferingDelegate(nint a1, nint a2);
+    [Signature("40 53 48 83 EC ?? 48 8B 0D ?? ?? ?? ?? 48 8B DA E8 ?? ?? ?? ?? 48 85 C0 74 ?? 4C 8B 00 48 8B C8 41 FF 90 ?? ?? ?? ?? 48 8B C8 BA ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 74 ?? 4C 8B 00 48 8B D3 48 8B C8 48 83 C4 ?? 5B 49 FF 60 ?? 48 83 C4 ?? 5B C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 40 53", DetourName = nameof(MarketboardOfferingDetour))]
+    private readonly Hook<MarketboardOfferingDelegate>? MarketboardOfferingHook;
+
     private delegate nint InfoProxyItemSearchAddPageDelegate(byte* a1, byte* a2);
     [Signature("48 89 5C 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 0F B6 82 ?? ?? ?? ?? 48 8B FA 48 8B D9 38 41 19 74 54", DetourName = nameof(InfoProxyItemSearchAddPageDetour))]
     private readonly Hook<InfoProxyItemSearchAddPageDelegate>? InfoProxyItemSearchAddPageHook;
@@ -273,6 +277,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
     private static int CurrentItemIndex = -1;
     private static List<MarketBoardHistory.MarketBoardHistoryListing>? ItemHistoryList;
     private static List<MarketBoardCurrentOfferings.MarketBoardItemListing>? ItemSearchList;
+    private static int CurrentReceiveState = -1;
 
     private static readonly HashSet<ulong> PlayerRetainers = [];
 
@@ -305,6 +310,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         Service.Hook.InitializeFromAttributes(this);
         MarketboardHistoryHook?.Enable();
         InfoProxyItemSearchAddPageHook?.Enable();
+        MarketboardOfferingHook?.Enable();
     }
 
     #region UI
@@ -836,6 +842,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         if (InterruptByConflictKey()) return true;
         if (!ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(6948).Text.RawString)) return false;
 
+        ResetCurrentItemStats();
         TaskManager.EnqueueImmediate(ObtainItemData);
         return true;
     }
@@ -884,7 +891,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
             return true;
         }
 
-        if (ItemHistoryList == null)
+        if (ItemHistoryList == null || CurrentReceiveState != 8)
         {
             InfoItemSearch->RequestData();
             return false;
@@ -1261,6 +1268,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         ItemSearchList = null;
         CurrentItem = null;
         CurrentItemIndex = -1;
+        CurrentReceiveState = -1;
     }
     #endregion
 
@@ -1273,6 +1281,14 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         var data = MarketBoardHistory.Read(packetData);
         ItemHistoryList = data.HistoryListings;
         return MarketboardHistoryHook.Original(a1, packetData);
+    }
+
+    // 市场交易数据获取状态获取
+    private nint MarketboardOfferingDetour(nint a1, nint a2)
+    {
+        var result = MarketboardOfferingHook.Original(a1, a2);
+        CurrentReceiveState = (int)result;
+        return result;
     }
 
     // 当前市场数据获取
@@ -1331,6 +1347,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
                 if (InterruptByConflictKey()) return;
                 if (TaskManager.IsBusy) return;
 
+                ResetCurrentItemStats();
                 TaskManager.Enqueue(ObtainItemData);
                 break;
         }
