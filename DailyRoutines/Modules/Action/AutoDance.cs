@@ -8,7 +8,7 @@ using TaskManager = ECommons.Automation.TaskManager;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoDanceTitle", "AutoDanceDescription", ModuleCategories.Combat)]
+[ModuleDescription("AutoDanceTitle", "AutoDanceDescription", ModuleCategories.Action)]
 public unsafe class AutoDance : DailyModuleBase
 {
     private delegate bool UseActionSelfDelegate(

@@ -1548,6 +1548,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Zone" xml:space="preserve">
     <value>区域</value>
   </data>
+  <data name="Action" xml:space="preserve">
+    <value>技能</value>
+  </data>
   <data name="MacroIntoActionQueueDescription" xml:space="preserve">
     <value>启用后, 令使用 /ac 指令释放的技能进入技能队列</value>
   </data>

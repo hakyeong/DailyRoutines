@@ -15,7 +15,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoJoinExitDutyTitle", "AutoJoinExitDutyDescription", ModuleCategories.CombatExpand)]
+[ModuleDescription("AutoJoinExitDutyTitle", "AutoJoinExitDutyDescription", ModuleCategories.Combat)]
 public unsafe class AutoJoinExitDuty : DailyModuleBase
 {
     private static AtkUnitBase* ContentsFinder => (AtkUnitBase*)Service.Gui.GetAddonByName("ContentsFinder");

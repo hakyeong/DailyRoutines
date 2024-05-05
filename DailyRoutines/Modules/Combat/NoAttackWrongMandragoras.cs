@@ -16,7 +16,7 @@ using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("NoAttackWrongMandragorasTitle", "NoAttackWrongMandragorasDescription",
-                   ModuleCategories.CombatExpand)]
+                   ModuleCategories.Combat)]
 public unsafe class NoAttackWrongMandragoras : DailyModuleBase
 {
     private delegate byte IsTargetableDelegate(GameObject* gameObj);

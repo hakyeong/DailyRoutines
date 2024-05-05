@@ -4,8 +4,8 @@ public enum ModuleCategories
 {
     Base,
     General,
+    Action,
     Combat,
-    CombatExpand,
     Interface,
     InterfaceExpand,
     GoldSaucer,

@@ -6,7 +6,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("MacroIntoActionQueueTitle", "MacroIntoActionQueueDescription", ModuleCategories.Combat)]
+[ModuleDescription("MacroIntoActionQueueTitle", "MacroIntoActionQueueDescription", ModuleCategories.Action)]
 public unsafe class MacroIntoActionQueue : DailyModuleBase
 {
     private delegate bool UseActionMacroDelegate(ActionManager* actionManager, uint actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0, uint a5 = 0, uint a6 = 0, void* a7 = null);

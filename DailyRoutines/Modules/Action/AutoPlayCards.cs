@@ -16,7 +16,7 @@ using Action = Lumina.Excel.GeneratedSheets.Action;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoPlayCardsTitle", "AutoPlayCardsDescription", ModuleCategories.Combat)]
+[ModuleDescription("AutoPlayCardsTitle", "AutoPlayCardsDescription", ModuleCategories.Action)]
 public unsafe class AutoPlayCards : DailyModuleBase
 {
     private delegate bool UseActionSelfDelegate(

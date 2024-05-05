@@ -11,7 +11,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoPreventDuplicateStatusTitle", "AutoPreventDuplicateStatusDescription", ModuleCategories.Combat)]
+[ModuleDescription("AutoPreventDuplicateStatusTitle", "AutoPreventDuplicateStatusDescription", ModuleCategories.Action)]
 public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
 {
     private enum DetectType

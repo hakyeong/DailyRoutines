@@ -7,7 +7,7 @@ using ECommons.Automation;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoQTETitle", "AutoQTEDescription", ModuleCategories.CombatExpand)]
+[ModuleDescription("AutoQTETitle", "AutoQTEDescription", ModuleCategories.Combat)]
 public class AutoQTE : DailyModuleBase
 {
     private static readonly string[] QTETypes = ["_QTEKeep", "_QTEMash", "_QTEKeepTime", "_QTEButton"];
