@@ -392,7 +392,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>自动无人岛采集</value>
   </data>
   <data name="AutoMountDescription" xml:space="preserve">
-    <value>区域变更或结束采集后, 自动上坐骑</value>
+    <value>启用并配置完成后, 在满足指定条件时, 自动上坐骑</value>
   </data>
   <data name="AutoMountTitle" xml:space="preserve">
     <value>自动上坐骑</value>
