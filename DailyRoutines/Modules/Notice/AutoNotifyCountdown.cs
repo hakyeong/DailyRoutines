@@ -24,7 +24,7 @@ public class AutoNotifyCountdown : DailyModuleBase
         AddConfig("OnlyNotifyWhenBackground", true);
         ConfigOnlyNotifyWhenBackground = GetConfig<bool>("OnlyNotifyWhenBackground");
 
-        Countdown ??= LuminaCache.GetRow<LogMessage>(5225).Text.Payloads
+        Countdown ??= LuminaCache.GetRow<LogMessage>(5255).Text.Payloads
                                  .Where(x => x.PayloadType == PayloadType.Text)
                                  .Select(text => text.RawString).ToList();
 
@@ -49,7 +49,7 @@ public class AutoNotifyCountdown : DailyModuleBase
         if (uintType != 185) return;
 
         var msg = message.TextValue;
-        if (Countdown.All(s => msg.Contains(msg)))
+        if (Countdown.All(s => msg.Contains(s)))
             WinToast.Notify(Service.Lang.GetText("AutoNotifyCountdown-NotificationTitle"), message.ExtractText());
     }
 
