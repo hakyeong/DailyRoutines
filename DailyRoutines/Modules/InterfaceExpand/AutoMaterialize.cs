@@ -9,6 +9,7 @@ using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Colors;
 using Dalamud.Memory;
 using ECommons.Automation;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -69,6 +70,7 @@ public class AutoMaterialize : DailyModuleBase
 
     private unsafe bool? StartARound()
     {
+        if (!EzThrottler.Throttle("AutoMaterialize")) return false;
         if (Service.Condition[ConditionFlag.Mounted])
         {
             TaskManager.Abort();
@@ -76,39 +78,36 @@ public class AutoMaterialize : DailyModuleBase
         }
 
         if (IsOccupied()) return false;
-        if (TryGetAddonByName<AtkUnitBase>("Materialize", out var addon) && IsAddonAndNodesReady(addon))
+        if (!TryGetAddonByName<AtkUnitBase>("Materialize", out var addon) || !IsAddonAndNodesReady(addon)) return false;
+
+        var firstItemData = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[3].String);
+        if (string.IsNullOrEmpty(firstItemData))
         {
-            var firstItemData = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[3].String);
-            if (string.IsNullOrEmpty(firstItemData))
-            {
-                TaskManager.Abort();
-                return true;
-            }
-
-            var parts = firstItemData.Split(',');
-            if (parts.Length == 0)
-            {
-                TaskManager.Abort();
-                return true;
-            }
-
-            foreach (var part in parts)
-                if (part == "100%")
-                {
-                    var agent = AgentModule.Instance()->GetAgentByInternalId(AgentId.Materialize);
-                    if (agent == null) return false;
-                    AgentHelper.SendEvent(agent, 0, 2, 0);
-
-                    TaskManager.DelayNext(1500);
-                    TaskManager.Enqueue(StartARound);
-                    return true;
-                }
-
             TaskManager.Abort();
             return true;
         }
 
-        return false;
+        var parts = firstItemData.Split(',');
+        if (parts.Length == 0)
+        {
+            TaskManager.Abort();
+            return true;
+        }
+
+        foreach (var part in parts)
+            if (part == "100%")
+            {
+                var agent = AgentModule.Instance()->GetAgentByInternalId(AgentId.Materialize);
+                if (agent == null) return false;
+                AgentHelper.SendEvent(agent, 0, 2, 0);
+
+                TaskManager.DelayNext(1500);
+                TaskManager.Enqueue(StartARound);
+                return true;
+            }
+
+        TaskManager.Abort();
+        return true;
     }
 
     public override void Uninit()
