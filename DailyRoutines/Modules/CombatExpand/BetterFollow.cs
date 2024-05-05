@@ -80,7 +80,7 @@ public unsafe class BetterFollow : DailyModuleBase
 
     public override void Init()
     {
-        ModuleConfig = LoadConfig<Config>();
+        ModuleConfig = LoadConfig<Config>() ?? new();
 
         #region Data
 
