@@ -630,7 +630,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>仅未操作状态下</value>
   </data>
   <data name="AutoRefreshPartyFinder-RefreshInterval" xml:space="preserve">
-    <value>刷新间隔</value>
+    <value>刷新间隔({0}秒)</value>
   </data>
   <data name="AutoRefreshPartyFinderDescription" xml:space="preserve">
     <value>打开队员招募后, 每经过固定间隔时间时, 自动刷新一次招募板</value>
@@ -1374,9 +1374,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Run" xml:space="preserve">
     <value>停止</value>
   </data>
-  <data name="AutoRefreshPartyFinder-NextRefreshTime" xml:space="preserve">
-    <value>({0}秒)</value>
-  </data>
   <data name="AutoRetainerEntrustDups-AddCommand" xml:space="preserve">
     <value>添加 /pdr {0} 指令 </value>
   </data>
@@ -1520,5 +1517,35 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoRetainerPriceAdjust-OperationDelay" xml:space="preserve">
     <value>操作延迟 (毫秒)</value>
+  </data>
+  <data name="AutoNotifySPPlayers-DisplayInfo" xml:space="preserve">
+    <value>名称:{0} 在线状态:{1} 区域:{2} 指令: {3}</value>
+  </data>
+  <data name="AutoNotifySPPlayers-ExtraCommand" xml:space="preserve">
+    <value>额外指令</value>
+  </data>
+  <data name="AutoNotifySPPlayers-ExtraCommandInputHint" xml:space="preserve">
+    <value>文本指令输入需要以 / 作为开头</value>
+  </data>
+  <data name="AutoNotifySPPlayers-NameInputHint" xml:space="preserve">
+    <value>支持正则, 正则输入请使用 / 作为开头</value>
+  </data>
+  <data name="AutoNotifySPPlayers-NoticeMessage" xml:space="preserve">
+    <value>发现了目标玩家: {0}</value>
+  </data>
+  <data name="AutoNotifySPPlayers-OnlineStatus" xml:space="preserve">
+    <value>在线状态</value>
+  </data>
+  <data name="AutoNotifySPPlayers-SelectedEntryAmount" xml:space="preserve">
+    <value>已选择 {0} 项</value>
+  </data>
+  <data name="AutoNotifySPPlayersDescription" xml:space="preserve">
+    <value>启用并配置完成后, 当指定的特殊玩家出现后, 发送提醒信息并执行自定义的文本指令</value>
+  </data>
+  <data name="AutoNotifySPPlayersTitle" xml:space="preserve">
+    <value>自动通知特殊玩家出现</value>
+  </data>
+  <data name="Zone" xml:space="preserve">
+    <value>区域</value>
   </data>
 </root>

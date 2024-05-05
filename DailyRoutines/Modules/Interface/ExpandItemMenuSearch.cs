@@ -6,7 +6,6 @@ using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Gui.ContextMenu;
-using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
@@ -52,9 +51,8 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
     private static ulong _LastHoveredItemID;
     private static ulong _LastDetailItemID;
 
-    private static bool _IsOnCharacterInspect;
-    private static bool _IsOnCabinetWithdraw;
-    private static bool _IsOnMiragePrismPrismBoxCrystallize;
+    private static bool _IsOnItemHover;
+    private static bool _IsOnItemDetail;
     private static readonly HashSet<InventoryItem> _CharacterInspectItems = [];
 
     private static bool SearchCollector;
@@ -88,11 +86,8 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
         Service.FrameworkManager.Register(OnUpdate);
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "CharacterInspect", OnAddon);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize,
-                                                ["CabinetWithdraw", "CharacterInspect,MiragePrismPrismBoxCrystallize"],
-                                                OnAddon);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup,
-                                                ["CabinetWithdraw", "MiragePrismPrismBoxCrystallize"], OnAddon);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, ["CabinetWithdraw", "Shop", "InclusionShop", "CollectablesShop", "FreeCompanyExchange", "FreeCompanyCreditShop", "ShopExchangeCurrency", "ShopExchangeItem", "SkyIslandExchange", "TripleTriadCoinExchange", "FreeCompanyChest", "MJIDisposeShop", "GrandCompanyExchange", "ReconstructionBuyback", "ShopExchangeCoin", "MiragePrismPrismBoxCrystallize", "ItemSearch", "GrandCompanySupplyList"], OnAddon);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, ["CabinetWithdraw", "CharacterInspect", "MiragePrismPrismBoxCrystallize", "Shop", "InclusionShop", "CollectablesShop", "FreeCompanyExchange", "FreeCompanyCreditShop", "ShopExchangeCurrency", "ShopExchangeItem", "SkyIslandExchange", "TripleTriadCoinExchange", "FreeCompanyChest", "MJIDisposeShop", "GrandCompanyExchange", "ReconstructionBuyback", "ShopExchangeCoin", "ItemSearch", "GrandCompanySupplyList"], OnAddon);
         _CharacterInspectItems.Clear();
     }
 
@@ -134,11 +129,11 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
             case AddonEvent.PostSetup:
                 switch (args.AddonName)
                 {
-                    case "CabinetWithdraw":
-                        _IsOnCabinetWithdraw = true;
-                        break;
                     case "MiragePrismPrismBoxCrystallize":
-                        _IsOnMiragePrismPrismBoxCrystallize = true;
+                        _IsOnItemHover = true;
+                        break;
+                    default:
+                        _IsOnItemDetail = true;
                         break;
                 }
 
@@ -159,7 +154,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
                                 _CharacterInspectItems.Add(*item);
                             }
 
-                            _IsOnCharacterInspect = true;
+                            _IsOnItemHover = true;
                         });
                         break;
                 }
@@ -168,19 +163,19 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
             case AddonEvent.PreFinalize:
                 switch (args.AddonName)
                 {
-                    case "CabinetWithdraw":
-                        _IsOnCabinetWithdraw = false;
-                        break;
                     case "CharacterInspect":
                         TaskManager.Enqueue(() =>
                         {
-                            _IsOnCharacterInspect = false;
+                            _IsOnItemHover = false;
                             _LastHoveredItemID = 0;
                             _CharacterInspectItems.Clear();
                         });
                         break;
                     case "MiragePrismPrismBoxCrystallize":
-                        _IsOnMiragePrismPrismBoxCrystallize = false;
+                        _IsOnItemHover = false;
+                        break;
+                    default:
+                        _IsOnItemDetail = false;
                         break;
                 }
 
@@ -190,7 +185,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
 
     private static void OnHoveredItemChanged(object? sender, ulong id)
     {
-        if (!_IsOnCharacterInspect && !_IsOnMiragePrismPrismBoxCrystallize) return;
+        if (!_IsOnItemHover) return;
         var contextMenu = (AtkUnitBase*)Service.Gui.GetAddonByName("ContextMenu");
         if (contextMenu is null || !contextMenu->IsVisible)
         {
@@ -202,7 +197,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
 
     private static void OnUpdate(IFramework framework)
     {
-        if (!_IsOnCabinetWithdraw) return;
+        if (!_IsOnItemDetail) return;
         var agent = AgentItemDetail.Instance();
         if (agent == null) return;
 
@@ -213,6 +208,9 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
 
     private static void OnMenuOpened(MenuOpenedArgs args)
     {
+        _LastItem = null;
+        _LastGlamourItem = null;
+
         if (args.Target is MenuTargetInventory { TargetItem: not null } inventoryTarget)
         {
             var itemId = inventoryTarget.TargetItem.Value.ItemId;
@@ -241,29 +239,8 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
 
         switch (args.AddonName)
         {
-            case "ItemSearch" when args.AgentPtr != nint.Zero:
-            {
-                _LastGlamourItem = null;
-
-                var itemID = (uint)AgentContext.Instance()->UpdateCheckerParam;
-                if (SearchCollector && PresetData.Gears.TryGetValue(itemID, out var searchCollectorItem))
-                {
-                    _LastItem = searchCollectorItem;
-                    args.AddMenuItem(CollectorItem);
-                }
-
-                if (SearchWiki && LuminaCache.TryGetRow<Item>(itemID, out var searchWikiItem))
-                {
-                    _LastItem = searchWikiItem;
-                    args.AddMenuItem(WikiItem);
-                }
-
-                break;
-            }
             case "ChatLog":
             {
-                _LastGlamourItem = null;
-
                 var agent = Service.Gui.FindAgentInterface("ChatLog");
                 if (agent == nint.Zero || !IsValidChatLogContext(agent)) return;
 
@@ -283,42 +260,32 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
                 break;
             }
             case "MiragePrismMiragePlate":
-                _LastGlamourItem = null;
-
                 var agentDetail = AgentMiragePrismPrismItemDetail.Instance();
                 if (agentDetail == null) return;
-
-                if (!PresetData.Gears.TryGetValue(agentDetail->ItemId, out var mirageItem)) return;
-                _LastItem = mirageItem;
+                if (!PresetData.Gears.TryGetValue(agentDetail->ItemId, out _LastItem)) return;
 
                 if (SearchCollector) args.AddMenuItem(CollectorItem);
                 if (SearchWiki) args.AddMenuItem(WikiItem);
                 break;
             case "ColorantColoring":
-                _LastGlamourItem = null;
-
                 var agentColoring = AgentColorant.Instance();
                 if (agentColoring == null) return;
-
-                if (!PresetData.Dyes.TryGetValue(agentColoring->CharaView.SelectedStain, out var stainItem)) return;
-                _LastItem = stainItem;
+                if (!PresetData.Dyes.TryGetValue(agentColoring->CharaView.SelectedStain, out _LastItem)) return;
 
                 if (SearchWiki) args.AddMenuItem(WikiItem);
                 break;
             case "CabinetWithdraw":
-                _LastGlamourItem = null;
-
-                if (!PresetData.Gears.TryGetValue((uint)_LastDetailItemID, out var cabinetItem)) return;
-                _LastItem = cabinetItem;
+                if (_LastDetailItemID <= 0) return;
+                if (!PresetData.Gears.TryGetValue((uint)_LastDetailItemID, out _LastItem)) return;
 
                 if (SearchCollector) args.AddMenuItem(CollectorItem);
                 if (SearchWiki) args.AddMenuItem(WikiItem);
                 break;
             case "CharacterInspect":
             {
+                if (!PresetData.Gears.TryGetValue((uint)_LastHoveredItemID, out var inspectItem)) return;
                 var glamourID = _CharacterInspectItems.FirstOrDefault(x => x.ItemID == _LastHoveredItemID).GlamourID;
 
-                if (!PresetData.Gears.TryGetValue((uint)_LastHoveredItemID, out var inspectItem)) return;
                 _LastItem = inspectItem;
                 _LastGlamourItem = PresetData.Gears.GetValueOrDefault(glamourID, _LastItem);
 
@@ -328,7 +295,6 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
                 break;
             }
             case "MiragePrismPrismBoxCrystallize":
-            {
                 var itemId = AgentMiragePrismPrismItemDetail.Instance()->ItemId;
                 PresetData.Gears.TryGetValue(itemId, out var miragePrismPrismBoxCrystallizeItem);
                 PresetData.Gears.TryGetValue((uint)_LastHoveredItemID, out var miragePrismPrismBoxItem);
@@ -340,7 +306,14 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
                 if (SearchCollector) args.AddMenuItem(CollectorItem);
                 if (SearchWiki) args.AddMenuItem(WikiItem);
                 break;
-            }
+            default:
+                if (_LastDetailItemID <= 0) return;
+
+                if (SearchCollector && PresetData.Gears.TryGetValue((uint)_LastDetailItemID, out _))
+                    args.AddMenuItem(CollectorItem);
+                if (SearchWiki && LuminaCache.TryGetRow((uint)_LastDetailItemID, out _LastItem))
+                    args.AddMenuItem(WikiItem);
+                break;
         }
     }
 

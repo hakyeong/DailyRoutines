@@ -861,7 +861,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         CurrentItem.ItemID = item.RowId;
         CurrentItem.IsHQ = itemNameText.Contains(''); // HQ 符号
         InfoItemSearch->SearchItemId = CurrentItem.ItemID;
-
+        
         TaskManager.EnqueueImmediate(ObtainMarketData);
         return true;
     }
@@ -869,6 +869,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
     // 获取市场数据
     private bool? ObtainMarketData()
     {
+        InfoItemSearch->ClearData();
         if (!EzThrottler.Throttle("AutoRetainerPriceAdjust-ObtainMarketData")) return false;
         if (InfoItemSearch->SearchItemId == 0)
         {
@@ -1267,12 +1268,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
     // 历史交易数据获取
     private nint MarketboardHistorDetour(nint a1, nint packetData)
     {
-        if (ItemHistoryList == null)
-        {
-            ItemHistoryList = [];
-            InfoItemSearch->ClearData();
-            InfoItemSearch->RequestData();
-        }
+        ItemHistoryList ??= [];
 
         var data = MarketBoardHistory.Read(packetData);
         ItemHistoryList = data.HistoryListings;
@@ -1282,12 +1278,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
     // 当前市场数据获取
     private nint InfoProxyItemSearchAddPageDetour(byte* a1, byte* packetData)
     {
-        if (ItemSearchList == null)
-        {
-            ItemSearchList = [];
-            InfoItemSearch->ClearData();
-            InfoItemSearch->RequestData();
-        }
+        ItemSearchList ??= [];
         var data = MarketBoardCurrentOfferings.Read((nint)packetData);
         ItemSearchList.AddRange(data.ItemListings);
 

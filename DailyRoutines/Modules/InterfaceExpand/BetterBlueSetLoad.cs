@@ -70,8 +70,7 @@ public unsafe class BetterBlueSetLoad : DailyModuleBase
                 if (ImGuiOm.ButtonSelectable($"{Service.Lang.GetText("BetterBlueSetLoad-ApplyPreset", i - 3)}"))
                 {
                     CompareAndApply((int)i - 4);
-                    var i1 = i;
-                    Service.Framework.RunOnTick(() => CompareAndApply((int)i1 - 4), TimeSpan.FromMilliseconds(100));
+                    CompareAndApply((int)i - 4);
                 }
                     
                 ImGui.End();
