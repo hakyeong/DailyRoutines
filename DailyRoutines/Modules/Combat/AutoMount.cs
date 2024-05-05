@@ -11,7 +11,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoMountTitle", "AutoMountDescription", ModuleCategories.General)]
+[ModuleDescription("AutoMountTitle", "AutoMountDescription", ModuleCategories.Combat)]
 public unsafe class AutoMount : DailyModuleBase
 {
     private static AtkUnitBase* NowLoading => (AtkUnitBase*)Service.Gui.GetAddonByName("NowLoading");

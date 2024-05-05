@@ -11,7 +11,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Object;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoDismountTitle", "AutoDismountDescription", ModuleCategories.General)]
+[ModuleDescription("AutoDismountTitle", "AutoDismountDescription", ModuleCategories.Combat)]
 public unsafe class AutoDismount : DailyModuleBase
 {
     private delegate bool UseActionSelfDelegate(
