@@ -24,6 +24,9 @@ public static unsafe class AddonHelper
     public delegate byte* GetAtkValueStringDelegate(nint address);
     public static GetAtkValueStringDelegate? GetAtkValueString;
 
+    public delegate AtkUnitBase* GetAddonByNodeDelegate(nint atkstageInstance, AtkComponentNode* ownerNode);
+    public static GetAddonByNodeDelegate? GetAddonByNode;
+
     public static readonly AtkValue ZeroAtkValue = new() { Type = 0, Int = 0 };
 
     internal static void Init()
@@ -31,6 +34,7 @@ public static unsafe class AddonHelper
         FireCallback ??= Marshal.GetDelegateForFunctionPointer<FireCallbackDelegate>(Service.SigScanner.ScanText("E8 ?? ?? ?? ?? 8B 4C 24 20 0F B6 D8"));
         GetAtkValueInt ??= Marshal.GetDelegateForFunctionPointer<GetAtkValueIntDelegate>(Service.SigScanner.ScanText("E8 ?? ?? ?? ?? C6 45 ?? ?? 8D 48"));
         GetAtkValueString ??= Marshal.GetDelegateForFunctionPointer<GetAtkValueStringDelegate>(Service.SigScanner.ScanText("E8 ?? ?? ?? ?? 33 D2 48 8D 8B ?? ?? ?? ?? 41 B8 ?? ?? ?? ?? 48 8B F8"));
+        GetAddonByNode ??= Marshal.GetDelegateForFunctionPointer<GetAddonByNodeDelegate>(Service.SigScanner.ScanText("48 83 EC ?? 4C 8B D2 4C 8B D9 48 85 D2 75"));
     }
 
     #region Callback
