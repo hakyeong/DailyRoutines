@@ -1557,4 +1557,13 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="MacroIntoActionQueueTitle" xml:space="preserve">
     <value>宏进入技能队列</value>
   </data>
+  <data name="AutoNumericInputMax-InterruptHelp" xml:space="preserve">
+    <value>按下一次打断热键会使模块在接下来的 10 秒内都不再尝试修改数字输入框值</value>
+  </data>
+  <data name="AutoNumericInputMaxDescription" xml:space="preserve">
+    <value>启用后, 令所有数字输入框始终为最大值</value>
+  </data>
+  <data name="AutoNumericInputMaxTitle" xml:space="preserve">
+    <value>自动数字输入框最大值</value>
+  </data>
 </root>
