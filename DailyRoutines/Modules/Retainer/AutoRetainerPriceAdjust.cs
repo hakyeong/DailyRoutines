@@ -16,6 +16,7 @@ using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Network.Structures;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
@@ -208,6 +209,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
     #region 游戏界面
     private static AtkUnitBase* SelectString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
     private static AtkUnitBase* RetainerList => (AtkUnitBase*)Service.Gui.GetAddonByName("RetainerList");
+    private static AtkUnitBase* RetainerSell => (AtkUnitBase*)Service.Gui.GetAddonByName("RetainerSell");
     private static AtkUnitBase* RetainerSellList => (AtkUnitBase*)Service.Gui.GetAddonByName("RetainerSellList");
     private static AtkUnitBase* ItemSearchResult => (AtkUnitBase*)Service.Gui.GetAddonByName("ItemSearchResult");
     private static AtkUnitBase* ItemHistory => (AtkUnitBase*)Service.Gui.GetAddonByName("ItemHistory");
@@ -725,6 +727,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
     }
     #endregion
 
+    #region 队列
     // 为所有雇员改价
     private void EnqueueAllRetainersInList()
     {
@@ -741,12 +744,12 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
             TaskManager.Enqueue(() =>
             {
                 if (RetainerSellList == null) return false;
-                
+
                 for (var i1 = 0; i1 < marketItemCount; i1++)
                 {
                     var index1 = i1;
                     TaskManager.Insert(() => ClickSellingItem(index1));
-                    if (ModuleConfig.OperationDelay > 0) TaskManager.InsertDelayNext(ModuleConfig.OperationDelay); 
+                    if (ModuleConfig.OperationDelay > 0) TaskManager.InsertDelayNext(ModuleConfig.OperationDelay);
                 }
                 return true;
             });
@@ -778,8 +781,9 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
             if (ModuleConfig.OperationDelay > 0) TaskManager.DelayNext(ModuleConfig.OperationDelay);
         }
     }
+    #endregion
 
-    #region ClickOperations
+    #region 点击
     // 点击特定雇员
     private bool? ClickSpecificRetainer(int index)
     {
@@ -836,7 +840,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         if (InterruptByConflictKey()) return true;
         if (!ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(6948).Text.RawString)) return false;
 
-        ResetCurrentItemStats();
+        ResetCurrentItemStats(false);
         TaskManager.EnqueueImmediate(ObtainItemData);
         return true;
     }
@@ -946,23 +950,15 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         return true;
     }
 
-    // 填入最低价格
+    // 填入价格
     private bool? FillPrice()
     {
         if (InterruptByConflictKey()) return true;
 
         if (ItemSearchResult != null) return false;
-        if (!TryGetAddonByName<AddonRetainerSell>("RetainerSell", out var addon) || 
-            !IsAddonAndNodesReady(&addon->AtkUnitBase))
-            return false;
+        if (RetainerSell == null || !IsAddonAndNodesReady(RetainerSell)) return false;
 
-        var ui = &addon->AtkUnitBase;
-
-        var itemPreset = ModuleConfig.ItemConfigs.TryGetValue(CurrentItem.ToString(), out var _itemPreset) ? _itemPreset : ModuleConfig.ItemConfigs[new ItemKey(0, CurrentItem.IsHQ).ToString()];
-        var origPrice = ui->AtkValues[5].Int;
-        var itemPayload = new SeStringBuilder().AddItemLink(CurrentItem.ItemID, CurrentItem.IsHQ).Build();
-        var retainerName = new SeStringBuilder()
-                           .AddUiForeground(Marshal.PtrToStringUTF8((nint)RetainerManager.Instance()->GetActiveRetainer()->Name), 62).Build();
+        var itemDetails = GetItemDetails();
         if (!TryGetPriceCache(CurrentItem.ItemID, CurrentItem.IsHQ, out var marketPrice) &&
             !TryGetPriceCache(CurrentItem.ItemID, !CurrentItem.IsHQ, out marketPrice))
         {
@@ -970,7 +966,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
             {
                 var message = new SeStringBuilder().Append(DRPrefix()).Append(
                     Service.Lang.GetSeString("AutoRetainerPriceAdjust-NoPriceDataFound",
-                                             itemPayload, retainerName)).Build();
+                                             itemDetails.ItemPayload, itemDetails.RetainerName)).Build();
                 Service.Chat.Print(message);
             }
 
@@ -979,29 +975,30 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         }
 
         var modifiedPrice = marketPrice;
-        switch (itemPreset.AdjustBehavior)
+        switch (itemDetails.Preset.AdjustBehavior)
         {
             case AdjustBehavior.固定值:
-                modifiedPrice = (uint)((int)marketPrice - itemPreset.AdjustValues[AdjustBehavior.固定值]);
+                modifiedPrice = (uint)((int)marketPrice - itemDetails.Preset.AdjustValues[AdjustBehavior.固定值]);
                 break;
             case AdjustBehavior.百分比:
-                modifiedPrice = (uint)(marketPrice * (1 - (itemPreset.AdjustValues[AdjustBehavior.百分比] / 100)));
+                modifiedPrice = (uint)(marketPrice * 
+                                       (1 - (itemDetails.Preset.AdjustValues[AdjustBehavior.百分比] / 100)));
                 break;
         }
 
         // 价格不变
-        if (modifiedPrice == origPrice)
+        if (modifiedPrice == itemDetails.OrigPrice)
         {
             OperateAndReturn(false);
             return true;
         }
 
         // 大于可接受降价值
-        if (itemPreset.PriceMaxReduction != 0 &&
-            Math.Abs(origPrice - modifiedPrice) > itemPreset.PriceMaxReduction &&
-            itemPreset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.大于可接受降价值)))
+        if (itemDetails.Preset.PriceMaxReduction != 0 &&
+            Math.Abs(itemDetails.OrigPrice - modifiedPrice) > itemDetails.Preset.PriceMaxReduction &&
+            itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.大于可接受降价值)))
         {
-            var behavior = itemPreset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.大于可接受降价值)).Value;
+            var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.大于可接受降价值)).Value;
             NotifyAbortCondition(AbortCondition.大于可接受降价值);
             EnqueueAbortBehavior(behavior);
             return true;
@@ -1010,29 +1007,30 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         // 低于收购价
         if (ItemsSellPrice.TryGetValue(CurrentItem.ItemID, out var buyingPrice) &&
             modifiedPrice < buyingPrice &&
-            itemPreset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.低于收购价)))
+            itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.低于收购价)))
         {
-            var behavior = itemPreset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.低于收购价)).Value;
+            var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault
+                (x => x.Key.HasFlag(AbortCondition.低于收购价)).Value;
             NotifyAbortCondition(AbortCondition.低于收购价);
             EnqueueAbortBehavior(behavior);
             return true;
         }
 
         // 低于最小值
-        if (modifiedPrice < itemPreset.PriceMinimum &&
-            itemPreset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.低于最小值)))
+        if (modifiedPrice < itemDetails.Preset.PriceMinimum &&
+            itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.低于最小值)))
         {
-            var behavior = itemPreset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.低于最小值)).Value;
+            var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.低于最小值)).Value;
             NotifyAbortCondition(AbortCondition.低于最小值);
             EnqueueAbortBehavior(behavior);
             return true;
         }
 
         // 低于预期值
-        if (modifiedPrice < itemPreset.PriceExpected &&
-            itemPreset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.低于预期值)))
+        if (modifiedPrice < itemDetails.Preset.PriceExpected &&
+            itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.低于预期值)))
         {
-            var behavior = itemPreset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.低于预期值)).Value;
+            var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.低于预期值)).Value;
             NotifyAbortCondition(AbortCondition.低于预期值);
             EnqueueAbortBehavior(behavior);
             return true;
@@ -1041,16 +1039,31 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         OperateAndReturn(true, modifiedPrice);
         return true;
 
+        (ItemConfig Preset, int OrigPrice, SeString ItemPayload, SeString RetainerName) GetItemDetails()
+        {
+            (ItemConfig Preset, int OrigPrice, SeString ItemPayload, SeString RetainerName) result = new()
+                {
+                    Preset = ModuleConfig.ItemConfigs.TryGetValue(CurrentItem.ToString(), out var itemConfig) ? itemConfig : ModuleConfig.ItemConfigs[new ItemKey(0, CurrentItem.IsHQ).ToString()],
+                    OrigPrice = RetainerSell->AtkValues[5].Int,
+                    ItemPayload = new SeStringBuilder().AddItemLink(CurrentItem.ItemID, CurrentItem.IsHQ).Build(),
+                    RetainerName = new SeStringBuilder()
+                                   .AddUiForeground(Marshal.PtrToStringUTF8((nint)RetainerManager.Instance()->GetActiveRetainer()->Name), 62).Build()
+                };
+
+            return result;
+        }
+
         void OperateAndReturn(bool isConfirm, uint price = 0)
         {
-            var priceComponent = addon->AskingPrice;
+            var UI = (AddonRetainerSell*)RetainerSell;
+            var priceComponent = UI->AskingPrice;
             var handler = new ClickRetainerSell();
 
-            if (isConfirm && price != 0 && origPrice != price)
+            if (isConfirm && price != 0 && itemDetails.OrigPrice != price)
             {
                 if (ModuleConfig.SendProcessMessage)
                 {
-                    var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-PriceAdjustSuccessfully", itemPayload, retainerName, origPrice, price);
+                    var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-PriceAdjustSuccessfully", itemDetails.ItemPayload, itemDetails.RetainerName, itemDetails.OrigPrice, price);
                     Service.Chat.Print(new SeStringBuilder().Append(DRPrefix()).Append(message).Build());
                 }
                 priceComponent->SetValue((int)price);
@@ -1058,8 +1071,14 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
             }
             else handler.Decline();
 
-            ui->Close(true);
-            ResetCurrentItemStats();
+            RetainerSell->Close(true);
+            ResetCurrentItemStats(true);
+        }
+
+        void CloseAddon()
+        {
+            ClickRetainerSell.Using((nint)RetainerList).Decline();
+            RetainerSell->Close(true);
         }
 
         void EnqueueAbortBehavior(AbortBehavior behavior)
@@ -1080,12 +1099,13 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
             switch (behavior)
             {
                 case AbortBehavior.改价至最小值:
-                    OperateAndReturn(true, (uint)itemPreset.PriceMinimum);
+                    OperateAndReturn(true, (uint)itemDetails.Preset.PriceMinimum);
                     break;
                 case AbortBehavior.改价至预期值:
-                    OperateAndReturn(true, (uint)itemPreset.PriceExpected);
+                    OperateAndReturn(true, (uint)itemDetails.Preset.PriceExpected);
                     break;
                 case AbortBehavior.收回至雇员:
+                    CloseAddon();
                     if (CurrentItemIndex != -1)
                     {
                         var copyIndex = CurrentItemIndex;
@@ -1100,9 +1120,10 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
                         TaskManager.DelayNextImmediate(50);
                         TaskManager.EnqueueImmediate(() => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(958).Text.RawString));
                     }
-                    OperateAndReturn(false);
+                    TaskManager.EnqueueImmediate(() => OperateAndReturn(false));
                     break;
                 case AbortBehavior.收回至背包:
+                    CloseAddon();
                     if (CurrentItemIndex != -1)
                     {
                         var copyIndex = CurrentItemIndex;
@@ -1117,9 +1138,10 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
                         TaskManager.DelayNextImmediate(50);
                         TaskManager.EnqueueImmediate(() => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(976).Text.RawString));
                     }
-                    OperateAndReturn(false);
+                    TaskManager.EnqueueImmediate(() => OperateAndReturn(false));
                     break;
                 case AbortBehavior.出售至系统商店:
+                    CloseAddon();
                     if (CurrentItemIndex != -1)
                     {
                         var copyIndex = CurrentItemIndex;
@@ -1133,19 +1155,27 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
                         TaskManager.EnqueueImmediate(() => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(976).Text.RawString));
 
                         TaskManager.DelayNextImmediate(500);
+                    }
+
+                    TaskManager.EnqueueImmediate(() =>
+                    {
+                        if (!TrySearchItemInInventory(CurrentItem.ItemID, CurrentItem.IsHQ, out var foundItem) ||
+                            foundItem.Count <= 0)
+                        {
+                            TaskManager.EnqueueImmediate(() => OperateAndReturn(false));
+                            return true;
+                        }
+
                         TaskManager.EnqueueImmediate(() =>
                         {
-                            if (!TrySearchItemInInventory(CurrentItem.ItemID, CurrentItem.IsHQ, out var foundItem) || 
-                                foundItem.Count <= 0) return true;
-
-                            TaskManager.EnqueueImmediate(() => OpenInventoryItemContext(foundItem[0]));
-                            TaskManager.EnqueueImmediate(() => ClickHelper.ContextMenu(
-                                                             LuminaCache.GetRow<Addon>(5480).Text.RawString));
-
-                            return true;
+                            OpenInventoryItemContext(foundItem[0]);
+                            return TryGetAddonByName<AtkUnitBase>("ContextMenu", out var cm) && IsAddonAndNodesReady(cm);
                         });
-                    }
-                    OperateAndReturn(false);
+                        TaskManager.EnqueueImmediate(() => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(5480).Text.RawString));
+                        TaskManager.EnqueueImmediate(() => OperateAndReturn(false));
+
+                        return true;
+                    });
                     break;
             }
         }
@@ -1154,14 +1184,13 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         {
             if (!ModuleConfig.SendProcessMessage) return;
             var conditionMessage = new SeStringBuilder().AddUiForeground(condition.ToString(), 60).Build();
-            var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-DetectAbortCondition", itemPayload, retainerName, conditionMessage);
+            var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-DetectAbortCondition", itemDetails.ItemPayload, itemDetails.RetainerName, conditionMessage);
             Service.Chat.Print(new SeStringBuilder().Append(DRPrefix()).Append(message).Build());
         }
     }
     #endregion
 
-    #region Helpers
-
+    #region 工具
     private static void ExportItemConfigToClipboard(ItemConfig config)
     {
         try
@@ -1204,7 +1233,6 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
     private static bool TrySearchItemInInventory(uint itemID, bool isHQ, out List<InventoryItem> foundItem)
     {
         foundItem = [];
-        if (Service.Gui.GetAddonByName("InventoryExpansion") == nint.Zero) return false;
         var inventoryManager = InventoryManager.Instance();
         if (inventoryManager == null) return false;
 
@@ -1216,6 +1244,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
             for (var i = 0; i < container->Size; i++)
             {
                 var slot = container->GetInventorySlot(i);
+                if (slot == null || slot->ItemID == 0) continue;
                 if (slot->ItemID == itemID && (!isHQ || (isHQ && slot->Flags.HasFlag(InventoryItem.ItemFlags.HQ))))
                     foundItem.Add(*slot);
             }
@@ -1252,7 +1281,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         return 0;
     }
 
-    private static void ResetCurrentItemStats()
+    private static void ResetCurrentItemStats(bool isResetIndex)
     {
         InfoItemSearch->SearchItemId = 0;
         InfoItemSearch->ListingCount = 0;
@@ -1261,11 +1290,11 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         ItemHistoryList = null;
         ItemSearchList = null;
         CurrentItem = null;
-        CurrentItemIndex = -1;
+        if (isResetIndex) CurrentItemIndex = -1;
     }
     #endregion
 
-    #region Events
+    #region 事件与 Hooks
     // 历史交易数据获取
     private nint MarketboardHistorDetour(nint a1, nint packetData)
     {
@@ -1342,7 +1371,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
                 if (InterruptByConflictKey()) return;
                 if (TaskManager.IsBusy) return;
 
-                ResetCurrentItemStats();
+                ResetCurrentItemStats(true);
                 TaskManager.Enqueue(ObtainItemData);
                 break;
         }
