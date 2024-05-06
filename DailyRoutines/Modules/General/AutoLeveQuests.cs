@@ -19,7 +19,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoLeveQuestsTitle", "AutoLeveQuestsDescription", ModuleCategories.General)]
+[ModuleDescription("AutoLeveQuestsTitle", "AutoLeveQuestsDescription", ModuleCategories.一般)]
 public unsafe class AutoLeveQuests : DailyModuleBase
 {
     private static AtkUnitBase* SelectString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");

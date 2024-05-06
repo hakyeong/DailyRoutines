@@ -17,7 +17,7 @@ using TaskManager = ECommons.Automation.TaskManager;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoRetainerEntrustDupsTitle", "AutoRetainerEntrustDupsDescription", ModuleCategories.Retainer)]
+[ModuleDescription("AutoRetainerEntrustDupsTitle", "AutoRetainerEntrustDupsDescription", ModuleCategories.¹ÍÔ±)]
 public unsafe class AutoRetainerEntrustDups : DailyModuleBase
 {
     private static AtkUnitBase* RetainerList => (AtkUnitBase*)Service.Gui.GetAddonByName("RetainerList");

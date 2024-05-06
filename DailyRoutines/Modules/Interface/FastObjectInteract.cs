@@ -22,7 +22,7 @@ using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("FastObjectInteractTitle", "FastObjectInteractDescription", ModuleCategories.Interface)]
+[ModuleDescription("FastObjectInteractTitle", "FastObjectInteractDescription", ModuleCategories.界面)]
 public unsafe partial class FastObjectInteract : DailyModuleBase
 {
     private class ObjectWaitSelected(GameObject* gameObject, string name, ObjectKind kind, float distance)

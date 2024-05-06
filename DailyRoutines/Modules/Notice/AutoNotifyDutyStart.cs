@@ -1,11 +1,11 @@
-using DailyRoutines.Infos;
+﻿using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Notifications;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoNotifyDutyStartTitle", "AutoNotifyDutyStartDescription", ModuleCategories.Notice)]
+[ModuleDescription("AutoNotifyDutyStartTitle", "AutoNotifyDutyStartDescription", ModuleCategories.通知)]
 public class AutoNotifyDutyStart : DailyModuleBase
 {
     private static bool ConfigOnlyNotifyWhenBackground;

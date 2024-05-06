@@ -7,7 +7,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoRetainersDispatchTitle", "AutoRetainersDispatchDescription", ModuleCategories.Retainer)]
+[ModuleDescription("AutoRetainersDispatchTitle", "AutoRetainersDispatchDescription", ModuleCategories.πÕ‘±)]
 public class AutoRetainersDispatch : DailyModuleBase
 {
     public override void Init()

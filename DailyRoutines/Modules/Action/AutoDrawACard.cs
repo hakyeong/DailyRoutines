@@ -6,7 +6,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoDrawACardTitle", "AutoDrawACardDescription", ModuleCategories.Action)]
+[ModuleDescription("AutoDrawACardTitle", "AutoDrawACardDescription", ModuleCategories.¼¼ÄÜ)]
 public class AutoDrawACard : DailyModuleBase
 {
     public override void Init()

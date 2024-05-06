@@ -6,7 +6,7 @@ using Dalamud.Game.Text.SeStringHandling;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoNotifyReadyCheckTitle", "AutoNotifyReadyCheckDescription", ModuleCategories.Notice)]
+[ModuleDescription("AutoNotifyReadyCheckTitle", "AutoNotifyReadyCheckDescription", ModuleCategories.通知)]
 public class AutoNotifyReadyCheck : DailyModuleBase
 {
     public override void Init()

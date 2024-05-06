@@ -9,7 +9,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoQuestCompleteTitle", "AutoQuestCompleteDescription", ModuleCategories.Base)]
+[ModuleDescription("AutoQuestCompleteTitle", "AutoQuestCompleteDescription", ModuleCategories.基础)]
 public class AutoQuestComplete : DailyModuleBase
 {
     public override void Init()

@@ -8,7 +8,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("CustomizeSightDistanceTitle", "CustomizeSightDistanceDescription", ModuleCategories.Interface)]
+[ModuleDescription("CustomizeSightDistanceTitle", "CustomizeSightDistanceDescription", ModuleCategories.ΩÁ√Ê)]
 public unsafe class CustomizeSightDistance : DailyModuleBase
 {
     private static float ConfigMaxDistance = 80;

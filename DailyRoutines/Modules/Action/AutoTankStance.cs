@@ -10,7 +10,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoTankStanceTitle", "AutoTankStanceDescription", ModuleCategories.Action)]
+[ModuleDescription("AutoTankStanceTitle", "AutoTankStanceDescription", ModuleCategories.技能)]
 public class AutoTankStance : DailyModuleBase
 {
     private static bool ConfigOnlyAutoStanceWhenOneTank = true;

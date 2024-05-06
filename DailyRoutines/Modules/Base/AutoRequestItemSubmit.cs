@@ -12,7 +12,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoRequestItemSubmitTitle", "AutoRequestItemSubmitDescription", ModuleCategories.Base)]
+[ModuleDescription("AutoRequestItemSubmitTitle", "AutoRequestItemSubmitDescription", ModuleCategories.基础)]
 public class AutoRequestItemSubmit : DailyModuleBase
 {
     private static bool ConfigIsSubmitHQItem;

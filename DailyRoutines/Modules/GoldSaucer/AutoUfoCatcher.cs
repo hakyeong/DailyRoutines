@@ -12,7 +12,7 @@ using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoTMPTitle", "AutoTMPDescription", ModuleCategories.GoldSaucer)]
+[ModuleDescription("AutoTMPTitle", "AutoTMPDescription", ModuleCategories.金碟)]
 public class AutoUfoCatcher : DailyModuleBase
 {
     public override void Init()

@@ -14,7 +14,7 @@ using Newtonsoft.Json;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("ExpandPlayerMenuSearchTitle", "ExpandPlayerMenuSearchDescription", ModuleCategories.Interface)]
+[ModuleDescription("ExpandPlayerMenuSearchTitle", "ExpandPlayerMenuSearchDescription", ModuleCategories.ΩÁ√Ê)]
 public class ExpandPlayerMenuSearch : DailyModuleBase
 {
     public class CharacterSearchInfo

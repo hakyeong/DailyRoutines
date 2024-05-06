@@ -13,7 +13,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoDeleteLettersTitle", "AutoDeleteLettersDescription", ModuleCategories.InterfaceExpand)]
+[ModuleDescription("AutoDeleteLettersTitle", "AutoDeleteLettersDescription", ModuleCategories.界面扩展)]
 public unsafe class AutoDeleteLetters : DailyModuleBase
 {
     public override void Init()

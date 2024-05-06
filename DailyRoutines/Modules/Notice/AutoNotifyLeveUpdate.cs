@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -10,7 +10,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoNotifyLeveUpdateTitle", "AutoNotifyLeveUpdateDescription", ModuleCategories.Notice)]
+[ModuleDescription("AutoNotifyLeveUpdateTitle", "AutoNotifyLeveUpdateDescription", ModuleCategories.通知)]
 public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
 {
     public override string? Author { get; set; } = "HSS";

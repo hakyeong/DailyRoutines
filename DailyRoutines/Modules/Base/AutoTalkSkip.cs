@@ -7,7 +7,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoTalkSkipTitle", "AutoTalkSkipDescription", ModuleCategories.Base)]
+[ModuleDescription("AutoTalkSkipTitle", "AutoTalkSkipDescription", ModuleCategories.»ù´¡)]
 public class AutoTalkSkip : DailyModuleBase
 {
     public override void Init()

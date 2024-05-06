@@ -13,7 +13,7 @@ using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoCACTitle", "AutoCACDescription", ModuleCategories.GoldSaucer)]
+[ModuleDescription("AutoCACTitle", "AutoCACDescription", ModuleCategories.金碟)]
 public class AutoPunchingMachine : DailyModuleBase
 {
     public override void Init()

@@ -1,4 +1,4 @@
-using DailyRoutines.Infos;
+﻿using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Notifications;
 using Dalamud.Game.Addon.Lifecycle;
@@ -8,7 +8,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoNotifyDutyConfirmTitle", "AutoNotifyDutyConfirmDescription", ModuleCategories.Notice)]
+[ModuleDescription("AutoNotifyDutyConfirmTitle", "AutoNotifyDutyConfirmDescription", ModuleCategories.通知)]
 public class AutoNotifyDutyConfirm : DailyModuleBase
 {
     public override void Init()

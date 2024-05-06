@@ -23,7 +23,7 @@ using Dalamud.Game.ClientState.Conditions;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoGardensWorkTitle", "AutoGardensWorkDescription", ModuleCategories.General)]
+[ModuleDescription("AutoGardensWorkTitle", "AutoGardensWorkDescription", ModuleCategories.一般)]
 public unsafe class AutoGardensWork : DailyModuleBase
 {
     [Signature("E8 ?? ?? ?? ?? 44 0F B6 C3 48 8B D0")]

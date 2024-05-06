@@ -14,7 +14,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("PlayerTargetInfoExpandTitle", "PlayerTargetInfoExpandDescription", ModuleCategories.Interface)]
+[ModuleDescription("PlayerTargetInfoExpandTitle", "PlayerTargetInfoExpandDescription", ModuleCategories.界面)]
 public unsafe class PlayerTargetInfoExpand : DailyModuleBase
 {
     private class Payload(string placeholder, string description, Func<Character, string> valueFunc)

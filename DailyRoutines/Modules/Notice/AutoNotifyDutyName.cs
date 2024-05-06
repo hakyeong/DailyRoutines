@@ -1,4 +1,4 @@
-using DailyRoutines.Infos;
+﻿using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Notifications;
 using Dalamud.Game.Text.SeStringHandling;
@@ -6,7 +6,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoNotifyDutyNameTitle", "AutoNotifyDutyNameDescription", ModuleCategories.Notice)]
+[ModuleDescription("AutoNotifyDutyNameTitle", "AutoNotifyDutyNameDescription", ModuleCategories.通知)]
 public class AutoNotifyDutyName : DailyModuleBase
 {
     private static bool ConfigSendWindowsToast = true;

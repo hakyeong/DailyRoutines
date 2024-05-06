@@ -22,7 +22,7 @@ using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoMJIGatherTitle", "AutoMJIGatherDescription", ModuleCategories.General)]
+[ModuleDescription("AutoMJIGatherTitle", "AutoMJIGatherDescription", ModuleCategories.一般)]
 public class AutoMJIGather : DailyModuleBase
 {
     #region StaticStatisitics

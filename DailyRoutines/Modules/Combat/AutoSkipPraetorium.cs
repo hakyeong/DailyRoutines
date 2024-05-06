@@ -6,7 +6,7 @@ using Dalamud;
 namespace DailyRoutines.Modules;
 
 // 完全来自 Dalamud.SkipCutScene
-[ModuleDescription("AutoSkipPraetoriumTitle", "AutoSkipPraetoriumDescription", ModuleCategories.Combat)]
+[ModuleDescription("AutoSkipPraetoriumTitle", "AutoSkipPraetoriumDescription", ModuleCategories.战斗)]
 public class AutoSkipPraetorium : DailyModuleBase
 {
     public bool Valid => Offset1 != IntPtr.Zero && Offset2 != IntPtr.Zero;

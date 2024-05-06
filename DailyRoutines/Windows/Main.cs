@@ -56,7 +56,7 @@ public class Main : Window, IDisposable
                                          type.GetCustomAttribute<ModuleDescriptionAttribute>()?.DescriptionKey ??
                                          "DevModuleDescription"),
                                      Category = type.GetCustomAttribute<ModuleDescriptionAttribute>()?.Category ??
-                                                ModuleCategories.Base,
+                                                ModuleCategories.基础,
                                      Author = ((DailyModuleBase)Activator.CreateInstance(type)!).Author,
                                      WithConfigUI = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
                                                         .Any(m => m.Name == "ConfigUI" && 
@@ -101,7 +101,7 @@ public class Main : Window, IDisposable
         if (!categorizedModules.TryGetValue(category, out var modules)) return;
         var modulesInCategory = modules.ToArray();
 
-        if (ImGui.BeginTabItem(Service.Lang.GetText(category.ToString())))
+        if (ImGui.BeginTabItem(category.ToString()))
         {
             if (ImGui.BeginChild(category.ToString()))
             {

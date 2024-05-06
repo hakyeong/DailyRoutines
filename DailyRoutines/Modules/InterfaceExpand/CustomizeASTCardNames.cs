@@ -9,7 +9,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("CustomizeASTCardNamesTitle", "CustomizeASTCardNamesDescription", ModuleCategories.InterfaceExpand)]
+[ModuleDescription("CustomizeASTCardNamesTitle", "CustomizeASTCardNamesDescription", ModuleCategories.界面扩展)]
 public class CustomizeASTCardNames : DailyModuleBase
 {
     private static Dictionary<string, string> CardNames = new()

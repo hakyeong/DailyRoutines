@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Linq;
 using DailyRoutines.Infos;
@@ -14,7 +14,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoNotifyCutSceneEndTitle", "AutoNotifyCutSceneEndDescription", ModuleCategories.Notice)]
+[ModuleDescription("AutoNotifyCutSceneEndTitle", "AutoNotifyCutSceneEndDescription", ModuleCategories.通知)]
 public class AutoNotifyCutSceneEnd : DailyModuleBase
 {
     private static bool OnlyNotifyWhenBackground;

@@ -19,7 +19,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoLoginTitle", "AutoLoginDescription", ModuleCategories.General)]
+[ModuleDescription("AutoLoginTitle", "AutoLoginDescription", ModuleCategories.一般)]
 public class AutoLogin : DailyModuleBase
 {
     private class LoginInfo(uint worldID, int index) : IEquatable<LoginInfo>

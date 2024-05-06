@@ -16,7 +16,7 @@ namespace DailyRoutines.Modules;
 
 // 硬编码领域大神
 [ModuleDescription("AutoMarkAetherCurrentsTitle", "AutoMarkAetherCurrentsDescription",
-                   ModuleCategories.InterfaceExpand)]
+                   ModuleCategories.界面扩展)]
 public class AutoMarkAetherCurrents : DailyModuleBase
 {
     private class AetherCurrent(uint index, Vector3 pos)

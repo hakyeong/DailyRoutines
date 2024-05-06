@@ -15,7 +15,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 namespace DailyRoutines.Modules;
 
 // 求解器逻辑来自 ezMiniCactpot, 作者为: daemitus, MidoriKami
-[ModuleDescription("AutoMiniCactpotTitle", "AutoMiniCactpotDescription", ModuleCategories.GoldSaucer)]
+[ModuleDescription("AutoMiniCactpotTitle", "AutoMiniCactpotDescription", ModuleCategories.金碟)]
 public unsafe class AutoMiniCactpot : DailyModuleBase
 {
     private static int SelectedLineNumber3D4;

@@ -17,7 +17,7 @@ using Lumina.Excel.GeneratedSheets;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoRemoveArmoireItemsFromDresserTitle", "AutoRemoveArmoireItemsFromDresserDescription",
-                   ModuleCategories.InterfaceExpand)]
+                   ModuleCategories.界面扩展)]
 public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
 {
     private static AtkUnitBase* AddonMiragePrismPrismBox =>

@@ -14,7 +14,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("BiggerHDWindowTextTitle", "BiggerHDWindowTextDescription", ModuleCategories.Interface)]
+[ModuleDescription("BiggerHDWindowTextTitle", "BiggerHDWindowTextDescription", ModuleCategories.界面)]
 public unsafe class BiggerHDWindowText : DailyModuleBase
 {
     private class TextNodeInfo(uint nodeID)

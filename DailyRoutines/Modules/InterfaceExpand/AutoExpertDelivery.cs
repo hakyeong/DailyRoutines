@@ -22,7 +22,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoExpertDeliveryTitle", "AutoExpertDeliveryDescription", ModuleCategories.InterfaceExpand)]
+[ModuleDescription("AutoExpertDeliveryTitle", "AutoExpertDeliveryDescription", ModuleCategories.界面扩展)]
 public unsafe class AutoExpertDelivery : DailyModuleBase
 {
     private static AtkUnitBase* GrandCompanySupplyList =>

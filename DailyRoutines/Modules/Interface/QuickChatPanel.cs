@@ -29,7 +29,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("QuickChatPanelTitle", "QuickChatPanelDescription", ModuleCategories.Interface)]
+[ModuleDescription("QuickChatPanelTitle", "QuickChatPanelDescription", ModuleCategories.界面)]
 public unsafe class QuickChatPanel : DailyModuleBase
 {
     public class SavedMacro : IEquatable<SavedMacro>

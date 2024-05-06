@@ -13,7 +13,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoCutSceneSkipTitle", "AutoCutSceneSkipDescription", ModuleCategories.Base)]
+[ModuleDescription("AutoCutSceneSkipTitle", "AutoCutSceneSkipDescription", ModuleCategories.»ù´¡)]
 public class AutoCutSceneSkip : DailyModuleBase
 {
     private delegate void CutsceneHandleInputDelegate(nint a1);

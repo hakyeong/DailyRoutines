@@ -8,7 +8,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Control;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoRefocusTitle", "AutoRefocusDescription", ModuleCategories.Combat)]
+[ModuleDescription("AutoRefocusTitle", "AutoRefocusDescription", ModuleCategories.Õ½¶·)]
 public unsafe class AutoRefocus : DailyModuleBase
 {
     private delegate void SetFocusTargetByObjectIDDelegate(TargetSystem* targetSystem, long objectID);

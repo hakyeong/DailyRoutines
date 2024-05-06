@@ -5,7 +5,7 @@ using Timer = System.Timers.Timer;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoAntiAfkTitle", "AutoAntiAfkDescription", ModuleCategories.Base)]
+[ModuleDescription("AutoAntiAfkTitle", "AutoAntiAfkDescription", ModuleCategories.»ù´¡)]
 public class AutoAntiAfk : DailyModuleBase
 {
     private static Timer? AfkTimer;

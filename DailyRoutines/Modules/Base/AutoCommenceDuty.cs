@@ -8,7 +8,7 @@ using ClickLib.Clicks;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoCommenceDutyTitle", "AutoCommenceDutyDescription", ModuleCategories.Base)]
+[ModuleDescription("AutoCommenceDutyTitle", "AutoCommenceDutyDescription", ModuleCategories.»ù´¡)]
 public class AutoCommenceDuty : DailyModuleBase
 {
     public override string? Author { get; set; } = "Cindy-Master";

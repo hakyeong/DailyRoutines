@@ -11,7 +11,7 @@ namespace DailyRoutines.Modules;
 
 // 大部分来自 STP 的 AutoRefreshMarketPrices, 作者为: Chalkos
 [ModuleDescription("AutoRefreshMarketSearchResultTitle", "AutoRefreshMarketSearchResultDescription",
-                   ModuleCategories.Base)]
+                   ModuleCategories.基础)]
 public unsafe class AutoRefreshMarketSearchResult : DailyModuleBase
 {
     private delegate long HandlePricesDelegate(

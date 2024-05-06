@@ -11,7 +11,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoNotifyMessagesTitle", "AutoNotifyMessagesDescription", ModuleCategories.Notice)]
+[ModuleDescription("AutoNotifyMessagesTitle", "AutoNotifyMessagesDescription", ModuleCategories.通知)]
 public class AutoNotifyMessages : DailyModuleBase
 {
     private static bool ConfigOnlyNotifyWhenBackground;

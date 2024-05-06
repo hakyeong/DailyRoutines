@@ -21,7 +21,7 @@ using TinyPinyin;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoAntiCensorshipTitle", "AutoAntiCensorshipDescription", ModuleCategories.Interface)]
+[ModuleDescription("AutoAntiCensorshipTitle", "AutoAntiCensorshipDescription", ModuleCategories.界面)]
 public unsafe class AutoAntiCensorship : DailyModuleBase
 {
     private enum State

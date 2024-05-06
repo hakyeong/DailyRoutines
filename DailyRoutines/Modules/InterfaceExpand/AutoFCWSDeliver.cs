@@ -17,7 +17,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoFCWSDeliverTitle", "AutoFCWSDeliverDescription", ModuleCategories.InterfaceExpand)]
+[ModuleDescription("AutoFCWSDeliverTitle", "AutoFCWSDeliverDescription", ModuleCategories.界面扩展)]
 public unsafe class AutoFCWSDeliver : DailyModuleBase
 {
     private static AtkUnitBase* SubmarinePartsMenu => (AtkUnitBase*)Service.Gui.GetAddonByName("SubmarinePartsMenu");

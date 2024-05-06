@@ -5,7 +5,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoHolmgangSelfTitle", "AutoHolmgangSelfDescription", ModuleCategories.Action)]
+[ModuleDescription("AutoHolmgangSelfTitle", "AutoHolmgangSelfDescription", ModuleCategories.¼¼ÄÜ)]
 public unsafe class AutoHolmgangSelf : DailyModuleBase
 {
     private delegate bool UseActionSelfDelegate(

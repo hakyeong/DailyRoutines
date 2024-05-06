@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -19,7 +19,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoNotifySPPlayersTitle", "AutoNotifySPPlayersDescription", ModuleCategories.Notice)]
+[ModuleDescription("AutoNotifySPPlayersTitle", "AutoNotifySPPlayersDescription", ModuleCategories.通知)]
 public class AutoNotifySPPlayers : DailyModuleBase
 {
     private class NotifiedPlayers

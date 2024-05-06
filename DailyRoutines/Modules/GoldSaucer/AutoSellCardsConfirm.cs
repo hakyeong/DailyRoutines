@@ -16,7 +16,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoSellCardsConfirmTitle", "AutoSellCardsConfirmDescription", ModuleCategories.GoldSaucer)]
+[ModuleDescription("AutoSellCardsConfirmTitle", "AutoSellCardsConfirmDescription", ModuleCategories.½ðµú)]
 public class AutoSellCardsConfirm : DailyModuleBase
 {
     public override void Init()

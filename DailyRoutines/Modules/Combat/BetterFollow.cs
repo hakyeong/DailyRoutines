@@ -23,7 +23,7 @@ using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("BetterFollowTitle", "BetterFollowDescription", ModuleCategories.Combat)]
+[ModuleDescription("BetterFollowTitle", "BetterFollowDescription", ModuleCategories.战斗)]
 public unsafe class BetterFollow : DailyModuleBase
 {
     public override string? Author { get; set; } = "HSS";

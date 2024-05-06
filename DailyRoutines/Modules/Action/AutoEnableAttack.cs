@@ -4,7 +4,7 @@ using Dalamud;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoEnableAttackTitle", "AutoEnableAttackDescription", ModuleCategories.Action)]
+[ModuleDescription("AutoEnableAttackTitle", "AutoEnableAttackDescription", ModuleCategories.¼¼ÄÜ)]
 public class AutoEnableAttack : DailyModuleBase
 {
     private nint AutoAttackAddress = nint.Zero;

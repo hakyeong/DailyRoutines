@@ -16,7 +16,7 @@ using TaskManager = ECommons.Automation.TaskManager;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoNoviceNetworkTitle", "AutoNoviceNetworkDescription", ModuleCategories.General)]
+[ModuleDescription("AutoNoviceNetworkTitle", "AutoNoviceNetworkDescription", ModuleCategories.一般)]
 public class AutoNoviceNetwork : DailyModuleBase
 {
     [StructLayout(LayoutKind.Sequential)]

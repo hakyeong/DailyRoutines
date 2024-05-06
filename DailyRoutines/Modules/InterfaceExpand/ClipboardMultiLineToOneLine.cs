@@ -11,7 +11,7 @@ using FFXIVClientStructs.FFXIV.Client.System.String;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("ClipboardMultiLineToOneLineTitle", "ClipboardMultiLineToOneLineDescription",
-                   ModuleCategories.Interface)]
+                   ModuleCategories.ΩÁ√Ê)]
 public unsafe class ClipboardMultiLineToOneLine : DailyModuleBase
 {
     private delegate nint GetClipboardDataDelegate(nint a1);

@@ -9,7 +9,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoConstantlyInspectTitle", "AutoConstantlyInspectDescription", ModuleCategories.Base)]
+[ModuleDescription("AutoConstantlyInspectTitle", "AutoConstantlyInspectDescription", ModuleCategories.»ù´¡)]
 public class AutoConstantlyInspect : DailyModuleBase
 {
     public override void Init()

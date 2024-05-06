@@ -2,13 +2,13 @@ namespace DailyRoutines.Infos;
 
 public enum ModuleCategories
 {
-    Base,
-    General,
-    Action,
-    Combat,
-    Interface,
-    InterfaceExpand,
-    GoldSaucer,
-    Retainer,
-    Notice,
+    基础,
+    一般,
+    技能,
+    战斗,
+    界面,
+    界面扩展,
+    金碟,
+    雇员,
+    通知,
 }

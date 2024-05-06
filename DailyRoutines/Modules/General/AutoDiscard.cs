@@ -21,7 +21,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoDiscardTitle", "AutoDiscardDescription", ModuleCategories.General)]
+[ModuleDescription("AutoDiscardTitle", "AutoDiscardDescription", ModuleCategories.一般)]
 public unsafe class AutoDiscard : DailyModuleBase
 {
     private enum DiscardBehaviour

@@ -18,7 +18,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("ExpandItemMenuSearchTitle", "ExpandItemMenuSearchDescription", ModuleCategories.Interface)]
+[ModuleDescription("ExpandItemMenuSearchTitle", "ExpandItemMenuSearchDescription", ModuleCategories.界面)]
 public unsafe class ExpandItemMenuSearch : DailyModuleBase
 {
     public override string? Author { get; set; } = "HSS";

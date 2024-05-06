@@ -12,7 +12,7 @@ using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoCTSTitle", "AutoCTSDescription", ModuleCategories.GoldSaucer)]
+[ModuleDescription("AutoCTSTitle", "AutoCTSDescription", ModuleCategories.金碟)]
 public class AutoHummer : DailyModuleBase
 {
     public override void Init()

@@ -9,7 +9,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoSummonPetTitle", "AutoSummonPetDescription", ModuleCategories.Action)]
+[ModuleDescription("AutoSummonPetTitle", "AutoSummonPetDescription", ModuleCategories.技能)]
 public class AutoSummonPet : DailyModuleBase
 {
     private static readonly Dictionary<uint, uint> SummonActions = new()

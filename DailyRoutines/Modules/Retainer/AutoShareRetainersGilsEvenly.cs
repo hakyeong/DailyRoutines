@@ -13,7 +13,7 @@ using ImGuiNET;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoShareRetainersGilsEvenlyTitle", "AutoShareRetainersGilsEvenlyDescription",
-                   ModuleCategories.Retainer)]
+                   ModuleCategories.雇员)]
 public unsafe class AutoShareRetainersGilsEvenly : DailyModuleBase
 {
     private static uint AverageAmount;

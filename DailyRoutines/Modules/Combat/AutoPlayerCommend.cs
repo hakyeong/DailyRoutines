@@ -19,7 +19,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoPlayerCommendTitle", "AutoPlayerCommendDescription", ModuleCategories.Combat)]
+[ModuleDescription("AutoPlayerCommendTitle", "AutoPlayerCommendDescription", ModuleCategories.Õ½¶·)]
 public unsafe class AutoPlayerCommend : DailyModuleBase
 {
     private enum PlayerRole

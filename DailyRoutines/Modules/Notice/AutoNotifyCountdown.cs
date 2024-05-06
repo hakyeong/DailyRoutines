@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
@@ -12,7 +12,7 @@ using PayloadType = Lumina.Text.Payloads.PayloadType;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoNotifyCountdownTitle", "AutoNotifyCountdownDescription", ModuleCategories.Notice)]
+[ModuleDescription("AutoNotifyCountdownTitle", "AutoNotifyCountdownDescription", ModuleCategories.通知)]
 public class AutoNotifyCountdown : DailyModuleBase
 {
     public override string? Author { get; set; } = "HSS";

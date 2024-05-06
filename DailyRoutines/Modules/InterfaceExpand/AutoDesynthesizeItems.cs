@@ -14,7 +14,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoDesynthesizeItemsTitle", "AutoDesynthesizeItemsDescription", ModuleCategories.InterfaceExpand)]
+[ModuleDescription("AutoDesynthesizeItemsTitle", "AutoDesynthesizeItemsDescription", ModuleCategories.界面扩展)]
 public unsafe class AutoDesynthesizeItems : DailyModuleBase
 {
     private static bool ConfigSkipWhenHQ;

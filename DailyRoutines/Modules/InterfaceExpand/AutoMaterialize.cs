@@ -16,7 +16,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoMaterializeTitle", "AutoMaterializeDescription", ModuleCategories.InterfaceExpand)]
+[ModuleDescription("AutoMaterializeTitle", "AutoMaterializeDescription", ModuleCategories.ΩÁ√Ê¿©’π)]
 public class AutoMaterialize : DailyModuleBase
 {
     public override void Init()

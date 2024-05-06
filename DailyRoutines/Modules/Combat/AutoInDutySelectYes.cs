@@ -10,7 +10,7 @@ using FFXIVClientStructs.FFXIV.Client.UI;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoInDutySelectYesTitle", "AutoInDutySelectYesDescription", ModuleCategories.Combat)]
+[ModuleDescription("AutoInDutySelectYesTitle", "AutoInDutySelectYesDescription", ModuleCategories.战斗)]
 public partial class AutoInDutySelectYes : DailyModuleBase
 {
     private static readonly HashSet<string> SelectYesSet = ["发现了", "退出任务"];

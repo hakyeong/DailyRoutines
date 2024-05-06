@@ -14,7 +14,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoJumboCactpotTitle", "AutoJumboCactpotDescription", ModuleCategories.GoldSaucer)]
+[ModuleDescription("AutoJumboCactpotTitle", "AutoJumboCactpotDescription", ModuleCategories.½ðµú)]
 public class AutoJumboCactpot : DailyModuleBase
 {
     private enum Mode

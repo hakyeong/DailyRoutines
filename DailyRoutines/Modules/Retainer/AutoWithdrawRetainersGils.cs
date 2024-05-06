@@ -10,7 +10,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoWithdrawRetainersGilsTitle", "AutoWithdrawRetainersGilsDescription", ModuleCategories.Retainer)]
+[ModuleDescription("AutoWithdrawRetainersGilsTitle", "AutoWithdrawRetainersGilsDescription", ModuleCategories.雇员)]
 public unsafe class AutoWithdrawRetainersGils : DailyModuleBase
 {
     public override void Init()

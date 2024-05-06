@@ -23,7 +23,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoSubmarineCollectTitle", "AutoSubmarineCollectDescription", ModuleCategories.General)]
+[ModuleDescription("AutoSubmarineCollectTitle", "AutoSubmarineCollectDescription", ModuleCategories.一般)]
 public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 {
     private static AtkUnitBase* SelectString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
@@ -99,18 +99,8 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         }
     }
 
-    // 航程结果 -> 再次出发
-    private void OnExplorationResult(AddonEvent type, AddonArgs args)
-    {
-        if (AirShipExplorationResult == null || !IsAddonAndNodesReady(AirShipExplorationResult)) return;
-
-        AddonHelper.Callback(AirShipExplorationResult, true, 1);
-        if (TaskManager.IsBusy) AirShipExplorationResult->IsVisible = false;
-    }
-
     private bool? GetSubmarineInfos()
     {
-        if (!EzThrottler.Throttle("AutoSubmarineCollect-GetSubmarineInfos", 100)) return false;
         // 还在看动画
         if (Service.Condition[ConditionFlag.OccupiedInCutSceneEvent] ||
             Service.Condition[ConditionFlag.WatchingCutscene78]) return false;
@@ -160,7 +150,6 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
     private bool? CommenceSubmarineVoyage()
     {
-        if (!EzThrottler.Throttle("AutoSubmarineCollect-CommenceSubmarineVoyage", 100)) return false;
         if (AirShipExplorationDetail == null || !IsAddonAndNodesReady(AirShipExplorationDetail)) return false;
 
         AddonHelper.Callback(AirShipExplorationDetail, true, 0);
@@ -175,7 +164,6 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
     private bool? ReadyToRepairSubmarines()
     {
-        if (!EzThrottler.Throttle("AutoSubmarineCollect-ReadyToRepairSubmarines", 100)) return false;
         if (AirShipExplorationDetail != null)
         {
             AirShipExplorationDetail->Close(true);
@@ -208,9 +196,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
     private bool? RepairSubmarines()
     {
-        if (!EzThrottler.Throttle("AutoSubmarineCollect-RepairSubmarines", 100)) return false;
         if (SelectYesno != null) return false;
-
         if (CompanyCraftSupply == null || !IsAddonAndNodesReady(CompanyCraftSupply)) return false;
 
         for (var i = 0; i < 4; i++)
@@ -262,6 +248,14 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
                 TaskManager.Abort();
                 break;
         }
+    }
+
+    private void OnExplorationResult(AddonEvent type, AddonArgs args)
+    {
+        if (AirShipExplorationResult == null || !IsAddonAndNodesReady(AirShipExplorationResult)) return;
+
+        AddonHelper.Callback(AirShipExplorationResult, true, 1);
+        if (TaskManager.IsBusy) AirShipExplorationResult->IsVisible = false;
     }
 
     private void OnAddonSelectString(AddonEvent type, AddonArgs args)

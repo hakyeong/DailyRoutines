@@ -8,7 +8,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoQuestAcceptTitle", "AutoQuestAcceptDescription", ModuleCategories.Base)]
+[ModuleDescription("AutoQuestAcceptTitle", "AutoQuestAcceptDescription", ModuleCategories.»ù´¡)]
 public class AutoQuestAccept : DailyModuleBase
 {
     public override void Init()

@@ -14,7 +14,7 @@ using TaskManager = ECommons.Automation.TaskManager;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoRetainerCollectTitle", "AutoRetainerCollectDescription", ModuleCategories.Retainer)]
+[ModuleDescription("AutoRetainerCollectTitle", "AutoRetainerCollectDescription", ModuleCategories.雇员)]
 public unsafe class AutoRetainerCollect : DailyModuleBase
 {
     public override void Init()

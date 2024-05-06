@@ -7,7 +7,7 @@ using Dalamud.Game.Text.SeStringHandling;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoNotifyRecruitmentEndTitle", "AutoNotifyRecruitmentEndDescription", ModuleCategories.Notice)]
+[ModuleDescription("AutoNotifyRecruitmentEndTitle", "AutoNotifyRecruitmentEndDescription", ModuleCategories.通知)]
 public class AutoNotifyRecruitmentEnd : DailyModuleBase
 {
     public override void Init()

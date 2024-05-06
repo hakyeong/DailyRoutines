@@ -12,7 +12,7 @@ using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoMTTitle", "AutoMTDescription", ModuleCategories.GoldSaucer)]
+[ModuleDescription("AutoMTTitle", "AutoMTDescription", ModuleCategories.金碟)]
 public class AutoBasketBall : DailyModuleBase
 {
     public override void Init()
