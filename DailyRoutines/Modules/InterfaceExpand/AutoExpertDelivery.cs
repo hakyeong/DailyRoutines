@@ -25,8 +25,12 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoExpertDeliveryTitle", "AutoExpertDeliveryDescription", ModuleCategories.InterfaceExpand)]
 public unsafe class AutoExpertDelivery : DailyModuleBase
 {
-    private static AtkUnitBase* AddonGrandCompanySupplyList =>
+    private static AtkUnitBase* GrandCompanySupplyList =>
         (AtkUnitBase*)Service.Gui.GetAddonByName("GrandCompanySupplyList");
+    private static AtkUnitBase* GrandCompanySupplyReward =>
+        (AtkUnitBase*)Service.Gui.GetAddonByName("GrandCompanySupplyReward");
+    private static AtkUnitBase* SelectYesno =>
+        (AtkUnitBase*)Service.Gui.GetAddonByName("SelectYesno");
 
     private static readonly List<InventoryType> ValidInventoryTypes =
     [
@@ -97,7 +101,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
     private static void CheckIfToReachCap()
     {
-        if (AddonGrandCompanySupplyList == null || !IsAddonAndNodesReady(AddonGrandCompanySupplyList)) return;
+        if (GrandCompanySupplyList == null || !IsAddonAndNodesReady(GrandCompanySupplyList)) return;
 
         var parts = Marshal.PtrToStringUTF8((nint)AtkStage.GetSingleton()->GetStringArrayData()[32]->StringArray[2])
                            .Split('/');
@@ -106,29 +110,30 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         var grandCompany = UIState.Instance()->PlayerState.GrandCompany;
         if ((GrandCompany)grandCompany == GrandCompany.None)
         {
-            Service.Log.Debug("玩家当前不属于任一大国防联军, 已停止");
             Service.FrameworkManager.Unregister(OnUpdate);
+            GrandCompanySupplyReward->Close(true);
+            SelectYesno->Close(true);
             return;
         }
 
         var companySeals = InventoryManager.Instance()->GetCompanySeals(grandCompany);
 
-        var firstItemAmount = AddonGrandCompanySupplyList->AtkValues[265].UInt;
+        var firstItemAmount = GrandCompanySupplyList->AtkValues[265].UInt;
         if (firstItemAmount + companySeals > capAmount)
         {
-            Service.Log.Debug("军票即将超限, 已停止");
             Service.FrameworkManager.Unregister(OnUpdate);
+            GrandCompanySupplyReward->Close(true);
+            SelectYesno->Close(true);
         }
     }
 
     private static void ConfirmRewardUI()
     {
-        if (!TryGetAddonByName<AtkUnitBase>("GrandCompanySupplyReward", out var addon) || !IsAddonAndNodesReady(addon))
-            return;
-        if (AddonGrandCompanySupplyList != null && IsAddonAndNodesReady(AddonGrandCompanySupplyList))
-            AddonGrandCompanySupplyList->Close(false);
+        if (GrandCompanySupplyReward == null || !IsAddonAndNodesReady(GrandCompanySupplyReward)) return;
+        if (GrandCompanySupplyList != null && IsAddonAndNodesReady(GrandCompanySupplyList))
+            GrandCompanySupplyList->Close(false);
 
-        ClickGrandCompanySupplyReward.Using((nint)addon).Deliver();
+        ClickGrandCompanySupplyReward.Using((nint)GrandCompanySupplyReward).Deliver();
     }
 
     private static void ConfirmHQItemUI()
@@ -139,14 +144,14 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
     private static void ClickListUI()
     {
-        if (AddonGrandCompanySupplyList == null || !IsAddonAndNodesReady(AddonGrandCompanySupplyList)) return;
+        if (GrandCompanySupplyList == null || !IsAddonAndNodesReady(GrandCompanySupplyList)) return;
 
-        var addon = (AddonGrandCompanySupplyList*)AddonGrandCompanySupplyList;
+        var addon = (AddonGrandCompanySupplyList*)GrandCompanySupplyList;
         var handler = new ClickGrandCompanySupplyList();
         handler.ExpertDelivery();
         if (SkipWhenHQ)
         {
-            HQItems ??= InventoryScanner(ValidInventoryTypes);
+            HQItems = InventoryScanner(ValidInventoryTypes);
 
             var onlyHQLeft = true;
             for (var i = 0; i < addon->ExpertDeliveryList->ListLength; i++)
