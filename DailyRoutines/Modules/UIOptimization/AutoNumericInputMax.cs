@@ -37,7 +37,7 @@ public unsafe class AutoNumericInputMax : DailyModuleBase
 
     private nint InitFromComponentDataDetour(AtkComponentNumericInput* component, AtkUldComponentDataNumericInput* data)
     {
-        if (data->Max != 99999)
+        if (data->Max < 99999)
         {
             data->Value = data->Max;
             component->SetValue(data->Max);
@@ -45,7 +45,7 @@ public unsafe class AutoNumericInputMax : DailyModuleBase
         var result = InitFromComponentDataHook.Original(component, data);
 
         // 一些界面初始化后还会再刷新
-        if (data->Max != 99999)
+        if (data->Max < 99999)
             Service.Framework.RunOnTick(() => component->SetValue(data->Max), TimeSpan.FromMilliseconds(500));
         return result;
     }
@@ -59,8 +59,8 @@ public unsafe class AutoNumericInputMax : DailyModuleBase
             _LastInterruptTime = Environment.TickCount64;
 
         if (Environment.TickCount64 - _LastInterruptTime > 10000)
-            if (EzThrottler.Throttle($"AutoNumericInputMax-UldUpdate_{(nint)component}", 100) &&
-                component->Data.Max != 99999)
+            if (EzThrottler.Throttle($"AutoNumericInputMax-UldUpdate_{(nint)component}") &&
+                component->Data.Max < 99999)
                 component->SetValue(component->Data.Max);
 
         return result;
