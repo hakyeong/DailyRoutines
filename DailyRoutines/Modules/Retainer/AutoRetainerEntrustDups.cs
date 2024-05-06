@@ -17,7 +17,7 @@ using TaskManager = ECommons.Automation.TaskManager;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoRetainerEntrustDupsTitle", "AutoRetainerEntrustDupsDescription", ModuleCategories.¹ÍÔ±)]
+[ModuleDescription("AutoRetainerEntrustDupsTitle", "AutoRetainerEntrustDupsDescription", ModuleCategories.é›‡å‘˜)]
 public unsafe class AutoRetainerEntrustDups : DailyModuleBase
 {
     private static AtkUnitBase* RetainerList => (AtkUnitBase*)Service.Gui.GetAddonByName("RetainerList");
@@ -57,7 +57,7 @@ public unsafe class AutoRetainerEntrustDups : DailyModuleBase
             UpdateConfig(nameof(IsEnableCommand), IsEnableCommand);
         }
 
-        ImGuiOm.HelpMarker(Service.Lang.GetText(Service.Lang.GetText("AutoRetainerEntrustDups-CommandHelp")));
+        ImGuiOm.HelpMarker(Service.Lang.GetText("AutoRetainerEntrustDups-CommandHelp"));
 
         ImGui.BeginDisabled(TaskManager.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("Start")))
@@ -128,10 +128,9 @@ public unsafe class AutoRetainerEntrustDups : DailyModuleBase
 
         var addon = RaptureAtkUnitManager.Instance()->GetAddonById((ushort)agent->GetAddonID());
         var addon2 = RaptureAtkUnitManager.Instance()->GetAddonById((ushort)agent2->GetAddonID());
-        if (addon == null) return false;
 
-        addon->Close(true);
-        if (addon2 != null) addon2->Close(true);
+        if (addon != null) addon->Close(true);
+        if (addon2 != null) AddonHelper.Callback(addon2, true, -1);
         return true;
     }
 
