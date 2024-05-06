@@ -4,3 +4,4 @@ bin/
 *.user
 DailyRoutines/Modules/Base/DevModule.cs
 .idea/
+DailyRoutines/Modules/General/DevModule.cs

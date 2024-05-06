@@ -56,7 +56,7 @@ public class Main : Window, IDisposable
                                          type.GetCustomAttribute<ModuleDescriptionAttribute>()?.DescriptionKey ??
                                          "DevModuleDescription"),
                                      Category = type.GetCustomAttribute<ModuleDescriptionAttribute>()?.Category ??
-                                                ModuleCategories.基础,
+                                                ModuleCategories.一般,
                                      Author = ((DailyModuleBase)Activator.CreateInstance(type)!).Author,
                                      WithConfigUI = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
                                                         .Any(m => m.Name == "ConfigUI" && 
@@ -81,7 +81,7 @@ public class Main : Window, IDisposable
                                 ref SearchString, 100);
         ImGui.Separator();
 
-        if (ImGui.BeginTabBar("BasicTab", ImGuiTabBarFlags.Reorderable | ImGuiTabBarFlags.FittingPolicyScroll))
+        if (ImGui.BeginTabBar("BasicTab", ImGuiTabBarFlags.FittingPolicyScroll))
         {
             if (string.IsNullOrEmpty(SearchString))
             {

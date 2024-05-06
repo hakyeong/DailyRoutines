@@ -2,13 +2,13 @@ namespace DailyRoutines.Infos;
 
 public enum ModuleCategories
 {
-    基础,
     一般,
+    系统,
     技能,
     战斗,
-    界面,
-    界面扩展,
+    界面优化,
+    界面操作,
     金碟,
     雇员,
-    通知,
+    通知
 }
