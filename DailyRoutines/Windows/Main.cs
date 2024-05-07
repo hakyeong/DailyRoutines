@@ -11,6 +11,7 @@ using DailyRoutines.Managers;
 using DailyRoutines.Modules;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
@@ -237,6 +238,8 @@ public class MainSettings
 
     public class GameEvent
     {
+        public uint ID { get; set; }
+        public DalamudLinkPayload? LinkPayload { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Url { get; set; } = string.Empty;
         public DateTime BeginTime { get; set; } = DateTime.MinValue;
@@ -614,7 +617,7 @@ public class MainSettings
         });
     }
 
-    private static void OnLogin()
+    internal static void OnLogin()
     {
         if (!Service.Config.SendCalendarToChatWhenLogin) return;
         if (GameCalendars.Any(x => x.BeginTime <= DateTime.Now && DateTime.Now <= x.EndTime))
@@ -628,11 +631,15 @@ public class MainSettings
             foreach (var gameEvent in GameCalendars)
             {
                 if (gameEvent.State != 0) continue;
-                Service.Chat.Print(new SeStringBuilder().AddUiForeground($"{orderNumber}. ", 2)
-                                                        .AddUiForeground($"{gameEvent.Name}", 25)
-                                                        .AddUiForeground($" ({Service.Lang.GetText("GameCalendar-EndTimeMessage", 
-                                                            gameEvent.DaysLeft)})", 2)
-                                                        .Build());
+                var message = new SeStringBuilder().AddUiForeground($"{orderNumber}. ", 2)
+                                                   .Add(gameEvent.LinkPayload)
+                                                   .AddUiForeground($"{gameEvent.Name}", 25)
+                                                   .Add(RawPayload.LinkTerminator)
+                                                   .AddUiForeground(
+                                                       $" ({Service.Lang.GetText("GameCalendar-EndTimeMessage",
+                                                           gameEvent.DaysLeft)})", 2)
+                                                   .Build();
+                Service.Chat.Print(message);
                 orderNumber++;
             }
         }
@@ -680,6 +687,8 @@ public class MainSettings
                 var endTime = UnixSecondToDateTime(activity.end_time);
                 var gameEvent = new GameEvent
                 {
+                    ID = activity.id,
+                    LinkPayload = Service.PluginInterface.AddChatLinkHandler(activity.id, OpenGameEventLinkPayload),
                     Name = activity.name,
                     Url = activity.url,
                     BeginTime = beginTime,
@@ -695,6 +704,13 @@ public class MainSettings
 
             GameCalendars = [..GameCalendars.OrderBy(x => x.DaysLeft)];
         }
+    }
+
+    private static void OpenGameEventLinkPayload(uint commandID, SeString message)
+    {
+        var link = GameCalendars.FirstOrDefault(x => x.ID == commandID)?.Url;
+        if (!string.IsNullOrWhiteSpace(link))
+            Util.OpenLink(link);
     }
 
     private static async Task GetGameNews()
@@ -726,5 +742,7 @@ public class MainSettings
     public static void Uninit()
     {
         Service.ClientState.Login -= OnLogin;
+        foreach (var gameEvent in GameCalendars)
+            Service.PluginInterface.RemoveChatLinkHandler(gameEvent.ID);
     }
 }

@@ -49,6 +49,8 @@ public class Service
 
     internal static void Uninit()
     {
+        PluginInterface.RemoveChatLinkHandler();
+
         foreach (var property in typeof(Service).GetProperties(BindingFlags.Static | BindingFlags.Public)
                                                 .Where(p => typeof(IDailyManager).IsAssignableFrom(p.PropertyType)).Reverse())
         {
