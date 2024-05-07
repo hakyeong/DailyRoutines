@@ -27,19 +27,16 @@ namespace DailyRoutines.Modules;
 public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 {
     private static AtkUnitBase* SelectString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
-
     private static AtkUnitBase* SelectYesno => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectYesno");
-
     // 航行结果
     private static AtkUnitBase* AirShipExplorationResult =>
         (AtkUnitBase*)Service.Gui.GetAddonByName("AirShipExplorationResult");
-
     // 出发详情
     private static AtkUnitBase* AirShipExplorationDetail =>
         (AtkUnitBase*)Service.Gui.GetAddonByName("AirShipExplorationDetail");
-
     private static AtkUnitBase* CompanyCraftSupply => (AtkUnitBase*)Service.Gui.GetAddonByName("CompanyCraftSupply");
 
+    private static TaskManager? RepairTaskManager;
 
     private static readonly HashSet<uint> CompanyWorkshopZones = [423, 424, 425, 653, 984];
     private static string RequisiteMaterialsName = string.Empty;
@@ -48,6 +45,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
     public override void Init()
     {
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
+        RepairTaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
         Overlay ??= new Overlay(this);
         Overlay.Flags |= ImGuiWindowFlags.NoMove;
@@ -178,8 +176,10 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
         if (CompanyCraftSupply != null && IsAddonAndNodesReady(CompanyCraftSupply))
         {
-            TaskManager.Enqueue(RepairSubmarines);
-            return true;
+            RepairTaskManager.Enqueue(RepairSubmarines);
+            RepairTaskManager.DelayNext(20);
+            RepairTaskManager.Enqueue(() => AddonHelper.Callback(CompanyCraftSupply, true, 5));
+            RepairTaskManager.Enqueue(ClickPreviousVoyageLog); return true;
         }
 
         if (SelectString != null && IsAddonAndNodesReady(SelectString))
@@ -187,15 +187,20 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
             if (!ClickHelper.SelectString("修理")) return false;
 
             SelectString->Close(true);
-            TaskManager.Enqueue(RepairSubmarines);
+
+            RepairTaskManager.Enqueue(RepairSubmarines);
+            RepairTaskManager.DelayNext(20);
+            RepairTaskManager.Enqueue(() => AddonHelper.Callback(CompanyCraftSupply, true, 5));
+            RepairTaskManager.Enqueue(ClickPreviousVoyageLog);
             return true;
         }
 
         return false;
     }
 
-    private bool? RepairSubmarines()
+    private static bool? RepairSubmarines()
     {
+        if (!EzThrottler.Throttle("AutoSubmarineCollect-Repair", 100)) return false;
         if (SelectYesno != null) return false;
         if (CompanyCraftSupply == null || !IsAddonAndNodesReady(CompanyCraftSupply)) return false;
 
@@ -208,10 +213,6 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
                 return false;
             }
         }
-
-        TaskManager.DelayNext(20);
-        TaskManager.Enqueue(() => AddonHelper.Callback(CompanyCraftSupply, true, 5));
-        TaskManager.Enqueue(ClickPreviousVoyageLog);
 
         return true;
     }
@@ -230,8 +231,8 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
         if (!ClickHelper.SelectString("上次的远航报告")) return false;
 
-        TaskManager.DelayNext(100);
-        TaskManager.Enqueue(CommenceSubmarineVoyage);
+        RepairTaskManager.DelayNext(100);
+        RepairTaskManager.Enqueue(CommenceSubmarineVoyage);
         return true;
     }
 
@@ -240,12 +241,13 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         switch (logMessageID)
         {
             case 4290:
-                Service.Framework.RunOnTick(TaskManager.Abort, TimeSpan.FromMilliseconds(200));
-                Service.Framework.RunOnTick(() => TaskManager.Enqueue(ReadyToRepairSubmarines),
-                                            TimeSpan.FromMilliseconds(210));
+                TaskManager.Abort();
+                RepairTaskManager.Abort();
+                RepairTaskManager.Enqueue(ReadyToRepairSubmarines);
                 break;
             case 4276:
                 TaskManager.Abort();
+                RepairTaskManager.Abort();
                 break;
         }
     }
@@ -283,6 +285,9 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         Service.AddonLifecycle.UnregisterListener(AlwaysYes);
         Service.AddonLifecycle.UnregisterListener(OnAddonSelectString);
         Service.LogMessageManager.Unregister(OnLogMessages);
+
+        RepairTaskManager?.Abort();
+        RepairTaskManager = null;
 
         base.Uninit();
     }

@@ -46,7 +46,7 @@ public unsafe class AutoNumericInputMax : DailyModuleBase
 
         // 一些界面初始化后还会再刷新
         if (data->Max < 99999)
-            Service.Framework.RunOnTick(() => component->SetValue(data->Max), TimeSpan.FromMilliseconds(500));
+            Service.Framework.RunOnTick(() => component->SetValue(data->Max), TimeSpan.FromMilliseconds(100));
         return result;
     }
 
@@ -59,7 +59,7 @@ public unsafe class AutoNumericInputMax : DailyModuleBase
             _LastInterruptTime = Environment.TickCount64;
 
         if (Environment.TickCount64 - _LastInterruptTime > 10000)
-            if (EzThrottler.Throttle($"AutoNumericInputMax-UldUpdate_{(nint)component}") &&
+            if (EzThrottler.Throttle($"AutoNumericInputMax-UldUpdate_{(nint)component}", 100) &&
                 component->Data.Max < 99999)
                 component->SetValue(component->Data.Max);
 
