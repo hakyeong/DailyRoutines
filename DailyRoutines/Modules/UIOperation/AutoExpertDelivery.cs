@@ -103,6 +103,15 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
     {
         if (GrandCompanySupplyList == null || !IsAddonAndNodesReady(GrandCompanySupplyList)) return;
 
+        var addon = (AddonGrandCompanySupplyList*)GrandCompanySupplyList;
+        if (addon->ExpertDeliveryList->ListLength == 0)
+        {
+            Service.FrameworkManager.Unregister(OnUpdate);
+            GrandCompanySupplyReward->Close(true);
+            SelectYesno->Close(true);
+            return;
+        }
+
         var parts = Marshal.PtrToStringUTF8((nint)AtkStage.GetSingleton()->GetStringArrayData()[32]->StringArray[2])
                            .Split('/');
         var capAmount = int.Parse(parts[1].Replace(",", ""));
