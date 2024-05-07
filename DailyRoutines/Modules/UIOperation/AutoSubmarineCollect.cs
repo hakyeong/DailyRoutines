@@ -192,6 +192,8 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
             RepairTaskManager.DelayNext(20);
             RepairTaskManager.Enqueue(() => AddonHelper.Callback(CompanyCraftSupply, true, 5));
             RepairTaskManager.Enqueue(ClickPreviousVoyageLog);
+            RepairTaskManager.DelayNext(100);
+            RepairTaskManager.Enqueue(CommenceSubmarineVoyage);
             return true;
         }
 
@@ -221,8 +223,8 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
     {
         if (AirShipExplorationDetail != null && IsAddonAndNodesReady(AirShipExplorationDetail))
         {
-            TaskManager.Abort();
-            TaskManager.Enqueue(CommenceSubmarineVoyage);
+            RepairTaskManager.Abort();
+            RepairTaskManager.Enqueue(CommenceSubmarineVoyage);
 
             return true;
         }
@@ -231,8 +233,6 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
         if (!ClickHelper.SelectString("上次的远航报告")) return false;
 
-        RepairTaskManager.DelayNext(100);
-        RepairTaskManager.Enqueue(CommenceSubmarineVoyage);
         return true;
     }
 
