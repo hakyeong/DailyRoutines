@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -8,19 +8,22 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Notifications;
 using Dalamud.Game.ClientState.Objects.Enums;
-using Dalamud.Game.ClientState.Objects.Types;
+using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
-using Dalamud.Plugin.Services;
+using Dalamud.Memory;
+using Dalamud.Utility.Signatures;
 using ECommons.Automation;
 using ECommons.Throttlers;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
+using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoNotifySPPlayersTitle", "AutoNotifySPPlayersDescription", ModuleCategories.通知)]
-public class AutoNotifySPPlayers : DailyModuleBase
+public unsafe class AutoNotifySPPlayers : DailyModuleBase
 {
     private class NotifiedPlayers
     {
@@ -32,12 +35,12 @@ public class AutoNotifySPPlayers : DailyModuleBase
 
     private class Config : ModuleConfiguration
     {
-        public readonly List<NotifiedPlayers> NotifiedPlayers = [];
+        public readonly List<NotifiedPlayers> NotifiedPlayer = [];
     }
 
     private static Config ModuleConfig = null!;
 
-    private static Dictionary<uint, OnlineStatus>? OnlineStatus;
+    private static Dictionary<uint, OnlineStatus>? OnlineStatuses;
 
     private static string ZoneSearchInput = string.Empty;
 
@@ -46,14 +49,22 @@ public class AutoNotifySPPlayers : DailyModuleBase
     private static string SelectName = string.Empty;
     private static string SelectCommand = string.Empty;
 
+    private delegate byte IsTargetableDelegate(GameObject* gameObj);
+
+    [Signature("40 53 48 83 EC 20 F3 0F 10 89 ?? ?? ?? ?? 0F 57 C0 0F 2E C8 48 8B D9 7A 0A",
+               DetourName = nameof(IsTargetableDetour))]
+    private readonly Hook<IsTargetableDelegate>? IsTargetableHook;
+
 
     public override void Init()
     {
-        OnlineStatus ??= LuminaCache.Get<OnlineStatus>().Where(x => x.RowId != 0 && x.RowId != 47)
-                                    .ToDictionary(x => x.RowId, x => x);
+        OnlineStatuses ??= LuminaCache.Get<OnlineStatus>().Where(x => x.RowId != 0 && x.RowId != 47)
+                                      .ToDictionary(x => x.RowId, x => x);
 
         ModuleConfig = LoadConfig<Config>() ?? new();
-        Service.FrameworkManager.Register(OnUpdate);
+
+        Service.Hook.InitializeFromAttributes(this);
+        IsTargetableHook?.Enable();
     }
 
     public override void ConfigUI()
@@ -70,7 +81,8 @@ public class AutoNotifySPPlayers : DailyModuleBase
 
             ImGui.TableNextColumn();
             ImGui.SetNextItemWidth(-1f);
-            ImGui.InputTextWithHint("###NameInput", Service.Lang.GetText("AutoNotifySPPlayers-NameInputHint"), ref SelectName, 64);
+            ImGui.InputTextWithHint("###NameInput", Service.Lang.GetText("AutoNotifySPPlayers-NameInputHint"),
+                                    ref SelectName, 64);
 
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
@@ -78,9 +90,11 @@ public class AutoNotifySPPlayers : DailyModuleBase
 
             ImGui.TableNextColumn();
             ImGui.SetNextItemWidth(-1f);
-            if (ImGui.BeginCombo("###OnlineStatusCombo", Service.Lang.GetText("AutoNotifySPPlayers-SelectedEntryAmount", SelectedOnlineStatus.Count), ImGuiComboFlags.HeightLarge))
+            if (ImGui.BeginCombo("###OnlineStatusCombo",
+                                 Service.Lang.GetText("AutoNotifySPPlayers-SelectedEntryAmount",
+                                                      SelectedOnlineStatus.Count), ImGuiComboFlags.HeightLarge))
             {
-                foreach (var statusPair in OnlineStatus)
+                foreach (var statusPair in OnlineStatuses)
                 {
                     ImGui.PushID($"{statusPair.Value.Name.RawString}_{statusPair.Value.RowId}");
                     if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(statusPair.Value.Icon).ImGuiHandle,
@@ -105,7 +119,9 @@ public class AutoNotifySPPlayers : DailyModuleBase
 
             ImGui.TableNextColumn();
             ImGui.SetNextItemWidth(-1f);
-            if (ImGui.BeginCombo("###ZoneCombo", Service.Lang.GetText("AutoNotifySPPlayers-SelectedEntryAmount", SelectedZone.Count), ImGuiComboFlags.HeightLarge))
+            if (ImGui.BeginCombo("###ZoneCombo",
+                                 Service.Lang.GetText("AutoNotifySPPlayers-SelectedEntryAmount", SelectedZone.Count),
+                                 ImGuiComboFlags.HeightLarge))
             {
                 ImGui.InputTextWithHint("###ZoneSearchInput", Service.Lang.GetText("PleaseSearch"),
                                         ref ZoneSearchInput, 32);
@@ -138,7 +154,9 @@ public class AutoNotifySPPlayers : DailyModuleBase
 
             ImGui.TableNextColumn();
             ImGui.SetNextItemWidth(-1f);
-            ImGui.InputTextWithHint("###CommandInput", Service.Lang.GetText("AutoNotifySPPlayers-ExtraCommandInputHint"), ref SelectCommand, 64);
+            ImGui.InputTextWithHint("###CommandInput",
+                                    Service.Lang.GetText("AutoNotifySPPlayers-ExtraCommandInputHint"),
+                                    ref SelectCommand, 64);
 
             ImGui.EndTable();
         }
@@ -156,7 +174,7 @@ public class AutoNotifySPPlayers : DailyModuleBase
                     Zone = SelectedZone,
                     Command = SelectCommand
                 };
-                ModuleConfig.NotifiedPlayers.Add(preset);
+                ModuleConfig.NotifiedPlayer.Add(preset);
                 SaveConfig(ModuleConfig);
             }
         }
@@ -164,7 +182,7 @@ public class AutoNotifySPPlayers : DailyModuleBase
         ImGui.Separator();
         ImGui.Separator();
 
-        foreach (var config in ModuleConfig.NotifiedPlayers.ToArray())
+        foreach (var config in ModuleConfig.NotifiedPlayer.ToArray())
         {
             ImGui.Selectable(Service.Lang.GetText("AutoNotifySPPlayers-DisplayInfo", config.Name,
                                                   string.Join(",", config.OnlineStatus.Take(3)),
@@ -175,7 +193,7 @@ public class AutoNotifySPPlayers : DailyModuleBase
             {
                 if (ImGuiOm.ButtonSelectable($"{Service.Lang.GetText("Delete")}"))
                 {
-                    ModuleConfig.NotifiedPlayers.Remove(config);
+                    ModuleConfig.NotifiedPlayer.Remove(config);
                     SaveConfig(ModuleConfig);
                 }
 
@@ -186,48 +204,55 @@ public class AutoNotifySPPlayers : DailyModuleBase
         }
     }
 
-    private static void OnUpdate(IFramework framework)
+    private byte IsTargetableDetour(GameObject* potentialTarget)
     {
-        if (!EzThrottler.Throttle("AutoNotifySPPlayers", 1000) ||
-            ModuleConfig.NotifiedPlayers.Count == 0 ||
-            Service.ClientState.LocalPlayer == null)
-            return;
+        var original = IsTargetableHook.Original(potentialTarget);
 
-        foreach (var player in Service.ObjectTable)
+        if (EzThrottler.Throttle($"AutoNotifySPPlayers-{(nint)potentialTarget}", 1000))
+            CheckGameObject(potentialTarget);
+        return original;
+    }
+
+    private static void CheckGameObject(GameObject* obj)
+    {
+        if (ModuleConfig.NotifiedPlayer.Count == 0 ||
+            Service.ClientState.LocalPlayer == null ||
+            Flags.BetweenAreas()) return;
+
+        if ((ObjectKind)obj->ObjectKind != ObjectKind.Player || !obj->IsCharacter()) return;
+        var chara = (Character*)obj;
+
+        foreach (var config in ModuleConfig.NotifiedPlayer)
         {
-            if (player.ObjectKind != ObjectKind.Player || player is not Character chara)
-                continue;
+            bool[] checks = [true, true, true];
+            var playerName = MemoryHelper.ReadSeStringNullTerminated((nint)obj->Name).TextValue;
 
-            foreach (var config in ModuleConfig.NotifiedPlayers)
+            if (!string.IsNullOrWhiteSpace(config.Name))
             {
-                bool[] checks = [true, true, true];
-
-                if (!string.IsNullOrWhiteSpace(config.Name))
+                try
                 {
-                    try
-                    {
-                        checks[0] = config.Name.StartsWith('/')
-                                        ? new Regex(config.Name).IsMatch(player.Name.TextValue)
-                                        : player.Name.TextValue == config.Name;
-                    }
-                    catch (ArgumentException)
-                    {
-                        checks[0] = false;
-                    }
+                    checks[0] = config.Name.StartsWith('/')
+                                    ? new Regex(config.Name).IsMatch(playerName)
+                                    : playerName == config.Name;
                 }
-
-                if (config.OnlineStatus.Count > 0) checks[1] = config.OnlineStatus.Contains(chara.OnlineStatus.Id);
-
-                if (config.Zone.Count > 0) checks[2] = config.Zone.Contains(Service.ClientState.TerritoryType);
-
-                if (checks.All(x => x))
+                catch (ArgumentException)
                 {
-                    var message = Service.Lang.GetText("AutoNotifySPPlayers-NoticeMessage", player.Name.TextValue);
-                    Service.Chat.Print(message);
-                    WinToast.Notify(message, message);
-
-                    if (!string.IsNullOrWhiteSpace(config.Command)) Chat.Instance.SendMessage(config.Command);
+                    checks[0] = false;
                 }
+            }
+
+            if (config.OnlineStatus.Count > 0)
+                checks[1] = config.OnlineStatus.Contains(chara->CharacterData.OnlineStatus);
+
+            if (config.Zone.Count > 0) checks[2] = config.Zone.Contains(Service.ClientState.TerritoryType);
+
+            if (checks.All(x => x))
+            {
+                var message = Service.Lang.GetText("AutoNotifySPPlayers-NoticeMessage", playerName);
+                Service.Chat.Print(message);
+                WinToast.Notify(message, message);
+
+                if (!string.IsNullOrWhiteSpace(config.Command)) Chat.Instance.SendMessage(config.Command);
             }
         }
     }
