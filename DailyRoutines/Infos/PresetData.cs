@@ -43,7 +43,7 @@ public class PresetData
                             .ToDictionary(x => x.RowId, x => x.Item1.Value)!;
 
         CNWorlds ??= LuminaCache.Get<World>()
-                                .Where(x => x.DataCenter.Value.Region == 5 && !string.IsNullOrWhiteSpace(x.Name.RawString) && !string.IsNullOrWhiteSpace(x.InternalName.RawString) && Utils.IsChineseString(x.Name.RawString))
+                                .Where(x => x.DataCenter.Value.Region == 5 && !string.IsNullOrWhiteSpace(x.Name.RawString) && !string.IsNullOrWhiteSpace(x.InternalName.RawString) && IsChineseString(x.Name.RawString))
                                 .ToDictionary(x => x.RowId, x => x);
 
         Zones ??= LuminaCache.Get<TerritoryType>()
