@@ -1,35 +1,33 @@
+using ClickLib.Clicks;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using FFXIVClientStructs.FFXIV.Component.GUI;
-using System.Runtime.InteropServices;
-using ClickLib.Clicks;
+using Dalamud.Utility.Signatures;
+using ECommons.Automation;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using TaskManager = ECommons.Automation.TaskManager;
-using DailyRoutines.Helpers;
-using ECommons.Automation;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using TaskManager = ECommons.Automation.TaskManager;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoJoinExitDutyTitle", "AutoJoinExitDutyDescription", ModuleCategories.Õ½¶·)]
+[ModuleDescription("AutoJoinExitDutyTitle", "AutoJoinExitDutyDescription", ModuleCategories.æˆ˜æ–—)]
 public unsafe class AutoJoinExitDuty : DailyModuleBase
 {
     private static AtkUnitBase* ContentsFinder => (AtkUnitBase*)Service.Gui.GetAddonByName("ContentsFinder");
 
-    private const string AbandonDutySig = "E8 ?? ?? ?? ?? 48 8B 43 28 B1 01";
-
     private delegate void AbandonDutyDelagte(bool a1);
 
+    [Signature("E8 ?? ?? ?? ?? 48 8B 43 28 B1 01")]
     private static AbandonDutyDelagte? AbandonDuty;
 
     public override void Init()
     {
-        AbandonDuty ??=
-            Marshal.GetDelegateForFunctionPointer<AbandonDutyDelagte>(Service.SigScanner.ScanText(AbandonDutySig));
+        Service.Hook.InitializeFromAttributes(this);
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
         Service.CommandManager.AddSubCommand("joinexitduty",
@@ -42,7 +40,17 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
 
     private void OnCommand(string command, string arguments)
     {
-        if (Flags.BoundByDuty() || !UIState.IsInstanceContentUnlocked(4)) return;
+        if (Flags.BoundByDuty())
+        {
+            Service.Chat.PrintError(Service.Lang.GetText("AutoJoinExitDuty-AlreadyInDutyNotice"), "Daily Routines");
+            return;
+        }
+
+        if (!UIState.IsInstanceContentUnlocked(4))
+        {
+            Service.Chat.PrintError(Service.Lang.GetText("AutoJoinExitDuty-DutyLockedNotice"), "Daily Routines");
+            return;
+        }
 
         TaskManager.Abort();
         EnqueueARound();
@@ -116,9 +124,11 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
         var agent = AgentModule.Instance()->GetAgentContentsFinder();
         var instance = FFXIVClientStructs.FFXIV.Client.Game.UI.ContentsFinder.Instance();
         if (agent == null || instance == null) return false;
-        if (!instance->IsExplorerMode)
+
+        if (!instance->IsExplorerMode || !instance->IsUnrestrictedParty)
         {
             instance->IsExplorerMode = true;
+            instance->IsUnrestrictedParty = true;
             return false;
         }
 

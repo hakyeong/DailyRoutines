@@ -1566,4 +1566,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoNumericInputMaxTitle" xml:space="preserve">
     <value>自动数字输入框最大值</value>
   </data>
+  <data name="AutoJoinExitDuty-AlreadyInDutyNotice" xml:space="preserve">
+    <value>错误: 当前已处于副本中</value>
+  </data>
+  <data name="AutoJoinExitDuty-DutyLockedNotice" xml:space="preserve">
+    <value>错误: 副本 天然要害沙斯塔夏溶洞 未解锁</value>
+  </data>
 </root>
