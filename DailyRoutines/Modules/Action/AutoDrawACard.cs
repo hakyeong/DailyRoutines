@@ -2,11 +2,10 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoDrawACardTitle", "AutoDrawACardDescription", ModuleCategories.¼¼ÄÜ)]
+[ModuleDescription("AutoDrawACardTitle", "AutoDrawACardDescription", ModuleCategories.æŠ€èƒ½)]
 public class AutoDrawACard : DailyModuleBase
 {
     public override void Init()
@@ -26,14 +25,14 @@ public class AutoDrawACard : DailyModuleBase
     private void OnZoneChanged(ushort zone)
     {
         if (!PresetData.Contents.ContainsKey(zone) || Service.ClientState.IsPvP) return;
+
         TaskManager.Abort();
         TaskManager.Enqueue(CheckCurrentJob);
     }
 
     private static unsafe bool? CheckCurrentJob()
     {
-        if (TryGetAddonByName<AtkUnitBase>("NowLoading", out var addon) && IsAddonAndNodesReady(addon))
-            return false;
+        if (Flags.BetweenAreas()) return false;
 
         var player = Service.ClientState.LocalPlayer;
         if (player == null || player.ClassJob.Id == 0) return false;
