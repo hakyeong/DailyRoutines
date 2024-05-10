@@ -1572,4 +1572,19 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoJoinExitDuty-DutyLockedNotice" xml:space="preserve">
     <value>错误: 副本 天然要害沙斯塔夏溶洞 未解锁</value>
   </data>
+  <data name="AutoShowDutyGuideDescription" xml:space="preserve">
+    <value>进入副本后, 自动以悬浮窗形式显示来自 新大陆见闻录 的副本攻略</value>
+  </data>
+  <data name="AutoShowDutyGuideTitle" xml:space="preserve">
+    <value>自动显示副本攻略</value>
+  </data>
+  <data name="AutoShowDutyGuide-DebugMode" xml:space="preserve">
+    <value>调试模式</value>
+  </data>
+  <data name="AutoShowDutyGuide-DebugModeHelp" xml:space="preserve">
+    <value>进入调试模式需要拉取在线数据, 请耐心等待, 切勿频繁开关</value>
+  </data>
+  <data name="AutoShowDutyGuide-FontScale" xml:space="preserve">
+    <value>文本缩放倍数</value>
+  </data>
 </root>
