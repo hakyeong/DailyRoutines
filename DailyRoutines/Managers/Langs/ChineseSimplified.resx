@@ -1587,4 +1587,23 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoShowDutyGuide-FontScale" xml:space="preserve">
     <value>文本缩放倍数</value>
   </data>
+  <data name="AutoPreventDuplicateStatus-EnabledActionAmount" xml:space="preserve">
+    <value>已启用了 {0} 个技能</value>
+  </data>
+  <data name="AutoReplaceLocationAction-TheoryHelp" xml:space="preserve">
+    <value>自动检测当前副本场地的中心位置,
+当地面放置类技能选定位置靠近中心位置时, 则自动修正至中心;
+若选定位置离"中心"偏差较大, 则以玩家手动选定的位置为准;
+
+注: 迷宫挑战/团队任务等副本的道中不会生效</value>
+  </data>
+  <data name="AutoReplaceLocationActionDescription" xml:space="preserve">
+    <value>在使用地面放置类技能时, 自动将其放置位置重定向至场地中心</value>
+  </data>
+  <data name="AutoReplaceLocationActionTitle" xml:space="preserve">
+    <value>自动重定向地面放置类技能</value>
+  </data>
+  <data name="WorkTheory" xml:space="preserve">
+    <value>工作原理</value>
+  </data>
 </root>
