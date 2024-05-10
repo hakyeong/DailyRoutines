@@ -164,7 +164,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
 
     public override void ConfigUI()
     {
-        if (ImGui.BeginCombo("###ActionEnabledCombo", $"已启用 {ConfigEnabledActions.Count(x => x.Value)} 个技能",
+        if (ImGui.BeginCombo("###ActionEnabledCombo", Service.Lang.GetText("AutoPreventDuplicateStatus-EnabledActionAmount", ConfigEnabledActions.Count(x => x.Value)),
                              ImGuiComboFlags.HeightLarge))
         {
             if (ImGui.BeginTable("###ActionTable", 3, ImGuiTableFlags.Borders))
