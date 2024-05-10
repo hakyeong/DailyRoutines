@@ -1598,7 +1598,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
 注: 迷宫挑战/团队任务等副本的道中不会生效</value>
   </data>
   <data name="AutoReplaceLocationActionDescription" xml:space="preserve">
-    <value>在使用地面放置类技能时, 自动将其放置位置重定向至场地中心</value>
+    <value>启用并进入副本后, 在使用地面放置类技能时, 自动将其放置位置重定向至场地中心</value>
   </data>
   <data name="AutoReplaceLocationActionTitle" xml:space="preserve">
     <value>自动重定向地面放置类技能</value>
