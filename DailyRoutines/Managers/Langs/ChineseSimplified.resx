@@ -1606,4 +1606,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="WorkTheory" xml:space="preserve">
     <value>工作原理</value>
   </data>
+  <data name="AutoRetainerRefreshDescription" xml:space="preserve">
+    <value>打开雇员列表并点击开始后, 自动逐个点击刷新雇员状态</value>
+  </data>
+  <data name="AutoRetainerRefreshTitle" xml:space="preserve">
+    <value>自动刷新雇员状态</value>
+  </data>
 </root>
