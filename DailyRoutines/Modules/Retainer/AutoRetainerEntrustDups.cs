@@ -17,6 +17,7 @@ using TaskManager = ECommons.Automation.TaskManager;
 
 namespace DailyRoutines.Modules;
 
+[PrecedingModule([typeof(AutoTalkSkip)])]
 [ModuleDescription("AutoRetainerEntrustDupsTitle", "AutoRetainerEntrustDupsDescription", ModuleCategories.雇员)]
 public unsafe class AutoRetainerEntrustDups : DailyModuleBase
 {

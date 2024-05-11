@@ -15,6 +15,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
+[PrecedingModule([typeof(AutoRequestItemSubmit)])]
 [ModuleDescription("AutoFCWSDeliverTitle", "AutoFCWSDeliverDescription", ModuleCategories.界面操作)]
 public unsafe class AutoFCWSDeliver : DailyModuleBase
 {

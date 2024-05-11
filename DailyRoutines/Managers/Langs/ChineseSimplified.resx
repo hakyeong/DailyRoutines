@@ -201,8 +201,7 @@
     <value>跳过 HQ 物品</value>
   </data>
   <data name="AutoDesynthesizeItemsDescription" xml:space="preserve">
-    <value>打开道具分解列表, 并点击开始后, 自动分解所有道具
-(前置模块: 自动确认道具分解)</value>
+    <value>打开道具分解列表, 并点击开始后, 自动分解所有道具</value>
   </data>
   <data name="AutoDesynthesizeItemsTitle" xml:space="preserve">
     <value>自动道具分解</value>
@@ -286,8 +285,7 @@
     <value>选择理符:</value>
   </data>
   <data name="AutoLeveQuestsDescription" xml:space="preserve">
-    <value>配置完成并点击开始后, 自动重复完成指定的生产理符任务, 直至理符额度耗尽
-(前置模块: 自动选择并递交物品, 自动跳过对话, 自动确认任务结果)</value>
+    <value>配置完成并点击开始后, 自动重复完成指定的生产理符任务, 直至理符额度耗尽</value>
   </data>
   <data name="AutoLeveQuestsTitle" xml:space="preserve">
     <value>自动批量完成生产理符</value>
@@ -667,8 +665,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>自动选择并递交物品</value>
   </data>
   <data name="AutoRetainerCollectDescription" xml:space="preserve">
-    <value>打开雇员列表界面后, 自动确认已探索结束雇员的探险结果并重新委派
-(前置模块: 自动跳过对话)</value>
+    <value>打开雇员列表界面后, 自动确认已探索结束雇员的探险结果并重新委派</value>
   </data>
   <data name="AutoRetainerCollectTitle" xml:space="preserve">
     <value>自动收取雇员</value>
@@ -690,8 +687,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>什么是雇员登记市场变更列表?</value>
   </data>
   <data name="AutoRetainersDispatchDescription" xml:space="preserve">
-    <value>打开雇员窗口的雇员登记市场变更列表, 点击开始后, 自动将所有雇员的登记市场改为当前城市
-(前置模块: 自动跳过对话)</value>
+    <value>打开雇员窗口的雇员登记市场变更列表, 点击开始后, 自动将所有雇员的登记市场改为当前城市</value>
   </data>
   <data name="AutoRetainersDispatchTitle" xml:space="preserve">
     <value>自动变更雇员登记市场</value>
@@ -721,8 +717,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>方式2</value>
   </data>
   <data name="AutoShareRetainersGilsEvenlyDescription" xml:space="preserve">
-    <value>配置完毕并点击开始后, 自动平均各个雇员所保管的金币数量
-(前置模块: 自动跳过对话)</value>
+    <value>配置完毕并点击开始后, 自动平均各个雇员所保管的金币数量</value>
   </data>
   <data name="AutoShareRetainersGilsEvenlyTitle" xml:space="preserve">
     <value>自动平均雇员金币</value>
@@ -743,8 +738,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>什么是潜水艇列表?</value>
   </data>
   <data name="AutoSubmarineCollectDescription" xml:space="preserve">
-    <value>打开潜水艇列表, 并点击开始后, 自动确认潜水艇探索结果并重新委派
-(前置模块: 自动跳过过场动画)</value>
+    <value>打开潜水艇列表, 并点击开始后, 自动确认潜水艇探索结果并重新委派</value>
   </data>
   <data name="AutoSubmarineCollectTitle" xml:space="preserve">
     <value>自动收取潜水艇</value>
@@ -790,8 +784,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
 3. 请避免因金币达到上限而蒙受损失的情况</value>
   </data>
   <data name="AutoWithdrawRetainersGilsDescription" xml:space="preserve">
-    <value>启用并点击开始后, 自动取出所有雇员保管的所有金币
-(前置模块: 自动跳过对话)</value>
+    <value>启用并点击开始后, 自动取出所有雇员保管的所有金币</value>
   </data>
   <data name="AutoWithdrawRetainersGilsTitle" xml:space="preserve">
     <value>自动取出雇员金币</value>
@@ -1440,8 +1433,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>高品质</value>
   </data>
   <data name="AutoFCWSDeliverDescription" xml:space="preserve">
-    <value>打开提供素材界面, 并点击开始后, 自动交纳当前所有可用素材
-(前置模块: 自动选择并递交物品) </value>
+    <value>打开提供素材界面, 并点击开始后, 自动交纳当前所有可用素材</value>
   </data>
   <data name="AutoFCWSDeliverTitle" xml:space="preserve">
     <value>自动部队合建交纳素材</value>
@@ -1611,5 +1603,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoRetainerRefreshTitle" xml:space="preserve">
     <value>自动刷新雇员状态</value>
+  </data>
+  <data name="PrecedingModules" xml:space="preserve">
+    <value>前置模块</value>
   </data>
 </root>

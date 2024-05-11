@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text.RegularExpressions;
@@ -23,6 +22,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
+[PrecedingModule([typeof(AutoCutSceneSkip)])]
 [ModuleDescription("AutoSubmarineCollectTitle", "AutoSubmarineCollectDescription", ModuleCategories.界面操作)]
 public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 {

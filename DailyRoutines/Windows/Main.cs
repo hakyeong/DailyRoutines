@@ -27,6 +27,7 @@ public class Main : Window, IDisposable
     public class ModuleInfo
     {
         public Type Module { get; set; } = null!;
+        public string[]? PrecedingModule { get; set; }
         public string Title { get; set; } = null!;
         public string Description { get; set; } = null!;
         public string? Author { get; set; }
@@ -50,6 +51,10 @@ public class Main : Window, IDisposable
                                  .Select(type => new ModuleInfo
                                  {
                                      Module = type,
+                                     PrecedingModule = type.GetCustomAttribute<PrecedingModuleAttribute>()?.Modules
+                                                           .Select(t => t.Name + "Title")
+                                                           .Select(title => Service.Lang.GetText(title))
+                                                           .ToArray(),
                                      Title = Service.Lang.GetText(
                                          type.GetCustomAttribute<ModuleDescriptionAttribute>()?.TitleKey ??
                                          "DevModuleTitle"),
@@ -111,7 +116,7 @@ public class Main : Window, IDisposable
                     var module = modulesInCategory[i];
 
                     ImGui.PushID($"{module.Module.Name}-{module.Category}-{module.Title}-{module.Description}");
-                    DrawModuleUI(module, modulesInCategory.Length, i);
+                    DrawModuleUI(module, modulesInCategory.Length, i, false);
                     ImGui.PopID();
                 }
 
@@ -134,11 +139,7 @@ public class Main : Window, IDisposable
                     !module.Module.Name.Contains(SearchString, StringComparison.OrdinalIgnoreCase)) continue;
 
                 ImGui.PushID($"{module.Category}-{module.Description}-{module.Title}-{module.Module}");
-                ImGui.BeginGroup();
-                DrawModuleUI(module, modules.Count, i);
-                ImGui.EndGroup();
-
-                ImGuiOm.TooltipHover(Service.Lang.GetText(module.Category.ToString()));
+                DrawModuleUI(module, modules.Count, i, true);
                 ImGui.PopID();
             }
 
@@ -146,7 +147,7 @@ public class Main : Window, IDisposable
         }
     }
 
-    private static void DrawModuleUI(ModuleInfo moduleInfo, int modulesCount, int index)
+    private static void DrawModuleUI(ModuleInfo moduleInfo, int modulesCount, int index, bool fromSearch)
     {
         var moduleName = moduleInfo.Module.Name;
         if (!Service.Config.ModuleEnabled.TryGetValue(moduleName, out var isModuleEnabled)) return;
@@ -161,6 +162,8 @@ public class Main : Window, IDisposable
 
             Service.Config.Save();
         }
+
+        ImGuiOm.TooltipHover(Service.Lang.GetText(moduleInfo.Category.ToString()));
 
         var moduleText = $"[{moduleName}]";
         ImGui.SameLine();
@@ -204,6 +207,33 @@ public class Main : Window, IDisposable
 
         ImGui.SetCursorPosX(origCursorPosX);
         ImGuiOm.TextDisabledWrapped(moduleInfo.Description);
+
+        ImGui.SetCursorPosX(origCursorPosX);
+        ImGui.BeginGroup();
+        if (moduleInfo.PrecedingModule is { Length: > 0 })
+        {
+            ImGuiOm.TextDisabledWrapped($"({Service.Lang.GetText("PrecedingModules")}:");
+            for (var i = 0; i < moduleInfo.PrecedingModule.Length; i++)
+            {
+                var pModule = moduleInfo.PrecedingModule[i];
+
+                ImGui.SameLine();
+                ImGui.TextColored(ImGuiColors.DalamudYellow, pModule);
+
+                if (ImGui.IsItemClicked())
+                    SearchString = pModule;
+
+                if (i < moduleInfo.PrecedingModule.Length - 1)
+                {
+                    ImGui.SameLine();
+                    ImGui.TextDisabled("/");
+                }
+            }
+            ImGui.SameLine(0, 0);
+            ImGuiOm.TextDisabledWrapped(")");
+        }
+        ImGui.EndGroup();
+
         if (index < modulesCount - 1) ImGui.Separator();
 
         return;

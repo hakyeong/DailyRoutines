@@ -14,6 +14,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
+[PrecedingModule([typeof(AutoConfirmDesynthesizeDialog)])]
 [ModuleDescription("AutoDesynthesizeItemsTitle", "AutoDesynthesizeItemsDescription", ModuleCategories.界面操作)]
 public unsafe class AutoDesynthesizeItems : DailyModuleBase
 {

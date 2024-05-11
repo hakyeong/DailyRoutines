@@ -19,6 +19,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
+[PrecedingModule([typeof(AutoRequestItemSubmit), typeof(AutoTalkSkip), typeof(AutoQuestComplete)])]
 [ModuleDescription("AutoLeveQuestsTitle", "AutoLeveQuestsDescription", ModuleCategories.一般)]
 public unsafe class AutoLeveQuests : DailyModuleBase
 {

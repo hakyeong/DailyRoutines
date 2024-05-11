@@ -12,6 +12,7 @@ using DailyRoutines.Infos;
 
 namespace DailyRoutines.Modules;
 
+[PrecedingModule([typeof(AutoTalkSkip)])]
 [ModuleDescription("AutoRetainerRefreshTitle", "AutoRetainerRefreshDescription", ModuleCategories.雇员)]
 public unsafe class AutoRetainerRefresh : DailyModuleBase
 {

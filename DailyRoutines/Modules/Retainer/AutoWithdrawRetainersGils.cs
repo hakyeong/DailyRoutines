@@ -10,6 +10,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
+[PrecedingModule([typeof(AutoTalkSkip)])]
 [ModuleDescription("AutoWithdrawRetainersGilsTitle", "AutoWithdrawRetainersGilsDescription", ModuleCategories.雇员)]
 public unsafe class AutoWithdrawRetainersGils : DailyModuleBase
 {

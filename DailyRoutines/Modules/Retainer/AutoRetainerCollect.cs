@@ -14,6 +14,7 @@ using TaskManager = ECommons.Automation.TaskManager;
 
 namespace DailyRoutines.Modules;
 
+[PrecedingModule([typeof(AutoTalkSkip)])]
 [ModuleDescription("AutoRetainerCollectTitle", "AutoRetainerCollectDescription", ModuleCategories.雇员)]
 public unsafe class AutoRetainerCollect : DailyModuleBase
 {

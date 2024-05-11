@@ -39,6 +39,7 @@ using SeStringBuilder = Dalamud.Game.Text.SeStringHandling.SeStringBuilder;
 
 namespace DailyRoutines.Modules;
 
+[PrecedingModule([typeof(AutoTalkSkip)])]
 [ModuleDescription("AutoRetainerPriceAdjustTitle", "AutoRetainerPriceAdjustDescription", ModuleCategories.雇员)]
 public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
 {
