@@ -63,7 +63,9 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         低于最小值 = 2,
         低于预期值 = 4,
         低于收购价 = 8,
-        大于可接受降价值 = 16
+        大于可接受降价值 = 16,
+        高于预期值 = 32,
+        高于最大值 = 64,
     }
 
     public enum AbortBehavior
@@ -151,13 +153,17 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         /// </summary>
         public int PriceMinimum { get; set; } = 100;
         /// <summary>
+        /// 最大可接受价格
+        /// </summary>
+        public int PriceMaximum { get; set; } = 100000000;
+        /// <summary>
         /// 预期价格 (最小值: PriceMinimum + 1)
         /// </summary>
         public int PriceExpected { get; set; } = 200;
         /// <summary>
         /// 最大可接受降价值 (设置为 0 以禁用)
         /// </summary>
-        public int PriceMaxReduction { get; set; } = 0;
+        public int PriceMaxReduction { get; set; }
 
         /// <summary>
         /// 意外情况逻辑
@@ -209,6 +215,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
 
     #region 游戏界面
     private static AtkUnitBase* SelectString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
+    private static AtkUnitBase* SelectYesno => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectYesno");
     private static AtkUnitBase* RetainerList => (AtkUnitBase*)Service.Gui.GetAddonByName("RetainerList");
     private static AtkUnitBase* RetainerSell => (AtkUnitBase*)Service.Gui.GetAddonByName("RetainerSell");
     private static AtkUnitBase* RetainerSellList => (AtkUnitBase*)Service.Gui.GetAddonByName("RetainerSellList");
@@ -270,6 +277,8 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
     private static bool NewConfigItemHQ;
     private static AbortCondition CondtionInput = AbortCondition.低于最小值;
     private static AbortBehavior BehaviorInput = AbortBehavior.无;
+    private static Vector2 ChildSizeLeft;
+    private static Vector2 ChildSizeRight;
 
     private static ItemConfig? SelectedItemConfig;
     private static ItemKey? CurrentItem;
@@ -281,12 +290,14 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
 
     public override void Init()
     {
+        ChildSizeLeft = new Vector2(200 * ImGuiHelpers.GlobalScale, 350 * ImGuiHelpers.GlobalScale);
+        ChildSizeRight = new Vector2(450 * ImGuiHelpers.GlobalScale, 350 * ImGuiHelpers.GlobalScale);
+
         ModuleConfig = LoadConfig<Config>() ?? new();
 
         ItemsSellPrice ??= LuminaCache.Get<Item>()
                                   .Where(x => !string.IsNullOrEmpty(x.Name.RawString) && x.PriceLow != 0)
                                   .ToDictionary(x => x.RowId, x => x.PriceLow);
-
         ItemNames ??= LuminaCache.Get<Item>()
                                  .Where(x => !string.IsNullOrEmpty(x.Name.RawString))
                                  .GroupBy(x => x.Name.RawString)
@@ -380,9 +391,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
 
     private void ItemConfigSelector()
     {
-        var childSize = new Vector2(200 * ImGuiHelpers.GlobalScale, 300 * ImGuiHelpers.GlobalScale);
-
-        if (ImGui.BeginChild("ItemConfigSelectorChild", childSize, true))
+        if (ImGui.BeginChild("ItemConfigSelectorChild", ChildSizeLeft, true))
         {
             if (ImGuiOm.ButtonIcon("AddNewConfig", FontAwesomeIcon.Plus, Service.Lang.GetText("Add")))
                 ImGui.OpenPopup("AddNewPreset");
@@ -478,10 +487,9 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
     private void ItemConfigEditor()
     {
         var itemConfig = SelectedItemConfig;
-        var childSize = new Vector2(450 * ImGuiHelpers.GlobalScale, 300 * ImGuiHelpers.GlobalScale);
         if (itemConfig == null)
         {
-            if (ImGui.BeginChild("ItemConfigEditorChild", childSize, true))
+            if (ImGui.BeginChild("ItemConfigEditorChild", ChildSizeRight, true))
                 ImGui.EndChild();
             return;
         }
@@ -495,7 +503,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         var itemBuyingPrice = itemConfig.ItemID == 0 ? 1 : item.PriceLow;
 
 
-        if (ImGui.BeginChild("ItemConfigEditorChild", childSize, true))
+        if (ImGui.BeginChild("ItemConfigEditorChild", ChildSizeRight, true))
         {
             // 物品基本信息展示
             PresetFont.Axis14.Push();
@@ -564,9 +572,9 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
 
             ImGui.Dummy(ImGuiHelpers.ScaledVector2(10f));
 
-            // 最低可接受价格与预期价格
+            // 最低可接受价格
             var originalMin = itemConfig.PriceMinimum;
-            ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
             ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-PriceMinimum"), ref originalMin);
 
             if (ImGui.IsItemDeactivatedAfterEdit())
@@ -584,8 +592,20 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
             }
             ImGui.EndDisabled();
 
+            // 最高可接受价格
+            var originalMax = itemConfig.PriceMaximum;
+            ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+            ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-PriceMaximum"), ref originalMax);
+
+            if (ImGui.IsItemDeactivatedAfterEdit())
+            {
+                itemConfig.PriceMaximum = Math.Min(int.MaxValue, originalMax);
+                SaveConfig(ModuleConfig);
+            }
+
+            // 预期价格
             var originalExpected = itemConfig.PriceExpected;
-            ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
             ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-PriceExpected"), ref originalExpected);
 
             if (ImGui.IsItemDeactivatedAfterEdit())
@@ -600,8 +620,9 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
                 Util.OpenLink($"https://universalis.app/market/{itemConfig.ItemID}");
             ImGui.EndDisabled();
 
+            // 可接受降价值
             var originalPriceReducion = itemConfig.PriceMaxReduction;
-            ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
             ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-PriceMaxReduction"), ref originalPriceReducion);
 
             if (ImGui.IsItemDeactivatedAfterEdit())
@@ -789,7 +810,11 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
     private bool? ClickSpecificRetainer(int index)
     {
         if (InterruptByConflictKey()) return true;
-
+        if (SelectYesno != null && IsAddonAndNodesReady(SelectYesno))
+        {
+            Click.SendClick("select_yes");
+            return false;
+        }
         if(RetainerList == null || !IsAddonAndNodesReady(RetainerList)) return false;
 
         ClickRetainerList.Using((nint)RetainerList).Retainer(index);
@@ -901,6 +926,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         return true;
     }
 
+    // 解析市场数据
     private bool? ParseMarketData()
     {
         // 市场结果为空
@@ -975,22 +1001,39 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
             return true;
         }
 
-        var modifiedPrice = marketPrice;
-        switch (itemDetails.Preset.AdjustBehavior)
+        var modifiedPrice = itemDetails.Preset.AdjustBehavior switch
         {
-            case AdjustBehavior.固定值:
-                modifiedPrice = (uint)((int)marketPrice - itemDetails.Preset.AdjustValues[AdjustBehavior.固定值]);
-                break;
-            case AdjustBehavior.百分比:
-                modifiedPrice = (uint)(marketPrice * 
-                                       (1 - (itemDetails.Preset.AdjustValues[AdjustBehavior.百分比] / 100)));
-                break;
-        }
+            AdjustBehavior.固定值 => (uint)((int)marketPrice - itemDetails.Preset.AdjustValues[AdjustBehavior.固定值]),
+            AdjustBehavior.百分比 => (uint)(marketPrice *
+                                         (1 - (itemDetails.Preset.AdjustValues[AdjustBehavior.百分比] / 100))),
+            _ => marketPrice
+        };
 
+        #region 意外情况判断
         // 价格不变
         if (modifiedPrice == itemDetails.OrigPrice)
         {
             OperateAndReturn(false);
+            return true;
+        }
+
+        // 高于最大值
+        if (modifiedPrice > itemDetails.Preset.PriceMaximum &&
+            itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.高于最大值)))
+        {
+            var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.高于最大值)).Value;
+            NotifyAbortCondition(AbortCondition.高于最大值);
+            EnqueueAbortBehavior(behavior);
+            return true;
+        }
+
+        // 高于预期值
+        if (modifiedPrice > itemDetails.Preset.PriceExpected &&
+            itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.高于预期值)))
+        {
+            var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.高于预期值)).Value;
+            NotifyAbortCondition(AbortCondition.高于预期值);
+            EnqueueAbortBehavior(behavior);
             return true;
         }
 
@@ -1036,7 +1079,7 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
             EnqueueAbortBehavior(behavior);
             return true;
         }
-
+        #endregion
         OperateAndReturn(true, modifiedPrice);
         return true;
 

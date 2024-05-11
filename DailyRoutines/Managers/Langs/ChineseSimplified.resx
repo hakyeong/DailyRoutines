@@ -1607,4 +1607,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="PrecedingModules" xml:space="preserve">
     <value>前置模块</value>
   </data>
+  <data name="AutoRetainerPriceAdjust-PriceMaximum" xml:space="preserve">
+    <value>最高可接受价格</value>
+  </data>
 </root>
