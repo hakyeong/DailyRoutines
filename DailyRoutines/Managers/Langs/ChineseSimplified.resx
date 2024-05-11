@@ -1610,4 +1610,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRetainerPriceAdjust-PriceMaximum" xml:space="preserve">
     <value>最高可接受价格</value>
   </data>
+  <data name="AutoNotifySPPlayers-WorkTheoryHelp" xml:space="preserve">
+    <value>每 3 秒执行一次检测,
+单个玩家每 5 分钟内最多提醒 5 次</value>
+  </data>
 </root>

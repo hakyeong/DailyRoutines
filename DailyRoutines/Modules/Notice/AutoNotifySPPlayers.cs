@@ -10,6 +10,7 @@ using DailyRoutines.Notifications;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Hooking;
 using Dalamud.Interface;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
@@ -50,10 +51,11 @@ public unsafe class AutoNotifySPPlayers : DailyModuleBase
     private static string SelectCommand = string.Empty;
 
     private delegate byte IsTargetableDelegate(GameObject* gameObj);
-
     [Signature("40 53 48 83 EC 20 F3 0F 10 89 ?? ?? ?? ?? 0F 57 C0 0F 2E C8 48 8B D9 7A 0A",
                DetourName = nameof(IsTargetableDetour))]
     private readonly Hook<IsTargetableDelegate>? IsTargetableHook;
+
+    private static readonly Dictionary<nint, long> NoticeTimeInfo = [];
 
 
     public override void Init()
@@ -69,6 +71,10 @@ public unsafe class AutoNotifySPPlayers : DailyModuleBase
 
     public override void ConfigUI()
     {
+        ImGui.TextColored(ImGuiColors.DalamudOrange, Service.Lang.GetText("WorkTheory"));
+
+        ImGuiOm.HelpMarker(Service.Lang.GetText("AutoNotifySPPlayers-WorkTheoryHelp"));
+
         var tableSize = new Vector2(ImGui.GetContentRegionAvail().X / 4 * 3, 0);
         if (ImGui.BeginTable("###AutoNotifySPPlayersTable", 2, ImGuiTableFlags.None, tableSize))
         {
@@ -208,8 +214,27 @@ public unsafe class AutoNotifySPPlayers : DailyModuleBase
     {
         var original = IsTargetableHook.Original(potentialTarget);
 
-        if (EzThrottler.Throttle($"AutoNotifySPPlayers-{(nint)potentialTarget}", 1000))
-            CheckGameObject(potentialTarget);
+        var targetAddress = (nint)potentialTarget;
+        if (EzThrottler.Throttle($"AutoNotifySPPlayers-{targetAddress}", 3000))
+        {
+            var currentTime = Environment.TickCount64;
+            NoticeTimeInfo.TryAdd(targetAddress, currentTime);
+            if (!NoticeTimeInfo.TryGetValue(targetAddress, out var lastNoticeTime))
+            {
+                NoticeTimeInfo[targetAddress] = currentTime;
+                CheckGameObject(potentialTarget);
+            }
+            else switch (currentTime - lastNoticeTime)
+            {
+                case < 15000:
+                    CheckGameObject(potentialTarget);
+                    break;
+                case > 300000:
+                    NoticeTimeInfo[targetAddress] = currentTime;
+                    CheckGameObject(potentialTarget);
+                    break;
+            }
+        }
         return original;
     }
 
