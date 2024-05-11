@@ -349,14 +349,18 @@ public unsafe class BetterFollow : DailyModuleBase
 
         /*-------------------------------不需要实时处理的模块-------------------------------*/
         if (!EzThrottler.Throttle("BetterFollow", (int)ModuleConfig.Delay * 1000)) return;
-        if (ModuleConfig.MountWhenFollowMount &&
-            ((Character*)followObject.Address)->IsMounted() &&
-            Flags.CanMount) return;
-        if (ModuleConfig.FlyingWhenFollowFlying && ((CharacterFlying*)followObject.Address)->IsFlying != 0 &&
-            !Service.Condition[ConditionFlag.InFlight] && Service.Condition[ConditionFlag.Mounted]) return;
-        if (ModuleConfig.UnMountWhenFollowUnMount &&
-            !((Character*)followObject.Address)->IsMounted() &&
-            Service.Condition[ConditionFlag.Mounted]) return;
+        if (_FollowStatus && followObject != null &&
+            followObject.ObjectKind == ObjectKind.Player)
+        {
+            if (ModuleConfig.MountWhenFollowMount &&
+                ((Character*)followObject.Address)->IsMounted() &&
+                Flags.CanMount) return;
+            if (ModuleConfig.FlyingWhenFollowFlying && ((CharacterFlying*)followObject.Address)->IsFlying != 0 &&
+                !Service.Condition[ConditionFlag.InFlight] && Service.Condition[ConditionFlag.Mounted]) return;
+            if (ModuleConfig.UnMountWhenFollowUnMount &&
+                !((Character*)followObject.Address)->IsMounted() &&
+                Service.Condition[ConditionFlag.Mounted]) return;
+        }
         //处理移动逻辑
         if (ModuleConfig.MoveType == MoveTypeList.Navmesh && _FollowStatus && followObject != null)
         {
