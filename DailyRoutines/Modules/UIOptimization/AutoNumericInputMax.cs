@@ -60,6 +60,7 @@ public unsafe class AutoNumericInputMax : DailyModuleBase
 
         if (Environment.TickCount64 - _LastInterruptTime > 10000)
             if (EzThrottler.Throttle($"AutoNumericInputMax-UldUpdate_{(nint)component}", 100) &&
+                component->AtkComponentInputBase.AtkComponentBase.OwnerNode->AtkResNode.NodeFlags.HasFlag(NodeFlags.Enabled) &&
                 component->Data.Max < 9999)
                 component->SetValue(component->Data.Max);
 
