@@ -75,7 +75,8 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         收回至背包,
         出售至系统商店,
         改价至最小值,
-        改价至预期值
+        改价至预期值,
+        改价至最高值
     }
 
     public class ItemKey : IEquatable<ItemKey>
@@ -1147,6 +1148,9 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
                     break;
                 case AbortBehavior.改价至预期值:
                     OperateAndReturn(true, (uint)itemDetails.Preset.PriceExpected);
+                    break;
+                case AbortBehavior.改价至最高值:
+                    OperateAndReturn(true, (uint)itemDetails.Preset.PriceMaximum);
                     break;
                 case AbortBehavior.收回至雇员:
                     CloseAddon();
