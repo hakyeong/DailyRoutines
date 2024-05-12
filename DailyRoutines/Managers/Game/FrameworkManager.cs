@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using DailyRoutines.Infos;
@@ -97,8 +98,15 @@ public class FrameworkManager : IDailyManager
     {
         for (var i = 0; i < _length; i++)
         {
-            var method = _updateMehtods[i];
-            method.Invoke(framework);
+            try
+            {
+                var method = _updateMehtods[i];
+                method.Invoke(framework);
+            }
+            catch(Exception ex)
+            {
+                if (Service.PluginInterface.IsDev) Service.Log.Error(ex, "Caught exception when invoking framework update event");
+            }
         }
     }
 
