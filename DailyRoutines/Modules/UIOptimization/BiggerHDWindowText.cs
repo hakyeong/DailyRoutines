@@ -77,7 +77,7 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
     {
         var original = TextInputReceiveEventHook.Original(component, eventCase, a3, a4, a5);
         
-        if (eventCase == 9)
+        if (eventCase == 9 || eventCase == 12)
             ModifyTextInputComponent(component);
 
         return original;
