@@ -116,6 +116,7 @@ public class Service
     public static LanguageManager Lang { get; private set; } = new();
     public static WindowManager WindowManager { get; private set; } = new();
     public static CommandManager CommandManager { get; private set; } = new();
+    public static ExecuteCommandManager ExecuteCommandManager { get; private set; } = new();
     public static LogMessageManager LogMessageManager { get; private set; } = new();
     public static FrameworkManager FrameworkManager { get; private set; } = new();
     public static NotifyManager Notify { get; private set; } = new();
