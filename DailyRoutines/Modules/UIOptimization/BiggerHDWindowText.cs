@@ -17,11 +17,16 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("BiggerHDWindowTextTitle", "BiggerHDWindowTextDescription", ModuleCategories.界面优化)]
 public unsafe class BiggerHDWindowText : DailyModuleBase
 {
-    private class TextNodeInfo(uint nodeID)
+
+    private class TextNodeInfo(uint nodeId, params uint[] nodeIds)
     {
-        public uint NodeID { get; set; } = nodeID;
-        public byte? TextFlag1 { get; set; }
-        public byte? TextFlag2 { get; set; }
+        public uint[] NodeID { get; set; } = [nodeId, .. nodeIds];
+        public byte? TextFlag1Original { get; set; }
+        public byte? TextFlag2Original { get; set; }
+        public byte TextFlags1 { get; set; } = 195;
+        public byte TextFlags2 { get; set; } = 0;
+        public byte? FontSize { get; set; }
+        public bool Modified { get; set; }
     }
 
     private delegate nint TextInputReceiveEventDelegate
@@ -31,7 +36,8 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
 
     private static readonly Dictionary<string, TextNodeInfo> TextWindows = new()
     {
-        { "LookingForGroupDetail", new TextNodeInfo(20) }
+        { "LookingForGroupDetail", new TextNodeInfo(20) },
+        { "LookingForGroupCondition", new TextNodeInfo(22, 16){ TextFlags1 = 224, TextFlags2 = 1} },
     };
 
     private static float FontScale = 2f;
@@ -93,27 +99,46 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
         imeBackground->SetScale(FontScale, FontScale);
     }
 
-    private static void ModifyTextNode(AtkUnitBase* addon, uint nodeID, bool isAdd)
+    private static void ModifyTextNode(AtkUnitBase* addon, uint[] nodeID, bool isAdd)
     {
         if (addon == null) return;
+        var node = addon->GetNodeById(nodeID[0]);
+        foreach (var id in nodeID[1..])
+        {
+            if (node is null)
+                return;
 
-        var textNode = addon->GetNodeById(nodeID)->GetAsAtkTextNode();
-        if (textNode == null) return;
+            node = node->GetComponent()->UldManager.SearchNodeById(id);
+        }
+
+        var textNode = node->GetAsAtkTextNode();
+        if (textNode is null)
+            return;
 
         if (!TextWindows.TryGetValue(Marshal.PtrToStringUTF8((nint)addon->Name), out var info)) return;
 
+        if (!info.Modified)
+        {
+            info.TextFlag1Original = textNode->TextFlags;
+            info.TextFlag2Original = textNode->TextFlags2;
+            info.FontSize = textNode->FontSize;
+        }
+
         if (isAdd)
         {
-            info.TextFlag1 ??= textNode->TextFlags;
-            info.TextFlag2 ??= textNode->TextFlags;
-
-            textNode->TextFlags = 195;
-            textNode->TextFlags2 = 0;
+            textNode->TextFlags = info.TextFlags1;
+            textNode->TextFlags2 = info.TextFlags2;
+            info.Modified = true;
         }
         else
         {
-            if (info.TextFlag1 != null) textNode->TextFlags = (byte)info.TextFlag1;
-            if (info.TextFlag2 != null) textNode->TextFlags2 = (byte)info.TextFlag2;
+            if (info.TextFlag1Original != null)
+                textNode->TextFlags = (byte)info.TextFlag1Original;
+            if (info.TextFlag2Original != null)
+                textNode->TextFlags2 = (byte)info.TextFlag2Original;
+            if (info.FontSize != null)
+                textNode->FontSize = (byte)info.FontSize;
+            info.Modified = false;
         }
     }
 
