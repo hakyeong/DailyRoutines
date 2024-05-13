@@ -796,7 +796,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>缩放倍数</value>
   </data>
   <data name="BiggerHDWindowTextDescription" xml:space="preserve">
-    <value>启用并配置完毕后, 允许你自定义输入法窗口缩放倍数, 并使部分窗口的文本变得更加清晰</value>
+    <value>启用并配置完毕后, 允许自定义输入法窗口缩放倍数, 并使部分窗口的文本变得更加清晰</value>
   </data>
   <data name="BiggerHDWindowTextTitle" xml:space="preserve">
     <value>更大的高清输入法界面</value>
@@ -1613,5 +1613,17 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoNotifySPPlayers-WorkTheoryHelp" xml:space="preserve">
     <value>每 3 秒执行一次检测,
 单个玩家每 5 分钟内最多提醒 5 次</value>
+  </data>
+  <data name="FastResetAllSDEnmity-AddCommand" xml:space="preserve">
+    <value>添加 /pdr {0} 指令</value>
+  </data>
+  <data name="FastResetAllSDEnmity-CommandHelp" xml:space="preserve">
+    <value>重置所有木人的仇恨</value>
+  </data>
+  <data name="FastResetAllSDEnmityDescription" xml:space="preserve">
+    <value>启用后, 对单一木人清除仇恨即可清除所有木人的仇恨, 并添加指令用以手动清除</value>
+  </data>
+  <data name="FastResetAllSDEnmityTitle" xml:space="preserve">
+    <value>快速重置所有木人仇恨</value>
   </data>
 </root>
