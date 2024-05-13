@@ -8,17 +8,21 @@ namespace DailyRoutines.Managers;
 
 public class ExecuteCommandManager : IDailyManager
 {
-    public delegate nint ExecuteCommandDelegate(int command, int param1, int param2, int param3, int param4);
-
+    private delegate nint ExecuteCommandDelegate(int command, int param1, int param2, int param3, int param4);
     [Signature("48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 8B E9 41 8B D9 48 8B 0D ?? ?? ?? ?? 41 8B F8 8B F2", DetourName = nameof(ExecuteCommandDetour))]
     private static Hook<ExecuteCommandDelegate>? ExecuteCommandHook;
 
-    private static Dictionary<string, ExecuteCommandDelegate>? MethodsInfo;
-    private static ExecuteCommandDelegate[]? _methods;
+    public delegate void ExecuteCommandReceivedDelegate(int command, int param1, int param2, int param3, int param4);
+
+    private static Dictionary<string, ExecuteCommandReceivedDelegate>? MethodsInfo;
+    private static ExecuteCommandReceivedDelegate[]? _methods;
     private static int _length;
 
     private void Init()
     {
+        MethodsInfo ??= [];
+        _methods ??= [];
+
         Service.Hook.InitializeFromAttributes(this);
         ExecuteCommandHook?.Enable();
     }
@@ -45,7 +49,7 @@ public class ExecuteCommandManager : IDailyManager
         }
     }
 
-    public bool Register(params ExecuteCommandDelegate[] methods)
+    public bool Register(params ExecuteCommandReceivedDelegate[] methods)
     {
         var state = true;
         foreach (var method in methods)
@@ -58,7 +62,7 @@ public class ExecuteCommandManager : IDailyManager
         return state;
     }
 
-    public bool Unregister(params ExecuteCommandDelegate[] methods)
+    public bool Unregister(params ExecuteCommandReceivedDelegate[] methods)
     {
         var state = true;
         foreach (var method in methods)
@@ -84,7 +88,7 @@ public class ExecuteCommandManager : IDailyManager
         return state;
     }
 
-    private static string GetUniqueName(ExecuteCommandDelegate method)
+    private static string GetUniqueName(ExecuteCommandReceivedDelegate method)
     {
         var methodInfo = method.Method;
         return $"{methodInfo.DeclaringType.FullName}_{methodInfo.Name}";
