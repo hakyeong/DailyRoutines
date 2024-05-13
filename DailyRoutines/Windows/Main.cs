@@ -163,7 +163,7 @@ public class Main : Window, IDisposable
             Service.Config.Save();
         }
 
-        if (fromSearch) ImGuiOm.TooltipHover(Service.Lang.GetText(moduleInfo.Category.ToString()));
+        if (fromSearch) ImGuiOm.TooltipHover(moduleInfo.Category.ToString());
 
         var moduleText = $"[{moduleName}]";
         ImGui.SameLine();
