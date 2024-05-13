@@ -389,6 +389,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     {
         TargetSystem.Instance()->Target = obj;
         TargetSystem.Instance()->InteractWithObject(obj);
+        if (kind is ObjectKind.EventObj) TargetSystem.Instance()->OpenObjectInteraction(obj);
     }
 
     private static bool IsWindowShouldBeOpen()
