@@ -359,9 +359,9 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
             TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && IsAddonAndNodesReady(addon))
         {
             if (TryScanContextMenuText(addon, "投影到当前装备上", out var index))
-                Util.OpenLink(string.Format(CollectorUrl, _LastPrismBoxItem.Name));
+                Util.OpenLink(string.Format(WikiUrl, _LastPrismBoxItem.Name));
             else
-                Util.OpenLink(string.Format(CollectorUrl, _LastItem.Name));
+                Util.OpenLink(string.Format(WikiUrl, _LastItem.Name));
 
             return;
         }
