@@ -1544,7 +1544,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>技能</value>
   </data>
   <data name="MacroIntoActionQueueDescription" xml:space="preserve">
-    <value>启用后, 令使用 /ac 指令释放的技能进入技能队列</value>
+    <value>启用后, 令所有技能与物品使用都可以进入技能队列</value>
   </data>
   <data name="MacroIntoActionQueueTitle" xml:space="preserve">
     <value>宏进入技能队列</value>
