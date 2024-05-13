@@ -26,6 +26,7 @@ public unsafe class AutoReplaceLocationAction : DailyModuleBase
             { 7439,  true }, // 地星
             { 25862, true }, // 礼仪之铃
             { 3569,  true }, // 庇护所
+            { 188,   true }, // 野战治疗阵
         };
     }
 
