@@ -87,58 +87,40 @@ public unsafe class LogMessageManager : IDailyManager
     #endregion
 
     #region Event
-    public bool Register(LogMessageDelegate method)
-    {
-        var uniqueName = GetUniqueName(method);
-        if (!MethodsInfo.TryAdd(uniqueName, method)) return false;
-
-        UpdateMethodsArray();
-        return true;
-    }
-
     public bool Register(params LogMessageDelegate[] methods)
     {
         var state = true;
         foreach (var method in methods)
-            if (!Register(method)) state = false;
+        {
+            var uniqueName = GetUniqueName(method);
+            if (!MethodsInfo.TryAdd(uniqueName, method)) state = false;
+        }
 
         UpdateMethodsArray();
         return state;
-    }
-
-    public bool Unregister(LogMessageDelegate method)
-    {
-        var uniqueName = GetUniqueName(method);
-        if (!MethodsInfo.Remove(uniqueName)) return false;
-
-        UpdateMethodsArray();
-        return true;
     }
 
     public bool Unregister(params LogMessageDelegate[] methods)
     {
         var state = true;
         foreach (var method in methods)
-            if (!Unregister(method)) state = false;
+        {
+            var uniqueName = GetUniqueName(method);
+            if (!MethodsInfo.Remove(uniqueName)) state = false;
+        }
 
         UpdateMethodsArray();
         return state;
-    }
-
-    public bool Unregister(MethodInfo method)
-    {
-        var uniqueName = GetUniqueName(method);
-        if (!MethodsInfo.Remove(uniqueName)) return false;
-
-        UpdateMethodsArray();
-        return true;
     }
 
     public bool Unregister(params MethodInfo[] methods)
     {
         var state = true;
         foreach (var method in methods)
-            if (!Unregister(method)) state = false;
+        {
+            var uniqueName = GetUniqueName(method);
+            if (!MethodsInfo.Remove(uniqueName)) state = false;
+        }
 
         UpdateMethodsArray();
         return state;

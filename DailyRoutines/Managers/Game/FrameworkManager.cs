@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Reflection;
 using DailyRoutines.Infos;
@@ -20,58 +19,40 @@ public class FrameworkManager : IDailyManager
         Service.Framework.Update += OnUpdate;
     }
 
-    public bool Register(IFramework.OnUpdateDelegate method)
-    {
-        var uniqueName = GetUniqueName(method);
-        if (!MethodsInfo.TryAdd(uniqueName, method)) return false;
-
-        UpdateMethodsArray();
-        return true;
-    }
-
     public bool Register(params IFramework.OnUpdateDelegate[] methods)
     {
         var state = true;
         foreach (var method in methods)
-            if (!Register(method)) state = false;
+        {
+            var uniqueName = GetUniqueName(method);
+            if (!MethodsInfo.TryAdd(uniqueName, method)) state = false;
+        }
 
         UpdateMethodsArray();
         return state;
-    }
-
-    public bool Unregister(IFramework.OnUpdateDelegate method)
-    {
-        var uniqueName = GetUniqueName(method);
-        if (!MethodsInfo.Remove(uniqueName)) return false;
-
-        UpdateMethodsArray();
-        return true;
     }
 
     public bool Unregister(params IFramework.OnUpdateDelegate[] methods)
     {
         var state = true;
         foreach (var method in methods)
-            if (!Unregister(method)) state = false;
+        {
+            var uniqueName = GetUniqueName(method);
+            if (!MethodsInfo.Remove(uniqueName)) state = false;
+        }
 
         UpdateMethodsArray();
         return state;
-    }
-
-    public bool Unregister(MethodInfo method)
-    {
-        var uniqueName = GetUniqueName(method);
-        if (!MethodsInfo.Remove(uniqueName)) return false;
-
-        UpdateMethodsArray();
-        return true;
     }
 
     public bool Unregister(params MethodInfo[] methods)
     {
         var state = true;
         foreach (var method in methods)
-            if (!Unregister(method)) state = false;
+        {
+            var uniqueName = GetUniqueName(method);
+            if (!MethodsInfo.Remove(uniqueName)) state = false;
+        }
 
         UpdateMethodsArray();
         return state;
@@ -98,15 +79,7 @@ public class FrameworkManager : IDailyManager
     {
         for (var i = 0; i < _length; i++)
         {
-            try
-            {
-                var method = _updateMehtods[i];
-                method.Invoke(framework);
-            }
-            catch(Exception ex)
-            {
-                if (Service.PluginInterface.IsDev) Service.Log.Error(ex, "Caught exception when invoking framework update event");
-            }
+            _updateMehtods[i].Invoke(framework);
         }
     }
 
