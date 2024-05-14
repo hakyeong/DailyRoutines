@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using DailyRoutines.Helpers;
@@ -11,6 +12,7 @@ using Dalamud.Interface.Internal;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility;
+using ECommons.Automation;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
@@ -18,6 +20,13 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoShowDutyGuideTitle", "AutoShowDutyGuideDescription", ModuleCategories.战斗)]
 public class AutoShowDutyGuide : DailyModuleBase
 {
+    private enum Sastasha
+    {
+        蓝珊瑚 = 2000212,
+        红珊瑚 = 2001548,
+        绿珊瑚 = 2001549
+    }
+
     private class Config : ModuleConfiguration
     {
         public float FontScale = 1f;
@@ -30,7 +39,13 @@ public class AutoShowDutyGuide : DailyModuleBase
     private static uint CurrentDuty;
     private static IDalamudTextureWrap? NoviceIcon;
 
+    private static string HintText = string.Empty;
     private static List<string> GuideText = [];
+
+    private readonly Dictionary<ushort, Func<bool?>> HintsContent = new()
+    {
+        { 1036, GetSastashaHint }
+    };
 
     private static bool IsOnDebug;
 
@@ -39,6 +54,8 @@ public class AutoShowDutyGuide : DailyModuleBase
         ModuleConfig = LoadConfig<Config>() ?? new();
 
         NoviceIcon ??= ImageHelper.GetIcon(61523);
+
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
 
         Overlay ??= new Overlay(this);
         Overlay.Flags &= ~ImGuiWindowFlags.NoTitleBar;
@@ -67,6 +84,7 @@ public class AutoShowDutyGuide : DailyModuleBase
             if (IsOnDebug) OnZoneChange(172);
             else
             {
+                HintText = string.Empty;
                 GuideText.Clear();
                 CurrentDuty = 0;
             }
@@ -84,6 +102,7 @@ public class AutoShowDutyGuide : DailyModuleBase
         {
             Overlay.IsOpen = false;
             GuideText.Clear();
+            HintText = string.Empty;
             return;
         }
 
@@ -98,6 +117,16 @@ public class AutoShowDutyGuide : DailyModuleBase
 
         ImGui.PushTextWrapPos(ImGui.GetWindowWidth());
         ImGui.SetWindowFontScale(ModuleConfig.FontScale);
+
+        if (!string.IsNullOrWhiteSpace(HintText))
+        {
+            ImGui.SetWindowFontScale(ModuleConfig.FontScale * 0.8f);
+            ImGui.Text($"{Service.Lang.GetText("AutoShowDutyGuide-DutyExtraGuide")}:");
+            ImGui.SetWindowFontScale(ModuleConfig.FontScale);
+            ImGui.Text($"{HintText}");
+            ImGui.Separator();
+        }
+
         for (var i = 1; i < GuideText.Count; i++)
         {
             var text = GuideText[i];
@@ -129,11 +158,37 @@ public class AutoShowDutyGuide : DailyModuleBase
         if (!PresetData.Contents.TryGetValue(territory, out var content))
         {
             CurrentDuty = 0;
+            HintText = string.Empty;
             GuideText.Clear();
             Overlay.IsOpen = false;
             return;
         }
+
+        if (HintsContent.TryGetValue(territory, out var func))
+        {
+            TaskManager.DelayNext(500);
+            TaskManager.Enqueue(func);
+        }
+
         Task.Run(async () => await GetDutyGuide(content.RowId));
+    }
+
+    private static bool? GetSastashaHint()
+    {
+        if (Flags.BetweenAreas()) return false;
+        if (!Flags.BoundByDuty()) return true;
+
+        var blueObj = Service.ObjectTable.FirstOrDefault(x => x.IsValid() && x.IsTargetable && x.DataId == (uint)Sastasha.蓝珊瑚);
+        var redObj = Service.ObjectTable.FirstOrDefault(x => x.IsValid() && x.IsTargetable && x.DataId == (uint)Sastasha.红珊瑚);
+        var greenObj = Service.ObjectTable.FirstOrDefault(x => x.IsValid() && x.IsTargetable && x.DataId == (uint)Sastasha.绿珊瑚);
+
+        if (blueObj == null && redObj == null && greenObj == null) return false;
+
+        if (blueObj != null) HintText = $"正确机关: {Sastasha.蓝珊瑚}";
+        if (redObj != null) HintText = $"正确机关: {Sastasha.红珊瑚}";
+        if (greenObj != null) HintText = $"正确机关: {Sastasha.绿珊瑚}";
+
+        return true;
     }
 
     private async Task GetDutyGuide(uint dutyID)

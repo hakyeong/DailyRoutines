@@ -1638,4 +1638,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
 
 可以通过鼠标右键悬浮窗内指定段落来复制整段内容</value>
   </data>
+  <data name="AutoShowDutyGuide-DutyExtraGuide" xml:space="preserve">
+    <value>副本额外提示</value>
+  </data>
 </root>
