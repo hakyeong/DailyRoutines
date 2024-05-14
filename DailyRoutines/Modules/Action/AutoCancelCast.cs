@@ -7,19 +7,17 @@ using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Utility.Signatures;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoCancelCastTitle", "AutoCancelCastDescription", ModuleCategories.¼¼ÄÜ)]
+[ModuleDescription("AutoCancelCastTitle", "AutoCancelCastDescription", ModuleCategories.æŠ€èƒ½)]
 public unsafe class AutoCancelCast : DailyModuleBase
 {
     [Signature("48 83 EC 38 33 D2 C7 44 24 20 00 00 00 00 45 33 C9")]
-    private readonly delegate* unmanaged<void> CancelCast;
-
-    [Signature("E8 ?? ?? ?? ?? 44 0F B6 C3 48 8B D0")]
-    private readonly delegate* unmanaged<ulong, GameObject*> GetGameObjectFromObjectID;
+    private static System.Action? CancelCast;
 
     private static HashSet<uint>? TargetAreaActions;
 
@@ -45,11 +43,12 @@ public unsafe class AutoCancelCast : DailyModuleBase
         }
     }
 
-    private bool? IsNeedToCancel()
+    private static bool? IsNeedToCancel()
     {
         var player = Service.ClientState.LocalPlayer;
         if (player.CastActionType != 1 || TargetAreaActions.Contains(player.CastActionId)) return true;
-        var obj = GetGameObjectFromObjectID(player.CastTargetObjectId);
+
+        var obj = (GameObject*)CharacterManager.Instance()->LookupBattleCharaByObjectId(player.CastTargetObjectId);
         if (obj == null || ActionManager.CanUseActionOnTarget(player.CastActionId, obj)) return false;
 
         CancelCast();
