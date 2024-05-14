@@ -78,7 +78,10 @@ public class FrameworkManager : IDailyManager
     private static void DailyRoutines_OnUpdate(IFramework framework)
     {
         for (var i = 0; i < _length; i++)
-            _updateMehtods[i].Invoke(framework);
+        {
+            var index = i;
+            framework.Run(() => _updateMehtods[index].Invoke(framework));
+        }
     }
 
     private void Uninit()

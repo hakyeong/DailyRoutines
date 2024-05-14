@@ -326,10 +326,9 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     private void OnUpdate(IFramework framework)
     {
-        if (!EzThrottler.Throttle("FastSelectObjects", 250)) return;
-
         framework.Run(() =>
         {
+            if (!EzThrottler.Throttle("FastSelectObjects", 250)) return;
             var localPlayer = Service.ClientState.LocalPlayer;
             if (localPlayer == null)
             {
