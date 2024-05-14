@@ -16,7 +16,7 @@ public class FrameworkManager : IDailyManager
         MethodsInfo ??= [];
         _updateMehtods ??= [];
 
-        Service.Framework.Update += OnUpdate;
+        Service.Framework.Update += DailyRoutines_OnUpdate;
     }
 
     public bool Register(params IFramework.OnUpdateDelegate[] methods)
@@ -75,17 +75,15 @@ public class FrameworkManager : IDailyManager
         _length = _updateMehtods.Length;
     }
 
-    private static void OnUpdate(IFramework framework)
+    private static void DailyRoutines_OnUpdate(IFramework framework)
     {
         for (var i = 0; i < _length; i++)
-        {
             _updateMehtods[i].Invoke(framework);
-        }
     }
 
     private void Uninit()
     {
-        Service.Framework.Update -= OnUpdate;
+        Service.Framework.Update -= DailyRoutines_OnUpdate;
 
         _updateMehtods = null;
         MethodsInfo = null;
