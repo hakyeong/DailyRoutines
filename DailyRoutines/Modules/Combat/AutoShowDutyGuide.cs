@@ -103,7 +103,7 @@ public class AutoShowDutyGuide : DailyModuleBase
             var text = GuideText[i];
             ImGui.PushID($"DutyGuideLine-{i}");
             ImGui.Text(text);
-            if (ImGui.IsItemClicked())
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
             {
                 ImGui.SetClipboardText(text);
                 Service.DalamudNotice.AddNotification(new()
