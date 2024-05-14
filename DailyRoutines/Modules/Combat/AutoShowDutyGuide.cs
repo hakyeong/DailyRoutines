@@ -1,10 +1,14 @@
+using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Internal;
+using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility;
 using ImGuiNET;
@@ -26,7 +30,7 @@ public class AutoShowDutyGuide : DailyModuleBase
     private static uint CurrentDuty;
     private static IDalamudTextureWrap? NoviceIcon;
 
-    private static string GuideText = string.Empty;
+    private static List<string> GuideText = [];
 
     private static bool IsOnDebug;
 
@@ -49,6 +53,9 @@ public class AutoShowDutyGuide : DailyModuleBase
 
     public override void ConfigUI()
     {
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("WorkTheory")}:");
+        ImGuiOm.HelpMarker(Service.Lang.GetText("AutoShowDutyGuide-TheoryHelp"), 30f);
+
         ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
         ImGui.InputFloat(Service.Lang.GetText("AutoShowDutyGuide-FontScale"), ref ModuleConfig.FontScale);
         if (ImGui.IsItemDeactivatedAfterEdit())
@@ -60,7 +67,7 @@ public class AutoShowDutyGuide : DailyModuleBase
             if (IsOnDebug) OnZoneChange(172);
             else
             {
-                GuideText = string.Empty;
+                GuideText.Clear();
                 CurrentDuty = 0;
             }
         }
@@ -69,30 +76,47 @@ public class AutoShowDutyGuide : DailyModuleBase
         ImGuiOm.TooltipHover(Service.Lang.GetText("AutoShowDutyGuide-DebugModeHelp"));
     }
 
+    public override void OverlayOnOpen() => ImGui.SetScrollHereY();
+
     public override void OverlayUI()
     {
-        if (!IsOnDebug && (!Flags.BoundByDuty() || string.IsNullOrWhiteSpace(GuideText)))
+        if (!IsOnDebug && (!Flags.BoundByDuty() || GuideText.Count <= 0))
         {
             Overlay.IsOpen = false;
-            GuideText = string.Empty;
+            GuideText.Clear();
             return;
         }
 
-        var guideLines = GuideText.Split('\n');
-        if (guideLines.Length > 0)
-            Overlay.WindowName = $"{guideLines[0]}###AutoShowDutyGuide-GuideWindow";
+        if (GuideText.Count > 0)
+            Overlay.WindowName = $"{GuideText[0]}###AutoShowDutyGuide-GuideWindow";
 
         PresetFont.Axis14.Push();
-        if (ImGuiOm.SelectableImageWithText(NoviceIcon.ImGuiHandle, ImGuiHelpers.ScaledVector2(24f), "来源: 新大陆见闻录", false))
+        if (ImGuiOm.SelectableImageWithText(NoviceIcon.ImGuiHandle, ImGuiHelpers.ScaledVector2(24f),
+                                            Service.Lang.GetText("AutoShowDutyGuide-Source"), false))
             Util.OpenLink($"https://ff14.org/duty/{CurrentDuty}.htm");
         ImGui.Separator();
 
-        ImGui.PushTextWrapPos(ImGui.GetWindowWidth() + (20f * ImGuiHelpers.GlobalScale));
+        ImGui.PushTextWrapPos(ImGui.GetWindowWidth());
         ImGui.SetWindowFontScale(ModuleConfig.FontScale);
-        for (var i = 1; i < guideLines.Length; i++)
+        for (var i = 1; i < GuideText.Count; i++)
         {
-            var text = guideLines[i];
+            var text = GuideText[i];
+            ImGui.PushID($"DutyGuideLine-{i}");
             ImGui.Text(text);
+            if (ImGui.IsItemClicked())
+            {
+                ImGui.SetClipboardText(text);
+                Service.DalamudNotice.AddNotification(new()
+                {
+                    Title = "Daily Routines",
+                    Content = Service.Lang.GetText("AutoShowDutyGuide-CopyNotice"),
+                    Type = NotificationType.Success,
+                    InitialDuration = TimeSpan.FromSeconds(3),
+                    ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1)
+                });
+            }
+            ImGui.PopID();
+
             ImGui.NewLine();
         }
         ImGui.SetWindowFontScale(1f);
@@ -105,7 +129,7 @@ public class AutoShowDutyGuide : DailyModuleBase
         if (!PresetData.Contents.TryGetValue(territory, out var content))
         {
             CurrentDuty = 0;
-            GuideText = string.Empty;
+            GuideText.Clear();
             Overlay.IsOpen = false;
             return;
         }
@@ -120,7 +144,7 @@ public class AutoShowDutyGuide : DailyModuleBase
         var plainText = MarkdownToPlainText(originalText);
         if (!string.IsNullOrWhiteSpace(plainText))
         {
-            GuideText = plainText;
+            GuideText = [.. plainText.Split('\n')];
             Overlay.IsOpen = true;
         }
     }

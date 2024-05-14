@@ -1626,4 +1626,16 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="FastResetAllSDEnmityTitle" xml:space="preserve">
     <value>快速重置所有木人仇恨</value>
   </data>
+  <data name="AutoShowDutyGuide-CopyNotice" xml:space="preserve">
+    <value>已复制指定攻略段落至剪贴板</value>
+  </data>
+  <data name="AutoShowDutyGuide-Source" xml:space="preserve">
+    <value>来源: 新大陆见闻录</value>
+  </data>
+  <data name="AutoShowDutyGuide-TheoryHelp" xml:space="preserve">
+    <value>进入副本后, 自动从 新大陆见闻录 拉取对应的副本攻略内容,
+若副本攻略不存在, 则不显示悬浮窗
+
+可以通过鼠标单击悬浮窗内指定段落来复制整段内容</value>
+  </data>
 </root>
