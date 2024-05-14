@@ -1641,4 +1641,12 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoShowDutyGuide-DutyExtraGuide" xml:space="preserve">
     <value>副本额外提示</value>
   </data>
+  <data name="ContactHelp2" xml:space="preserve">
+    <value>如果你是购买的, 出现任何问题麻烦找卖你插件的人售后,
+我不接受你的反馈, 又不是我给你的插件
+
+如果你是倒卖的, 麻烦自行解决你客户的所有问题
+出来开店不会这点问题都解决不了吧?
+还有收信息差和安装教学费用也要负责到底噢</value>
+  </data>
 </root>

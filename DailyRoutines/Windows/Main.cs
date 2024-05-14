@@ -422,9 +422,7 @@ public class MainSettings
         ImGuiHelpers.CenterCursorForText(Service.Lang.GetText("ContactHelp"));
         ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("ContactHelp"));
 
-        ImGuiOm.TooltipHover("如果你是购买的,\n出现任何问题麻烦找卖你插件的人售后, 我不负责\n\n" +
-                             "如果你是倒卖的,\n麻烦自行解决你客户的所有问题\n" +
-                             "出来开店不会这点问题都解决不了吧?\n还有收信息差和安装教学费用也要负责到底噢");
+        ImGuiOm.TooltipHover(Service.Lang.GetText("ContactHelp2"));
         ImGui.SetWindowFontScale(1f);
         PresetFont.Axis18.Pop();
 
