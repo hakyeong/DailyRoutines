@@ -30,6 +30,18 @@ public abstract class DailyModuleBase
 
     public virtual void OverlayUI() { }
 
+    public virtual void OverlayOnOpen() { }
+
+    public virtual void OverlayOnClose() { }
+
+    public virtual void OverlayPreDraw() { }
+
+    public virtual void OverlayPostDraw() { }
+
+    public virtual void OverlayUpdate() { }
+
+    public virtual void OverlayPreOpenCheck() { }
+
     protected T LoadConfig<T>() where T : ModuleConfiguration
     {
         return LoadConfig<T>(GetType().Name);

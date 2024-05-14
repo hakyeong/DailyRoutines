@@ -23,10 +23,19 @@ public class Overlay : Window
         Service.WindowManager.AddWindows(this);
     }
 
-    public override void Draw()
-    {
-        ModuleBase.OverlayUI();
-    }
+    public override void Draw() => ModuleBase.OverlayUI();
+
+    public override void OnOpen() => ModuleBase.OverlayOnOpen();
+
+    public override void OnClose() => ModuleBase.OverlayOnClose();
+
+    public override void PreDraw() => ModuleBase.OverlayPreDraw();
+
+    public override void PostDraw() => ModuleBase.OverlayPostDraw();
+
+    public override void Update() => ModuleBase.OverlayUpdate();
+
+    public override void PreOpenCheck() => ModuleBase.OverlayPreOpenCheck();
 
     public override bool DrawConditions()
     {
