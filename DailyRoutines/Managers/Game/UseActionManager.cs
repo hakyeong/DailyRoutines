@@ -22,7 +22,7 @@ public unsafe class UseActionManager : IDailyManager
     private static Hook<useActionDelegate>? UseActionHook;
 
     private delegate bool useActionLocationDelegate(ActionManager* manager, ActionType type, uint actionID, ulong targetID, Vector3* location, uint a4);
-    private Hook<useActionLocationDelegate>? UseActionLocationHook;
+    private static Hook<useActionLocationDelegate>? UseActionLocationHook;
 
     // PreUseAction
     private static readonly Dictionary<string, PreUseActionDelegate>? MethodsInfoPreUseAction = [];
@@ -45,7 +45,7 @@ public unsafe class UseActionManager : IDailyManager
         UseActionHook.Enable();
 
         UseActionLocationHook = Service.Hook.HookFromAddress<useActionLocationDelegate>((nint)ActionManager.MemberFunctionPointers.UseActionLocation, UseActionLocationDetour);
-        UseActionLocationHook?.Enable();
+        UseActionLocationHook.Enable();
     }
 
     #region PreUseAction
