@@ -1649,4 +1649,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
 出来开店不会这点问题都解决不了吧?
 还有收信息差和安装教学费用也要负责到底噢</value>
   </data>
+  <data name="AutoReplaceLocationAction-RedirectMessage" xml:space="preserve">
+    <value> 已成功重定向地面技能至: {0}</value>
+  </data>
+  <data name="AutoReplaceLocationAction-SendMessage" xml:space="preserve">
+    <value>发送重定向成功消息</value>
+  </data>
 </root>

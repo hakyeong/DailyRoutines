@@ -4,6 +4,7 @@ using System.Numerics;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Hooking;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
@@ -28,6 +29,8 @@ public unsafe class AutoReplaceLocationAction : DailyModuleBase
             { 3569,  true }, // 庇护所
             { 188,   true }, // 野战治疗阵
         };
+
+        public bool SendMessage = true;
     }
 
     private delegate bool UseActionLocationDelegate(ActionManager* manager, ActionType type, uint actionID, ulong targetID, Vector3* location, uint a4);
@@ -53,6 +56,8 @@ public unsafe class AutoReplaceLocationAction : DailyModuleBase
     {
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("WorkTheory")}:");
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoReplaceLocationAction-TheoryHelp"), 30f);
+
+        ImGui.Checkbox(Service.Lang.GetText("AutoReplaceLocationAction-SendMessage"), ref ModuleConfig.SendMessage);
 
         var tableSize = new Vector2(ImGui.GetContentRegionAvail().X / 3, 0);
         if (ImGui.BeginTable("ActionEnableTable", 2, ImGuiTableFlags.Borders, tableSize))
@@ -103,22 +108,35 @@ public unsafe class AutoReplaceLocationAction : DailyModuleBase
         if (type is ActionType.Action && ModuleConfig.EnabledActions.TryGetValue(actionID, out var isEnabled) && isEnabled)
         {
             var modifiedLocation = ZoneMapMarkers.Values.FirstOrDefault
-                (x => Vector3.Distance(x.ToVector3(), Service.ClientState.LocalPlayer.Position) < 25).ToVector3();
+                (x => Vector3.Distance(x.ToVector3(), Service.ClientState.LocalPlayer.Position) < 25)
+                                                 .ToVector3();
 
             if (modifiedLocation.X != 0 && modifiedLocation.Z != 0)
             {
                 if (Vector3.Distance(*location, modifiedLocation) < 15)
-                    return UseActionLocationHook.Original(manager, type, actionID, targetID, &modifiedLocation, a4);
+                {
+                    var original = UseActionLocationHook.Original
+                        (manager, type, actionID, targetID, &modifiedLocation, a4);
+                    if (original && ModuleConfig.SendMessage)
+                        Service.Chat.Print(new SeStringBuilder().Append(DRPrefix()).Append(Service.Lang.GetText("AutoReplaceLocationAction-RedirectMessage", modifiedLocation)).Build());
+                    return original;
+                }
             }
             else if (PresetData.TryGetContent(Service.ClientState.TerritoryType, out var content) &&
                      content.ContentType.Row is 4 or 5)
             {
                 var map = LuminaCache.GetRow<Map>(CurrentMapID);
                 modifiedLocation = MapHelper.MapToWorld(new(6.125f), map)
-                                            .ToVector3(Service.ClientState.LocalPlayer.Position.Y);
+                                            .ToVector3();
 
                 if (Vector3.Distance(*location, modifiedLocation) < 15)
-                    return UseActionLocationHook.Original(manager, type, actionID, targetID, &modifiedLocation, a4);
+                {
+                    var original = UseActionLocationHook.Original
+                        (manager, type, actionID, targetID, &modifiedLocation, a4);
+                    if (original && ModuleConfig.SendMessage)
+                        Service.Chat.Print(new SeStringBuilder().Append(DRPrefix()).Append(Service.Lang.GetText("AutoReplaceLocationAction-RedirectMessage", modifiedLocation)).Build());
+                    return original;
+                }
             }
         }
 
