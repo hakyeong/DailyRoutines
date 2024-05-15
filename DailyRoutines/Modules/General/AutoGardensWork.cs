@@ -443,6 +443,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
         var targetSystem = TargetSystem.Instance();
         targetSystem->Target = gameObj;
         targetSystem->InteractWithObject(gameObj);
+        targetSystem->OpenObjectInteraction(gameObj);
 
         return true;
     }
