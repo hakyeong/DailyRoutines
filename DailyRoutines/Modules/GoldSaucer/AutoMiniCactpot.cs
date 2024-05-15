@@ -169,17 +169,6 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
     /// </summary>
     internal sealed class PerfectCactpot
     {
-        public const int TotalNumbers = 9;
-        public const int TotalLanes = 8;
-
-        private const double EPS = 0.00001;
-
-        private static int[] Payouts =>
-        [
-            0, 0, 0, 0, 0, 0, 10000, 36, 720, 360, 80, 252, 108, 72, 54, 180, 72, 180, 119, 36, 306, 1080, 144, 1800,
-            3600
-        ];
-
         private readonly Dictionary<string, (double Value, bool[] Tiles)> PrecalculatedOpenings = new()
         {
             { "100000000", (1677.7854166666664, [false, false, true, false, false, false, true, false, false]) },
@@ -265,13 +254,21 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
             { "000000009", (1517.7214285714285, [false, false, true, false, true, false, true, false, false]) }
         };
 
+        private static int[] Payouts =>
+        [
+            0, 0, 0, 0, 0, 0, 10000, 36, 720, 360, 80, 252, 108, 72, 54, 180, 72, 180, 119, 36, 306, 1080, 144, 1800,
+            3600
+        ];
+
+        public const int TotalNumbers = 9;
+        public const int TotalLanes = 8;
+
+        private const double EPS = 0.00001;
+
         internal bool[] Solve(int[] state)
         {
-            // Count how many are visible
             var num_revealed = state.Count(x => x > 0);
 
-            // If four are visible, we are picking between eight rows. Otherwise, we are picking
-            // between nine tiles (although we'll never be picking revealed tiles)
             var num_options = 9;
             if (num_revealed == 4)
                 num_options = 8;
@@ -282,15 +279,10 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
             switch (num_revealed)
             {
                 case 0:
-                    // You don't get to choose the first spot, but here's the answer anyway
-                    return new[] { true, false, true, false, false, false, true, false, true };
+                    return [true, false, true, false, false, false, true, false, true];
 
                 case 1:
                 {
-                    // This will take a long time, but we have no choice
-                    // value = SolveAny(ref state, ref tiles);
-
-                    // Using our pre-calculated library, this is much faster
                     var stateStr = string.Join("", state);
                     (value, which_to_flip) = PrecalculatedOpenings[stateStr];
                     break;
@@ -316,38 +308,31 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
             for (var i = 0; i < 9; i++)
                 if (state[i] == 0)
                 {
-                    // Storing the ids of all locations which are currently unrevealed
                     ids.Add(i);
                     tot_win.Add(0);
                 }
                 else
                 {
-                    // Checking which numbers are currently visible
                     has[state[i]] = 1;
                 }
 
             var num_hidden = tot_win.Count;
             var num_revealed = 9 - num_hidden;
 
-            // From the previous step, we know which numbers are not yet visible:
-            //  these are the possible unknowns
             for (var i = 1; i <= 9; i++)
                 if (has[i] == 0)
                     hiddenNumbers.Add(i);
 
             if (num_revealed >= 4)
             {
-                // We've revealed as many numbers as we can -- time for the final assessment
                 var permutations = 0;
-                tot_win = new List<double> { 0, 0, 0, 0, 0, 0, 0, 0 };
-                // One for each row, column, and diagonal
-                // Loop over all possible permutations on the unknowns
+                tot_win = [0, 0, 0, 0, 0, 0, 0, 0];
+
                 do
                 {
                     permutations++;
                     for (var i = 0; i < ids.Count; i++) state[ids[i]] = hiddenNumbers[i];
 
-                    // For each row, cumulatively sum the winnings for picking that row
                     tot_win[0] += Payouts[state[0] + state[1] + state[2]];
                     tot_win[1] += Payouts[state[3] + state[4] + state[5]];
                     tot_win[2] += Payouts[state[6] + state[7] + state[8]];
@@ -359,34 +344,27 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
                 }
                 while (NextPermutation(hiddenNumbers));
 
-                // Find the maximum. Start by assuming option 0 is best.
                 var currentMax = tot_win[0];
                 options[0] = true;
                 for (var i = 1; i < 8; i++)
-                    // If another row yielded a higher expected value:
                     if (tot_win[i] > currentMax)
                     {
-                        // Mark all the previous rows as FALSE (not optimal) and the current one as TRUE
                         currentMax = tot_win[i];
+
                         for (var j = 0; j < i; j++)
                             options[j] = false;
+
                         options[i] = true;
                     }
                     else if (Math.Abs(tot_win[i] - currentMax) < 0.1f)
                     {
-                        // For a tie, mark the current one as TRUE, and leave the previous ones intact
                         options[i] = true;
                     }
 
-                // The current totals are for a number of possible configurations.
-                // Divide by that number to get the actual expected value.
                 return currentMax / permutations;
             }
             else
             {
-                // Determine which tile to reveal next.
-                // Loop over every unknown tile and every possible value that could appear.
-                // Solve the resulting cases with a recursive call to solve_any.
                 for (var i = 0; i < num_hidden; i++)
                 for (var j = 0; j < num_hidden; j++)
                 {
@@ -408,15 +386,13 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
                     }
                     else if (tot_win[i] > currentMax - EPS) options[ids[i]] = true;
 
-                // Each tile can be flipped to reveal one of num_hidden values (one number per space).
-                // Divide by num_hidden to get the true expected value.
                 return currentMax / num_hidden;
             }
         }
 
         private bool NextPermutation(List<int> list)
         {
-            var begin = 0;
+            const int begin = 0;
             var end = list.Count;
 
             if (list.Count <= 1)
