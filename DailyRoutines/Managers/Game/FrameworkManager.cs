@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading;
 using DailyRoutines.Infos;
 using Dalamud.Plugin.Services;
 
@@ -7,9 +8,11 @@ namespace DailyRoutines.Managers;
 
 public class FrameworkManager : IDailyManager
 {
-    internal static Dictionary<string, IFramework.OnUpdateDelegate>? MethodsInfo;
+    private static Dictionary<string, IFramework.OnUpdateDelegate>? MethodsInfo;
     private static IFramework.OnUpdateDelegate[]? _updateMehtods;
-    internal static int _length;
+    private static int _length;
+    private static readonly CancellationTokenSource _cancellationSource = new();
+
 
     private void Init()
     {
@@ -80,13 +83,15 @@ public class FrameworkManager : IDailyManager
         for (var i = 0; i < _length; i++)
         {
             var index = i;
-            framework.Run(() => _updateMehtods[index].Invoke(framework));
+            framework.Run(() => _updateMehtods[index].Invoke(framework), _cancellationSource.Token);
         }
     }
 
     private void Uninit()
     {
         Service.Framework.Update -= DailyRoutines_OnUpdate;
+        _cancellationSource.Cancel();
+        _cancellationSource.Dispose();
 
         _updateMehtods = null;
         MethodsInfo = null;

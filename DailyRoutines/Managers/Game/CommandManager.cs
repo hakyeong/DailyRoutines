@@ -14,8 +14,9 @@ public class CommandManager : IDailyManager
 
     private void Init()
     {
-        AddSubCommand("search", new CommandInfo(OnSubSearch) { HelpMessage = Service.Lang.GetText("CommandHelp-Search"), ShowInHelp = true });
         RefreshCommandDetails();
+        AddSubCommand("search", new CommandInfo(OnSubSearch) { HelpMessage = Service.Lang.GetText("CommandHelp-Search"), ShowInHelp = true });
+        AddSubCommand("debug", new CommandInfo(OnSubDebug) { ShowInHelp = false });
     }
 
     private void RefreshCommandDetails()
@@ -114,7 +115,7 @@ public class CommandManager : IDailyManager
         return false;
     }
 
-    private void OnCommandPDR(string command, string args)
+    private static void OnCommandPDR(string command, string args)
     {
         if (string.IsNullOrWhiteSpace(args))
         {
@@ -131,7 +132,12 @@ public class CommandManager : IDailyManager
             Service.Chat.PrintError($"“{spiltedArgs[0]}”出现问题：该命令不存在。");
     }
 
-    private void OnSubSearch(string command, string args)
+    private static void OnSubDebug(string command, string args)
+    {
+        WindowManager.Debug.IsOpen ^= true;
+    }
+
+    private static void OnSubSearch(string command, string args)
     {
         if (string.IsNullOrWhiteSpace(args))
         {

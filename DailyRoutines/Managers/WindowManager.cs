@@ -9,15 +9,19 @@ public class WindowManager : IDailyManager
 {
     public WindowSystem? WindowSystem { get; private set; }
     public static Main? Main { get; private set; }
+    public static Debug? Debug { get; private set; }
 
     private void Init()
     {
         WindowSystem = new("DailyRoutines");
+
         Main = new();
         AddWindows(Main);
+        Debug = new();
+        AddWindows(Debug);
 
         Service.PluginInterface.UiBuilder.Draw += DrawUI;
-        Service.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
+        Service.PluginInterface.UiBuilder.OpenMainUi += DrawMainUI;
     }
 
     public bool AddWindows(Window? window)
@@ -49,7 +53,7 @@ public class WindowManager : IDailyManager
         WindowSystem?.Draw();
     }
 
-    public void DrawConfigUI()
+    private static void DrawMainUI()
     {
         if (Main != null) Main.IsOpen ^= true;
     }
@@ -57,7 +61,11 @@ public class WindowManager : IDailyManager
     private void Uninit()
     {
         WindowSystem.RemoveAllWindows();
+
         Main?.Dispose();
         Main = null;
+
+        Debug?.Dispose();
+        Debug = null;
     }
 }
