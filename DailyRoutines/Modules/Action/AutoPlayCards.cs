@@ -8,7 +8,6 @@ using Dalamud.Game.ClientState.JobGauge.Enums;
 using Dalamud.Game.ClientState.JobGauge.Types;
 using Dalamud.Game.ClientState.Party;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using ImGuiNET;
@@ -16,14 +15,10 @@ using Action = Lumina.Excel.GeneratedSheets.Action;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoPlayCardsTitle", "AutoPlayCardsDescription", ModuleCategories.¼¼ÄÜ)]
+[ModuleDescription("AutoPlayCardsTitle", "AutoPlayCardsDescription", ModuleCategories.æŠ€èƒ½)]
 public unsafe class AutoPlayCards : DailyModuleBase
 {
-    private delegate bool UseActionSelfDelegate(
-        ActionManager* actionManager, uint actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
-        uint a5 = 0, uint a6 = 0, void* a7 = null);
-
-    private Hook<UseActionSelfDelegate>? useActionSelfHook;
+    private record SendInfo(PartyMember member, (bool IsMelee, string Name) card);
 
     private static readonly HashSet<uint> CardStatuses = [1882, 1883, 1884, 1885, 1886, 1887];
 
@@ -39,19 +34,18 @@ public unsafe class AutoPlayCards : DailyModuleBase
 
     private static bool SendMessage = true;
     private static bool UseAantonomasia;
+    private static SendInfo? CardSendInfo;
 
     public override void Init()
     {
-        useActionSelfHook =
-            Service.Hook.HookFromAddress<UseActionSelfDelegate>((nint)ActionManager.MemberFunctionPointers.UseAction,
-                                                                UseActionSelf);
-        useActionSelfHook?.Enable();
-
         AddConfig("SendMessage", SendMessage);
         SendMessage = GetConfig<bool>("SendMessage");
 
         AddConfig("UseAantonomasia", UseAantonomasia);
         UseAantonomasia = GetConfig<bool>("UseAantonomasia");
+
+        Service.UseActionManager.Register(OnPreUseAction);
+        Service.UseActionManager.Register(OnPostUseAction);
     }
 
     public override void ConfigUI()
@@ -70,18 +64,16 @@ public unsafe class AutoPlayCards : DailyModuleBase
         }
     }
 
-    private bool UseActionSelf(
-        ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6,
-        void* a7)
+    private static void OnPreUseAction(ref bool isPrevented,
+        ref ActionType actionType, ref uint actionID, ref ulong targetID, ref uint a4,
+        ref uint queueState, ref uint a6)
     {
-        if (actionType != 1 || actionID != 17055)
-            return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
+        if (actionType != ActionType.Action || actionID != 17055) return;
 
         var localPlayer = Service.ClientState.LocalPlayer;
         var drawnCard = Service.JobGauges.Get<ASTGauge>().DrawnCard;
 
-        if (!Cards.TryGetValue(drawnCard, out var cardInfo))
-            return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
+        if (!Cards.TryGetValue(drawnCard, out var cardInfo)) return;
 
         var indices = Enumerable.Range(0, Service.PartyList.Count)
                                 .Where(i => Service.PartyList[i].GameObject != null &&
@@ -109,10 +101,8 @@ public unsafe class AutoPlayCards : DailyModuleBase
                 indices.OrderByDescending(index => Service.PartyList[index].ClassJob.GameData.Role is 2 or 3 ? 1 : 0)
                        .ThenByDescending(index =>
                                              Service.PartyList[index].ClassJob.GameData.Role is 1 or 2
-                                                 ?
-                                                 cardInfo.IsMelee ? 1 : 0
-                                                 :
-                                                 cardInfo.IsMelee
+                                                 ? cardInfo.IsMelee ? 1 : 0
+                                                 : cardInfo.IsMelee
                                                      ? 0
                                                      : 1
                        ).First();
@@ -120,26 +110,41 @@ public unsafe class AutoPlayCards : DailyModuleBase
             member = Service.PartyList[firstSortedIndex];
         }
 
-        if (member == null)
-            return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
+        if (member == null) return;
 
-        var state = useActionSelfHook.Original(actionManager, actionType, actionID, member.ObjectId, a4, a5, a6, a7);
-        if (SendMessage && state)
-        {
-            string jobNameText = member.ClassJob.GameData.Name.ExtractText(),
-                   memberNameText = member.Name.ExtractText();
+        targetID = member.ObjectId;
+        if (SendMessage) CardSendInfo ??= new(member, cardInfo);
+    }
 
-            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(
-                Service.Lang.GetSeString("AutoPlayCards-Message",
-                                         UseAantonomasia
-                                             ? cardInfo.IsMelee
-                                                   ? Service.Lang.GetText("AutoPlayCards-MeleeCard")
-                                                   : Service.Lang.GetText("AutoPlayCards-RangeCard")
-                                             : cardInfo.Name, member.ClassJob.GameData.ToBitmapFontIcon(), jobNameText,
-                                         memberNameText)).Build();
-            Service.Chat.Print(message);
-        }
+    private static void OnPostUseAction(
+        bool result, ActionType actionType, uint actionID, ulong targetID, uint a4, uint queueState, uint a6)
+    {
+        if (actionType != ActionType.Action || actionID != 17055 || !result || !SendMessage) return;
+        if (CardSendInfo == null) return;
 
-        return state;
+        string jobNameText = CardSendInfo.member.ClassJob.GameData.Name.ExtractText(),
+               memberNameText = CardSendInfo.member.Name.TextValue;
+
+        var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(
+            Service.Lang.GetSeString("AutoPlayCards-Message",
+                                     UseAantonomasia
+                                         ? CardSendInfo.card.IsMelee
+                                               ? Service.Lang.GetText("AutoPlayCards-MeleeCard")
+                                               : Service.Lang.GetText("AutoPlayCards-RangeCard")
+                                         : CardSendInfo.card.Name,
+                                     CardSendInfo.member.ClassJob.GameData.ToBitmapFontIcon(), jobNameText,
+                                     memberNameText)).Build();
+
+        Service.Chat.Print(message);
+        CardSendInfo = null;
+    }
+
+    public override void Uninit()
+    {
+        Service.UseActionManager.Unregister(OnPreUseAction);
+        Service.UseActionManager.Unregister(OnPostUseAction);
+        CardSendInfo = null;
+
+        base.Uninit();
     }
 }

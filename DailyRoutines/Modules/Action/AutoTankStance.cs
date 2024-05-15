@@ -5,7 +5,6 @@ using DailyRoutines.Managers;
 using ECommons.Automation;
 using ECommons.GameFunctions;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
@@ -64,6 +63,7 @@ public class AutoTankStance : DailyModuleBase
             (!ConfigOnlyAutoStanceWhenOneTank && PresetData.Contents.ContainsKey(zone)))
         {
             TaskManager.Abort();
+            TaskManager.DelayNext(500);
             TaskManager.Enqueue(CheckCurrentJob);
         }
     }
@@ -76,19 +76,20 @@ public class AutoTankStance : DailyModuleBase
 
     private static unsafe bool? CheckCurrentJob()
     {
-        if (TryGetAddonByName<AtkUnitBase>("NowLoading", out var addon) && IsAddonAndNodesReady(addon))
-            return false;
+        if (Flags.BetweenAreas()) return false;
 
         var player = Service.ClientState.LocalPlayer;
-        if (player == null || player.ClassJob.Id == 0) return false;
+        if (player == null || player.ClassJob.Id == 0 || !player.IsTargetable) return false;
 
         var job = player.ClassJob.Id;
         if (!TankStanceActions.TryGetValue(job, out var actionID)) return true;
 
         if (IsOccupied()) return false;
+
+        var battlePlayer = player.BattleChara();
         foreach (var status in TankStanceStatuses)
-            if (player.BattleChara()->GetStatusManager->HasStatus(status))
-                return true;
+            if (battlePlayer->GetStatusManager->HasStatus(status)) return true;
+
         return ActionManager.Instance()->UseAction(ActionType.Action, actionID);
     }
 

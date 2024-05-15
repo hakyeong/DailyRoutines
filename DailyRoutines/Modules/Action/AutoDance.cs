@@ -1,44 +1,31 @@
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.JobGauge.Types;
-using Dalamud.Hooking;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using TaskManager = ECommons.Automation.TaskManager;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoDanceTitle", "AutoDanceDescription", ModuleCategories.¼¼ÄÜ)]
+[ModuleDescription("AutoDanceTitle", "AutoDanceDescription", ModuleCategories.æŠ€èƒ½)]
 public unsafe class AutoDance : DailyModuleBase
 {
-    private delegate bool UseActionSelfDelegate(
-        ActionManager* actionManager, uint actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
-        uint a5 = 0, uint a6 = 0, void* a7 = null);
-
-    private Hook<UseActionSelfDelegate>? useActionSelfHook;
-
     public override void Init()
     {
-        useActionSelfHook =
-            Service.Hook.HookFromAddress<UseActionSelfDelegate>((nint)ActionManager.MemberFunctionPointers.UseAction,
-                                                                UseActionSelf);
-        useActionSelfHook?.Enable();
-
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+
+        Service.UseActionManager.Register(OnPostUseAction);
     }
 
-    private bool UseActionSelf(
-        ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6, void* a7)
+    private void OnPostUseAction(
+        bool result, ActionType actionType, uint actionID, ulong targetID, uint a4, uint queueState, uint a6)
     {
         var gauge = Service.JobGauges.Get<DNCGauge>();
-        if ((ActionType)actionType is ActionType.Action && actionID is 15997 or 15998 &&
-            ActionManager.Instance()->GetActionStatus(ActionType.Action, actionID) == 0 && !gauge.IsDancing)
+        if (result && actionType is ActionType.Action && actionID is 15997 or 15998 && !gauge.IsDancing)
         {
             TaskManager.Enqueue(() => gauge.IsDancing);
             TaskManager.Enqueue(actionID == 15997 ? DanceStandardStep : DanceTechnicalStep);
         }
-
-        return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
     }
 
     private bool? DanceStandardStep() => DanceStep(false);
@@ -66,5 +53,12 @@ public unsafe class AutoDance : DailyModuleBase
         }
 
         return false;
+    }
+
+    public override void Uninit()
+    {
+        Service.UseActionManager.Unregister(OnPostUseAction);
+
+        base.Uninit();
     }
 }

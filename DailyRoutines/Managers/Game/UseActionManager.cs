@@ -8,13 +8,13 @@ namespace DailyRoutines.Managers;
 
 public unsafe class UseActionManager : IDailyManager
 {
-    public delegate void PreUseActionDelegate(
+    public delegate void PreUseActionDelegate(ref bool isPrevented,
         ref ActionType actionType, ref uint actionID, ref ulong targetID, ref uint a4, ref uint queueState, ref uint a6);
     public delegate void PostUseActionDelegate(bool result, ActionType actionType, uint actionID, ulong targetID, uint a4, uint queueState, uint a6);
 
-    public delegate void PreUseActionLocationDelegate(
-        ref ActionType type, ref uint actionID, ref ulong targetID, ref Vector3* location, ref uint a4);
-    public delegate void PostUseActionLocationDelegate(bool result, ActionType actionType, uint actionID, ulong targetID, Vector3* location, uint a4);
+    public delegate void PreUseActionLocationDelegate(ref bool isPrevented,
+        ref ActionType type, ref uint actionID, ref ulong targetID, ref Vector3 location, ref uint a4);
+    public delegate void PostUseActionLocationDelegate(bool result, ActionType actionType, uint actionID, ulong targetID, Vector3 location, uint a4);
 
     private delegate bool useActionDelegate(
         ActionManager* actionManager, ActionType actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
@@ -209,11 +209,15 @@ public unsafe class UseActionManager : IDailyManager
         ActionManager* actionManager, ActionType actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
         uint queueState = 0, uint a6 = 0, void* a7 = null)
     {
+        var isPrevented = false;
         foreach (var preUseAction in _methodsPreUseAction)
         {
-            preUseAction.Invoke(ref actionType, ref actionID, ref targetID, ref a4, ref queueState, ref a6);
+            preUseAction.Invoke
+                (ref isPrevented, ref actionType, ref actionID, ref targetID, ref a4, ref queueState, ref a6);
         }
 
+        if (isPrevented) return false;
+        
         var original = UseActionHook.Original(actionManager, actionType, actionID, targetID, a4, queueState, a6, a7);
         foreach (var postUseAction in _methodsPostUseAction)
         {
@@ -223,18 +227,22 @@ public unsafe class UseActionManager : IDailyManager
         return original;
     }
 
-    private bool UseActionLocationDetour(
+    private static bool UseActionLocationDetour(
         ActionManager* manager, ActionType type, uint actionID, ulong targetID, Vector3* location, uint a4)
     {
+        var isPrevented = false;
+        var location0 = *location;
         foreach (var preUseAction in _methodsPreUseActionLocation)
         {
-            preUseAction.Invoke(ref type, ref actionID, ref targetID, ref location, ref a4);
+            preUseAction.Invoke(ref isPrevented, ref type, ref actionID, ref targetID, ref location0, ref a4);
         }
 
-        var original = UseActionLocationHook.Original(manager, type, actionID, targetID, location, a4);
+        if (isPrevented) return false;
+
+        var original = UseActionLocationHook.Original(manager, type, actionID, targetID, &location0, a4);
         foreach (var postUseAction in _methodsPostUseActionLocation)
         {
-            postUseAction.Invoke(original, type, actionID, targetID, location, a4);
+            postUseAction.Invoke(original, type, actionID, targetID, location0, a4);
         }
 
         return original;

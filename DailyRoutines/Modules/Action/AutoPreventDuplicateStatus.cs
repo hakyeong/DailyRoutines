@@ -4,7 +4,6 @@ using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Objects.Types;
-using Dalamud.Hooking;
 using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
@@ -21,19 +20,8 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
         Target = 2
     }
 
-    private class DuplicateActionInfo(uint actionID, DetectType detectType, uint[] statusID, uint[] secondStatusID)
-    {
-        public uint ActionID { get; set; } = actionID;
-        public DetectType DetectType { get; set; } = detectType;
-        public uint[] StatusID { get; set; } = statusID;
-        public uint[] SecondStatusID { get; set; } = secondStatusID;
-    }
-
-    private delegate bool UseActionSelfDelegate(
-        ActionManager* actionManager, uint actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
-        uint a5 = 0, uint a6 = 0, void* a7 = null);
-
-    private Hook<UseActionSelfDelegate>? useActionSelfHook;
+    private sealed record DuplicateActionInfo
+        (uint ActionID, DetectType DetectType, uint[] StatusID, uint[] SecondStatusID);
 
     private static readonly Dictionary<DetectType, string> DetectTypeLoc = new()
     {
@@ -146,11 +134,6 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
 
     public override void Init()
     {
-        useActionSelfHook =
-            Service.Hook.HookFromAddress<UseActionSelfDelegate>((nint)ActionManager.MemberFunctionPointers.UseAction,
-                                                                UseActionSelf);
-        useActionSelfHook?.Enable();
-
         AddConfig("EnabledActions", new Dictionary<uint, bool>());
         ConfigEnabledActions = GetConfig<Dictionary<uint, bool>>("EnabledActions");
 
@@ -160,6 +143,8 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
                             .ForEach(key => ConfigEnabledActions.Remove(key));
 
         UpdateConfig("EnabledActions", ConfigEnabledActions);
+
+        Service.UseActionManager.Register(OnPreUseAction);
     }
 
     public override void ConfigUI()
@@ -223,46 +208,39 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
         }
     }
 
-    private bool UseActionSelf(
-        ActionManager* actionManager, uint actionType, uint actionID, ulong targetID, uint a4, uint a5, uint a6,
-        void* a7)
+    private static void OnPreUseAction(
+        ref bool isPrevented, ref ActionType actionType, ref uint actionID, ref ulong targetID, ref uint a4,
+        ref uint queueState, ref uint a6)
     {
-        if (actionType != 1 || !DuplicateActions.TryGetValue(actionID, out var info) ||
-            !ConfigEnabledActions[actionID])
-            return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
+        if (actionType != ActionType.Action || !DuplicateActions.TryGetValue(actionID, out var info) ||
+            !ConfigEnabledActions[actionID]) return;
 
-        if (actionID is 7551 or 7538)
+        if (actionID is 7551 or 7538 &&
+            Service.Target.Target is not BattleChara { IsCasting: true, IsCastInterruptible: true } chara)
         {
-            if (Service.Target.Target is not BattleChara chara)
-                return false;
-            if (!chara.IsCasting || !chara.IsCastInterruptible)
-                return false;
-
-            return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
+            isPrevented = true;
+            return;
         }
 
         StatusManager* statusManager = null;
         switch (info.DetectType)
         {
             case DetectType.Self:
-                statusManager =
-                    ((FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara*)Service.ClientState.LocalPlayer
-                            .Address)->GetStatusManager;
+                statusManager = ((FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara*)
+                                    Service.ClientState.LocalPlayer.Address)->GetStatusManager;
                 break;
             case DetectType.Target:
                 if (Service.Target.Target != null && Service.Target.Target is BattleChara)
                 {
-                    statusManager =
-                        ((FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara*)Service.Target.Target.Address)
-                        ->GetStatusManager;
+                    statusManager = ((FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara*)
+                                        Service.Target.Target.Address)->GetStatusManager;
                 }
 
                 if (Service.Target.Target == null && targetID == 0xE000_0000)
                 {
                     statusManager =
-                        ((FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara*)Service.ClientState.LocalPlayer
-                                .Address)
-                        ->GetStatusManager;
+                        ((FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara*)
+                            Service.ClientState.LocalPlayer.Address)->GetStatusManager;
                 }
 
                 break;
@@ -274,10 +252,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
             {
                 foreach (var secondStatus in info.SecondStatusID)
                     if (statusManager->HasStatus(secondStatus))
-                    {
-                        return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6,
-                                                          a7);
-                    }
+                        return;
             }
 
             foreach (var status in info.StatusID)
@@ -286,10 +261,18 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
                 if (statusIndex != -1 &&
                     (PresetData.Statuses[status].IsPermanent ||
                      statusManager->StatusSpan[statusIndex].RemainingTime > 3.5))
-                    return false;
+                {
+                    isPrevented = true;
+                    return;
+                }
             }
         }
+    }
 
-        return useActionSelfHook.Original(actionManager, actionType, actionID, targetID, a4, a5, a6, a7);
+    public override void Uninit()
+    {
+        Service.UseActionManager.Unregister(OnPreUseAction);
+
+        base.Uninit();
     }
 }
