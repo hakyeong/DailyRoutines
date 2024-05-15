@@ -35,7 +35,7 @@ public class AutoDrawACard : DailyModuleBase
         if (Flags.BetweenAreas()) return false;
 
         var player = Service.ClientState.LocalPlayer;
-        if (player == null || player.ClassJob.Id == 0) return false;
+        if (player == null || player.ClassJob.Id == 0 || !player.IsTargetable) return false;
 
         if (player.ClassJob.Id != 33 || player.Level < 30) return true;
         if (IsOccupied()) return false;
