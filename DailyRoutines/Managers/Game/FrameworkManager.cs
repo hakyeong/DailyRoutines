@@ -11,8 +11,8 @@ public class FrameworkManager : IDailyManager
     private static Dictionary<string, IFramework.OnUpdateDelegate>? MethodsInfo;
     private static IFramework.OnUpdateDelegate[]? _updateMehtods;
     private static int _length;
-    private static readonly CancellationTokenSource _cancellationSource = new();
 
+    internal static CancellationTokenSource CancelSource { get; } = new();
 
     private void Init()
     {
@@ -83,15 +83,15 @@ public class FrameworkManager : IDailyManager
         for (var i = 0; i < _length; i++)
         {
             var index = i;
-            framework.Run(() => _updateMehtods[index].Invoke(framework), _cancellationSource.Token);
+            framework.Run(() => _updateMehtods[index].Invoke(framework), CancelSource.Token);
         }
     }
 
     private void Uninit()
     {
         Service.Framework.Update -= DailyRoutines_OnUpdate;
-        _cancellationSource.Cancel();
-        _cancellationSource.Dispose();
+        CancelSource.Cancel();
+        CancelSource.Dispose();
 
         _updateMehtods = null;
         MethodsInfo = null;
