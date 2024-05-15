@@ -115,6 +115,7 @@ public class Service
     public static Configuration Config { get; private set; } = null!;
     public static LanguageManager Lang { get; private set; } = new();
     public static WindowManager WindowManager { get; private set; } = new();
+    public static UseActionManager UseActionManager { get; private set; } = new();
     public static CommandManager CommandManager { get; private set; } = new();
     public static ExecuteCommandManager ExecuteCommandManager { get; private set; } = new();
     public static LogMessageManager LogMessageManager { get; private set; } = new();
