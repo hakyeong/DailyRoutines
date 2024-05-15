@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
-using System.Text;
 using System.Text.RegularExpressions;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
-using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
@@ -25,19 +23,8 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("FastObjectInteractTitle", "FastObjectInteractDescription", ModuleCategories.界面优化)]
 public unsafe partial class FastObjectInteract : DailyModuleBase
 {
-    private class ObjectWaitSelected(GameObject* gameObject, string name, ObjectKind kind, float distance)
-        : IEquatable<ObjectWaitSelected>
+    private sealed record ObjectWaitSelected(nint GameObject, string Name, ObjectKind Kind, float Distance)
     {
-        public GameObject* GameObject { get; set; } = gameObject;
-        public string Name { get; set; } = name;
-        public ObjectKind Kind { get; set; } = kind;
-        public float Distance { get; set; } = distance;
-
-        public override bool Equals(object? obj)
-        {
-            return Equals(obj as ObjectWaitSelected);
-        }
-
         public bool Equals(ObjectWaitSelected? other)
         {
             if (other is null || GetType() != other.GetType())
@@ -49,17 +36,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         public override int GetHashCode()
         {
             return HashCode.Combine((nint)GameObject);
-        }
-
-        public static bool operator ==(ObjectWaitSelected? lhs, ObjectWaitSelected? rhs)
-        {
-            if (lhs is null) return rhs is null;
-            return lhs.Equals(rhs);
-        }
-
-        public static bool operator !=(ObjectWaitSelected lhs, ObjectWaitSelected rhs)
-        {
-            return !(lhs == rhs);
         }
     }
 
@@ -258,7 +234,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         ImGui.BeginGroup();
         foreach (var kvp in ObjectsWaitSelected)
         {
-            if (kvp.Value.GameObject == null) continue;
+            if (kvp.Value.GameObject == nint.Zero) continue;
             var interactState = CanInteract(kvp.Value.Kind, kvp.Value.Distance);
 
             if (ModuleConfig.AllowClickToTarget)
@@ -292,16 +268,16 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
                 if (ImGui.IsItemClicked(ImGuiMouseButton.Left) && interactState)
                 {
-                    if (interactState) InteractWithObject(kvp.Value.GameObject, kvp.Value.Kind);
+                    if (interactState) InteractWithObject((GameObject*)kvp.Value.GameObject, kvp.Value.Kind);
                 }
                 else if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
-                    TargetSystem.Instance()->Target = kvp.Value.GameObject;
+                    TargetSystem.Instance()->Target = (GameObject*)kvp.Value.GameObject;
             }
             else
             {
                 ImGui.BeginDisabled(!interactState);
                 if (ButtonText(kvp.Key.ToString(), kvp.Value.Name) && interactState)
-                    InteractWithObject(kvp.Value.GameObject, kvp.Value.Kind);
+                    InteractWithObject((GameObject*)kvp.Value.GameObject, kvp.Value.Kind);
                 ImGui.EndDisabled();
 
                 if (ImGui.BeginPopupContextItem($"{kvp.Value.Name}"))
@@ -326,63 +302,60 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     private void OnUpdate(IFramework framework)
     {
-        framework.Run(() =>
+        if (!EzThrottler.Throttle("FastSelectObjects", 250)) return;
+        var localPlayer = Service.ClientState.LocalPlayer;
+        if (localPlayer == null)
         {
-            if (!EzThrottler.Throttle("FastSelectObjects", 250)) return;
-            var localPlayer = Service.ClientState.LocalPlayer;
-            if (localPlayer == null)
-            {
-                ObjectsWaitSelected.Clear();
-                WindowWidth = 0f;
-                Overlay.IsOpen = false;
-                return;
-            }
-
-            tempObjects.Clear();
-
-            foreach (var obj in Service.ObjectTable)
-            {
-                if (!obj.IsTargetable || obj.IsDead) continue;
-
-                var objName = obj.Name.TextValue;
-                if (ModuleConfig.BlacklistKeys.Contains(objName)) continue;
-
-                var objKind = obj.ObjectKind;
-                if (!ModuleConfig.SelectedKinds.Contains(objKind)) continue;
-
-                var dataID = obj.DataId;
-                if (objKind == ObjectKind.EventNpc && !ImportantENPC.Contains(dataID))
-                {
-                    if (!ImportantENPC.Contains(dataID)) continue;
-                    if (ENpcTitles.TryGetValue(dataID, out var ENPCTitle))
-                        objName = string.Format(ENPCTiltleText, ENPCTitle, obj.Name);
-                }
-
-                var gameObj = (GameObject*)obj.Address;
-                if (ModuleConfig.OnlyDisplayInViewRange)
-                    if (!targetSystem->IsObjectInViewRange(gameObj)) continue;
-
-                var objDistance = Vector3.Distance(localPlayer.Position, obj.Position);
-                if (objDistance > 10 || localPlayer.Position.Y - gameObj->Position.Y > 4) continue;
-
-                if (tempObjects.Count > ModuleConfig.MaxDisplayAmount) break;
-                tempObjects.Add(new ObjectWaitSelected(gameObj, objName, objKind, objDistance));
-            }
-
-            tempObjects.Sort((a, b) => a.Distance.CompareTo(b.Distance));
-
             ObjectsWaitSelected.Clear();
-            foreach (var tempObj in tempObjects) ObjectsWaitSelected.Add((nint)tempObj.GameObject, tempObj);
+            WindowWidth = 0f;
+            Overlay.IsOpen = false;
+            return;
+        }
 
-            if (Overlay == null) return;
-            if (!IsWindowShouldBeOpen())
+        tempObjects.Clear();
+
+        foreach (var obj in Service.ObjectTable)
+        {
+            if (!obj.IsTargetable || obj.IsDead) continue;
+
+            var objName = obj.Name.TextValue;
+            if (ModuleConfig.BlacklistKeys.Contains(objName)) continue;
+
+            var objKind = obj.ObjectKind;
+            if (!ModuleConfig.SelectedKinds.Contains(objKind)) continue;
+
+            var dataID = obj.DataId;
+            if (objKind == ObjectKind.EventNpc && !ImportantENPC.Contains(dataID))
             {
-                Overlay.IsOpen = false;
-                WindowWidth = 0f;
+                if (!ImportantENPC.Contains(dataID)) continue;
+                if (ENpcTitles.TryGetValue(dataID, out var ENPCTitle))
+                    objName = string.Format(ENPCTiltleText, ENPCTitle, obj.Name);
             }
-            else
-                Overlay.IsOpen = true;
-        });
+
+            var gameObj = (GameObject*)obj.Address;
+            if (ModuleConfig.OnlyDisplayInViewRange)
+                if (!targetSystem->IsObjectInViewRange(gameObj)) continue;
+
+            var objDistance = Vector3.Distance(localPlayer.Position, obj.Position);
+            if (objDistance > 10 || localPlayer.Position.Y - gameObj->Position.Y > 4) continue;
+
+            if (tempObjects.Count > ModuleConfig.MaxDisplayAmount) break;
+            tempObjects.Add(new ObjectWaitSelected((nint)gameObj, objName, objKind, objDistance));
+        }
+
+        tempObjects.Sort((a, b) => a.Distance.CompareTo(b.Distance));
+
+        ObjectsWaitSelected.Clear();
+        foreach (var tempObj in tempObjects) ObjectsWaitSelected.Add(tempObj.GameObject, tempObj);
+
+        if (Overlay == null) return;
+        if (!IsWindowShouldBeOpen())
+        {
+            Overlay.IsOpen = false;
+            WindowWidth = 0f;
+        }
+        else
+            Overlay.IsOpen = true;
     }
 
     private static void InteractWithObject(GameObject* obj, ObjectKind kind)
