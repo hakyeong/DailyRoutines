@@ -20,6 +20,7 @@ using System;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using Dalamud.Game.ClientState.Conditions;
+using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 
 namespace DailyRoutines.Modules;
 
@@ -313,10 +314,9 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
     private static void ObtainGardensAround()
     {
-        var tempSet = new HashSet<uint>();
-        foreach (var obj in Service.ObjectTable.Where(x => x.DataId == 2003757)) tempSet.Add(obj.ObjectId);
-
-        Gardens = [.. tempSet];
+        Gardens = Service.ObjectTable.Where(x => x is { ObjectKind: ObjectKind.EventObj, DataId: 2003757 })
+                         .Select(x => x.ObjectId)
+                         .ToArray();
     }
 
     private static bool? CheckFertilizerState()
