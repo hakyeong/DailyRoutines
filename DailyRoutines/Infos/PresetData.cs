@@ -31,6 +31,8 @@ public class PresetData
         Contents ??= LuminaCache.Get<ContentFinderCondition>()
                                 .Where(x => !x.Name.ToString().IsNullOrEmpty())
                                 .DistinctBy(x => x.TerritoryType.Row)
+                                .OrderBy(x => x.ContentType.Row)
+                                .ThenBy(x => x.ClassJobLevelRequired)
                                 .ToDictionary(x => x.TerritoryType.Row, x => x);
 
         Gears ??= LuminaCache.Get<Item>()

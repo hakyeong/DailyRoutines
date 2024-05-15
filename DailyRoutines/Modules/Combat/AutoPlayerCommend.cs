@@ -19,7 +19,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoPlayerCommendTitle", "AutoPlayerCommendDescription", ModuleCategories.Õ½¶·)]
+[ModuleDescription("AutoPlayerCommendTitle", "AutoPlayerCommendDescription", ModuleCategories.æˆ˜æ–—)]
 public unsafe class AutoPlayerCommend : DailyModuleBase
 {
     private enum PlayerRole
@@ -224,7 +224,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
             ImGui.Text($"{Service.Lang.GetText("AutoPlayerCommend-Content")}:");
 
             ImGui.SameLine();
-            ImGui.SetNextItemWidth(180f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
             ContentSelectCombo(ref SelectedContent, ref ContentSearchInput);
 
             ImGui.SameLine();

@@ -5,6 +5,7 @@ using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Utility;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 
@@ -104,28 +105,71 @@ public static class Widgets
         var selectState = false;
         if (ImGui.BeginCombo("###ContentSelectCombo", selectedContent == null ? "" : selectedContent.Name.RawString, ImGuiComboFlags.HeightLarge))
         {
-            ImGui.InputTextWithHint("###ContentSearchInput", Service.Lang.GetText("PleaseSearch"), ref contentSearchInput, 32);
+            ImGui.EndCombo();
+        }
+
+        if (ImGui.IsItemClicked())
+        {
+            ImGui.OpenPopup("###ContentSelectPopup");
+        }
+
+        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(450f, 400f));
+        if (ImGui.BeginPopup("###ContentSelectPopup", ImGuiWindowFlags.NoScrollbar))
+        {
+            ImGui.SetNextItemWidth(-1f);
+            ImGui.InputTextWithHint
+                ("###ContentSearchInput", Service.Lang.GetText("PleaseSearch"), ref contentSearchInput, 32);
 
             ImGui.Separator();
-            foreach (var content in PresetData.Contents)
+
+            var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
+            if (ImGui.BeginTable("###ContentSelectTable", 4, ImGuiTableFlags.Borders, tableSize))
             {
-                var contentName = content.Value.Name.RawString;
-                var placeName = content.Value.TerritoryType.Value.PlaceName.Value.Name.RawString;
+                ImGui.TableSetupColumn("Icon", ImGuiTableColumnFlags.WidthFixed, 20f * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupColumn("Level", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("123").X);
+                ImGui.TableSetupColumn("DutyName", ImGuiTableColumnFlags.WidthStretch, 40);
+                ImGui.TableSetupColumn("PlaceName", ImGuiTableColumnFlags.WidthStretch, 40);
 
-                if (!string.IsNullOrWhiteSpace(contentSearchInput) && 
-                    !contentName.Contains(contentSearchInput) && !placeName.Contains(contentSearchInput)) continue;
+                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+                ImGui.TableNextColumn();
+                ImGui.Text("类型");
+                ImGui.TableNextColumn();
+                ImGui.Text("等级");
+                ImGui.TableNextColumn();
+                ImGui.Text("副本名");
+                ImGui.TableNextColumn();
+                ImGui.Text("区域名");
 
-                if (ImGui.Selectable($"{placeName} | {contentName}", selectedContent != null && selectedContent.RowId == content.Key))
+                foreach (var contentPair in PresetData.Contents)
                 {
-                    selectedContent = content.Value;
-                    ImGui.CloseCurrentPopup();
-                    selectState = true;
+                    var contentName = contentPair.Value.Name.RawString;
+                    var placeName = contentPair.Value.TerritoryType.Value.PlaceName.Value.Name.RawString;
+                    ImGui.TableNextRow();
+
+                    ImGui.TableNextColumn();
+                    ImGui.Image(ImageHelper.GetIcon(contentPair.Value.ContentType.Value.Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(20f));
+
+                    ImGui.TableNextColumn();
+                    ImGui.Text(contentPair.Value.ClassJobLevelRequired.ToString());
+
+                    ImGui.TableNextColumn();
+                    if (ImGui.Selectable(contentName, selectedContent == contentPair.Value,
+                                         ImGuiSelectableFlags.SpanAllColumns))
+                    {
+                        selectedContent = contentPair.Value;
+                        selectState = true;
+                        ImGui.CloseCurrentPopup();
+                    }
+
+                    ImGui.TableNextColumn();
+                    ImGui.Text(placeName);
+
+                    if (ImGui.IsWindowAppearing() && selectedContent == contentPair.Value) ImGui.SetScrollHereY();
                 }
 
-                ImGui.Separator();
+                ImGui.EndTable();
             }
-
-            ImGui.EndCombo();
+            ImGui.EndPopup();
         }
 
         return selectState;
