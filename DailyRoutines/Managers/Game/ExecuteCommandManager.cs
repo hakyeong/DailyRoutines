@@ -39,7 +39,7 @@ public class ExecuteCommandManager : IDailyManager
         var original = ExecuteCommandHook.Original(command, param1, param2, param3, param4);
 
         if (Debug.DebugConfig.ShowExecuteCommandLog)
-            Service.Log.Debug($"[ExecuteCommand Manager]\n命令:{command} | p1:{param1} | p2:{param2} | p3:{param3} | p4:{param4}");
+            Service.Log.Debug($"[Execute Command Manager]\n命令:{command} | p1:{param1} | p2:{param2} | p3:{param3} | p4:{param4}");
 
         OnExecuteCommand(command, param1, param2, param3, param4);
         return original;

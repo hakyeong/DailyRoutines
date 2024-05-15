@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
+using DailyRoutines.Windows;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
@@ -130,6 +131,9 @@ public unsafe class LogMessageManager : IDailyManager
     {
         var logKind = LuminaCache.GetRow<LogMessage>(logMessageID).LogKind;
         if (logKind == 0) return;
+
+        if (Debug.DebugConfig.ShowLogMessageLog)
+            Service.Log.Debug($"[Log Message Manager]\nID:{logMessageID} | 类型:{logKind}");
 
         for (var i = 0; i < _length; i++)
         {
