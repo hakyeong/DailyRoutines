@@ -83,7 +83,9 @@ public static class Widgets
             {
                 var worldName = world.Value.Name.RawString;
                 var dcName = world.Value.DataCenter.Value.Name.RawString;
-                if (!string.IsNullOrWhiteSpace(worldSearchInput) && !worldName.Contains(worldSearchInput) && !dcName.Contains(worldSearchInput)) continue;
+                if (!string.IsNullOrWhiteSpace(worldSearchInput) && 
+                    !worldName.Contains(worldSearchInput) && !dcName.Contains(worldSearchInput))
+                    continue;
 
                 if (ImGui.Selectable($"[{dcName}] {worldName}", selectedWorld != null && selectedWorld.RowId == world.Key))
                 {
