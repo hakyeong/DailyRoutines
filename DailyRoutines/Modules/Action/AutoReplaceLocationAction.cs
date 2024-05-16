@@ -17,7 +17,7 @@ using Lumina.Excel.GeneratedSheets;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoReplaceLocationActionTitle", "AutoReplaceLocationActionDescription", ModuleCategories.技能)]
-public unsafe class AutoReplaceLocationAction : DailyModuleBase
+public class AutoReplaceLocationAction : DailyModuleBase
 {
     private class Config : ModuleConfiguration
     {
