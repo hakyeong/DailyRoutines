@@ -59,7 +59,7 @@ public class AutoRefreshPartyFinder : DailyModuleBase
         Overlay.Position = WindowPos;
 
         ImGui.BeginGroup();
-        ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(50f * ImGuiHelpers.GlobalScale);
         ImGui.InputInt("##input", ref ConfigRefreshInterval, 0, 0);
 
         if (ImGui.IsItemDeactivatedAfterEdit())
