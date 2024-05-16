@@ -24,7 +24,7 @@ public unsafe class AutoNumericInputMax : DailyModuleBase
     public override void Init()
     {
         Service.Hook.InitializeFromAttributes(this);
-        InitFromComponentDataHook?.Enable();
+        // InitFromComponentDataHook?.Enable();
         UldUpdateHook?.Enable();
     }
 
@@ -59,10 +59,14 @@ public unsafe class AutoNumericInputMax : DailyModuleBase
             _LastInterruptTime = Environment.TickCount64;
 
         if (Environment.TickCount64 - _LastInterruptTime > 10000)
-            if (EzThrottler.Throttle($"AutoNumericInputMax-UldUpdate_{(nint)component}", 100) &&
-                component->AtkComponentInputBase.AtkComponentBase.OwnerNode->AtkResNode.NodeFlags.HasFlag(NodeFlags.Enabled) &&
-                component->Data.Max < 9999)
-                component->SetValue(component->Data.Max);
+            if (EzThrottler.Throttle($"AutoNumericInputMax-UldUpdate_{(nint)component}", 250))
+            {
+                var nodeFlags = component->AtkComponentInputBase.AtkComponentBase.OwnerNode->AtkResNode.NodeFlags;
+                if (nodeFlags.HasFlag(NodeFlags.Enabled | NodeFlags.Visible) && component->Data.Max < 9999)
+                {
+                    component->SetValue(component->Data.Max);
+                }
+            }
 
         return result;
     }
