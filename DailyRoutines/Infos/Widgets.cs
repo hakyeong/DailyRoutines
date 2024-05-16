@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
@@ -123,14 +124,17 @@ public static class Widgets
             ImGui.Separator();
 
             var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
-            if (ImGui.BeginTable("###ContentSelectTable", 4, ImGuiTableFlags.Borders, tableSize))
+            if (ImGui.BeginTable("###ContentSelectTable", 5, ImGuiTableFlags.Borders, tableSize))
             {
+                ImGui.TableSetupColumn("RadioButton", ImGuiTableColumnFlags.WidthFixed, 20f * ImGuiHelpers.GlobalScale);
                 ImGui.TableSetupColumn("Icon", ImGuiTableColumnFlags.WidthFixed, 20f * ImGuiHelpers.GlobalScale);
                 ImGui.TableSetupColumn("Level", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("123").X);
                 ImGui.TableSetupColumn("DutyName", ImGuiTableColumnFlags.WidthStretch, 40);
                 ImGui.TableSetupColumn("PlaceName", ImGuiTableColumnFlags.WidthStretch, 40);
 
                 ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+                ImGui.TableNextColumn();
+                ImGui.Text("");
                 ImGui.TableNextColumn();
                 ImGui.Text("类型");
                 ImGui.TableNextColumn();
@@ -144,7 +148,15 @@ public static class Widgets
                 {
                     var contentName = contentPair.Value.Name.RawString;
                     var placeName = contentPair.Value.TerritoryType.Value.PlaceName.Value.Name.RawString;
+                    if (!string.IsNullOrWhiteSpace(contentSearchInput) &&
+                        !contentName.Contains(contentSearchInput, StringComparison.OrdinalIgnoreCase) &&
+                        !placeName.Contains(contentSearchInput, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    ImGui.PushID($"{contentName}_{contentPair.Key}");
                     ImGui.TableNextRow();
+
+                    ImGui.TableNextColumn();
+                    ImGui.RadioButton("", selectedContent == contentPair.Value);
 
                     ImGui.TableNextColumn();
                     ImGui.Image(ImageHelper.GetIcon(contentPair.Value.ContentType.Value.Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(20f));
@@ -153,18 +165,18 @@ public static class Widgets
                     ImGui.Text(contentPair.Value.ClassJobLevelRequired.ToString());
 
                     ImGui.TableNextColumn();
-                    if (ImGui.Selectable(contentName, selectedContent == contentPair.Value,
-                                         ImGuiSelectableFlags.SpanAllColumns))
+                    if (ImGui.Selectable(contentName, false, 
+                                         ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups))
                     {
                         selectedContent = contentPair.Value;
                         selectState = true;
-                        ImGui.CloseCurrentPopup();
                     }
 
                     ImGui.TableNextColumn();
                     ImGui.Text(placeName);
 
                     if (ImGui.IsWindowAppearing() && selectedContent == contentPair.Value) ImGui.SetScrollHereY();
+                    ImGui.PopID();
                 }
 
                 ImGui.EndTable();
