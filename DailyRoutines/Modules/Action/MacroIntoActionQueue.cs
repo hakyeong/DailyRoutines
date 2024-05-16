@@ -5,7 +5,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("MacroIntoActionQueueTitle", "MacroIntoActionQueueDescription", ModuleCategories.技能)]
-public unsafe class MacroIntoActionQueue : DailyModuleBase
+public class MacroIntoActionQueue : DailyModuleBase
 {
     public override void Init()
     {

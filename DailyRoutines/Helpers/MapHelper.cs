@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Utility;
+using ECommons.MathHelpers;
 using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Helpers;
@@ -11,71 +11,86 @@ public static class MapHelper
 {
     // 材质坐标, 地图坐标 和 世界坐标
     #region Position
+    #region Texture & Map
     public static Vector2 TextureToMap(Vector2 textureCoordinates, Map map)
     {
-        var worldPosition = TextureToWorld(textureCoordinates, map);
-        return WorldToMap(worldPosition, map);
+        return WorldToMap(TextureToWorld(textureCoordinates, map), map);
     }
 
     public static Vector2 MapToTexture(Vector2 mapCoordinates, Map map)
     {
-        var worldPosition = MapToWorld(mapCoordinates, map);
-        return WorldToTexture(worldPosition, map);
+        return WorldToTexture(MapToWorld(mapCoordinates, map).ToVector3(), map);
     }
+    #endregion
 
+    #region World & Map
     public static Vector2 WorldToMap(Vector2 worldCoordinates, Map map)
     {
-        var scalar = map.SizeFactor / 100.0f;
-        var center = new Vector2(1024.0f, 1024.0f);
-
-        var adjustedWorldCoordinates = worldCoordinates + center / scalar;
-
-        var scaledWorldCoordinates = adjustedWorldCoordinates * scalar;
-
-        var mapX = MapToWorld(scaledWorldCoordinates.X, map.SizeFactor, map.OffsetX);
-        var mapY = MapToWorld(scaledWorldCoordinates.Y, map.SizeFactor, map.OffsetY);
-
-        return new Vector2(mapX, mapY);
+        return new Vector2(
+            WorldXZToMap(worldCoordinates.X, map.SizeFactor, map.OffsetX),
+            WorldXZToMap(worldCoordinates.Y, map.SizeFactor, map.OffsetY));
     }
 
-    public static Vector2 MapToWorld(Vector2 coordinates, Map map)
+    public static Vector3 WorldToMap(Vector3 worldCoordinates, Map map, TerritoryTypeTransient territoryTransient, bool correctZOffset = false)
     {
-        var scalar = map.SizeFactor / 100.0f;
-
-        var xWorldCoord = MapToWorld(coordinates.X, map.SizeFactor, map.OffsetX);
-        var yWorldCoord = MapToWorld(coordinates.Y, map.SizeFactor, map.OffsetY);
-
-        var objectPosition = new Vector2(xWorldCoord, yWorldCoord);
-        var center = new Vector2(1024.0f, 1024.0f);
-
-        return objectPosition / scalar - center / scalar;
+        return new Vector3(
+            WorldXZToMap(worldCoordinates.X, map.SizeFactor, map.OffsetX),
+            WorldXZToMap(worldCoordinates.Z, map.SizeFactor, map.OffsetY),
+            WorldYToMap(worldCoordinates.Y, territoryTransient.OffsetZ, correctZOffset));
     }
 
-    public static float MapToWorld(float value, uint scale, int offset)
-        => -offset * (scale / 100.0f) + 50.0f * (value - 1) * (scale / 100.0f);
+    public static Vector2 MapToWorld(Vector2 mapCoordinates, Map map)
+    {
+        return new Vector2(
+            MapToWorldXZ(mapCoordinates.X, map.SizeFactor, map.OffsetX),
+            MapToWorldXZ(mapCoordinates.Y, map.SizeFactor, map.OffsetY));
+    }
 
-    public static Vector2 WorldToTexture(GameObject gameObject, Map map)
-        => WorldToTexture(gameObject.Position, map);
+    public static Vector3 MapToWorld(Vector3 mapCoordinates, Map map, TerritoryTypeTransient territoryTransient, bool correctZOffset = false)
+    {
+        return new Vector3(
+            MapToWorldXZ(mapCoordinates.X, map.SizeFactor, map.OffsetX),
+            MapToWorldXZ(mapCoordinates.Z, map.SizeFactor, map.OffsetY),
+            MapToWorldY(mapCoordinates.Y, territoryTransient.OffsetZ, correctZOffset));
+    }
+    #endregion
 
+    #region World & Texture
     public static Vector2 WorldToTexture(Vector3 position, Map map)
-        => WorldToTexture(new Vector2(position.X, position.Z), map);
-
-    public static Vector2 WorldToTexture(Vector2 coordinates, Map map)
-        => coordinates * (map.SizeFactor / 100.0f) +
+    {
+        return new Vector2(position.X, position.Z) * (map.SizeFactor / 100.0f) +
            new Vector2(map.OffsetX, map.OffsetY) * (map.SizeFactor / 100.0f) +
            new Vector2(1024.0f, 1024.0f);
+    }
 
     public static Vector2 TextureToWorld(Vector2 coordinates, Map map)
-        => TextureToWorld(coordinates, new(map.OffsetX, map.OffsetY), map.SizeFactor);
-
-    public static Vector2 TextureToWorld(Vector2 coordinates, Vector2 mapOffset, ushort mapSizeFactor)
     {
-        var adjustedCoordinates = coordinates - new Vector2(1024f);
-
-        adjustedCoordinates /= mapSizeFactor;
-
-        return (adjustedCoordinates * 100f) - mapOffset;
+        var adjustedCoordinates = (coordinates - new Vector2(1024f)) / map.SizeFactor;
+        return adjustedCoordinates * 100f - new Vector2(map.OffsetX, map.OffsetY);
     }
+    #endregion
+
+    #region Helper Methods
+    private static float WorldXZToMap(float value, uint scale, int offset)
+    {
+        return 0.02f * offset + 2048f / scale + 0.02f * value + 1f;
+    }
+
+    private static float MapToWorldXZ(float mapValue, uint scale, int offset)
+    {
+        return (mapValue - 0.02f * offset - 2048f / scale - 1f) / 0.02f;
+    }
+
+    public static float WorldYToMap(float value, int zOffset, bool correctZOffset = false)
+    {
+        return (correctZOffset && zOffset == -10000) ? value / 100f : (value - zOffset) / 100f;
+    }
+
+    public static float MapToWorldY(float mapValue, int zOffset, bool correctZOffset = false)
+    {
+        return (correctZOffset && zOffset == -10000) ? mapValue * 100f : mapValue * 100f + zOffset;
+    }
+    #endregion
     #endregion
 
     #region MapMarker Extensions

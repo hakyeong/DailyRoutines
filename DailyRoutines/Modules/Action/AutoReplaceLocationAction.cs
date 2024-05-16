@@ -111,7 +111,6 @@ public unsafe class AutoReplaceLocationAction : DailyModuleBase
         {
             if (Vector3.Distance(location, modifiedLocation) < 15)
             {
-                Service.Log.Debug($"测试 {modifiedLocation}");
                 location = modifiedLocation;
                 ModifiedLocation ??= modifiedLocation;
             }
