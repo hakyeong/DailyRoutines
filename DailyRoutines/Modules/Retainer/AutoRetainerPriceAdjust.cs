@@ -1039,8 +1039,8 @@ public unsafe class AutoRetainerPriceAdjust : DailyModuleBase
         }
 
         // 大于可接受降价值
-        if (itemDetails.Preset.PriceMaxReduction != 0 &&
-            Math.Abs(itemDetails.OrigPrice - modifiedPrice) > itemDetails.Preset.PriceMaxReduction &&
+        if (itemDetails.Preset.PriceMaxReduction != 0 && itemDetails.OrigPrice - modifiedPrice > 0 &&
+            itemDetails.OrigPrice - modifiedPrice > itemDetails.Preset.PriceMaxReduction &&
             itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.大于可接受降价值)))
         {
             var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.大于可接受降价值)).Value;
