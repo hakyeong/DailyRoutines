@@ -9,6 +9,7 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
+using Action = Lumina.Excel.GeneratedSheets.Action;
 
 namespace DailyRoutines.Infos;
 
@@ -107,17 +108,13 @@ public static class Widgets
     {
         var selectState = false;
         if (ImGui.BeginCombo("###ContentSelectCombo", selectedContent == null ? "" : selectedContent.Name.RawString, ImGuiComboFlags.HeightLarge))
-        {
             ImGui.EndCombo();
-        }
 
         if (ImGui.IsItemClicked())
-        {
             ImGui.OpenPopup("###ContentSelectPopup");
-        }
 
         ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(450f, 400f));
-        if (ImGui.BeginPopup("###ContentSelectPopup", ImGuiWindowFlags.NoScrollbar))
+        if (ImGui.BeginPopup("###ContentSelectPopup"))
         {
             ImGui.SetNextItemWidth(-1f);
             ImGui.InputTextWithHint
@@ -178,6 +175,82 @@ public static class Widgets
                     ImGui.Text(placeName);
 
                     if (ImGui.IsWindowAppearing() && selectedContent == contentPair.Value) ImGui.SetScrollHereY();
+                    ImGui.PopID();
+                }
+
+                ImGui.EndTable();
+            }
+            ImGui.EndPopup();
+        }
+
+        return selectState;
+    }
+
+    public static bool ActionSelectCombo(ref Action? selectedAction, ref string actionSearchInput)
+    {
+        var selectState = false;
+
+        if (ImGui.BeginCombo("###ActionSelectCombo", selectedAction == null ? "" : $"[{selectedAction.ClassJob.Value?.Name.RawString}] {selectedAction.Name.RawString} ({selectedAction.RowId})", ImGuiComboFlags.HeightLarge))
+            ImGui.EndCombo();
+
+        if (ImGui.IsItemClicked())
+            ImGui.OpenPopup("###ActionSelectPopup");
+
+        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(350f, 400f));
+        if (ImGui.BeginPopup("###ActionSelectPopup"))
+        {
+            ImGui.SetNextItemWidth(-1f);
+            ImGui.InputTextWithHint
+                ("###ActionSearchInput", Service.Lang.GetText("PleaseSearch"), ref actionSearchInput, 32);
+
+            ImGui.Separator();
+
+            var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
+            if (ImGui.BeginTable("###ActionSelectTable", 4, ImGuiTableFlags.Borders, tableSize))
+            {
+                ImGui.TableSetupColumn("RadioButton", ImGuiTableColumnFlags.WidthFixed, 20f * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupColumn("Job", ImGuiTableColumnFlags.WidthFixed, 70f * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupColumn("Level", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("1234").X);
+                ImGui.TableSetupColumn("Action", ImGuiTableColumnFlags.WidthStretch, 50);
+
+                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+                ImGui.TableNextColumn();
+                ImGui.Text("");
+                ImGui.TableNextColumn();
+                ImGui.Text("职业");
+                ImGui.TableNextColumn();
+                ImGui.Text("等级");
+                ImGui.TableNextColumn();
+                ImGui.Text("技能");
+
+                foreach (var actionPair in PresetData.PlayerActions)
+                {
+                    var actionName = actionPair.Value.Name.RawString;
+                    var jobName = actionPair.Value.ClassJob.Value?.Name.RawString ?? string.Empty;
+                    if (!string.IsNullOrWhiteSpace(actionSearchInput) &&
+                        !actionName.Contains(actionSearchInput, StringComparison.OrdinalIgnoreCase) &&
+                        !jobName.Contains(actionSearchInput, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    ImGui.PushID($"{actionName}_{actionPair.Key}");
+                    ImGui.TableNextRow();
+
+                    ImGui.TableNextColumn();
+                    ImGui.RadioButton("", selectedAction == actionPair.Value);
+
+                    ImGui.TableNextColumn();
+                    ImGui.Text($"{jobName}");
+
+                    ImGui.TableNextColumn();
+                    ImGui.Text(actionPair.Value.ClassJobLevel.ToString());
+
+                    ImGui.TableNextColumn();
+                    if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(actionPair.Value.Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(20f), actionName, false, ImGuiSelectableFlags.DontClosePopups | ImGuiSelectableFlags.SpanAllColumns))
+                    {
+                        selectedAction = actionPair.Value;
+                        selectState = true;
+                    }
+
+                    if (ImGui.IsWindowAppearing() && selectedAction == actionPair.Value) ImGui.SetScrollHereY();
                     ImGui.PopID();
                 }
 
