@@ -104,16 +104,20 @@ public class AutoReplaceLocationAction : DailyModuleBase
     {
         if (type != ActionType.Action || !ModuleConfig.EnabledActions.TryGetValue(actionID, out var isEnabled) ||
             !isEnabled) return;
-        
-        var modifiedLocation = ZoneMapMarkers.Values.FirstOrDefault(x => Vector3.Distance(x.ToVector3(), Service.ClientState.LocalPlayer.Position) < 25).ToVector3();
 
-        if (modifiedLocation.X != 0 && modifiedLocation.Z != 0)
+        var resultLocation = ZoneMapMarkers.Values
+                                             .Select(x => (Vector3?)x.ToVector3())
+                                             .FirstOrDefault(x => x.HasValue && Vector3.Distance(x.Value, Service.ClientState.LocalPlayer.Position) < 25);
+
+        if (resultLocation == null) return;
+        var modifiedLocation = resultLocation.Value;
+
+        //if (modifiedLocation.Y is >= -2 and <= 0) modifiedLocation.Y = 0f;
+        
+        if (Vector3.Distance(location, modifiedLocation) < 15)
         {
-            if (Vector3.Distance(location, modifiedLocation) < 15)
-            {
-                location = modifiedLocation;
-                ModifiedLocation ??= modifiedLocation;
-            }
+            location = modifiedLocation;
+            ModifiedLocation ??= modifiedLocation;
         }
         else if (PresetData.TryGetContent(Service.ClientState.TerritoryType, out var content) &&
                  content.ContentType.Row is 4 or 5)
