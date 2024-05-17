@@ -28,13 +28,9 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
     [Signature("E8 ?? ?? ?? ?? 48 8B C3 48 83 C4 ?? 5B C3 CC CC CC CC CC CC CC 48 83 EC")]
     private static GetFilteredUtf8StringDelegate? GetFilteredUtf8String;
 
-    private delegate nint LocalMessageDisplayHandlerDelegate(nint a1, nint a2);
-    [Signature("E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? 48 8B 89 ?? ?? ?? ?? 48 85 C9 74 ?? 48 8B D3 E8 ?? ?? ?? ?? 48 8B C3")]
-    private static LocalMessageDisplayHandlerDelegate? LocalMessageDisplayHandler;
-
-    private delegate nint PFMessageDisplayHandlerDelegate(nint a1, nint a2);
-    [Signature("E8 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? 48 8B 81 ?? ?? ?? ?? 48 85 C0 74 ?? 48 8B D3")]
-    private static PFMessageDisplayHandlerDelegate? PartyFinderMessageDisplayHandler;
+    private delegate nint Utf8StringCopyDelegate(nint a1, nint a2, nint a3 = 1);
+    [Signature("48 89 5C 24 ?? 57 48 83 EC ?? 48 8B FA 48 8B D9 48 3B D1 74 ?? 48 8B 52 ?? 41 B0 ?? E8 ?? ?? ?? ?? 4C 8B 43 ?? 48 8B 17 48 8B 0B E8 ?? ?? ?? ?? 0F B6 47 ?? 88 43 ?? 48 8B 47 ?? 48 89 43 ?? 48 8B C3 48 8B 5C 24 ?? 48 83 C4 ?? 5F C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 89 5C 24")]
+    private static Utf8StringCopyDelegate? Utf8StringCopy;
 
     private delegate nint LocalMessageDisplayDelegate(nint a1, nint a2);
     [Signature("40 53 48 83 EC ?? 48 8D 99 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 48 8B 0D",
@@ -187,11 +183,11 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
 
     // 本地聊天消息显示处理函数
     private static nint LocalMessageDisplayDetour(nint a1, nint a2) 
-        => LocalMessageDisplayHandler(a1 + 1096, a2);
+        => Utf8StringCopy(a1 + 1096, a2);
 
     // 招募板信息显示处理函数
     private static nint PartyFinderMessageDisplayDetour(nint a1, nint a2) 
-        => PartyFinderMessageDisplayHandler(a1 + 10488, a2);
+        => Utf8StringCopy(a1 + 10488, a2);
 
     // 获取屏蔽词处理后的文本
     private string GetFilteredString(string str)
