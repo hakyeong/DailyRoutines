@@ -20,8 +20,10 @@ public class PresetData
     public static void Init()
     {
         PlayerActions ??= LuminaCache.Get<Action>()
-                                     .Where(x => x.ClassJobCategory.Row > 0 && x.ActionCategory.Row <= 4 && x.RowId > 8 &&
-                                                 !string.IsNullOrWhiteSpace(x.Name.ExtractText()))
+                                     .Where(x => x.ClassJob.Value != null && x.Range != -1 && x.Icon != 0 &&
+                                                 !string.IsNullOrWhiteSpace(x.Name.RawString))
+                                     .OrderBy(x => x.ClassJob.Row)
+                                     .ThenBy(x => x.ClassJobLevel)
                                      .ToDictionary(x => x.RowId, x => x);
 
         Statuses ??= LuminaCache.Get<Status>()
