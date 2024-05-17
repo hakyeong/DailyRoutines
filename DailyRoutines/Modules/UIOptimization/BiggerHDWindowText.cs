@@ -82,8 +82,8 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
         (AtkComponentTextInput* component, ushort eventCase, uint a3, nint a4, ushort* a5)
     {
         var original = TextInputReceiveEventHook.Original(component, eventCase, a3, a4, a5);
-        
-        if (eventCase == 9 || eventCase == 12)
+
+        if (eventCase == 18)
             ModifyTextInputComponent(component);
 
         return original;
