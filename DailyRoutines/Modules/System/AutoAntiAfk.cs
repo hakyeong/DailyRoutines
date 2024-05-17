@@ -1,7 +1,6 @@
 using System.Timers;
 using DailyRoutines.Infos;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using Timer = System.Timers.Timer;
 
 namespace DailyRoutines.Modules;
 
@@ -12,31 +11,25 @@ public class AutoAntiAfk : DailyModuleBase
 
     public override void Init()
     {
-        AfkTimer ??= new Timer(10000);
-        AfkTimer.Elapsed += OnAfkStateCheck;
-        AfkTimer.AutoReset = true;
-        AfkTimer.Enabled = true;
+        AfkTimer ??= new Timer(10000) { AutoReset = true, Enabled = true };
+        AfkTimer.Elapsed += ResetAfkTimers;
     }
 
-    private static unsafe void OnAfkStateCheck(object? sender, ElapsedEventArgs e)
+    private static unsafe void ResetAfkTimers(object? sender, ElapsedEventArgs e)
     {
-        var inputTimerModule = InputTimerModule.Instance();
-        if (inputTimerModule != null)
-        {
-            inputTimerModule->AfkTimer = 0;
-            inputTimerModule->ContentInputTimer = 0;
-            inputTimerModule->InputTimer = 0;
-            inputTimerModule->Unk1C = 0;
-        }
+        var timerModule = InputTimerModule.Instance();
+        if (timerModule != null)
+            timerModule->AfkTimer = timerModule->ContentInputTimer = timerModule->InputTimer = timerModule->Unk1C = 0;
     }
 
     public override void Uninit()
     {
-        AfkTimer?.Stop();
-        if (AfkTimer != null) AfkTimer.Elapsed -= OnAfkStateCheck;
-        AfkTimer?.Dispose();
+        if (AfkTimer != null)
+        {
+            AfkTimer.Stop();
+            AfkTimer.Elapsed -= ResetAfkTimers;
+            AfkTimer.Dispose();
+        }
         AfkTimer = null;
-
-        base.Uninit();
     }
 }
