@@ -36,9 +36,11 @@ public unsafe class AutoDismount : DailyModuleBase
             PresetData.PlayerActions.Where(x => x.Value.CanTargetSelf || x.Value.TargetArea).Select(x => x.Key)
                       .ToHashSet();
 
-        Service.Condition.ConditionChange += OnConditionChanged;
-
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+
+        Service.Condition.ConditionChange += OnConditionChanged;
+        if (Service.Condition[ConditionFlag.Mounted] || Service.Condition[ConditionFlag.Mounted2]) 
+            OnConditionChanged(ConditionFlag.Mounted, true);
     }
 
     private void OnConditionChanged(ConditionFlag flag, bool value)
