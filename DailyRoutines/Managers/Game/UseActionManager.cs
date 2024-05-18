@@ -3,6 +3,7 @@ using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using System.Collections.Generic;
 using System.Numerics;
+using DailyRoutines.Windows;
 
 namespace DailyRoutines.Managers;
 
@@ -209,6 +210,9 @@ public unsafe class UseActionManager : IDailyManager
         ActionManager* actionManager, ActionType actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
         uint queueState = 0, uint a6 = 0, void* a7 = null)
     {
+        if (Debug.DebugConfig.ShowUseActionLog)
+            Service.Log.Debug($"[Use Action Manager] 一般类技能\n类型:{actionType} | ID:{actionID} | 目标ID: {targetID} | a4:{a4} | 队列状态:{queueState} | a6:{a6}");
+
         var isPrevented = false;
         foreach (var preUseAction in _methodsPreUseAction)
         {
@@ -230,6 +234,9 @@ public unsafe class UseActionManager : IDailyManager
     private static bool UseActionLocationDetour(
         ActionManager* manager, ActionType type, uint actionID, ulong targetID, Vector3* location, uint a4)
     {
+        if (Debug.DebugConfig.ShowUseActionLocationLog)
+            Service.Log.Debug($"[Use Action Manager] 地面类技能\n类型:{type} | ID:{actionID} | 目标ID: {targetID} | 地点:{*location} | a4:{a4}");
+
         var isPrevented = false;
         var location0 = *location;
         foreach (var preUseAction in _methodsPreUseActionLocation)
