@@ -63,7 +63,7 @@ public class AutoTankStance : DailyModuleBase
             (!ConfigOnlyAutoStanceWhenOneTank && PresetData.Contents.ContainsKey(zone)))
         {
             TaskManager.Abort();
-            TaskManager.DelayNext(500);
+            TaskManager.DelayNext(100);
             TaskManager.Enqueue(CheckCurrentJob);
         }
     }

@@ -41,7 +41,7 @@ public class AutoSummonPet : DailyModuleBase
         if (!PresetData.Contents.ContainsKey(zone) || Service.ClientState.IsPvP) return;
 
         TaskManager.Abort();
-        TaskManager.DelayNext(500);
+        TaskManager.DelayNext(100);
         TaskManager.Enqueue(CheckCurrentJob);
     }
 
