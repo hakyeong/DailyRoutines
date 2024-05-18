@@ -14,6 +14,8 @@ using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using static Lumina.Data.Parsing.Uld.NodeData;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace DailyRoutines.Modules;
 
@@ -27,8 +29,12 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
         正则
     }
 
-    private delegate void Utf8StringSetStringDelegate(AtkTextNode* textNode, nint text);
+    private delegate nint SetPlayerNamePlateDelegate(nint namePlateObjectPtr, bool isPrefixTitle, bool displayTitle,
+                                               nint titlePtr, nint namePtr, nint fcNamePtr, nint prefix, int iconId);
+    [Signature("48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 83 EC ?? 44 0F B6 EA", DetourName = nameof(SetPlayerNamePlayerDetour))]
+    private static Hook<SetPlayerNamePlateDelegate>? SetPlayerNamePlateHook;
 
+    private delegate void Utf8StringSetStringDelegate(AtkTextNode* textNode, nint text);
     [Signature("48 85 C9 0F 84 ?? ?? ?? ?? 4C 8B DC 53 55", DetourName = nameof(Utf8StringSetStringDetour))]
     private static Hook<Utf8StringSetStringDelegate>? Utf8StringSetStringHook;
 
@@ -96,6 +102,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
 
         Service.Hook.InitializeFromAttributes(this);
         Utf8StringSetStringHook?.Enable();
+        SetPlayerNamePlateHook?.Enable();
     }
 
     public override void ConfigUI()
@@ -283,13 +290,76 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
     private static void Utf8StringSetStringDetour(AtkTextNode* textNode, nint text)
     {
         var origText = MemoryHelper.ReadSeStringNullTerminated(text);
-
         if (origText.Payloads.Count == 0)
         {
             Utf8StringSetStringHook.Original(textNode, text);
             return;
         }
 
+        var (state, modifiedText) = ApplyTextReplacements(origText);
+
+        if (state)
+        {
+            var ptr = Marshal.AllocHGlobal(modifiedText.Length + 1);
+            Marshal.Copy(modifiedText, 0, ptr, modifiedText.Length);
+            Marshal.WriteByte(ptr, modifiedText.Length, 0);
+
+            Utf8StringSetStringHook.Original(textNode, ptr);
+            Marshal.FreeHGlobal(ptr);
+
+            return;
+        }
+
+        Utf8StringSetStringHook.Original(textNode, text);
+    }
+
+    private static nint SetPlayerNamePlayerDetour(
+        nint namePlateObjectPtr, bool isPrefixTitle, bool displayTitle,
+        nint titlePtr, nint namePtr, nint fcNamePtr, nint prefix, int iconId)
+    {
+        var (stateName, newNamePtr) = ReplaceTextAndAllocate(namePtr);
+        var (stateTitle, newTitlePtr) = ReplaceTextAndAllocate(titlePtr);
+        var (stateFcName, newFcNamePtr) = ReplaceTextAndAllocate(fcNamePtr);
+
+        var anyChanges = stateName || stateTitle || stateFcName;
+
+        if (anyChanges)
+        {
+            var original = SetPlayerNamePlateHook.Original(namePlateObjectPtr, isPrefixTitle, displayTitle,
+                                                           newTitlePtr, newNamePtr, newFcNamePtr, prefix, iconId);
+            if (stateName) Marshal.FreeHGlobal(newNamePtr);
+            if (stateTitle) Marshal.FreeHGlobal(newTitlePtr);
+            if (stateFcName) Marshal.FreeHGlobal(newFcNamePtr);
+            return original;
+        }
+
+        return SetPlayerNamePlateHook.Original(namePlateObjectPtr, isPrefixTitle, displayTitle,
+                                               titlePtr, namePtr, fcNamePtr, prefix, iconId);
+    }
+
+    private static (bool state, nint ptr) ReplaceTextAndAllocate(nint originalTextPtr)
+    {
+        var origText = MemoryHelper.ReadSeStringNullTerminated(originalTextPtr);
+        if (origText.Payloads.Count == 0)
+        {
+            return (false, originalTextPtr);
+        }
+
+        var (state, modifiedText) = ApplyTextReplacements(origText);
+
+        if (state)
+        {
+            var ptr = Marshal.AllocHGlobal(modifiedText.Length + 1);
+            Marshal.Copy(modifiedText, 0, ptr, modifiedText.Length);
+            Marshal.WriteByte(ptr, modifiedText.Length, 0);
+            return (true, ptr);
+        }
+
+        return (false, originalTextPtr);
+    }
+
+    private static (bool state, byte[]? modifiedText) ApplyTextReplacements(SeString origText)
+    {
         var state = false;
         var textPayloads = origText.Payloads
                                    .Where(p => p.Type == PayloadType.RawText)
@@ -312,7 +382,6 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
                             rawTextPayload.Text = originalText.Replace(pattern.Key, pattern.Value);
                             state = true;
                         }
-
                         break;
                     case ReplaceMode.完全匹配:
                         if (originalText == pattern.Key)
@@ -320,7 +389,6 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
                             rawTextPayload.Text = pattern.Value;
                             state = true;
                         }
-
                         break;
                     case ReplaceMode.正则:
                         var regex = pattern.Regex;
@@ -329,25 +397,12 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
                             rawTextPayload.Text = regex.Replace(originalText, pattern.Value);
                             state = true;
                         }
-
                         break;
                 }
             }
         }
 
-        if (state)
-        {
-            var modifiedText = origText.Encode();
-            var ptr = Marshal.AllocHGlobal(modifiedText.Length + 1);
-
-            Marshal.Copy(modifiedText, 0, ptr, modifiedText.Length);
-            Marshal.WriteByte(ptr, modifiedText.Length, 0);
-
-            Utf8StringSetStringHook.Original(textNode, ptr);
-            Marshal.FreeHGlobal(ptr);
-            return;
-        }
-
-        Utf8StringSetStringHook.Original(textNode, text);
+        return (state, state ? origText.Encode() : null);
     }
+
 }
