@@ -1673,4 +1673,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="CustomizeInterfaceTextTitle" xml:space="preserve">
     <value>自定义界面文本替换</value>
   </data>
+  <data name="FastObjectInteract-InstanceAreaChange" xml:space="preserve">
+    <value>切换副本区 {0}</value>
+  </data>
 </root>

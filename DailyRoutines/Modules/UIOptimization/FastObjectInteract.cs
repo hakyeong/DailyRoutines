@@ -4,16 +4,21 @@ using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Text.RegularExpressions;
+using ClickLib;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
+using Dalamud.Memory;
 using Dalamud.Plugin.Services;
+using ECommons.Automation;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
@@ -81,8 +86,12 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     private static TargetSystem* targetSystem;
     private static readonly Dictionary<nint, ObjectWaitSelected> ObjectsWaitSelected = [];
 
+    private static bool IsInInstancedArea;
+
     public override void Init()
     {
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+
         ModuleConfig = LoadConfig<Config>() ?? new();
 
         ENpcTitles ??= LuminaCache.Get<ENpcResident>()
@@ -99,10 +108,8 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         Overlay.Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize |
                         ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoCollapse;
 
-        if (ModuleConfig.LockWindow)
-            Overlay.Flags |= ImGuiWindowFlags.NoMove;
-        else
-            Overlay.Flags &= ~ImGuiWindowFlags.NoMove;
+        if (ModuleConfig.LockWindow) Overlay.Flags |= ImGuiWindowFlags.NoMove;
+        else Overlay.Flags &= ~ImGuiWindowFlags.NoMove;
 
         Service.FrameworkManager.Register(OnUpdate);
     }
@@ -291,6 +298,19 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
                     ImGui.EndPopup();
                 }
+
+                if (IsInInstancedArea && kvp.Value.Kind == ObjectKind.Aetheryte)
+                {
+                    var instance = UIState.Instance()->AreaInstance;
+                    for (var i = 1; i < 4; i++)
+                    {
+                        if (i == instance.Instance) continue;
+                        ImGui.BeginDisabled(!interactState);
+                        if (ButtonText(Service.Lang.GetText("FastObjectInteract-InstanceAreaChange", i), Service.Lang.GetText("FastObjectInteract-InstanceAreaChange", i)) && interactState)
+                            ChangeInstanceZone((GameObject*)kvp.Value.GameObject, i);
+                        ImGui.EndDisabled();
+                    }
+                }
             }
         }
         ImGui.EndGroup();
@@ -303,59 +323,67 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     private void OnUpdate(IFramework framework)
     {
         if (!EzThrottler.Throttle("FastSelectObjects", 250)) return;
-        var localPlayer = Service.ClientState.LocalPlayer;
-        if (localPlayer == null)
+
+        Service.Framework.Run(() =>
         {
-            ObjectsWaitSelected.Clear();
-            WindowWidth = 0f;
-            Overlay.IsOpen = false;
-            return;
-        }
-
-        tempObjects.Clear();
-
-        foreach (var obj in Service.ObjectTable)
-        {
-            if (!obj.IsTargetable || obj.IsDead) continue;
-
-            var objName = obj.Name.TextValue;
-            if (ModuleConfig.BlacklistKeys.Contains(objName)) continue;
-
-            var objKind = obj.ObjectKind;
-            if (!ModuleConfig.SelectedKinds.Contains(objKind)) continue;
-
-            var dataID = obj.DataId;
-            if (objKind == ObjectKind.EventNpc && !ImportantENPC.Contains(dataID))
+            var localPlayer = Service.ClientState.LocalPlayer;
+            if (localPlayer == null)
             {
-                if (!ImportantENPC.Contains(dataID)) continue;
-                if (ENpcTitles.TryGetValue(dataID, out var ENPCTitle))
-                    objName = string.Format(ENPCTiltleText, ENPCTitle, obj.Name);
+                ObjectsWaitSelected.Clear();
+                WindowWidth = 0f;
+                Overlay.IsOpen = false;
+                return;
             }
 
-            var gameObj = (GameObject*)obj.Address;
-            if (ModuleConfig.OnlyDisplayInViewRange)
-                if (!targetSystem->IsObjectInViewRange(gameObj)) continue;
+            tempObjects.Clear();
 
-            var objDistance = Vector3.Distance(localPlayer.Position, obj.Position);
-            if (objDistance > 10 || localPlayer.Position.Y - gameObj->Position.Y > 4) continue;
+            foreach (var obj in Service.ObjectTable)
+            {
+                if (!obj.IsTargetable || obj.IsDead) continue;
 
-            if (tempObjects.Count > ModuleConfig.MaxDisplayAmount) break;
-            tempObjects.Add(new ObjectWaitSelected((nint)gameObj, objName, objKind, objDistance));
-        }
+                var objName = obj.Name.TextValue;
+                if (ModuleConfig.BlacklistKeys.Contains(objName)) continue;
 
-        tempObjects.Sort((a, b) => a.Distance.CompareTo(b.Distance));
+                var objKind = obj.ObjectKind;
+                if (!ModuleConfig.SelectedKinds.Contains(objKind)) continue;
 
-        ObjectsWaitSelected.Clear();
-        foreach (var tempObj in tempObjects) ObjectsWaitSelected.Add(tempObj.GameObject, tempObj);
+                if (objKind == ObjectKind.Aetheryte)
+                    IsInInstancedArea = UIState.Instance()->AreaInstance.IsInstancedArea();
 
-        if (Overlay == null) return;
-        if (!IsWindowShouldBeOpen())
-        {
-            Overlay.IsOpen = false;
-            WindowWidth = 0f;
-        }
-        else
-            Overlay.IsOpen = true;
+                var dataID = obj.DataId;
+                if (objKind == ObjectKind.EventNpc && !ImportantENPC.Contains(dataID))
+                {
+                    if (!ImportantENPC.Contains(dataID)) continue;
+                    if (ENpcTitles.TryGetValue(dataID, out var ENPCTitle))
+                        objName = string.Format(ENPCTiltleText, ENPCTitle, obj.Name);
+                }
+
+                var gameObj = (GameObject*)obj.Address;
+                if (ModuleConfig.OnlyDisplayInViewRange)
+                    if (!targetSystem->IsObjectInViewRange(gameObj))
+                        continue;
+
+                var objDistance = Vector3.Distance(localPlayer.Position, obj.Position);
+                if (objDistance > 10 || localPlayer.Position.Y - gameObj->Position.Y > 4) continue;
+
+                if (tempObjects.Count > ModuleConfig.MaxDisplayAmount) break;
+                tempObjects.Add(new ObjectWaitSelected((nint)gameObj, objName, objKind, objDistance));
+            }
+
+            tempObjects.Sort((a, b) => a.Distance.CompareTo(b.Distance));
+
+            ObjectsWaitSelected.Clear();
+            foreach (var tempObj in tempObjects) ObjectsWaitSelected.Add(tempObj.GameObject, tempObj);
+
+            if (Overlay == null) return;
+            if (!IsWindowShouldBeOpen())
+            {
+                Overlay.IsOpen = false;
+                WindowWidth = 0f;
+            }
+            else
+                Overlay.IsOpen = true;
+        }, FrameworkManager.CancelSource.Token);
     }
 
     private static void InteractWithObject(GameObject* obj, ObjectKind kind)
@@ -365,6 +393,34 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         if (kind is ObjectKind.EventObj) TargetSystem.Instance()->OpenObjectInteraction(obj);
     }
 
+    private void ChangeInstanceZone(GameObject* obj, int zone)
+    {
+        TaskManager.Enqueue(() =>
+        {
+            TargetSystem.Instance()->Target = obj;
+            TargetSystem.Instance()->InteractWithObject(obj);
+        });
+
+        TaskManager.Enqueue(() =>
+        {
+            if (!TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) || 
+                !IsAddonAndNodesReady(addon)) return false;
+
+            return ClickHelper.SelectString("切换副本区");
+        });
+
+        TaskManager.Enqueue(() =>
+        {
+            if (!TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) ||
+                !IsAddonAndNodesReady(addon)) return false;
+
+            if (!MemoryHelper.ReadSeStringNullTerminated((nint)addon->AtkValues[2].String).TextValue
+                             .Contains("为了缓解服务器压力")) return false;
+
+            return Click.TrySendClick($"select_string{zone + 1}");
+        });
+    }
+
     private static bool IsWindowShouldBeOpen()
         => ObjectsWaitSelected.Count != 0 && (!ModuleConfig.WindowInvisibleWhenInteract || !IsOccupied());
 
@@ -372,10 +428,10 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     {
         return kind switch
         {
-            ObjectKind.EventObj => distance <= 5,
-            ObjectKind.EventNpc => distance <= 7.5,
-            ObjectKind.Aetheryte => distance <= 10.5,
-            _ => distance <= 3.6
+            ObjectKind.EventObj => distance < 5,
+            ObjectKind.EventNpc => distance < 7.5,
+            ObjectKind.Aetheryte => distance < 10.5,
+            _ => distance < 3.6
         };
     }
 
