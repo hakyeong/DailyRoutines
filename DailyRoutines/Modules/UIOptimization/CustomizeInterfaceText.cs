@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -26,7 +28,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
         正则
     }
 
-    private delegate void Utf8StringSetStringDelegate(AtkTextNode* textNode, nint a2);
+    private delegate void Utf8StringSetStringDelegate(AtkTextNode* textNode, nint text);
 
     [Signature("48 85 C9 0F 84 ?? ?? ?? ?? 4C 8B DC 53 55", DetourName = nameof(Utf8StringSetStringDetour))]
     private static Hook<Utf8StringSetStringDelegate>? Utf8StringSetStringHook;
@@ -37,6 +39,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
         public string Value { get; set; } = string.Empty;
         public ReplaceMode Mode { get; set; }
         public bool Enabled { get; set; }
+        public Regex? Regex { get; set; }
 
         public ReplacePattern() { }
 
@@ -133,6 +136,9 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
             if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Plus, Service.Lang.GetText("Add")))
             {
                 var pattern = new ReplacePattern(KeyInput, ValueInput, (ReplaceMode)ReplaceModeInput, true);
+                if (ReplaceModeEditInput == (int)ReplaceMode.正则)
+                    pattern.Regex = new Regex(pattern.Key);
+
                 if (!ReplacePatterns.Contains(pattern))
                 {
                     ReplacePatterns.Add(pattern);
@@ -146,13 +152,16 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
             ImGui.Separator();
             ImGui.Spacing();
 
-            if (ImGui.BeginTable("###CustomizeInterfaceTextTable", 3, ImGuiTableFlags.BordersH))
+            if (ImGui.BeginTable("###CustomizeInterfaceTextTable", 4, ImGuiTableFlags.Borders))
             {
+                ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, 20 * ImGuiHelpers.GlobalScale);
                 ImGui.TableSetupColumn("键", ImGuiTableColumnFlags.WidthStretch, 50);
                 ImGui.TableSetupColumn("值", ImGuiTableColumnFlags.WidthStretch, 50);
                 ImGui.TableSetupColumn("匹配模式", ImGuiTableColumnFlags.WidthStretch, 15);
 
                 ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+                ImGui.TableNextColumn();
+                ImGui.Text("");
                 ImGui.TableNextColumn();
                 ImGui.Text(Service.Lang.GetText("Key"));
                 ImGui.TableNextColumn();
@@ -165,6 +174,14 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
                 {
                     var replacePattern = array[i];
                     ImGui.TableNextRow();
+
+                    ImGui.TableNextColumn();
+                    var enabled = replacePattern.Enabled;
+                    if (ImGui.Checkbox($"###{i}_IsEnabled", ref enabled))
+                    {
+                        ReplacePatterns[i].Enabled = enabled;
+                        UpdateConfig(nameof(ReplacePatterns), ReplacePatterns);
+                    }
 
                     ImGui.TableNextColumn();
                     ImGui.Selectable(replacePattern.Key, false);
@@ -183,11 +200,12 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
 
                         if (ImGui.IsItemDeactivatedAfterEdit())
                         {
-                            var pattern = new ReplacePattern(KeyEditInput, replacePattern.Value, replacePattern.Mode,
-                                                             replacePattern.Enabled);
+                            var pattern = new ReplacePattern(KeyEditInput, "", 0, replacePattern.Enabled);
                             if (!ReplacePatterns.Contains(pattern))
                             {
-                                ReplacePatterns[i] = pattern;
+                                ReplacePatterns[i].Key = KeyEditInput;
+                                if (replacePattern.Mode is ReplaceMode.正则)
+                                    ReplacePatterns[i].Regex = new Regex(KeyEditInput);
                                 UpdateConfig(nameof(ReplacePatterns), ReplacePatterns);
                             }
                         }
@@ -219,9 +237,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
 
                         if (ImGui.IsItemDeactivatedAfterEdit())
                         {
-                            var pattern = new ReplacePattern(replacePattern.Key, ValueEditInput, replacePattern.Mode,
-                                                             replacePattern.Enabled);
-                            ReplacePatterns[i] = pattern;
+                            ReplacePatterns[i].Value = ValueEditInput;
                             UpdateConfig(nameof(ReplacePatterns), ReplacePatterns);
                         }
 
@@ -246,10 +262,10 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
 
                             if (ImGui.IsItemDeactivatedAfterEdit())
                             {
-                                var pattern = new ReplacePattern(replacePattern.Key, replacePattern.Value,
-                                                                 (ReplaceMode)ReplaceModeEditInput,
-                                                                 replacePattern.Enabled);
-                                ReplacePatterns[i] = pattern;
+                                ReplacePatterns[i].Mode = (ReplaceMode)ReplaceModeEditInput;
+                                if ((ReplaceMode)ReplaceModeEditInput is ReplaceMode.正则)
+                                    ReplacePatterns[i].Regex = new Regex(replacePattern.Key);
+
                                 UpdateConfig(nameof(ReplacePatterns), ReplacePatterns);
                             }
                         }
@@ -264,25 +280,30 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
         }
     }
 
-    private static void Utf8StringSetStringDetour(AtkTextNode* textNode, nint a2)
+    private static void Utf8StringSetStringDetour(AtkTextNode* textNode, nint text)
     {
-        Utf8StringSetStringHook.Original(textNode, a2);
+        var origText = MemoryHelper.ReadSeStringNullTerminated(text);
 
-        var origText = MemoryHelper.ReadSeStringNullTerminated((nint)textNode->GetText());
-        if (origText.Payloads.Count == 0) return;
+        if (origText.Payloads.Count == 0)
+        {
+            Utf8StringSetStringHook.Original(textNode, text);
+            return;
+        }
 
         var state = false;
         var textPayloads = origText.Payloads
-            .Where(p => p.Type == PayloadType.RawText)
-            .Cast<TextPayload>()
-            .ToList();
+                                   .Where(p => p.Type == PayloadType.RawText)
+                                   .Cast<TextPayload>()
+                                   .ToList();
 
         foreach (var pattern in ReplacePatterns)
         {
-            var regex = pattern.Mode == ReplaceMode.正则 ? new Regex(pattern.Key) : null;
+            if (!pattern.Enabled) continue;
+
             foreach (var rawTextPayload in textPayloads)
             {
                 var originalText = rawTextPayload.Text;
+
                 switch (pattern.Mode)
                 {
                     case ReplaceMode.部分匹配:
@@ -300,17 +321,11 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
                         }
                         break;
                     case ReplaceMode.正则:
-                        try
+                        var regex = pattern.Regex;
+                        if (regex != null && regex.IsMatch(originalText))
                         {
-                            if (regex.IsMatch(originalText))
-                            {
-                                rawTextPayload.Text = regex.Replace(originalText, pattern.Value);
-                                state = true;
-                            }
-                        }
-                        catch (ArgumentException)
-                        {
-                            return;
+                            rawTextPayload.Text = regex.Replace(originalText, pattern.Value);
+                            state = true;
                         }
                         break;
                 }
@@ -320,7 +335,16 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
         if (state)
         {
             var modifiedText = origText.Encode();
-            textNode->SetText(modifiedText);
+            var ptr = Marshal.AllocHGlobal(modifiedText.Length + 1);
+
+            Marshal.Copy(modifiedText, 0, ptr, modifiedText.Length);
+            Marshal.WriteByte(ptr, modifiedText.Length, 0);
+
+            Utf8StringSetStringHook.Original(textNode, ptr);
+            Marshal.FreeHGlobal(ptr);
+            return;
         }
+
+        Utf8StringSetStringHook.Original(textNode, text);
     }
 }
