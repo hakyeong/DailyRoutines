@@ -14,8 +14,6 @@ using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
-using static Lumina.Data.Parsing.Uld.NodeData;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace DailyRoutines.Modules;
 
