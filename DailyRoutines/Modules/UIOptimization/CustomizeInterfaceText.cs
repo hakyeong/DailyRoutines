@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.RegularExpressions;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -101,7 +100,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
 
     public override void ConfigUI()
     {
-        if (ImGui.BeginCombo("###CustomizeInterfaceTextCombo", 
+        if (ImGui.BeginCombo("###CustomizeInterfaceTextCombo",
                              Service.Lang.GetText("CustomizeInterfaceText-PatternAmount", ReplacePatterns.Count),
                              ImGuiComboFlags.HeightLarge))
         {
@@ -276,6 +275,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
 
                 ImGui.EndTable();
             }
+
             ImGui.EndCombo();
         }
     }
@@ -312,6 +312,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
                             rawTextPayload.Text = originalText.Replace(pattern.Key, pattern.Value);
                             state = true;
                         }
+
                         break;
                     case ReplaceMode.完全匹配:
                         if (originalText == pattern.Key)
@@ -319,6 +320,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
                             rawTextPayload.Text = pattern.Value;
                             state = true;
                         }
+
                         break;
                     case ReplaceMode.正则:
                         var regex = pattern.Regex;
@@ -327,6 +329,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
                             rawTextPayload.Text = regex.Replace(originalText, pattern.Value);
                             state = true;
                         }
+
                         break;
                 }
             }
