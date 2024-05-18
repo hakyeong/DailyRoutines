@@ -279,6 +279,19 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                 }
                 else if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
                     TargetSystem.Instance()->Target = (GameObject*)kvp.Value.GameObject;
+
+                if (IsInInstancedArea && kvp.Value.Kind == ObjectKind.Aetheryte)
+                {
+                    var instance = UIState.Instance()->AreaInstance;
+                    for (var i = 1; i < 4; i++)
+                    {
+                        if (i == instance.Instance) continue;
+                        ImGui.BeginDisabled(!interactState);
+                        if (ButtonText(Service.Lang.GetText("FastObjectInteract-InstanceAreaChange", i), Service.Lang.GetText("FastObjectInteract-InstanceAreaChange", i)) && interactState)
+                            ChangeInstanceZone((GameObject*)kvp.Value.GameObject, i);
+                        ImGui.EndDisabled();
+                    }
+                }
             }
             else
             {
