@@ -24,12 +24,13 @@ public unsafe class AutoCancelCast : DailyModuleBase
     public override void Init()
     {
         Service.Hook.InitializeFromAttributes(this);
-        Service.Condition.ConditionChange += OnConditionChanged;
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
         TargetAreaActions ??= LuminaCache.Get<Action>()
                                          .Where(x => x.TargetArea)
                                          .Select(x => x.RowId).ToHashSet();
+
+        Service.Condition.ConditionChange += OnConditionChanged;
     }
 
     private void OnConditionChanged(ConditionFlag flag, bool value)
