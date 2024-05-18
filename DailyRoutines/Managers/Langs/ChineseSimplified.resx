@@ -1655,4 +1655,22 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoReplaceLocationAction-SendMessage" xml:space="preserve">
     <value>发送重定向成功消息</value>
   </data>
+  <data name="Key" xml:space="preserve">
+    <value>键</value>
+  </data>
+  <data name="Value" xml:space="preserve">
+    <value>值</value>
+  </data>
+  <data name="CustomizeInterfaceText-PatternAmount" xml:space="preserve">
+    <value>已存储了 {0} 条替换规则</value>
+  </data>
+  <data name="CustomizeInterfaceText-ReplaceMode" xml:space="preserve">
+    <value>替换模式</value>
+  </data>
+  <data name="CustomizeInterfaceTextDescription" xml:space="preserve">
+    <value>启用后, 为游戏内所有可显示文本提供自定义的替换选项</value>
+  </data>
+  <data name="CustomizeInterfaceTextTitle" xml:space="preserve">
+    <value>自定义界面文本替换</value>
+  </data>
 </root>
