@@ -99,37 +99,40 @@ public class AutoReplaceLocationAction : DailyModuleBase
                  });
     }
 
-    private static void OnPreUseActionLocation(ref bool isPrevented, ref ActionType type, ref uint actionID, 
+    private static void OnPreUseActionLocation(ref bool isPrevented, ref ActionType type, ref uint actionID,
                                                ref ulong targetID, ref Vector3 location, ref uint a4)
     {
-        if (type != ActionType.Action || !ModuleConfig.EnabledActions.TryGetValue(actionID, out var isEnabled) ||
-            !isEnabled) return;
+        if (type != ActionType.Action || !ModuleConfig.EnabledActions.TryGetValue(actionID, out bool isEnabled) || !isEnabled)
+            return;
 
         var resultLocation = ZoneMapMarkers.Values
-                                             .Select(x => (Vector3?)x.ToVector3())
-                                             .FirstOrDefault(x => x.HasValue && Vector3.Distance(x.Value, Service.ClientState.LocalPlayer.Position) < 25);
+                                           .Select(x => x.ToVector3() as Vector3?)
+                                           .FirstOrDefault(x => x.HasValue && Vector3.Distance(x.Value, Service.ClientState.LocalPlayer.Position) < 25);
 
-        if (resultLocation == null) return;
-        var modifiedLocation = resultLocation.Value;
+        if (resultLocation != null)
+            UpdateLocationIfClose(ref location, resultLocation.Value, 15);
+        else
+            HandleAlternativeLocation(ref location);
+    }
 
-        //if (modifiedLocation.Y is >= -2 and <= 0) modifiedLocation.Y = 0f;
-        
-        if (Vector3.Distance(location, modifiedLocation) < 15)
+    private static void UpdateLocationIfClose(ref Vector3 currentLocation, Vector3 candidateLocation, float proximityThreshold)
+    {
+        if (Vector3.Distance(currentLocation, candidateLocation) < proximityThreshold)
         {
-            location = modifiedLocation;
-            ModifiedLocation ??= modifiedLocation;
+            currentLocation = candidateLocation;
+            ModifiedLocation ??= candidateLocation;
         }
-        else if (PresetData.TryGetContent(Service.ClientState.TerritoryType, out var content) &&
-                 content.ContentType.Row is 4 or 5)
+    }
+
+    private static void HandleAlternativeLocation(ref Vector3 location)
+    {
+        if (PresetData.TryGetContent(Service.ClientState.TerritoryType, out var content) && 
+            content.ContentType.Row is 4 or 5)
         {
             var map = LuminaCache.GetRow<Map>(CurrentMapID);
-            modifiedLocation = MapHelper.MapToWorld(new(6.125f), map).ToVector3();
+            var modifiedLocation = MapHelper.MapToWorld(new Vector2(6.125f), map).ToVector3();
 
-            if (Vector3.Distance(location, modifiedLocation) < 15)
-            {
-                location = modifiedLocation;
-                ModifiedLocation ??= modifiedLocation;
-            }
+            UpdateLocationIfClose(ref location, modifiedLocation, 15);
         }
     }
 
