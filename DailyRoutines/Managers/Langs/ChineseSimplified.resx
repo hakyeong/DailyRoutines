@@ -1676,4 +1676,13 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="FastObjectInteract-InstanceAreaChange" xml:space="preserve">
     <value>切换副本区 {0}</value>
   </data>
+  <data name="AutoStoreToCabinet-StoreHelp" xml:space="preserve">
+    <value>由于网络延迟, 通过模块存入的装备可能至多需要半分钟才能够在收藏柜中显示, 请耐心等待</value>
+  </data>
+  <data name="AutoStoreToCabinetDescription" xml:space="preserve">
+    <value>打开收藏柜的放入道具界面, 并点击开始后, 自动将所有可存储装备存入收藏柜中</value>
+  </data>
+  <data name="AutoStoreToCabinetTitle" xml:space="preserve">
+    <value>自动存入收藏柜</value>
+  </data>
 </root>
