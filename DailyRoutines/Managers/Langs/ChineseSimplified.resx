@@ -1675,6 +1675,24 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="FastObjectInteract-InstanceAreaChange" xml:space="preserve">
     <value>切换副本区 {0}</value>
   </data>
+  <data name="AutoCheckItemLevel-ILAverage" xml:space="preserve">
+    <value>平均装等</value>
+  </data>
+  <data name="AutoCheckItemLevel-ILMinimum" xml:space="preserve">
+    <value>最低装等</value>
+  </data>
+  <data name="AutoCheckItemLevel-ILRequired" xml:space="preserve">
+    <value>最低准入装等</value>
+  </data>
+  <data name="AutoCheckItemLevel-ILSync" xml:space="preserve">
+    <value>最高同步装等</value>
+  </data>
+  <data name="AutoCheckItemLevelDescription" xml:space="preserve">
+    <value>进入副本后, 自动检查小队所有成员的装等, 并提醒装等异常的成员</value>
+  </data>
+  <data name="AutoCheckItemLevelTitle" xml:space="preserve">
+    <value>自动检查装等</value>
+  </data>
   <data name="AutoStoreToCabinet-StoreHelp" xml:space="preserve">
     <value>由于网络延迟, 通过模块存入的装备可能至多需要半分钟才能够在收藏柜中显示, 请耐心等待</value>
   </data>
