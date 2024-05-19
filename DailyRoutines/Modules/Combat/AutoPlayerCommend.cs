@@ -124,6 +124,8 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
     private static string PlayerNameInput = string.Empty;
     private static string ContentSearchInput = string.Empty;
 
+    private static bool IsNeedToCommend;
+    
     private Config? ModuleConfig;
 
     public override void Init()
@@ -263,6 +265,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
 
     private void OnDutyComplete(object? sender, ushort dutyZoneID)
     {
+        IsNeedToCommend = false;
         if (InterruptByConflictKey()) return;
         if (ModuleConfig.BlacklistContents.FirstOrDefault(x => x.TerritoryID == dutyZoneID) is not null) return;
 
@@ -277,6 +280,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
         var notificationMvp = (AtkUnitBase*)Service.Gui.GetAddonByName("_NotificationIcMvp");
         if (notification == null && notificationMvp == null) return true;
 
+        IsNeedToCommend = true;
         AddonHelper.Callback(notification, true, 0, 11);
         return true;
     }
@@ -347,6 +351,8 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
 
     private void OnAddonList(AddonEvent type, AddonArgs args)
     {
+        if (!IsNeedToCommend) return;
+
         switch (args.AddonName)
         {
             case "VoteMvp":
@@ -356,6 +362,8 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
                 ProcessCommendation("BannerMIP", 29, 22, 12);
                 break;
         }
+
+        IsNeedToCommend = false;
     }
 
     private static PlayerRole GetCharacterJobRole(byte rawRole)
