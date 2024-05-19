@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using ClickLib;
 using DailyRoutines.Helpers;
@@ -18,6 +19,7 @@ using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -86,7 +88,9 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     private static TargetSystem* targetSystem;
     private static readonly Dictionary<nint, ObjectWaitSelected> ObjectsWaitSelected = [];
 
+    private static string AethernetShardName = string.Empty;
     private static bool IsInInstancedArea;
+    private static int InstancedAreaAmount = 3;
 
     public override void Init()
     {
@@ -102,6 +106,8 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                                      .Select(x => x.RowId)
                                      .ToHashSet();
 
+        AethernetShardName = LuminaCache.GetRow<EObjName>(2000151).Singular.RawString;
+
         targetSystem = TargetSystem.Instance();
 
         Overlay ??= new Overlay(this, $"Daily Routines {Service.Lang.GetText("FastObjectInteractTitle")}");
@@ -111,7 +117,18 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         if (ModuleConfig.LockWindow) Overlay.Flags |= ImGuiWindowFlags.NoMove;
         else Overlay.Flags &= ~ImGuiWindowFlags.NoMove;
 
+        Service.ClientState.TerritoryChanged += OnZoneChanged;
         Service.FrameworkManager.Register(OnUpdate);
+
+        OnZoneChanged(1);
+    }
+
+    private static void OnZoneChanged(ushort zone)
+    {
+        if (zone == 0 || zone == Service.ClientState.TerritoryType) return;
+
+        IsInInstancedArea = UIState.Instance()->AreaInstance.IsInstancedArea();
+        InstancedAreaAmount = 3;
     }
 
     public override void ConfigUI()
@@ -238,11 +255,23 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     {
         PresetFont.Axis14.Push();
         var colors = ImGui.GetStyle().Colors;
+
+        var aetheryteInstance = (GameObject*)nint.Zero;
+        var aetheryteInstanceState = false;
+
         ImGui.BeginGroup();
         foreach (var kvp in ObjectsWaitSelected)
         {
             if (kvp.Value.GameObject == nint.Zero) continue;
+
             var interactState = CanInteract(kvp.Value.Kind, kvp.Value.Distance);
+            aetheryteInstanceState = interactState;
+            if (IsInInstancedArea && kvp.Value.Kind == ObjectKind.Aetheryte)
+            {
+                var gameObj = (GameObject*)kvp.Value.GameObject;
+                if (Marshal.PtrToStringUTF8((nint)gameObj->Name) != AethernetShardName)
+                    aetheryteInstance = gameObj;
+            }
 
             if (ModuleConfig.AllowClickToTarget)
             {
@@ -279,19 +308,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                 }
                 else if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
                     TargetSystem.Instance()->Target = (GameObject*)kvp.Value.GameObject;
-
-                if (IsInInstancedArea && kvp.Value.Kind == ObjectKind.Aetheryte)
-                {
-                    var instance = UIState.Instance()->AreaInstance;
-                    for (var i = 1; i < 4; i++)
-                    {
-                        if (i == instance.Instance) continue;
-                        ImGui.BeginDisabled(!interactState);
-                        if (ButtonText(Service.Lang.GetText("FastObjectInteract-InstanceAreaChange", i), Service.Lang.GetText("FastObjectInteract-InstanceAreaChange", i)) && interactState)
-                            ChangeInstanceZone((GameObject*)kvp.Value.GameObject, i);
-                        ImGui.EndDisabled();
-                    }
-                }
             }
             else
             {
@@ -311,23 +327,26 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
                     ImGui.EndPopup();
                 }
-
-                if (IsInInstancedArea && kvp.Value.Kind == ObjectKind.Aetheryte)
-                {
-                    var instance = UIState.Instance()->AreaInstance;
-                    for (var i = 1; i < 4; i++)
-                    {
-                        if (i == instance.Instance) continue;
-                        ImGui.BeginDisabled(!interactState);
-                        if (ButtonText(Service.Lang.GetText("FastObjectInteract-InstanceAreaChange", i), Service.Lang.GetText("FastObjectInteract-InstanceAreaChange", i)) && interactState)
-                            ChangeInstanceZone((GameObject*)kvp.Value.GameObject, i);
-                        ImGui.EndDisabled();
-                    }
-                }
             }
         }
         ImGui.EndGroup();
 
+        ImGui.SameLine();
+        if (aetheryteInstance != null)
+        {
+            ImGui.BeginGroup();
+            var instance = UIState.Instance()->AreaInstance;
+            for (var i = 1; i < InstancedAreaAmount + 1; i++)
+            {
+                if (i == instance.Instance) continue;
+                ImGui.BeginDisabled(!aetheryteInstanceState);
+                if (ButtonText(Service.Lang.GetText("FastObjectInteract-InstanceAreaChange", i), Service.Lang.GetText("FastObjectInteract-InstanceAreaChange", i)) && aetheryteInstanceState)
+                    ChangeInstanceZone(aetheryteInstance, i);
+                ImGui.EndDisabled();
+            }
+            ImGui.EndGroup();
+
+        }
         WindowWidth = Math.Max(ModuleConfig.MinButtonWidth, ImGui.GetItemRectSize().X);
 
         PresetFont.Axis14.Pop();
@@ -359,9 +378,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
                 var objKind = obj.ObjectKind;
                 if (!ModuleConfig.SelectedKinds.Contains(objKind)) continue;
-
-                if (objKind == ObjectKind.Aetheryte)
-                    IsInInstancedArea = UIState.Instance()->AreaInstance.IsInstancedArea();
 
                 var dataID = obj.DataId;
                 if (objKind == ObjectKind.EventNpc && !ImportantENPC.Contains(dataID))
@@ -430,6 +446,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
             if (!MemoryHelper.ReadSeStringNullTerminated((nint)addon->AtkValues[2].String).TextValue
                              .Contains("为了缓解服务器压力")) return false;
 
+            InstancedAreaAmount = ((AddonSelectString*)addon)->PopupMenu.PopupMenu.EntryCount - 2;
             return Click.TrySendClick($"select_string{zone + 1}");
         });
     }
@@ -471,6 +488,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     public override void Uninit()
     {
+        Service.ClientState.TerritoryChanged -= OnZoneChanged;
         ObjectsWaitSelected.Clear();
 
         base.Uninit();
