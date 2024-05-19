@@ -13,7 +13,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("BetterBlueSetLoadTitle", "BetterBlueSetLoadDescription", ModuleCategories.界面操作)]
+[ModuleDescription("BetterBlueSetLoadTitle", "BetterBlueSetLoadDescription", ModuleCategories.界面优化)]
 public unsafe class BetterBlueSetLoad : DailyModuleBase
 {
     public override void Init()
