@@ -1702,4 +1702,19 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoStoreToCabinetTitle" xml:space="preserve">
     <value>自动存入收藏柜</value>
   </data>
+  <data name="FastPrismBoxSearch-DefaultSlot" xml:space="preserve">
+    <value>默认投影栏位</value>
+  </data>
+  <data name="FastPrismBoxSearchDescription" xml:space="preserve">
+    <value>启用并打开编辑投影模板界面后, 自动切换默认栏位并打开收藏柜, 并新增一个快捷搜索悬浮窗</value>
+  </data>
+  <data name="FastPrismBoxSearchTitle" xml:space="preserve">
+    <value>快捷投影台搜索</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>搜索</value>
+  </data>
+  <data name="Sex" xml:space="preserve">
+    <value>性别</value>
+  </data>
 </root>
