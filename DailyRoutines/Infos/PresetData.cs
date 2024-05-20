@@ -16,6 +16,7 @@ public class PresetData
     public static Dictionary<uint, Item>? Dyes { get; private set; } // 不包含特制
     public static Dictionary<uint, World>? CNWorlds { get; private set; }
     public static Dictionary<uint, TerritoryType>? Zones { get; private set; }
+    public static Dictionary<uint, Mount>? Mounts { get; private set; }
 
     public static void Init()
     {
@@ -56,6 +57,10 @@ public class PresetData
                              .Where(x => !(string.IsNullOrWhiteSpace(x.Name.RawString) || x.PlaceNameIcon <= 0 ||
                                            x.PlaceNameRegionIcon <= 0))
                              .ToDictionary(x => x.RowId, x => x);
+
+        Mounts ??= LuminaCache.Get<Mount>()
+                              .Where(x => !string.IsNullOrWhiteSpace(x.Singular.RawString) && x.Icon > 0)
+                              .ToDictionary(x => x.RowId, x => x);
     }
 
     public static bool TryGetPlayerActions(uint rowID, out Action action)
@@ -78,4 +83,7 @@ public class PresetData
 
     public static bool TryGetZone(uint rowID, out TerritoryType zone)
         => Zones.TryGetValue(rowID, out zone);
+
+    public static bool TryGetMount(uint rowID, out Mount mount)
+        => Mounts.TryGetValue(rowID, out mount);
 }

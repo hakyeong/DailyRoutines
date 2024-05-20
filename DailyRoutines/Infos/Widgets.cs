@@ -262,6 +262,77 @@ public static class Widgets
         return selectState;
     }
 
+    public static bool MountSelectCombo(ref Mount? selectedMount, ref string mountSearchInput)
+    {
+        var selectState = false;
+
+        if (ImGui.BeginCombo("###MountSelectCombo", 
+                             selectedMount == null ? "" : $"{selectedMount.Singular.RawString} ({selectedMount.RowId})", 
+                             ImGuiComboFlags.HeightLarge))
+            ImGui.EndCombo();
+
+        if (ImGui.IsItemClicked())
+            ImGui.OpenPopup("###MountSelectPopup");
+
+        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(250f, 400f));
+        if (ImGui.BeginPopup("###MountSelectPopup"))
+        {
+            ImGui.SetNextItemWidth(-1f);
+            ImGui.InputTextWithHint
+                ("###MountSearchInput", Service.Lang.GetText("PleaseSearch"), ref mountSearchInput, 32);
+
+            ImGui.Separator();
+
+            var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
+            if (ImGui.BeginTable("###MountSelectTable", 3, ImGuiTableFlags.Borders, tableSize))
+            {
+                ImGui.TableSetupColumn("RadioButton", ImGuiTableColumnFlags.WidthFixed, 20f * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupColumn("Icon", ImGuiTableColumnFlags.WidthFixed, ImGuiHelpers.ScaledVector2(20f).X);
+                ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 200f * ImGuiHelpers.GlobalScale);
+
+                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+                ImGui.TableNextColumn();
+                ImGui.Text("");
+                ImGui.TableNextColumn();
+                ImGui.Text("");
+                ImGui.TableNextColumn();
+                ImGui.Text("名称");
+
+                foreach (var mountPair in PresetData.Mounts)
+                {
+                    var mountName = mountPair.Value.Singular.RawString;
+                    if (!string.IsNullOrWhiteSpace(mountSearchInput) &&
+                        !mountName.Contains(mountSearchInput, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    ImGui.PushID($"{mountName}_{mountPair.Key}");
+                    ImGui.TableNextRow();
+
+                    ImGui.TableNextColumn();
+                    ImGui.RadioButton("", selectedMount == mountPair.Value);
+
+                    ImGui.TableNextColumn();
+                    ImGui.Image(ImageHelper.GetIcon(mountPair.Value.Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(20f));
+
+                    ImGui.TableNextColumn();
+                    if (ImGui.Selectable(mountName, false, 
+                                         ImGuiSelectableFlags.DontClosePopups | ImGuiSelectableFlags.SpanAllColumns))
+                    {
+                        selectedMount = mountPair.Value;
+                        selectState = true;
+                    }
+
+                    if (ImGui.IsWindowAppearing() && selectedMount == mountPair.Value) ImGui.SetScrollHereY();
+                    ImGui.PopID();
+                }
+
+                ImGui.EndTable();
+            }
+            ImGui.EndPopup();
+        }
+
+        return selectState;
+    }
+
     public static void ConflictKeyText()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
