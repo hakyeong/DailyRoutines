@@ -393,7 +393,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                         continue;
 
                 var objDistance = Vector3.Distance(localPlayer.Position, obj.Position);
-                if (objDistance > 10 || localPlayer.Position.Y - gameObj->Position.Y > 4) continue;
+                if (objDistance > 15 || localPlayer.Position.Y - gameObj->Position.Y > 4) continue;
 
                 if (tempObjects.Count > ModuleConfig.MaxDisplayAmount) break;
                 tempObjects.Add(new ObjectWaitSelected((nint)gameObj, objName, objKind, objDistance));
@@ -458,10 +458,11 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     {
         return kind switch
         {
-            ObjectKind.EventObj => distance < 5,
-            ObjectKind.EventNpc => distance < 7.5,
-            ObjectKind.Aetheryte => distance < 10.5,
-            _ => distance < 3.6
+            ObjectKind.EventObj => distance < 4.7999999,
+            ObjectKind.EventNpc => distance < 6.9999999,
+            ObjectKind.Aetheryte => distance < 11.0,
+            ObjectKind.GatheringPoint => distance < 3.0,
+            _ => distance < 6.0
         };
     }
 
