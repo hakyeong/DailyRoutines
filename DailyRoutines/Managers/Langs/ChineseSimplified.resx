@@ -1695,6 +1695,15 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Sex" xml:space="preserve">
     <value>性别</value>
   </data>
+  <data name="AutoMount-CurrentMount" xml:space="preserve">
+    <value>当前坐骑</value>
+  </data>
+  <data name="AutoMount-RandomMount" xml:space="preserve">
+    <value>随机坐骑</value>
+  </data>
+  <data name="AutoMount-SelecteMount" xml:space="preserve">
+    <value>选择坐骑</value>
+  </data>
   <data name="AutoRetainerWorkDescription" xml:space="preserve">
     <value>启用后, 自动或半自动地完成雇员相关作业</value>
   </data>

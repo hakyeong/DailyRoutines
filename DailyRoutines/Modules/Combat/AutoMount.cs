@@ -1,6 +1,9 @@
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Interface.Colors;
+using Dalamud.Interface.Utility;
 using ECommons.Automation;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -8,33 +11,34 @@ using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoMountTitle", "AutoMountDescription", ModuleCategories.战斗)]
 public unsafe class AutoMount : DailyModuleBase
 {
+    private class Config : ModuleConfiguration
+    {
+        public bool MountWhenZoneChange = true;
+        public bool MountWhenGatherEnd = true;
+        public bool MountWhenCombatEnd = true;
+        public uint SelectedMount = 0;
+    }
+
     private static AtkUnitBase* NowLoading => (AtkUnitBase*)Service.Gui.GetAddonByName("NowLoading");
     private static AtkUnitBase* FadeMiddle => (AtkUnitBase*)Service.Gui.GetAddonByName("FadeMiddle");
 
-    private static bool MountWhenZoneChange;
-    private static bool MountWhenGatherEnd;
-    private static bool MountWhenCombatEnd;
+    private static Config ModuleConfig = null!;
+
+    private static Mount? SelectedMount;
+    private static string MountSearchInput = string.Empty;
 
     public override void Init()
     {
-        #region Config
-
-        AddConfig("MountWhenZoneChange", true);
-        MountWhenZoneChange = GetConfig<bool>("MountWhenZoneChange");
-
-        AddConfig("MountWhenGatherEnd", true);
-        MountWhenGatherEnd = GetConfig<bool>("MountWhenGatherEnd");
-
-        AddConfig("MountWhenCombatEnd", true);
-        MountWhenCombatEnd = GetConfig<bool>("MountWhenCombatEnd");
-
-        #endregion
+        ModuleConfig = LoadConfig<Config>() ?? new();
+        if (ModuleConfig.SelectedMount != 0)
+            SelectedMount = LuminaCache.GetRow<Mount>(ModuleConfig.SelectedMount);
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = false };
 
@@ -44,19 +48,42 @@ public unsafe class AutoMount : DailyModuleBase
 
     public override void ConfigUI()
     {
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoMount-MountWhenZoneChange"), ref MountWhenZoneChange))
-            UpdateConfig("MountWhenZoneChange", MountWhenZoneChange);
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoMount-CurrentMount")}:");
 
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoMount-MountWhenGatherEnd"), ref MountWhenGatherEnd))
-            UpdateConfig("MountWhenGatherEnd", MountWhenGatherEnd);
+        ImGui.SameLine();
+        ImGui.Text(ModuleConfig.SelectedMount == 0 ? Service.Lang.GetText("AutoMount-RandomMount") : LuminaCache.GetRow<Mount>(ModuleConfig.SelectedMount).Singular.RawString);
 
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoMount-MountWhenCombatEnd"), ref MountWhenCombatEnd))
-            UpdateConfig("MountWhenCombatEnd", MountWhenCombatEnd);
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoMount-SelecteMount")}:");
+
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        if (MountSelectCombo(ref SelectedMount, ref MountSearchInput))
+        {
+            ModuleConfig.SelectedMount = SelectedMount.RowId;
+            SaveConfig(ModuleConfig);
+        }
+
+        ImGui.SameLine();
+        if (ImGui.SmallButton(Service.Lang.GetText("AutoMount-RandomMount")))
+        {
+            ModuleConfig.SelectedMount = 0;
+            SaveConfig(ModuleConfig);
+        }
+
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoMount-MountWhenZoneChange"), ref ModuleConfig.MountWhenZoneChange))
+            SaveConfig(ModuleConfig);
+
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoMount-MountWhenGatherEnd"), ref ModuleConfig.MountWhenGatherEnd))
+            SaveConfig(ModuleConfig);
+
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoMount-MountWhenCombatEnd"), ref ModuleConfig.MountWhenCombatEnd))
+            SaveConfig(ModuleConfig);
     }
 
     private void OnZoneChanged(ushort zone)
     {
-        if (!MountWhenZoneChange) return;
+        if (!ModuleConfig.MountWhenZoneChange) return;
 
         TaskManager.Abort();
         TaskManager.Enqueue(UseMountBetweenMap);
@@ -66,8 +93,8 @@ public unsafe class AutoMount : DailyModuleBase
     {
         switch (flag)
         {
-            case ConditionFlag.Gathering when !value && MountWhenGatherEnd:
-            case ConditionFlag.InCombat when !value && MountWhenCombatEnd && !Service.ClientState.IsPvP &&
+            case ConditionFlag.Gathering when !value && ModuleConfig.MountWhenGatherEnd:
+            case ConditionFlag.InCombat when !value && ModuleConfig.MountWhenCombatEnd && !Service.ClientState.IsPvP &&
                                              (FateManager.Instance()->CurrentFate == null ||
                                               FateManager.Instance()->CurrentFate->Progress == 100):
                 TaskManager.Abort();
@@ -86,7 +113,7 @@ public unsafe class AutoMount : DailyModuleBase
         if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 9) != 0) return false;
 
         TaskManager.DelayNext(100);
-        TaskManager.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.GeneralAction, 9));
+        TaskManager.Enqueue(UseMount);
         return true;
     }
 
@@ -103,11 +130,16 @@ public unsafe class AutoMount : DailyModuleBase
         if (Service.ClientState.LocalPlayer.IsTargetable)
         {
             TaskManager.DelayNext(100);
-            TaskManager.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.GeneralAction, 9));
+            TaskManager.Enqueue(UseMount);
             return true;
         }
 
         return true;
+    }
+
+    private static bool? UseMount()
+    {
+        return ModuleConfig.SelectedMount == 0 ? ActionManager.Instance()->UseAction(ActionType.GeneralAction, 9) : ActionManager.Instance()->UseAction(ActionType.Mount, ModuleConfig.SelectedMount);
     }
 
     public override void Uninit()
