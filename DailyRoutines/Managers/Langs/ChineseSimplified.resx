@@ -1710,4 +1710,19 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRetainerWorkTitle" xml:space="preserve">
     <value>自动雇员作业</value>
   </data>
+  <data name="SoundEffectThrottler-Throttle" xml:space="preserve">
+    <value>限制频率 (ms)</value>
+  </data>
+  <data name="SoundEffectThrottler-ThrottleHelp" xml:space="preserve">
+    <value>即每经过 {0} 毫秒才允许播放一次系统音效</value>
+  </data>
+  <data name="SoundEffectThrottler-Volume" xml:space="preserve">
+    <value>音量强度</value>
+  </data>
+  <data name="SoundEffectThrottlerDescription" xml:space="preserve">
+    <value>启用并配置完成后, 自动限制系统音效 (&lt;se.&gt;) 的播放频率</value>
+  </data>
+  <data name="SoundEffectThrottlerTitle" xml:space="preserve">
+    <value>自动限制系统音效频率</value>
+  </data>
 </root>
