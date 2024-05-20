@@ -62,7 +62,7 @@ public unsafe class AutoCheckItemLevel : DailyModuleBase
 
                 TaskManager.Enqueue(() =>
                 {
-                    if (!EzThrottler.Throttle("AutoCheckItemLevel-CheckCharacterIL", 250)) return false;
+                    if (!EzThrottler.Throttle("AutoCheckItemLevel-CheckCharacterIL")) return false;
                     if (!TryGetAddonByName<AtkUnitBase>("CharacterInspect", out var addon) || 
                         !IsAddonAndNodesReady(addon) || AgentInspect.Instance()->CurrentObjectID != member.ObjectId)
                     {
