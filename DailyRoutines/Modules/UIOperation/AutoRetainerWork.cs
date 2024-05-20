@@ -766,7 +766,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         if (ImGui.CollapsingHeader(Service.Lang.GetText("AutoRetainerRefreshTitle")))
         {
             if (ImGui.Button($"{Service.Lang.GetText("Start")}###Refresh"))
-                EnqueueAllRetainersRefresh();
+                EnqueueRetainersRefresh();
 
             ImGui.SameLine();
             if (ImGui.Button($"{Service.Lang.GetText("Stop")}###Refresh"))
@@ -826,7 +826,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             ImGui.Separator();
 
             ImGui.BeginDisabled(TaskManager.IsBusy);
-            if (ImGui.Button(Service.Lang.GetText("Start"))) EnqueueAllRetainersPriceAdjust();
+            if (ImGui.Button(Service.Lang.GetText("Start"))) EnqueueRetainersPriceAdjust();
             ImGui.EndDisabled();
 
             ImGui.SameLine();
@@ -842,7 +842,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             ImGui.Separator();
 
             ImGui.BeginDisabled(TaskManager.IsBusy);
-            if (ImGui.Button(Service.Lang.GetText("Start"))) EnqueueAllItemsPriceAdjust();
+            if (ImGui.Button(Service.Lang.GetText("Start"))) EnqueueItemsPriceAdjust();
             ImGui.EndDisabled();
 
             ImGui.SameLine();
@@ -1254,8 +1254,10 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
     #region 队列
 
-    private void EnqueueRetainerCollects()
+    private void EnqueueRetainersCollect()
     {
+        if (InterruptByConflictKey()) return;
+
         var retainerManager = RetainerManager.Instance();
         var serverTime = Framework.GetServerTime();
         for (var i = 0; i < retainerManager->GetRetainerCount(); i++)
@@ -1264,24 +1266,18 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             if (retainerState == 0) continue;
             if (retainerState - serverTime <= 0)
             {
-                EnqueueSingleCollect(i);
+                var index = i;
+                TaskManager.Enqueue(() => ClickSpecificRetainer(index));
+                TaskManager.Enqueue(ClickRetainerFinishedVenture);
+                TaskManager.Enqueue(() => Click.TrySendClick("retainer_venture_result_reassign"));
+                TaskManager.Enqueue(() => Click.TrySendClick("retainer_venture_ask_assign"));
+                TaskManager.Enqueue(ReturnToRetainerList);
                 break;
             }
         }
     }
 
-    private void EnqueueSingleCollect(int index)
-    {
-        if (InterruptByConflictKey()) return;
-
-        TaskManager.Enqueue(() => ClickSpecificRetainer(index));
-        TaskManager.Enqueue(ClickRetainerFinishedVenture);
-        TaskManager.Enqueue(() => Click.TrySendClick("retainer_venture_result_reassign"));
-        TaskManager.Enqueue(() => Click.TrySendClick("retainer_venture_ask_assign"));
-        TaskManager.Enqueue(ReturnToRetainerList);
-    }
-
-    private void EnqueueAllRetainersPriceAdjust()
+    private void EnqueueRetainersPriceAdjust()
     {
         var retainerManager = RetainerManager.Instance();
 
@@ -1315,7 +1311,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         }
     }
 
-    private void EnqueueAllItemsPriceAdjust()
+    private void EnqueueItemsPriceAdjust()
     {
         var retainerManager = RetainerManager.Instance();
         var marketItemCount = retainerManager->GetActiveRetainer()->MarkerItemCount;
@@ -1334,7 +1330,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         }
     }
 
-    private void EnqueueAllRetainersRefresh()
+    private void EnqueueRetainersRefresh()
     {
         if (RetainerList == null || !IsAddonAndNodesReady(RetainerList)) return;
 
@@ -1851,7 +1847,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             case AddonEvent.PostSetup:
                 if (InterruptByConflictKey()) return;
                 ObtainPlayerRetainers();
-                EnqueueRetainerCollects();
+                EnqueueRetainersCollect();
 
                 Service.AddonLifecycle.RegisterListener(AddonEvent.PostUpdate, "RetainerList", OnRetainerList);
                 break;
@@ -1860,7 +1856,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 {
                     if (InterruptByConflictKey() || TaskManager.IsBusy ||
                         !IsAddonAndNodesReady((AtkUnitBase*)args.Addon)) return;
-                    Service.Framework.RunOnTick(EnqueueRetainerCollects, TimeSpan.FromSeconds(1));
+                    Service.Framework.RunOnTick(EnqueueRetainersCollect, TimeSpan.FromSeconds(1));
                 }
 
                 break;
