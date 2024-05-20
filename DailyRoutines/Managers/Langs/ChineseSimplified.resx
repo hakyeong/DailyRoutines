@@ -663,9 +663,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRequestItemSubmitTitle" xml:space="preserve">
     <value>自动选择并递交物品</value>
   </data>
-  <data name="AutoRetainerCollectDescription" xml:space="preserve">
-    <value>打开雇员列表界面后, 自动确认已探索结束雇员的探险结果并重新委派</value>
-  </data>
   <data name="AutoRetainerCollectTitle" xml:space="preserve">
     <value>自动收取雇员</value>
   </data>
@@ -714,9 +711,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoShareRetainersGilsEvenly-Method2" xml:space="preserve">
     <value>方式2</value>
-  </data>
-  <data name="AutoShareRetainersGilsEvenlyDescription" xml:space="preserve">
-    <value>配置完毕并点击开始后, 自动平均各个雇员所保管的金币数量</value>
   </data>
   <data name="AutoShareRetainersGilsEvenlyTitle" xml:space="preserve">
     <value>自动平均雇员金币</value>
@@ -778,12 +772,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>自动游玩莫古抓球机</value>
   </data>
   <data name="AutoWithdrawRetainersGils-Help" xml:space="preserve">
-    <value>1. 请在雇员列表打开的状态下使用本模块
-2. 请避免在启用了 自动收取雇员 模块且有雇员 即将完成探险的情况下使用本模块
-3. 请避免因金币达到上限而蒙受损失的情况</value>
-  </data>
-  <data name="AutoWithdrawRetainersGilsDescription" xml:space="preserve">
-    <value>启用并点击开始后, 自动取出所有雇员保管的所有金币</value>
+    <value>1. 请避免在启用了 自动收取雇员 模块且有雇员 即将完成探险的情况下使用本模块
+2. 请避免因金币达到上限而蒙受损失的情况</value>
   </data>
   <data name="AutoWithdrawRetainersGilsTitle" xml:space="preserve">
     <value>自动取出雇员金币</value>
@@ -1366,17 +1356,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Run" xml:space="preserve">
     <value>停止</value>
   </data>
-  <data name="AutoRetainerEntrustDups-AddCommand" xml:space="preserve">
-    <value>添加 /pdr {0} 指令 </value>
-  </data>
-  <data name="AutoRetainerEntrustDups-CommandHelp" xml:space="preserve">
-    <value>为所有雇员合并递交同类道具</value>
-  </data>
-  <data name="AutoRetainerEntrustDupsDescription" xml:space="preserve">
-    <value>打开雇员列表, 并点击开始后, 自动尝试为所有雇员合并递交同类道具</value>
-  </data>
   <data name="AutoRetainerEntrustDupsTitle" xml:space="preserve">
-    <value>自动同类道具合并递交</value>
+    <value>自动道具合并递交</value>
   </data>
   <data name="Settings-AllowAnonymousUpload" xml:space="preserve">
     <value>允许上传匿名数据</value>
@@ -1597,9 +1578,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="WorkTheory" xml:space="preserve">
     <value>工作原理</value>
   </data>
-  <data name="AutoRetainerRefreshDescription" xml:space="preserve">
-    <value>打开雇员列表并点击开始后, 自动逐个点击刷新雇员状态</value>
-  </data>
   <data name="AutoRetainerRefreshTitle" xml:space="preserve">
     <value>自动刷新雇员状态</value>
   </data>
@@ -1716,5 +1694,11 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="Sex" xml:space="preserve">
     <value>性别</value>
+  </data>
+  <data name="AutoRetainerWorkDescription" xml:space="preserve">
+    <value>启用后, 自动或半自动地完成雇员相关作业</value>
+  </data>
+  <data name="AutoRetainerWorkTitle" xml:space="preserve">
+    <value>自动雇员作业</value>
   </data>
 </root>
