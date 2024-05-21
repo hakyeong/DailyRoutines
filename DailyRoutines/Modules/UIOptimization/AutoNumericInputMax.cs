@@ -5,6 +5,7 @@ using Dalamud.Utility.Signatures;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
+using System.Runtime.InteropServices;
 
 namespace DailyRoutines.Modules;
 
@@ -61,8 +62,9 @@ public unsafe class AutoNumericInputMax : DailyModuleBase
         if (Environment.TickCount64 - _LastInterruptTime > 10000)
             if (EzThrottler.Throttle($"AutoNumericInputMax-UldUpdate_{(nint)component}", 250))
             {
+                var value = Marshal.ReadInt32((nint)component + 504);
                 var nodeFlags = component->AtkComponentInputBase.AtkComponentBase.OwnerNode->AtkResNode.NodeFlags;
-                if (nodeFlags.HasFlag(NodeFlags.Enabled | NodeFlags.Visible) && component->Data.Max < 9999)
+                if (value == 1 && nodeFlags.HasFlag(NodeFlags.Enabled | NodeFlags.Visible) && component->Data.Max < 9999)
                 {
                     component->SetValue(component->Data.Max);
                 }
