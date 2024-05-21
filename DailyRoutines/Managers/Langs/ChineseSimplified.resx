@@ -269,17 +269,20 @@
   <data name="AutoLeveQuests-GetAreaLeveData" xml:space="preserve">
     <value>获取本区域理符任务</value>
   </data>
-  <data name="AutoLeveQuests-ObtainLeveClientID" xml:space="preserve">
-    <value>获取理符委托人 ID</value>
+  <data name="AutoLeveQuests-ObtainLeveClient" xml:space="preserve">
+    <value>获取理符委托人</value>
   </data>
-  <data name="AutoLeveQuests-ObtainLevemeteID" xml:space="preserve">
-    <value>获取理符发行人 ID</value>
+  <data name="AutoLeveQuests-ObtainLevemete" xml:space="preserve">
+    <value>获取理符发行人</value>
   </data>
   <data name="AutoLeveQuests-OperationDelay" xml:space="preserve">
     <value>操作延迟 (毫秒)</value>
   </data>
   <data name="AutoLeveQuests-OperationDelayHelp" xml:space="preserve">
-    <value>本模块默认状态下操作速度较快, 若你身边其他玩家数量较多, 请调高操作延迟</value>
+    <value>本模块在运行时会禁止目标选择数据上传至服务器,
+即本地视角下来看在正常选择目标, 但从他人视角下来看你的角色什么都没有选中
+
+如果仍然不放心可以使用小号观察, 或者在此调高操作延迟</value>
   </data>
   <data name="AutoLeveQuests-SelectedLeve" xml:space="preserve">
     <value>选择理符:</value>
@@ -1724,5 +1727,11 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="SoundEffectThrottlerTitle" xml:space="preserve">
     <value>自动限制系统音效频率</value>
+  </data>
+  <data name="AutoLeveQuests-GetMapLevesFailed" xml:space="preserve">
+    <value>获取当前地区数据失败, 请尝试重新进出本区域</value>
+  </data>
+  <data name="AutoLeveQuests-ObtainHelp" xml:space="preserve">
+    <value>待获取 (选中目标后点击左侧按钮)</value>
   </data>
 </root>
