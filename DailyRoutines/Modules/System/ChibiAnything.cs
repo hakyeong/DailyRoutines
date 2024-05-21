@@ -130,8 +130,11 @@ public class ChibiAnything : DailyModuleBase
                                 Character bc = (Character)gameObject;
                                 CharacterStruct* bcs = (CharacterStruct*)bc.Address;
                                 CharacterData cd = bcs->CharacterData;
-                                if (cd.ModelCharaId.ToString() == chibiTarget.Value) flag = true;
-                                cd.ModelScale = chibiTarget.Scale;
+                                if (cd.ModelCharaId.ToString() == chibiTarget.Value)
+                                {
+                                    flag = true;
+                                    cd.ModelScale = chibiTarget.Scale;
+                                }
                                 break;
                             default:
                                 break;
