@@ -137,7 +137,8 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
             ImGui.EndGroup();
 
             ImGui.SameLine();
-            if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Plus, Service.Lang.GetText("Add")))
+            if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Plus, Service.Lang.GetText("Add")) &&
+                !string.IsNullOrWhiteSpace(KeyInput) && !string.IsNullOrWhiteSpace(ValueInput))
             {
                 var pattern = new ReplacePattern(KeyInput, ValueInput, (ReplaceMode)ReplaceModeInput, true);
                 if (ReplaceModeEditInput == (int)ReplaceMode.正则)
@@ -202,7 +203,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
                         ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
                         ImGui.InputText("###KeyEditInput", ref KeyEditInput, 96);
 
-                        if (ImGui.IsItemDeactivatedAfterEdit())
+                        if (ImGui.IsItemDeactivatedAfterEdit() && !string.IsNullOrWhiteSpace(KeyEditInput))
                         {
                             var pattern = new ReplacePattern(KeyEditInput, "", 0, replacePattern.Enabled);
                             if (!ReplacePatterns.Contains(pattern))
@@ -239,7 +240,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
                         ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
                         ImGui.InputText("###ValueEditInput", ref ValueEditInput, 96);
 
-                        if (ImGui.IsItemDeactivatedAfterEdit())
+                        if (ImGui.IsItemDeactivatedAfterEdit() && !string.IsNullOrWhiteSpace(ValueEditInput))
                         {
                             ReplacePatterns[i].Value = ValueEditInput;
                             UpdateConfig(nameof(ReplacePatterns), ReplacePatterns);
