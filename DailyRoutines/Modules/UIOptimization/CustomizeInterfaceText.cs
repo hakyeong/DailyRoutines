@@ -138,7 +138,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
 
             ImGui.SameLine();
             if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Plus, Service.Lang.GetText("Add")) &&
-                !string.IsNullOrWhiteSpace(KeyInput) && !string.IsNullOrWhiteSpace(ValueInput))
+                !string.IsNullOrWhiteSpace(KeyInput))
             {
                 var pattern = new ReplacePattern(KeyInput, ValueInput, (ReplaceMode)ReplaceModeInput, true);
                 if (ReplaceModeEditInput == (int)ReplaceMode.正则)
@@ -240,7 +240,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
                         ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
                         ImGui.InputText("###ValueEditInput", ref ValueEditInput, 96);
 
-                        if (ImGui.IsItemDeactivatedAfterEdit() && !string.IsNullOrWhiteSpace(ValueEditInput))
+                        if (ImGui.IsItemDeactivatedAfterEdit())
                         {
                             ReplacePatterns[i].Value = ValueEditInput;
                             UpdateConfig(nameof(ReplacePatterns), ReplacePatterns);
