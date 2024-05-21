@@ -42,6 +42,12 @@ public class ExecuteCommandManager : IDailyManager
         return result;
     }
 
+    public nint ExecuteCommand(ExecuteCommandFlag command, int param1, int param2, int param3, int param4)
+    {
+        var result = ExecuteCommandHook.Original((int)command, param1, param2, param3, param4);
+        return result;
+    }
+
     private static nint ExecuteCommandDetour(int command, int param1, int param2, int param3, int param4)
     {
         if (Debug.DebugConfig.ShowExecuteCommandLog)
