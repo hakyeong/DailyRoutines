@@ -157,10 +157,10 @@ public unsafe class AutoDiscard : DailyModuleBase
             var orderColumnWidth = ImGui.CalcTextSize((ModuleConfig.DiscardGroups.Count + 1).ToString()).X + 24;
             ImGui.TableSetupColumn("Order", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize,
                                    orderColumnWidth);
-            ImGui.TableSetupColumn("UniqueName", ImGuiTableColumnFlags.None, 20);
-            ImGui.TableSetupColumn("Items", ImGuiTableColumnFlags.None, 60);
-            ImGui.TableSetupColumn("Behaviour", ImGuiTableColumnFlags.None, 20);
-            ImGui.TableSetupColumn("Operations", ImGuiTableColumnFlags.WidthFixed, 150);
+            ImGui.TableSetupColumn("UniqueName", ImGuiTableColumnFlags.None, 20f);
+            ImGui.TableSetupColumn("Items", ImGuiTableColumnFlags.None, 100f);
+            ImGui.TableSetupColumn("Behaviour", ImGuiTableColumnFlags.None, 30f);
+            ImGui.TableSetupColumn("Operations", ImGuiTableColumnFlags.None, 30f);
 
             ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
 
@@ -291,7 +291,7 @@ public unsafe class AutoDiscard : DailyModuleBase
         if (group.Items.Count > 0)
         {
             ImGui.BeginGroup();
-            foreach (var item in group.Items.TakeLast(10))
+            foreach (var item in group.Items.TakeLast(15))
             {
                 ImGui.Image(ImageHelper.GetIcon(LuminaCache.GetRow<Item>(item).Icon).ImGuiHandle,
                             ImGuiHelpers.ScaledVector2(20f));
