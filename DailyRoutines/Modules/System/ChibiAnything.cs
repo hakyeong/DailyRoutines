@@ -12,7 +12,6 @@ using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using ImGuiNET;
-using static DailyRoutines.Modules.CustomizeInterfaceText;
 using CharacterStruct = FFXIVClientStructs.FFXIV.Client.Game.Character.Character;
 using GameObjectStruct = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
@@ -33,6 +32,7 @@ public unsafe class ChibiAnything : DailyModuleBase
         public CustomizeType Type { get; set; }
         public string Value { get; set; } = string.Empty;
         public float Scale { get; set; }
+        public bool ScaleVFX { get; set; }
         public bool Enabled { get; set; }
 
         public CustomizePreset() { }
@@ -117,6 +117,7 @@ public unsafe class ChibiAnything : DailyModuleBase
     private static float ScaleEditInput = 1f;
     private static string ValueEditInput = "";
 
+    private static float CheckboxWidth = 20f;
     private static bool IsTargetInfoWindowOpen;
 
     private static readonly Dictionary<nint, (CustomizePreset Preset, float Scale)> CustomizeHistory = [];
@@ -272,15 +273,14 @@ public unsafe class ChibiAnything : DailyModuleBase
             ImGui.End();
         }
 
-        ImGui.Separator();
-
         var tableSize2 = ImGui.GetContentRegionAvail() with { Y = 0 };
-        if (ImGui.BeginTable("###ConfigTable", 5, ImGuiTableFlags.BordersInner, tableSize2))
+        if (ImGui.BeginTable("###ConfigTable", 6, ImGuiTableFlags.BordersInner, tableSize2))
         {
-            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, 20 * ImGuiHelpers.GlobalScale);
+            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.None, 4);
             ImGui.TableSetupColumn("模式", ImGuiTableColumnFlags.None, 20);
             ImGui.TableSetupColumn("值", ImGuiTableColumnFlags.None, 40);
             ImGui.TableSetupColumn("缩放比例", ImGuiTableColumnFlags.None, 15);
+            ImGui.TableSetupColumn("缩放特效", ImGuiTableColumnFlags.None, 10);
             ImGui.TableSetupColumn("操作", ImGuiTableColumnFlags.None, 20);
 
             ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
@@ -292,6 +292,8 @@ public unsafe class ChibiAnything : DailyModuleBase
             ImGui.Text("值");
             ImGui.TableNextColumn();
             ImGui.Text("缩放比例");
+            ImGui.TableNextColumn();
+            ImGui.Text("缩放特效");
             ImGui.TableNextColumn();
             ImGui.Text("");
 
@@ -311,11 +313,15 @@ public unsafe class ChibiAnything : DailyModuleBase
                     ModuleConfig.CustomizePresets[i].Enabled = isEnabled;
                     SaveConfig(ModuleConfig);
 
-                    var match = CustomizeHistory.FirstOrDefault(x => x.Value.Preset == preset);
-                    if (!isEnabled && match.Value.Preset != null)
+                    var keysToRemove = CustomizeHistory
+                                       .Where(x => x.Value.Preset == preset)
+                                       .Select(x => x.Key)
+                                       .ToList();
+
+                    foreach (var key in keysToRemove)
                     {
-                        ResetCustomizeFromHistory(match.Key);
-                        CustomizeHistory.Remove(match.Key);
+                        ResetCustomizeFromHistory(key);
+                        CustomizeHistory.Remove(key);
                     }
                 }
 
@@ -390,8 +396,39 @@ public unsafe class ChibiAnything : DailyModuleBase
                 }
 
                 ImGui.TableNextColumn();
-                if (ImGuiOm.ButtonIcon($"DeletePreset_{i}", FontAwesomeIcon.TrashAlt, "按住 Ctrl 以删除"))
+                var isScaleVFX = preset.ScaleVFX;
+                if (ImGui.Checkbox("###IsScaleVFX", ref isScaleVFX))
                 {
+                    ModuleConfig.CustomizePresets[i].ScaleVFX = isScaleVFX;
+                    SaveConfig(ModuleConfig);
+
+                    var keysToRemove = CustomizeHistory
+                                       .Where(x => x.Value.Preset == preset)
+                                       .Select(x => x.Key)
+                                       .ToList();
+
+                    foreach (var key in keysToRemove)
+                    {
+                        ResetCustomizeFromHistory(key);
+                        CustomizeHistory.Remove(key);
+                    }
+                }
+
+                ImGui.TableNextColumn();
+                if (ImGuiOm.ButtonIcon($"DeletePreset_{i}", FontAwesomeIcon.TrashAlt, "按住 Ctrl 以删除") &&
+                    ImGui.IsKeyDown(ImGuiKey.LeftCtrl))
+                {
+                    var keysToRemove = CustomizeHistory
+                                       .Where(x => x.Value.Preset == preset)
+                                       .Select(x => x.Key)
+                                       .ToList();
+
+                    foreach (var key in keysToRemove)
+                    {
+                        ResetCustomizeFromHistory(key);
+                        CustomizeHistory.Remove(key);
+                    }
+
                     ModuleConfig.CustomizePresets.Remove(preset);
                     SaveConfig(ModuleConfig);
                 }
@@ -409,6 +446,7 @@ public unsafe class ChibiAnything : DailyModuleBase
                     {
                         ModuleConfig.CustomizePresets.Add(presetImport);
                         SaveConfig(ModuleConfig);
+                        array = [.. ModuleConfig.CustomizePresets];
                     }
                 }
 
@@ -465,12 +503,13 @@ public unsafe class ChibiAnything : DailyModuleBase
                     break;
             }
 
-            if (isNeedToReScale && pTarget->Scale != preset.Scale)
+            if (isNeedToReScale && (pTarget->Scale != preset.Scale || 
+                                    (preset.ScaleVFX && pTarget->VfxScale != preset.Scale)))
             {
                 CustomizeHistory.TryAdd((nint)pTarget, (preset, pTarget->Scale));
 
                 pTarget->Scale = preset.Scale;
-                pTarget->VfxScale = preset.Scale;
+                if (preset.ScaleVFX) pTarget->VfxScale = preset.Scale;
                 pTarget->DisableDraw();
                 pTarget->EnableDraw();
             }
@@ -494,6 +533,7 @@ public unsafe class ChibiAnything : DailyModuleBase
         if (gameObj == null || !gameObj->IsReadyToDraw()) return;
 
         gameObj->Scale = data.Scale;
+        gameObj->VfxScale = data.Scale;
         gameObj->DisableDraw();
         gameObj->EnableDraw();
     }
@@ -508,6 +548,7 @@ public unsafe class ChibiAnything : DailyModuleBase
             if (gameObj == null || !gameObj->IsReadyToDraw()) continue;
 
             gameObj->Scale = data.Scale;
+            gameObj->VfxScale = data.Scale;
             gameObj->DisableDraw();
             gameObj->EnableDraw();
         }
