@@ -10,6 +10,7 @@ using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using ImGuiNET;
 using CharacterStruct = FFXIVClientStructs.FFXIV.Client.Game.Character.Character;
@@ -463,6 +464,7 @@ public unsafe class ChibiAnything : DailyModuleBase
         var isTargetable = IsTargetableHook.Original(pTarget);
 
         if (ModuleConfig.CustomizePresets.Count == 0 || !pTarget->IsCharacter()) return isTargetable;
+        if (!EzThrottler.Throttle($"CustomizeGameObjectScale_{(nint)pTarget}", 1000)) return isTargetable;
 
         var name = Marshal.PtrToStringUTF8((nint)pTarget->Name);
         var dataID = pTarget->DataID;
@@ -515,7 +517,7 @@ public unsafe class ChibiAnything : DailyModuleBase
             }
         }
 
-        return 1;
+        return isTargetable;
     }
 
     private static void OnZoneChanged(ushort zone)
