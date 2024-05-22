@@ -3,14 +3,18 @@ using DailyRoutines.Windows;
 using Dalamud.Hooking;
 using ECommons.Automation;
 using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
 using System;
 using System.Reflection;
+using System.Text;
+using System.Windows.Forms;
 using DailyRoutines.Infos;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin.Services;
+using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace DailyRoutines.Modules;
 
@@ -269,6 +273,51 @@ public abstract class DailyModuleBase
             Service.Log.Error(ex, $"Failed to remove config for {moduleName}");
             return false;
         }
+    }
+
+    protected static void ExportToClipboard<T>(T config) where T : class
+    {
+        try
+        {
+            var json = JsonSerializer.Serialize(config);
+            var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+
+            Clipboard.SetText(base64);
+            Service.Chat.Print(new SeStringBuilder().Append(DRPrefix())
+                                                    .Append(" 已成功导出配置至剪贴板")
+                                                    .Build());
+        }
+        catch (Exception ex)
+        {
+            Service.Chat.PrintError($"导出至剪贴板错误: {ex.Message}");
+        }
+    }
+
+    protected static T? ImportFromClipboard<T>() where T : class
+    {
+        try
+        {
+            var base64 = Clipboard.GetText();
+
+            if (!string.IsNullOrEmpty(base64))
+            {
+                var json = Encoding.UTF8.GetString(Convert.FromBase64String(base64));
+                var config = JsonSerializer.Deserialize<T>(json);
+                if (config != null)
+                {
+                    Service.Chat.Print(new SeStringBuilder().Append(DRPrefix())
+                                                            .Append($" 已成功导入配置")
+                                                            .Build());
+                }
+                return config;
+            }
+        }
+        catch (Exception ex)
+        {
+            Service.Chat.PrintError($"从剪贴板导入配置时失败: {ex.Message}");
+        }
+
+        return null;
     }
 
     protected bool InterruptByConflictKey()

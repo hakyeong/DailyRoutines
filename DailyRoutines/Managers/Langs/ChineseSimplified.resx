@@ -1208,37 +1208,22 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoJumboCactpot-Fixed" xml:space="preserve">
     <value>固定</value>
   </data>
-    <data name="ChibiAnything" xml:space="preserve">
-    <value>调整模型大小</value>
+  <data name="ChibiAnythingTitle" xml:space="preserve">
+    <value>自定义游戏对象缩放</value>
   </data>
-    <data name="ChibiAnythingDescription" xml:space="preserve">
+  <data name="ChibiAnythingDescription" xml:space="preserve">
     <value>切换地图生效</value>
   </data>
-    <data name="ChibiAnything-Config-chibiType" xml:space="preserve">
+  <data name="ChibiAnything-Config-chibiType" xml:space="preserve">
     <value>匹配方式</value>
   </data>
-    <data name="ChibiAnything-Config-chibiType-Name" xml:space="preserve">
-    <value>名称匹配</value>
-  </data>
-    <data name="ChibiAnything-Config-chibiType-DataId" xml:space="preserve">
-    <value>DataId匹配</value>
-  </data>
-    <data name="ChibiAnything-Config-chibiType-ObjectId" xml:space="preserve">
-    <value>ObjectId匹配</value>
-  </data>
-    <data name="ChibiAnything-Config-chibiType-ModelCharaId" xml:space="preserve">
-    <value>ModelCharaId匹配</value>
-  </data>
-    <data name="ChibiAnything-Config-value" xml:space="preserve">
+  <data name="ChibiAnything-Config-value" xml:space="preserve">
     <value>匹配值</value>
   </data>
-    <data name="ChibiAnything-Config-scale" xml:space="preserve">
+  <data name="ChibiAnything-Config-scale" xml:space="preserve">
     <value>大小比例</value>
   </data>
-    <data name="ChibiAnything-Add" xml:space="preserve">
-    <value>保存</value>
-  </data>
-    <data name="ChibiAnything-Del" xml:space="preserve">
+  <data name="ChibiAnything-Del" xml:space="preserve">
     <value>删除</value>
   </data>
   <data name="AutoJumboCactpot-FixedNumber" xml:space="preserve">
