@@ -30,6 +30,11 @@ public enum ExecuteCommandFlag
     Dismount = 101,
 
     /// <summary>
+    /// 中断咏唱
+    /// </summary>
+    CancelCast = 105,
+
+    /// <summary>
     /// 传送至指定的以太之光
     /// <para><c>param1</c>: 以太之光 ID</para>
     /// <para><c>param2</c>: 是否使用传送券 (0 - 否, 1 - 是)</para>
@@ -46,6 +51,26 @@ public enum ExecuteCommandFlag
     /// 立即返回至返回点, 若在副本内则返回至副本内重生点
     /// </summary>
     InstantReturn = 214,
+
+    /// <summary>
+    /// 更改佩戴的称号
+    /// <para><c>param1</c>: 称号 ID</para>
+    /// </summary>
+    ChangeTitle = 302,
+
+    /// <summary>
+    /// 清除场地标点
+    /// </summary>
+    ClearFieldMarkers = 313,
+
+    /// <summary>
+    /// 放置场地标点
+    /// <para><c>param1</c>: 标点索引</para>
+    /// <para><c>param2</c>: 坐标 X * 1000</para>
+    /// <para><c>param3</c>: 坐标 Y * 1000</para>
+    /// <para><c>param4</c>: 坐标 Z * 1000</para>
+    /// </summary>
+    PlaceFieldMarker = 315,
 
     /// <summary>
     /// 将青魔法师技能交换或应用于有效技能
@@ -69,6 +94,11 @@ public enum ExecuteCommandFlag
     FateLevelSync = 814,
 
     /// <summary>
+    /// 启用/解除自动加入新人频道设置
+    /// </summary>
+    EnableAutoJoinNoviceNetwork = 2102,
+
+    /// <summary>
     /// 请求投影台数据
     /// </summary>
     RequestPrismBox = 2350,
@@ -87,6 +117,7 @@ public enum ExecuteCommandFlag
     /// <summary>
     /// 进入/退出投影模板选择状态
     /// <para><c>param1</c>: 0 - 退出, 1 - 进入</para>
+    /// <para><c>param2</c>: 未知, 可能为 0 或 1</para>
     /// </summary>
     EnterGlamourPlateState = 2356,
 
@@ -131,5 +162,12 @@ public enum ExecuteCommandFlag
     /// <summary>
     /// 请求无人岛工房需求数据
     /// </summary>
-    MJIFavorStateRequest = 3292
+    MJIFavorStateRequest = 3292,
+
+    /// <summary>
+    /// 掷骰子
+    /// <para><c>param1</c>: 类型 (固定为 0)</para>
+    /// <para><c>param2</c>: 最大值</para>
+    /// </summary>
+    RollDice = 9000,
 }
