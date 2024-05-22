@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using DailyRoutines.Helpers;
@@ -23,7 +22,7 @@ public unsafe class NoAttackWrongMandragoras : DailyModuleBase
 
     [Signature("40 53 48 83 EC 20 F3 0F 10 89 ?? ?? ?? ?? 0F 57 C0 0F 2E C8 48 8B D9 7A 0A",
                DetourName = nameof(IsTargetableDetour))]
-    private readonly Hook<IsTargetableDelegate>? IsTargetableHook;
+    private static Hook<IsTargetableDelegate>? IsTargetableHook;
 
     private static List<uint[]>? Mandragoras;
 
@@ -50,7 +49,7 @@ public unsafe class NoAttackWrongMandragoras : DailyModuleBase
             OnZoneChanged(Service.ClientState.TerritoryType);
     }
 
-    private void OnZoneChanged(ushort zone)
+    private static void OnZoneChanged(ushort zone)
     {
         if (ValidZones.Contains(zone))
             IsTargetableHook?.Enable();
@@ -58,7 +57,7 @@ public unsafe class NoAttackWrongMandragoras : DailyModuleBase
             IsTargetableHook?.Disable();
     }
 
-    private byte IsTargetableDetour(GameObject* potentialTarget)
+    private static byte IsTargetableDetour(GameObject* potentialTarget)
     {
         var isTargetable = IsTargetableHook.Original(potentialTarget);
         if (!ValidZones.Contains(Service.ClientState.TerritoryType) || Mandragoras == null) return isTargetable;
