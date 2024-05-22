@@ -9,6 +9,7 @@ using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
+using ECommons.ImGuiMethods;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using ImGuiNET;
@@ -86,7 +87,7 @@ public unsafe class CustomizeGameObject : DailyModuleBase
 
     private enum CustomizeType
     {
-        名称,
+        Name,
         ModelCharaID,
         ModelSkeletonID,
         DataID,
@@ -109,15 +110,15 @@ public unsafe class CustomizeGameObject : DailyModuleBase
 
     private static Config ModuleConfig = null!;
 
-    private static CustomizeType TypeInput = CustomizeType.名称;
+    private static CustomizeType TypeInput = CustomizeType.Name;
     private static float ScaleInput = 1f;
-    private static string ValueInput = "";
+    private static string ValueInput = string.Empty;
+    private static bool ScaleVFXInput;
 
     private static int TypeEditInput;
     private static float ScaleEditInput = 1f;
     private static string ValueEditInput = "";
 
-    private static float CheckboxWidth = 20f;
     private static bool IsTargetInfoWindowOpen;
 
     private static readonly Dictionary<nint, (CustomizePreset Preset, float Scale)> CustomizeHistory = [];
@@ -134,21 +135,21 @@ public unsafe class CustomizeGameObject : DailyModuleBase
 
     public override void ConfigUI()
     {
-        var tableSize0 = (ImGui.GetContentRegionAvail() / 3) with { Y = 0 };
-        if (ImGui.BeginTable("NewConfigInputTable", 2, ImGuiTableFlags.None, tableSize0))
+        var tableSize0 = (ImGui.GetContentRegionAvail() / 2) with { Y = 0 };
+        if (ImGui.BeginTable("NewConfigInputTable", 2, ImGuiTableFlags.BordersInner, tableSize0))
         {
-            ImGui.TableSetupColumn("Lable", ImGuiTableColumnFlags.None, 30);
-            ImGui.TableSetupColumn("Input", ImGuiTableColumnFlags.None, 70);
+            ImGui.TableSetupColumn("Lable", ImGuiTableColumnFlags.None, 20);
+            ImGui.TableSetupColumn("Input", ImGuiTableColumnFlags.None, 80);
 
             // 类型
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
             ImGui.AlignTextToFramePadding();
-            ImGui.Text($"{Service.Lang.GetText("ChibiAnything-Config-chibiType")}:");
+            ImGui.Text($"{Service.Lang.GetText("CustomizeGameObject-CustomizeType")}:");
 
             ImGui.TableNextColumn();
             ImGui.SetNextItemWidth(-1f);
-            if (ImGui.BeginCombo("###ChibiTypeCombo", TypeInput.ToString()))
+            if (ImGui.BeginCombo("###CustomizeTypeSelectCombo", TypeInput.ToString()))
             {
                 foreach (var mode in Enum.GetValues<CustomizeType>())
                     if (ImGui.Selectable(mode.ToString(), mode == TypeInput))
@@ -161,42 +162,60 @@ public unsafe class CustomizeGameObject : DailyModuleBase
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
             ImGui.AlignTextToFramePadding();
-            ImGui.Text($"{Service.Lang.GetText("ChibiAnything-Config-value")}:");
+            ImGui.Text($"{Service.Lang.GetText("Value")}:");
 
             ImGui.TableNextColumn();
             ImGui.SetNextItemWidth(-1f);
-            ImGui.InputText("###ChibiAnything-ValueConfig", ref ValueInput, 100);
+            ImGui.InputText("###CustomizeValueInput", ref ValueInput, 100);
 
             // 缩放
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
             ImGui.AlignTextToFramePadding();
-            ImGui.Text($"{Service.Lang.GetText("ChibiAnything-Config-scale")}:");
+            ImGui.Text($"{Service.Lang.GetText("CustomizeGameObject-Scale")}:");
 
             ImGui.TableNextColumn();
             ImGui.SetNextItemWidth(-1f);
-            ImGui.SliderFloat("###ChibiAnything-ScaleConfig", ref ScaleInput, 0.1f, 10f, "%.1f");
+            ImGui.SliderFloat("###CustomizeScaleSilder", ref ScaleInput, 0.1f, 10f, "%.1f");
+
+            // 缩放特效
+            ImGui.TableNextRow();
+            ImGui.TableNextColumn();
+            ImGui.AlignTextToFramePadding();
+            ImGui.Text($"{Service.Lang.GetText("CustomizeGameObject-ScaleVFX")}:");
+
+            ImGui.TableNextColumn();
+            ImGui.SetNextItemWidth(-1f);
+            ImGui.Checkbox("###CustomizeScaleVFX", ref ScaleVFXInput);
 
             ImGui.EndTable();
         }
 
         ImGui.SameLine();
+        ImGui.BeginGroup();
         if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Plus, Service.Lang.GetText("Add")))
         {
             if (ScaleInput > 0 && !string.IsNullOrWhiteSpace(ValueInput))
             {
                 ModuleConfig.CustomizePresets.Add(
-                    new CustomizePreset { Enabled = true, Scale = ScaleInput, Type = TypeInput, Value = ValueInput });
+                    new CustomizePreset
+                    {
+                        Enabled = true, 
+                        Scale = ScaleInput, 
+                        Type = TypeInput, 
+                        Value = ValueInput,
+                        ScaleVFX = ScaleVFXInput
+                    });
                 SaveConfig(ModuleConfig);
             }
         }
 
-        ImGui.SameLine();
-        if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Info, "目标信息"))
+        if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Info, Service.Lang.GetText("Target")))
             IsTargetInfoWindowOpen ^= true;
+        ImGui.EndGroup();
 
-        if (IsTargetInfoWindowOpen && ImGui.Begin("目标信息预览###TargetInfoPreviewWindow", 
-                                                  ImGuiWindowFlags.NoDocking))
+        if (IsTargetInfoWindowOpen && ImGui.Begin(
+                $"{Service.Lang.GetText("CustomizeGameObject-TargetInfoWindow")}###TargetInfoPreviewWindow"))
         {
             if (ImGui.IsWindowAppearing() && ImGui.GetWindowSize().X < 100f)
                 ImGui.SetWindowSize(ImGuiHelpers.ScaledVector2(400f, 150f));
@@ -215,7 +234,7 @@ public unsafe class CustomizeGameObject : DailyModuleBase
                     ImGui.TableNextRow();
                     ImGui.TableNextColumn();
                     ImGui.AlignTextToFramePadding();
-                    ImGui.Text("名称:");
+                    ImGui.Text($"{Service.Lang.GetText("Name")}:");
 
                     ImGui.TableNextColumn();
                     var targetName = Marshal.PtrToStringUTF8((nint)currentTarget->Name);
@@ -273,6 +292,10 @@ public unsafe class CustomizeGameObject : DailyModuleBase
             ImGui.End();
         }
 
+        ImGui.Spacing();
+        if (ModuleConfig.CustomizePresets.Count == 0) return;
+        ImGui.Spacing();
+
         var tableSize2 = ImGui.GetContentRegionAvail() with { Y = 0 };
         if (ImGui.BeginTable("###ConfigTable", 6, ImGuiTableFlags.BordersInner, tableSize2))
         {
@@ -287,13 +310,13 @@ public unsafe class CustomizeGameObject : DailyModuleBase
             ImGui.TableNextColumn();
             ImGui.Text("");
             ImGui.TableNextColumn();
-            ImGui.Text("模式");
+            ImGui.Text(Service.Lang.GetText("CustomizeGameObject-CustomizeType"));
             ImGui.TableNextColumn();
-            ImGui.Text("值");
+            ImGui.Text(Service.Lang.GetText("Value"));
             ImGui.TableNextColumn();
-            ImGui.Text("缩放比例");
+            ImGui.Text(Service.Lang.GetText("CustomizeGameObject-Scale"));
             ImGui.TableNextColumn();
-            ImGui.Text("缩放特效");
+            ImGui.Text(Service.Lang.GetText("CustomizeGameObject-ScaleVFX"));
             ImGui.TableNextColumn();
             ImGui.Text("");
 
@@ -334,7 +357,7 @@ public unsafe class CustomizeGameObject : DailyModuleBase
                         TypeEditInput = (int)preset.Type;
 
                     ImGui.AlignTextToFramePadding();
-                    ImGui.Text("匹配类型:");
+                    ImGui.Text($"{Service.Lang.GetText("CustomizeGameObject-CustomizeType")}:");
 
                     foreach (var customizeType in Enum.GetValues<CustomizeType>())
                     {
@@ -358,7 +381,7 @@ public unsafe class CustomizeGameObject : DailyModuleBase
                         ValueEditInput = preset.Value;
 
                     ImGui.AlignTextToFramePadding();
-                    ImGui.Text("值:");
+                    ImGui.Text($"{Service.Lang.GetText("Value")}:");
 
                     ImGui.SameLine();
                     ImGui.InputText("###ValueEditInput", ref ValueEditInput, 128);
@@ -415,7 +438,8 @@ public unsafe class CustomizeGameObject : DailyModuleBase
                 }
 
                 ImGui.TableNextColumn();
-                if (ImGuiOm.ButtonIcon($"DeletePreset_{i}", FontAwesomeIcon.TrashAlt, "按住 Ctrl 以删除") &&
+                if (ImGuiOm.ButtonIcon($"DeletePreset_{i}", FontAwesomeIcon.TrashAlt,
+                                       Service.Lang.GetText("CustomizeGameObject-HoldCtrlToDelete")) && 
                     ImGui.IsKeyDown(ImGuiKey.LeftCtrl))
                 {
                     var keysToRemove = CustomizeHistory
@@ -434,11 +458,13 @@ public unsafe class CustomizeGameObject : DailyModuleBase
                 }
 
                 ImGui.SameLine();
-                if (ImGuiOm.ButtonIcon($"ExportPreset_{i}", FontAwesomeIcon.FileExport, "导出至剪贴板"))
+                if (ImGuiOm.ButtonIcon($"ExportPreset_{i}", FontAwesomeIcon.FileExport, 
+                                       Service.Lang.GetText("ExportToClipboard")))
                     ExportToClipboard(preset);
 
                 ImGui.SameLine();
-                if (ImGuiOm.ButtonIcon($"ImportPreset_{i}", FontAwesomeIcon.FileImport, "从剪贴板导入"))
+                if (ImGuiOm.ButtonIcon($"ImportPreset_{i}", FontAwesomeIcon.FileImport, 
+                                       Service.Lang.GetText("ImportFromClipboard")))
                 {
                     var presetImport = ImportFromClipboard<CustomizePreset>();
 
@@ -479,7 +505,7 @@ public unsafe class CustomizeGameObject : DailyModuleBase
             var isNeedToReScale = false;
             switch (preset.Type)
             {
-                case CustomizeType.名称:
+                case CustomizeType.Name:
                     if (name.Equals(preset.Value)) isNeedToReScale = true;
                     break;
                 case CustomizeType.DataID:
@@ -504,8 +530,8 @@ public unsafe class CustomizeGameObject : DailyModuleBase
                     break;
             }
 
-            if (isNeedToReScale && (pTarget->Scale != preset.Scale || 
-                                    (preset.ScaleVFX && pTarget->VfxScale != preset.Scale)))
+            if (isNeedToReScale && 
+                (pTarget->Scale != preset.Scale || (preset.ScaleVFX && pTarget->VfxScale != preset.Scale)))
             {
                 CustomizeHistory.TryAdd((nint)pTarget, (preset, pTarget->Scale));
 
