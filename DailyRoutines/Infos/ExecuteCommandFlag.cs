@@ -47,8 +47,15 @@ public enum ExecuteCommandFlag
     InstantReturn = 214,
 
     /// <summary>
+    /// 将青魔法师技能应用至有效技能的第X格
+    /// <para><c>param2</c>: 格子, 从 0 开始, 小于 24</para>
+    /// <para><c>param3</c>: 技能 ID</para>
+    /// </summary>
+    AssignBLUActionToSlot = 315,
+
+    /// <summary>
     /// 清除来自木人的仇恨
     /// <para><c>param1</c>: 木人的 Object ID</para>
     /// </summary>
-    ResetStrkingDummy,
+    ResetStrkingDummy = 319,
 }
