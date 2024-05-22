@@ -5,6 +5,7 @@ public enum ExecuteCommandFlag
     /// <summary>
     /// 拔出/收回武器
     /// <para><c>param1</c>: 1 - 拔出, 0 - 收回</para>
+    /// <para><c>param2</c>: 未知, 固定为 1</para>
     /// </summary>
     DrawOrSheatheWeapon = 1,
 
@@ -47,9 +48,10 @@ public enum ExecuteCommandFlag
     InstantReturn = 214,
 
     /// <summary>
-    /// 将青魔法师技能应用至有效技能的第X格
-    /// <para><c>param2</c>: 格子序号, 从 0 开始, 小于 24</para>
-    /// <para><c>param3</c>: 技能 ID</para>
+    /// 将青魔法师技能交换或应用于有效技能
+    /// <para><c>param1</c>: 类型 (0 为应用有效技能, 1 为交换有效技能)</para>
+    /// <para><c>param2</c>: 格子序号 (从 0 开始, 小于 24)</para>
+    /// <para><c>param3</c>: 技能 ID / 格子序号 (从 0 开始, 小于 24)</para>
     /// </summary>
     AssignBLUActionToSlot = 315,
 
@@ -58,4 +60,76 @@ public enum ExecuteCommandFlag
     /// <para><c>param1</c>: 木人的 Object ID</para>
     /// </summary>
     ResetStrkingDummy = 319,
+
+    /// <summary>
+    /// 为 临危受命 等级同步
+    /// <para><c>param1</c>: FATE ID</para>
+    /// <para><c>param2</c>: 是否等级同步 (0 - 否, 1 - 是)</para>
+    /// </summary>
+    FateLevelSync = 814,
+
+    /// <summary>
+    /// 请求投影台数据
+    /// </summary>
+    RequestPrismBox = 2350,
+
+    /// <summary>
+    /// 取出投影台物品
+    /// <para><c>param1</c>: 投影台内部物品 ID (MirageManager.Instance().PrismBoxItemIds)</para>
+    /// </summary>
+    RestorePrsimBoxItem = 2352,
+
+    /// <summary>
+    /// 请求投影模板数据
+    /// </summary>
+    RequestGlamourPlates = 2355,
+
+    /// <summary>
+    /// 进入/退出投影模板选择状态
+    /// <para><c>param1</c>: 0 - 退出, 1 - 进入</para>
+    /// </summary>
+    EnterGlamourPlateState = 2356,
+
+    /// <summary>
+    /// 应用投影模板 (需要先进入投影模板选择状态)
+    /// <para><c>param1</c>: 投影模板索引</para>
+    /// </summary>
+    ApplyGlamourPlate = 2357,
+
+    /// <summary>
+    /// 收取无人岛屯货仓库探索结果
+    /// <para><c>param1</c>: 仓库索引</para>
+    /// </summary>
+    MJIGranaryCollect = 3262,
+
+    /// <summary>
+    /// 托管单块无人岛耕地
+    /// <para><c>param1</c>: 耕地索引</para>
+    /// <para><c>param2</c>: 种子物品 ID</para>
+    /// </summary>
+    MJIFarmEntrustSingle = 3279,
+
+    /// <summary>
+    /// 取消托管单块无人岛耕地
+    /// <para><c>param1</c>: 耕地索引</para>
+    /// </summary>
+    MJIFarmDismiss = 3280,
+
+    /// <summary>
+    /// 收取单块无人岛耕地
+    /// <para><c>param1</c>: 耕地索引</para>
+    /// <para><c>param2</c>: 收取后是否取消托管 (0 - 否, 1 - 是)</para>
+    /// </summary>
+    MJIFarmCollectSingle = 3281,
+
+    /// <summary>
+    /// 收取全部无人岛耕地
+    /// <para><c>param1</c>: *(int*)MJIManager.Instance()->GranariesState</para>
+    /// </summary>
+    MJIFarmCollectAll = 3282,
+
+    /// <summary>
+    /// 请求无人岛工房需求数据
+    /// </summary>
+    MJIFavorStateRequest = 3292
 }
