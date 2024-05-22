@@ -1208,11 +1208,11 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoJumboCactpot-Fixed" xml:space="preserve">
     <value>固定</value>
   </data>
-  <data name="ChibiAnythingTitle" xml:space="preserve">
+  <data name="CustomizeGameObjectTitle" xml:space="preserve">
     <value>自定义游戏对象缩放</value>
   </data>
-  <data name="ChibiAnythingDescription" xml:space="preserve">
-    <value>切换地图生效</value>
+  <data name="CustomizeGameObjectDescription" xml:space="preserve">
+    <value>启用并配置完成后, 允许自定义游戏内大部分物体对象的缩放</value>
   </data>
   <data name="ChibiAnything-Config-chibiType" xml:space="preserve">
     <value>匹配方式</value>

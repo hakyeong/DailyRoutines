@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Numerics;
 using System.Runtime.InteropServices;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -18,8 +17,8 @@ using GameObjectStruct = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("ChibiAnythingTitle", "ChibiAnythingDescription", ModuleCategories.系统)]
-public unsafe class ChibiAnything : DailyModuleBase
+[ModuleDescription("CustomizeGameObjectTitle", "CustomizeGameObjectDescription", ModuleCategories.系统)]
+public unsafe class CustomizeGameObject : DailyModuleBase
 {
     private struct ChibiTarget
     {
