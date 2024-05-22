@@ -9,7 +9,6 @@ using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
-using ECommons.ImGuiMethods;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using ImGuiNET;
@@ -99,8 +98,6 @@ public unsafe class CustomizeGameObject : DailyModuleBase
     private class Config : ModuleConfiguration
     {
         public readonly List<CustomizePreset> CustomizePresets = [];
-
-        public readonly List<ChibiTarget> TargetList = [];
     }
 
     private delegate byte IsTargetableDelegate(GameObjectStruct* gameObj);
