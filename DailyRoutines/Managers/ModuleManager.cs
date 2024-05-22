@@ -82,11 +82,11 @@ public class ModuleManager : IDailyManager
             {
                 module.Uninit();
                 module.Initialized = false;
-                Service.Log.Debug($"Unloaded {module.GetType().Name} moduleBase");
+                Service.Log.Debug($"Unloaded {module.GetType().Name}");
             }
             catch (Exception ex)
             {
-                Service.Log.Error(ex, $"Fail to unload {module.GetType().Name} moduleBase");
+                Service.Log.Error(ex, $"Fail to unload {module.GetType().Name}");
             }
         }
     }
@@ -114,7 +114,7 @@ public class ModuleManager : IDailyManager
             }
             catch (Exception ex)
             {
-                Service.Log.Error(ex, $"Fail to unload {module.GetType().Name} module");
+                Service.Log.Error(ex, $"Fail to unload {module.GetType().Name}");
             }
 
         Modules.Clear();
