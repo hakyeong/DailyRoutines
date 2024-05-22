@@ -36,13 +36,13 @@ public class ExecuteCommandManager : IDailyManager
         ExecuteCommandHook?.Enable();
     }
 
-    public nint ExecuteCommand(int command, int param1, int param2, int param3, int param4)
+    public nint ExecuteCommand(int command, int param1 = 0, int param2 = 0, int param3 = 0, int param4 = 0)
     {
         var result = ExecuteCommandHook.Original(command, param1, param2, param3, param4);
         return result;
     }
 
-    public nint ExecuteCommand(ExecuteCommandFlag command, int param1, int param2, int param3, int param4)
+    public nint ExecuteCommand(ExecuteCommandFlag command, int param1 = 0, int param2 = 0, int param3 = 0, int param4 = 0)
     {
         var result = ExecuteCommandHook.Original((int)command, param1, param2, param3, param4);
         return result;
