@@ -48,7 +48,7 @@ public enum ExecuteCommandFlag
 
     /// <summary>
     /// 将青魔法师技能应用至有效技能的第X格
-    /// <para><c>param2</c>: 格子, 从 0 开始, 小于 24</para>
+    /// <para><c>param2</c>: 格子序号, 从 0 开始, 小于 24</para>
     /// <para><c>param3</c>: 技能 ID</para>
     /// </summary>
     AssignBLUActionToSlot = 315,
