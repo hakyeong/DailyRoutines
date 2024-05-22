@@ -19,8 +19,11 @@ public class InstantReturn : DailyModuleBase
         ReturnHook?.Enable();
     }
 
-    private static byte ReturnDetour(nint _)
+    private static byte ReturnDetour(nint a1)
     {
+        if (Service.ClientState.IsPvPExcludingDen)
+            return ReturnHook.Original(a1);
+
         Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.InstantReturn, 0, 0, 0, 0);
         return 1;
     }
