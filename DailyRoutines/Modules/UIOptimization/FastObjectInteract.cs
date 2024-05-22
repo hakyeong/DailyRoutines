@@ -127,7 +127,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     {
         if (zone == 0 || zone == Service.ClientState.TerritoryType) return;
 
-        IsInInstancedArea = UIState.Instance()->AreaInstance.IsInstancedArea();
         InstancedAreaAmount = 3;
     }
 
@@ -368,6 +367,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
             }
 
             tempObjects.Clear();
+            IsInInstancedArea = UIState.Instance()->AreaInstance.IsInstancedArea();
 
             foreach (var obj in Service.ObjectTable)
             {
