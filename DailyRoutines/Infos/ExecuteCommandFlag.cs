@@ -87,6 +87,12 @@ public enum ExecuteCommandFlag
     ResetStrkingDummy = 319,
 
     /// <summary>
+    /// 存入物品至收藏柜
+    /// <para><c>param1</c>: 物品在 Cabinet.csv 中的对应索引</para>
+    /// </summary>
+    StoreToCabinet,
+
+    /// <summary>
     /// 为 临危受命 等级同步
     /// <para><c>param1</c>: FATE ID</para>
     /// <para><c>param2</c>: 是否等级同步 (0 - 否, 1 - 是)</para>
