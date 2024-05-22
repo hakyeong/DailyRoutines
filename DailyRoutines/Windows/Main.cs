@@ -116,8 +116,10 @@ public class Main : Window, IDisposable
                     var module = modulesInCategory[i];
 
                     ImGui.PushID($"{module.Module.Name}-{module.Category}-{module.Title}-{module.Description}");
-                    DrawModuleUI(module, modulesInCategory.Length, i, false);
+                    DrawModuleUI(module, false);
                     ImGui.PopID();
+
+                    if (i < modulesInCategory.Length - 1) ImGui.Separator();
                 }
 
                 ImGui.EndChild();
@@ -139,19 +141,21 @@ public class Main : Window, IDisposable
                     !module.Module.Name.Contains(SearchString, StringComparison.OrdinalIgnoreCase)) continue;
 
                 ImGui.PushID($"{module.Category}-{module.Description}-{module.Title}-{module.Module}");
-                DrawModuleUI(module, modules.Count, i, true);
+                DrawModuleUI(module, true);
                 ImGui.PopID();
+
+                if (i < modules.Count - 1) ImGui.Separator();
             }
 
             ImGui.EndTabItem();
         }
     }
 
-    private static void DrawModuleUI(ModuleInfo moduleInfo, int modulesCount, int index, bool fromSearch)
+    private static void DrawModuleUI(ModuleInfo moduleInfo, bool fromSearch)
     {
         var moduleName = moduleInfo.Module.Name;
         if (!Service.Config.ModuleEnabled.TryGetValue(moduleName, out var isModuleEnabled)) return;
-            
+
         if (ImGuiOm.CheckboxColored("", ref isModuleEnabled))
         {
             Service.Config.ModuleEnabled[moduleName] ^= true;
@@ -233,8 +237,6 @@ public class Main : Window, IDisposable
             ImGuiOm.TextDisabledWrapped(")");
         }
         ImGui.EndGroup();
-
-        if (index < modulesCount - 1) ImGui.Separator();
 
         return;
 
