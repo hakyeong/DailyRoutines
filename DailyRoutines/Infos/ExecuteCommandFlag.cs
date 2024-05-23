@@ -106,6 +106,17 @@ public enum ExecuteCommandFlag
     FateLevelSync = 814,
 
     /// <summary>
+    /// 放弃任务投票
+    /// </summary>
+    VoteAbandon = 808,
+
+    /// <summary>
+    /// 离开副本
+    /// <para><c>param1</c>: 类型 (0 - 正常退本, 1 - 一段时间未操作)</para>
+    /// </summary>
+    LeaveDuty = 819,
+
+    /// <summary>
     /// 启用/解除自动加入新人频道设置
     /// </summary>
     EnableAutoJoinNoviceNetwork = 2102,
