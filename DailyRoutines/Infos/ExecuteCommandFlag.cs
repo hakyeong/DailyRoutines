@@ -70,7 +70,13 @@ public enum ExecuteCommandFlag
     /// <para><c>param3</c>: 坐标 Y * 1000</para>
     /// <para><c>param4</c>: 坐标 Z * 1000</para>
     /// </summary>
-    PlaceFieldMarker = 315,
+    PlaceFieldMarker = 317,
+
+    /// <summary>
+    /// 移除场地标点
+    /// <para><c>param1</c>: 标点索引</para>
+    /// </summary>
+    RemoveFieldMarker = 318,
 
     /// <summary>
     /// 将青魔法师技能交换或应用于有效技能
