@@ -1,6 +1,10 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 using DailyRoutines.Infos;
+using DailyRoutines.Modules;
 using DailyRoutines.Windows;
 using Dalamud.Game.Command;
 
@@ -15,7 +19,9 @@ public class CommandManager : IDailyManager
     private void Init()
     {
         RefreshCommandDetails();
-        AddSubCommand("search", new CommandInfo(OnSubSearch) { HelpMessage = Service.Lang.GetText("CommandHelp-Search"), ShowInHelp = true });
+        AddSubCommand("search", new CommandInfo(OnSubSearch) { HelpMessage = Service.Lang.GetText("CommandHelp-Search") });
+        AddSubCommand("load", new CommandInfo(OnSubLoad) { HelpMessage = Service.Lang.GetText("CommandHelp-Load") });
+        AddSubCommand("unload", new CommandInfo(OnSubUnload) { HelpMessage = Service.Lang.GetText("CommandHelp-Unload") });
         AddSubCommand("debug", new CommandInfo(OnSubDebug) { ShowInHelp = false });
     }
 
@@ -146,6 +152,38 @@ public class CommandManager : IDailyManager
         }
         Main.SearchString = args;
         WindowManager.Main.IsOpen ^= true;
+    }
+
+    private static void OnSubLoad(string command, string args)
+    {
+        var moduleName = args.Trim();
+        if (string.IsNullOrWhiteSpace(moduleName)) return;
+
+        var moduleType = Assembly.GetExecutingAssembly()
+                                 .GetTypes()
+                                 .FirstOrDefault(t => typeof(DailyModuleBase).IsAssignableFrom(t) &&
+                                                      t is { IsClass: true, IsAbstract: false } &&
+                                                      string.Equals(t.Name, moduleName, StringComparison.OrdinalIgnoreCase));
+        if (moduleType == null) return;
+
+        var module = Service.ModuleManager.Modules[moduleType];
+        Service.ModuleManager.Load(module, true);
+    }
+
+    private static void OnSubUnload(string command, string args)
+    {
+        var moduleName = args.Trim();
+        if (string.IsNullOrWhiteSpace(moduleName)) return;
+
+        var moduleType = Assembly.GetExecutingAssembly()
+                                 .GetTypes()
+                                 .FirstOrDefault(t => typeof(DailyModuleBase).IsAssignableFrom(t) &&
+                                                      t is { IsClass: true, IsAbstract: false } &&
+                                                      string.Equals(t.Name, moduleName, StringComparison.OrdinalIgnoreCase));
+        if (moduleType == null) return;
+
+        var module = Service.ModuleManager.Modules[moduleType];
+        Service.ModuleManager.Unload(module, true);
     }
 
     private void Uninit()

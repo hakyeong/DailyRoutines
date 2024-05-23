@@ -158,13 +158,9 @@ public class Main : Window, IDisposable
 
         if (ImGuiOm.CheckboxColored("", ref isModuleEnabled))
         {
-            Service.Config.ModuleEnabled[moduleName] ^= true;
-
             var module = Service.ModuleManager.Modules[moduleInfo.Module];
-            if (isModuleEnabled) Service.ModuleManager.Load(module);
-            else Service.ModuleManager.Unload(module);
-
-            Service.Config.Save();
+            if (isModuleEnabled) Service.ModuleManager.Load(module, true);
+            else Service.ModuleManager.Unload(module, true);
         }
 
         if (fromSearch) ImGuiOm.TooltipHover(moduleInfo.Category.ToString());

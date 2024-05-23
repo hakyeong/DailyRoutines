@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using DailyRoutines.Infos;
 using DailyRoutines.Modules;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
 
 namespace DailyRoutines.Managers;
 
@@ -48,7 +49,7 @@ public class ModuleManager : IDailyManager
         }
     }
 
-    public void Load(DailyModuleBase module)
+    public void Load(DailyModuleBase module, bool affectConfig = false)
     {
         if (Modules.ContainsValue(module))
         {
@@ -59,6 +60,7 @@ public class ModuleManager : IDailyManager
                 {
                     module.Init();
                     module.Initialized = true;
+                    if (affectConfig) Service.Config.ModuleEnabled[moduleName] = true;
                     Service.Log.Debug($"Loaded {moduleName}");
                 }
                 else
@@ -66,29 +68,35 @@ public class ModuleManager : IDailyManager
             }
             catch (Exception ex)
             {
+                if (affectConfig) Service.Config.ModuleEnabled[moduleName] = false;
                 Service.Log.Error($"Failed to load {moduleName} due to error: {ex.Message}");
                 Service.Log.Error(ex.StackTrace ?? "Unknown");
             }
+
+            if (affectConfig) Service.Config.Save();
         }
         else
             Service.Log.Error($"Fail to fetch {module}");
     }
 
-    public void Unload(DailyModuleBase module)
+    public void Unload(DailyModuleBase module, bool affectConfig = false)
     {
-        if (Modules.ContainsValue(module))
+        if (!Modules.ContainsValue(module)) return;
+
+        try
         {
-            try
-            {
-                module.Uninit();
-                module.Initialized = false;
-                Service.Log.Debug($"Unloaded {module.GetType().Name}");
-            }
-            catch (Exception ex)
-            {
-                Service.Log.Error(ex, $"Fail to unload {module.GetType().Name}");
-            }
+            module.Uninit();
+            module.Initialized = false;
+            if (affectConfig) Service.Config.ModuleEnabled[module.GetType().Name] = false;
+            Service.Log.Debug($"Unloaded {module.GetType().Name}");
         }
+        catch (Exception ex)
+        {
+            if (affectConfig) Service.Config.ModuleEnabled[module.GetType().Name] = false;
+            Service.Log.Error(ex, $"Fail to unload {module.GetType().Name}");
+        }
+
+        if (affectConfig) Service.Config.Save();
     }
 
     public bool IsModuleEnabled(Type moduleType)
