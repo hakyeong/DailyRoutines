@@ -1,6 +1,6 @@
-using System;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Memory;
 
@@ -14,7 +14,7 @@ public class FieldMarkerHelper
     public static nint FieldMarkerData;
     public static nint FieldMarkerController;
 
-    public enum FieldMarkerPoint
+    public enum FieldMarkerPoint : uint
     {
         A, B, C, D, One, Two, Three, Four
     }
@@ -28,7 +28,35 @@ public class FieldMarkerHelper
             (Service.SigScanner.ScanText("E8 ?? ?? ?? ?? EB D8 83 FB 09"));
     }
 
-    public static void Place(FieldMarkerPoint index, Vector3 pos, bool isActive)
+    /// <summary>
+    /// 放置指定的场地标点至指定地点 (在线)
+    /// </summary>
+    /// <param name="point"></param>
+    /// <param name="pos"></param>
+    public static void PlaceOnline(FieldMarkerPoint point, Vector3 pos)
+    {
+        Service.ExecuteCommandManager.ExecuteCommand
+            (ExecuteCommandFlag.PlaceFieldMarker, (int)point, (int)pos.X * 1000, (int)pos.Y * 1000, (int)pos.Z * 1000);
+    }
+
+    /// <summary>
+    /// 放置指定的场地标点至指定地点 (在线)
+    /// </summary>
+    /// <param name="point"></param>
+    /// <param name="pos"></param>
+    public static void PlaceOnline(uint point, Vector3 pos)
+    {
+        Service.ExecuteCommandManager.ExecuteCommand
+            (ExecuteCommandFlag.PlaceFieldMarker, (int)point, (int)pos.X * 1000, (int)pos.Y * 1000, (int)pos.Z * 1000);
+    }
+
+    /// <summary>
+    /// 放置指定的场地标点至指定地点 (本地)
+    /// </summary>
+    /// <param name="index"></param>
+    /// <param name="pos"></param>
+    /// <param name="isActive"></param>
+    public static void PlaceLocal(FieldMarkerPoint index, Vector3 pos, bool isActive)
     {
         var markAddress = index switch
         {
@@ -54,7 +82,13 @@ public class FieldMarkerHelper
         MemoryHelper.Write(markAddress + 0x1C, (byte)(isActive ? 1 : 0));
     }
 
-    public static void Place(uint index, Vector3 pos, bool isActive)
+    /// <summary>
+    /// 放置指定的场地标点至指定地点 (本地)
+    /// </summary>
+    /// <param name="index"></param>
+    /// <param name="pos"></param>
+    /// <param name="isActive"></param>
+    public static void PlaceLocal(uint index, Vector3 pos, bool isActive)
     {
         if (index > 7) return;
 
@@ -81,25 +115,38 @@ public class FieldMarkerHelper
         MemoryHelper.Write(markAddress + 0x1C, (byte)(isActive ? 1 : 0));
     }
 
-    public static void Remove(FieldMarkerPoint index)
+    /// <summary>
+    /// 移除指定的场地标点 (在线)
+    /// </summary>
+    /// <param name="point"></param>
+    public static void RemoveOnline(FieldMarkerPoint point)
     {
-        var markerIndex = index switch
-        {
-            FieldMarkerPoint.A => 0U,
-            FieldMarkerPoint.B => 1U,
-            FieldMarkerPoint.C => 2U,
-            FieldMarkerPoint.D => 3U,
-            FieldMarkerPoint.One => 4U,
-            FieldMarkerPoint.Two => 5U,
-            FieldMarkerPoint.Three => 6U,
-            FieldMarkerPoint.Four => 7U,
-            _ => 0U
-        };
-
-        RemoveFieldMarker(FieldMarkerController, markerIndex);
+        Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.RemoveFieldMarker, (int)point);
     }
 
-    public static void Remove(uint index)
+    /// <summary>
+    /// 移除指定的场地标点 (在线)
+    /// </summary>
+    /// <param name="point"></param>
+    public static void RemoveOnline(uint point)
+    {
+        Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.RemoveFieldMarker, (int)point);
+    }
+
+    /// <summary>
+    /// 移除指定的场地标点 (本地)
+    /// </summary>
+    /// <param name="index"></param>
+    public static void RemoveLocal(FieldMarkerPoint index)
+    {
+        RemoveFieldMarker(FieldMarkerController, (uint)index);
+    }
+
+    /// <summary>
+    /// 移除指定的场地标点 (本地)
+    /// </summary>
+    /// <param name="index"></param>
+    public static void RemoveLocal(uint index)
     {
         if (index > 7) return;
         RemoveFieldMarker(FieldMarkerController, index);
