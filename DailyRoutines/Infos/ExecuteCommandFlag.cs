@@ -46,6 +46,11 @@ public enum ExecuteCommandFlag
     CancelCast = 105,
 
     /// <summary>
+    /// 收起时尚配饰
+    /// </summary>
+    WithdrawParasol,
+
+    /// <summary>
     /// 传送至指定的以太之光
     /// <para><c>param1</c>: 以太之光 ID</para>
     /// <para><c>param2</c>: 是否使用传送券 (0 - 否, 1 - 是)</para>
