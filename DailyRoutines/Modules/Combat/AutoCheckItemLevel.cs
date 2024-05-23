@@ -55,14 +55,21 @@ public unsafe class AutoCheckItemLevel : DailyModuleBase
 
                 TaskManager.Enqueue(() =>
                 {
-                    if (!EzThrottler.Throttle("AutoCheckItemLevel-WaitExamineUI")) return false;
+                    if (!EzThrottler.Throttle("AutoCheckItemLevel-WaitExamineUI", 1000)) return false;
                     AgentInspect.Instance()->ExamineCharacter(member.ObjectId);
                     return Service.Gui.GetAddonByName("CharacterInspect") != nint.Zero;
                 });
 
                 TaskManager.Enqueue(() =>
                 {
-                    if (!EzThrottler.Throttle("AutoCheckItemLevel-CheckCharacterIL")) return false;
+                    if (!EzThrottler.Throttle("AutoCheckItemLevel-CheckCharacterIL", 1000)) return false;
+                    if (InterruptByConflictKey()) return true;
+                    if (!Flags.BoundByDuty())
+                    {
+                        TaskManager.Abort();
+                        return true;
+                    }
+
                     if (!TryGetAddonByName<AtkUnitBase>("CharacterInspect", out var addon) || 
                         !IsAddonAndNodesReady(addon) || AgentInspect.Instance()->CurrentObjectID != member.ObjectId)
                     {
