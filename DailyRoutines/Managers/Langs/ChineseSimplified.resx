@@ -1770,4 +1770,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="ImportFromClipboard" xml:space="preserve">
     <value>从剪贴板导入</value>
   </data>
+  <data name="GlamourPlateApplyCommandDescription" xml:space="preserve">
+    <value>添加 /pdr gpapply &lt;编号&gt; (从 1 开始) 指令, 允许使用指令快捷切换游戏原生保存的各投影模板</value>
+  </data>
+  <data name="GlamourPlateApplyCommandTitle" xml:space="preserve">
+    <value>投影模板切换指令</value>
+  </data>
 </root>
