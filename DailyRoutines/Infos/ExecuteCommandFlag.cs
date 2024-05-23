@@ -30,6 +30,17 @@ public enum ExecuteCommandFlag
     Dismount = 101,
 
     /// <summary>
+    /// 召唤宠物
+    /// <para><c>param1</c>: 宠物 ID</para>
+    /// </summary>
+    SummonPet = 102,
+
+    /// <summary>
+    /// 收回宠物
+    /// </summary>
+    WithdrawPet = 103,
+
+    /// <summary>
     /// 中断咏唱
     /// </summary>
     CancelCast = 105,
@@ -115,16 +126,16 @@ public enum ExecuteCommandFlag
     RequestSaddle = 444,
 
     /// <summary>
+    /// 放弃任务投票
+    /// </summary>
+    VoteAbandon = 808,
+
+    /// <summary>
     /// 为 临危受命 等级同步
     /// <para><c>param1</c>: FATE ID</para>
     /// <para><c>param2</c>: 是否等级同步 (0 - 否, 1 - 是)</para>
     /// </summary>
     FateLevelSync = 814,
-
-    /// <summary>
-    /// 放弃任务投票
-    /// </summary>
-    VoteAbandon = 808,
 
     /// <summary>
     /// 离开副本
@@ -133,9 +144,22 @@ public enum ExecuteCommandFlag
     LeaveDuty = 819,
 
     /// <summary>
+    /// 昔日重现模式
+    /// <para><c>param1</c>: QuestRedo.csv 中对应的昔日重现章节序号 (0 - 退出昔日重现)</para>
+    /// </summary>
+    QuestRedo = 824,
+
+    /// <summary>
     /// 领取战利水晶
     /// </summary>
     CollectTrophyCrystal = 1200,
+
+    /// <summary>
+    /// 陆行鸟装甲
+    /// <para><c>param1</c>: 部位 (0 - 头部, 1 - 身体, 2 - 腿部)</para>
+    /// <para><c>param2</c>: 在 BuddyEquip.csv 中对应的装备索引 (0 - 卸下装备)</para>
+    /// </summary>
+    BuddyEquip = 1701,
 
     /// <summary>
     /// 请求金碟游乐场面板 整体 信息
@@ -185,6 +209,21 @@ public enum ExecuteCommandFlag
     /// 请求金碟游乐场面板 多玛方城战 信息
     /// </summary>
     RequestGSMahjong = 2550,
+
+    /// <summary>
+    /// 请求青魔法书数据
+    /// </summary>
+    RequstAOZNotebook = 2601,
+
+    /// <summary>
+    /// 请求亲信战友数据
+    /// </summary>
+    RequestTrustedFriend = 2651,
+
+    /// <summary>
+    /// 请求剧情辅助器数据
+    /// </summary>
+    RequestDutySupport = 2653,
 
     /// <summary>
     /// 收取无人岛屯货仓库探索结果
