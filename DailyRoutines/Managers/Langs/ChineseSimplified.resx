@@ -1776,4 +1776,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="GlamourPlateApplyCommandTitle" xml:space="preserve">
     <value>投影模板切换指令</value>
   </data>
+  <data name="AutoMarkAetherCurrents-UseLocalMark" xml:space="preserve">
+    <value>使用本地标点</value>
+  </data>
+  <data name="AutoMarkAetherCurrents-UseLocalMarkHelp" xml:space="preserve">
+    <value>如有展示给队友的需要, 取消勾选此处后点击下方 刷新标点显示 按钮, 模块会转为使用在线标点 (请自行评估风险)</value>
+  </data>
 </root>

@@ -8,269 +8,186 @@ using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
 // 硬编码领域大神
 [ModuleDescription("AutoMarkAetherCurrentsTitle", "AutoMarkAetherCurrentsDescription", ModuleCategories.系统)]
-public class AutoMarkAetherCurrents : DailyModuleBase
+public unsafe class AutoMarkAetherCurrents : DailyModuleBase
 {
-    private class AetherCurrent(uint index, Vector3 pos)
+    private record AetherCurrentRecord(uint Zone, uint Index, Vector3 Position);
+
+    private static AtkUnitBase* AetherCurrentAddon => (AtkUnitBase*)Service.Gui.GetAddonByName("AetherCurrent");
+
+    // 当前: 6.0 版本
+    private static readonly HashSet<uint> NewVersionZones = [956, 957, 958, 959, 960, 961];
+    private static readonly HashSet<uint> ValidZones = [397, 398, 399, 400, 401, 612, 613, 614, 620, 621, 622, 
+        813, 814, 815, 816, 817, 818, 956, 957, 958, 959, 960, 961];
+
+    private static readonly Dictionary<uint, HashSet<AetherCurrentRecord>> AetherCurrentsPresetData = new()
     {
-        public uint Index { get; } = index;
-        public Vector3 Position { get; } = pos;
-    }
-
-    #region PresetData
-
-    private readonly HashSet<uint> ValidTerritories =
-    [
-        397, 398, 399, 400, 401, 612, 613, 614, 620, 621, 622, 813, 814, 815, 816, 817, 818, 956, 957, 958, 959, 960,
-        961
-    ];
-
-    // 坐标可以全部用 Lumina 获取，但是 SE 调了部分风脉在 UI 上的对应顺序，所以就干脆所有都硬编码了
-    private readonly List<(uint TerritoryID, AetherCurrent AetherCurrent)> PresetAetherCurrentsData =
-    [
-        // 库尔札斯西部高地
-        (397, new AetherCurrent(0, new Vector3(402.03f, 191.54f, 561.42f))),
-        (397, new AetherCurrent(1, new Vector3(424.96f, 164.31f, -536.91f))),
-        (397, new AetherCurrent(2, new Vector3(-332.89f, 126.84f, -29.95f))),
-        (397, new AetherCurrent(3, new Vector3(-660.14f, 135.55f, -376.63f))),
-        // 龙堡参天高地
-        (398, new AetherCurrent(0, new Vector3(765.01f, -15.85f, 289.08f))),
-        (398, new AetherCurrent(1, new Vector3(433.55f, -47.77f, -286.24f))),
-        (398, new AetherCurrent(2, new Vector3(-480.28f, -5.97f, -425.28f))),
-        (398, new AetherCurrent(3, new Vector3(406.76f, -89.79f, 686.61f))),
-        // 龙堡内陆低地
-        (399, new AetherCurrent(0, new Vector3(729.23f, 134.97f, 150.91f))),
-        (399, new AetherCurrent(1, new Vector3(98.91f, 73.09f, -174.36f))),
-        (399, new AetherCurrent(2, new Vector3(-487.47f, 144.67f, -285.33f))),
-        (399, new AetherCurrent(3, new Vector3(-452.38f, 138.12f, 678.22f))),
-        // 翻云雾海
-        (400, new AetherCurrent(0, new Vector3(421.16f, -43.06f, 661.77f))),
-        (400, new AetherCurrent(1, new Vector3(-93.79f, -6.75f, 223.84f))),
-        (400, new AetherCurrent(2, new Vector3(-775.27f, 123.76f, 243.70f))),
-        (400, new AetherCurrent(3, new Vector3(340.02f, -25.37f, -130.54f))),
-        // 阿巴拉提亚云海
-        (401, new AetherCurrent(0, new Vector3(-747.10f, -57.10f, 163.84f))),
-        (401, new AetherCurrent(1, new Vector3(-759.43f, -9.20f, -110.86f))),
-        (401, new AetherCurrent(2, new Vector3(-180.32f, -14.92f, -543.11f))),
-        (401, new AetherCurrent(3, new Vector3(-564.81f, -36.68f, -349.08f))),
-        // 基拉巴尼亚边区
-        (612, new AetherCurrent(0, new Vector3(-487.27f, 76.73f, -249.56f))),
-        (612, new AetherCurrent(1, new Vector3(155.84f, 53.35f, -499.43f))),
-        (612, new AetherCurrent(2, new Vector3(322.59f, 88.98f, 10.51f))),
-        (612, new AetherCurrent(3, new Vector3(743.03f, 181.01f, -214.05f))),
-        // 基拉巴尼亚山区
-        (620, new AetherCurrent(0, new Vector3(202.87f, 133.93f, -753.12f))),
-        (620, new AetherCurrent(1, new Vector3(-271.23f, 157.94f, -280.23f))),
-        (620, new AetherCurrent(2, new Vector3(-485.21f, 304.47f, 247.41f))),
-        (620, new AetherCurrent(3, new Vector3(146.63f, 303.76f, 460.82f))),
-        // 基拉巴尼亚湖区
-        (621, new AetherCurrent(0, new Vector3(-380.19f, 10.06f, 16.92f))),
-        (621, new AetherCurrent(1, new Vector3(109.61f, 42.01f, 788.63f))),
-        (621, new AetherCurrent(2, new Vector3(261.53f, 78.40f, 69.96f))),
-        (621, new AetherCurrent(3, new Vector3(683.41f, 70.00f, 521.17f))),
-        // 红玉海
-        (613, new AetherCurrent(0, new Vector3(423.56f, 15.83f, 801.57f))),
-        (613, new AetherCurrent(1, new Vector3(21.29f, 24.01f, -623.62f))),
-        (613, new AetherCurrent(2, new Vector3(694.77f, 1.91f, -53.46f))),
-        (613, new AetherCurrent(3, new Vector3(-805.78f, 36.58f, 235.21f))),
-        // 延夏
-        (614, new AetherCurrent(0, new Vector3(497.31f, 16.36f, 402.49f))),
-        (614, new AetherCurrent(1, new Vector3(163.58f, 144.63f, -11.91f))),
-        (614, new AetherCurrent(2, new Vector3(457.51f, 32.38f, 822.41f))),
-        (614, new AetherCurrent(3, new Vector3(-97.42f, 13.28f, 563.72f))),
-        // 太阳神草原
-        (622, new AetherCurrent(0, new Vector3(570.28f, -19.51f, 438.17f))),
-        (622, new AetherCurrent(1, new Vector3(232.01f, 93.39f, -515.79f))),
-        (622, new AetherCurrent(2, new Vector3(105.61f, 116.04f, -49.70f))),
-        (622, new AetherCurrent(3, new Vector3(-693.83f, 7.26f, 658.90f))),
-        // 雷克兰德
-        (813, new AetherCurrent(0, new Vector3(554.28f, 17.95f, 352.10f))),
-        (813, new AetherCurrent(1, new Vector3(613.24f, 24.02f, -231.13f))),
-        (813, new AetherCurrent(2, new Vector3(-149.80f, 15.28f, -102.50f))),
-        (813, new AetherCurrent(3, new Vector3(-619.64f, 51.50f, -199.10f))),
-        // 珂露西亚岛
-        (814, new AetherCurrent(0, new Vector3(650.57f, 0.35f, 556.39f))),
-        (814, new AetherCurrent(1, new Vector3(-651.17f, 0f, 588.41f))),
-        (814, new AetherCurrent(2, new Vector3(623.75f, 285.94f, -555.25f))),
-        (814, new AetherCurrent(3, new Vector3(-62.90f, 345.12f, -16.53f))),
-        // 安穆·艾兰
-        (815, new AetherCurrent(0, new Vector3(446.08f, -60.55f, -523.69f))),
-        (815, new AetherCurrent(1, new Vector3(344.68f, -66.53f, 538.94f))),
-        (815, new AetherCurrent(2, new Vector3(-343.80f, 46.98f, -235.43f))),
-        (815, new AetherCurrent(3, new Vector3(158.80f, -61.09f, 674.89f))),
-        // 伊尔美格
-        (816, new AetherCurrent(0, new Vector3(-231.41f, 4.70f, 160.84f))),
-        (816, new AetherCurrent(1, new Vector3(12.85f, 110.75f, -851.25f))),
-        (816, new AetherCurrent(2, new Vector3(432.48f, 90.44f, -770.40f))),
-        (816, new AetherCurrent(3, new Vector3(-9.00f, 89.31f, -247.64f))),
-        // 拉凯提卡大森林
-        (817, new AetherCurrent(0, new Vector3(-405.95f, 7.17f, 506.54f))),
-        (817, new AetherCurrent(1, new Vector3(-141.57f, -0.88f, 49.76f))),
-        (817, new AetherCurrent(2, new Vector3(338.64f, 24.15f, 203.18f))),
-        (817, new AetherCurrent(3, new Vector3(681.14f, -39.20f, -262.75f))),
-        // 黑风海
-        (818, new AetherCurrent(0, new Vector3(358.21f, 396.55f, -715.90f))),
-        (818, new AetherCurrent(1, new Vector3(50.21f, 380.10f, -512.07f))),
-        (818, new AetherCurrent(2, new Vector3(339.12f, 298.72f, -280.02f))),
-        (818, new AetherCurrent(3, new Vector3(-774.23f, 63.19f, -97.71f))),
         // 迷津
-        (956, new AetherCurrent(0, new Vector3(346.53f, 209.35f, -767.74f))),
-        (956, new AetherCurrent(1, new Vector3(748.56f, 106.71f, 66.76f))),
-        (956, new AetherCurrent(2, new Vector3(-547.73f, -18.02f, 661.87f))),
-        (956, new AetherCurrent(3, new Vector3(-128.07f, -20.52f, 676.72f))),
-        (956, new AetherCurrent(4, new Vector3(-316.28f, 79.76f, -395.31f))),
-        (956, new AetherCurrent(5, new Vector3(32.33f, 72.83f, -286.27f))),
-        (956, new AetherCurrent(6, new Vector3(497.11f, 73.42f, -267.23f))),
-        (956, new AetherCurrent(7, new Vector3(-176.38f, -10.10f, -242.24f))),
-        (956, new AetherCurrent(8, new Vector3(-505.14f, -21.82f, -122.60f))),
-        (956, new AetherCurrent(9, new Vector3(46.28f, -29.80f, 178.88f))),
+        { 956, [new(956, 0, new(346.53f, 209.35f, -767.74f)),
+                new(956, 1, new(748.56f, 106.71f, 66.76f)),
+                new(956, 2, new(-547.73f, -18.02f, 661.87f)),
+                new(956, 3, new(-128.07f, -20.52f, 676.72f)),
+                new(956, 4, new(-316.28f, 79.76f, -395.31f)),
+                new(956, 5, new(32.33f, 72.83f, -286.27f)),
+                new(956, 6, new(497.11f, 73.42f, -267.23f)),
+                new(956, 7, new(-176.38f, -10.10f, -242.24f)),
+                new(956, 8, new(-505.14f, -21.82f, -122.60f)),
+                new(956, 9, new(46.28f, -29.80f, 178.88f))] },
         // 萨维奈岛
-        (957, new AetherCurrent(0, new Vector3(-176.10f, 21.53f, 537.84f))),
-        (957, new AetherCurrent(1, new Vector3(-49.27f, 94.07f, -710.76f))),
-        (957, new AetherCurrent(2, new Vector3(118.47f, 4.93f, -343.87f))),
-        (957, new AetherCurrent(3, new Vector3(550.02f, 25.48f, -159.08f))),
-        (957, new AetherCurrent(4, new Vector3(303.92f, 0.28f, 473.66f))),
-        (957, new AetherCurrent(5, new Vector3(-479.44f, 72.90f, -561.81f))),
-        (957, new AetherCurrent(6, new Vector3(-114.46f, 87.09f, -288.29f))),
-        (957, new AetherCurrent(7, new Vector3(93.12f, 36.68f, -447.86f))),
-        (957, new AetherCurrent(8, new Vector3(294.40f, 4.10f, 425.12f))),
-        (957, new AetherCurrent(9, new Vector3(53.19f, 11.39f, 187.41f))),
+        { 957, [new(957, 0, new(-176.10f, 21.53f, 537.84f)),
+                new(957, 1, new(-49.27f, 94.07f, -710.76f)),
+                new(957, 2, new(118.47f, 4.93f, -343.87f)),
+                new(957, 3, new(550.02f, 25.48f, -159.08f)),
+                new(957, 4, new(303.92f, 0.28f, 473.66f)),
+                new(957, 5, new(-479.44f, 72.90f, -561.81f)),
+                new(957, 6, new(-114.46f, 87.09f, -288.29f)),
+                new(957, 7, new(93.12f, 36.68f, -447.86f)),
+                new(957, 8, new(294.40f, 4.10f, 425.12f)),
+                new(957, 9, new(53.19f, 11.39f, 187.41f))] },
         // 加雷马
-        (958, new AetherCurrent(0, new Vector3(-184.22f, 31.94f, 423.61f))),
-        (958, new AetherCurrent(1, new Vector3(194.82f, -12.84f, 644.31f))),
-        (958, new AetherCurrent(2, new Vector3(83.09f, 1.53f, 102.02f))),
-        (958, new AetherCurrent(3, new Vector3(405.30f, -2.24f, 520.32f))),
-        (958, new AetherCurrent(4, new Vector3(-516.09f, 42.47f, 67.84f))),
-        (958, new AetherCurrent(5, new Vector3(382.18f, 25.90f, -482.20f))),
-        (958, new AetherCurrent(6, new Vector3(-602.03f, 34.32f, -325.85f))),
-        (958, new AetherCurrent(7, new Vector3(79.91f, 37.89f, -518.18f))),
-        (958, new AetherCurrent(8, new Vector3(134.93f, 14.40f, -172.25f))),
-        (958, new AetherCurrent(9, new Vector3(-144.92f, 17.58f, -420.52f))),
+        { 958, [new(958, 0, new(-184.22f, 31.94f, 423.61f)),
+                new(958, 1, new(194.82f, -12.84f, 644.31f)),
+                new(958, 2, new(83.09f, 1.53f, 102.02f)),
+                new(958, 3, new(405.30f, -2.24f, 520.32f)),
+                new(958, 4, new(-516.09f, 42.47f, 67.84f)),
+                new(958, 5, new(382.18f, 25.90f, -482.20f)),
+                new(958, 6, new(-602.03f, 34.32f, -325.85f)),
+                new(958, 7, new(79.91f, 37.89f, -518.18f)),
+                new(958, 8, new(134.93f, 14.40f, -172.25f)),
+                new(958, 9, new(-144.92f, 17.58f, -420.52f))] },
         // 叹息海
-        (959, new AetherCurrent(0, new Vector3(42.59f, 124.01f, -167.03f))),
-        (959, new AetherCurrent(1, new Vector3(-482.74f, -154.95f, -595.71f))),
-        (959, new AetherCurrent(2, new Vector3(316.40f, -154.98f, -595.52f))),
-        (959, new AetherCurrent(3, new Vector3(29.10f, -47.74f, -550.41f))),
-        (959, new AetherCurrent(4, new Vector3(-128.00f, 66.35f, -68.24f))),
-        (959, new AetherCurrent(5, new Vector3(591.38f, 149.36f, 114.94f))),
-        (959, new AetherCurrent(6, new Vector3(388.36f, 99.92f, 306.07f))),
-        (959, new AetherCurrent(7, new Vector3(652.98f, -160.69f, -405.08f))),
-        (959, new AetherCurrent(8, new Vector3(-733.62f, -139.66f, -733.28f))),
-        (959, new AetherCurrent(9, new Vector3(21.71f, -133.50f, -385.73f))),
+        { 959, [new(959, 0, new(42.59f, 124.01f, -167.03f)),
+                new(959, 1, new(-482.74f, -154.95f, -595.71f)),
+                new(959, 2, new(316.40f, -154.98f, -595.52f)),
+                new(959, 3, new(29.10f, -47.74f, -550.41f)),
+                new(959, 4, new(-128.00f, 66.35f, -68.24f)),
+                new(959, 5, new(591.38f, 149.36f, 114.94f)),
+                new(959, 6, new(388.36f, 99.92f, 306.07f)),
+                new(959, 7, new(652.98f, -160.69f, -405.08f)),
+                new(959, 8, new(-733.62f, -139.66f, -733.28f)),
+                new(959, 9, new(21.71f, -133.50f, -385.73f))] },
         // 厄尔庇斯
-        (961, new AetherCurrent(0, new Vector3(628.24f, 8.32f, 107.90f))),
-        (961, new AetherCurrent(1, new Vector3(-754.75f, -36.01f, 411.13f))),
-        (961, new AetherCurrent(2, new Vector3(151.67f, 7.67f, 2.55f))),
-        (961, new AetherCurrent(3, new Vector3(-144.54f, -26.23f, 551.52f))),
-        (961, new AetherCurrent(4, new Vector3(-481.41f, -28.58f, 490.56f))),
-        (961, new AetherCurrent(5, new Vector3(-402.92f, 327.76f, -691.32f))),
-        (961, new AetherCurrent(6, new Vector3(-555.62f, 158.12f, 172.43f))),
-        (961, new AetherCurrent(7, new Vector3(-392.05f, 173.72f, -293.60f))),
-        (961, new AetherCurrent(8, new Vector3(-761.71f, 160.01f, -108.99f))),
-        (961, new AetherCurrent(9, new Vector3(-255.51f, 143.08f, -36.97f))),
+        { 961, [new(961, 0, new(628.24f, 8.32f, 107.90f)),
+                new(961, 1, new(-754.75f, -36.01f, 411.13f)),
+                new(961, 2, new(151.67f, 7.67f, 2.55f)),
+                new(961, 3, new(-144.54f, -26.23f, 551.52f)),
+                new(961, 4, new(-481.41f, -28.58f, 490.56f)),
+                new(961, 5, new(-402.92f, 327.76f, -691.32f)),
+                new(961, 6, new(-555.62f, 158.12f, 172.43f)),
+                new(961, 7, new(-392.05f, 173.72f, -293.60f)),
+                new(961, 8, new(-761.71f, 160.01f, -108.99f)),
+                new(961, 9, new(-255.51f, 143.08f, -36.97f))] },
         // 天外天垓
-        (960, new AetherCurrent(0, new Vector3(-333.54f, 270.85f, -361.49f))),
-        (960, new AetherCurrent(1, new Vector3(13.12f, 275.57f, -756.40f))),
-        (960, new AetherCurrent(2, new Vector3(661.78f, 439.98f, 411.76f))),
-        (960, new AetherCurrent(3, new Vector3(539.27f, 438.00f, 239.40f))),
-        (960, new AetherCurrent(4, new Vector3(424.57f, 283.38f, -679.76f))),
-        (960, new AetherCurrent(5, new Vector3(-238.79f, 320.39f, -295.14f))),
-        (960, new AetherCurrent(6, new Vector3(-385.22f, 262.52f, -629.85f))),
-        (960, new AetherCurrent(7, new Vector3(751.88f, 439.98f, 357.90f))),
-        (960, new AetherCurrent(8, new Vector3(637.20f, 439.24f, 289.67f))),
-        (960, new AetherCurrent(9, new Vector3(567.50f, 440.93f, 402.14f)))
-    ];
-
-    #endregion
-
-    private static Dictionary<uint, HashSet<AetherCurrent>> SelectedAetherCurrents = new()
-    {
-        { 397, [] },
-        { 398, [] },
-        { 399, [] },
-        { 400, [] },
-        { 401, [] },
-        { 612, [] },
-        { 613, [] },
-        { 614, [] },
-        { 620, [] },
-        { 621, [] },
-        { 622, [] },
-        { 813, [] },
-        { 814, [] },
-        { 815, [] },
-        { 816, [] },
-        { 817, [] },
-        { 818, [] },
-        { 956, [] },
-        { 957, [] },
-        { 958, [] },
-        { 959, [] },
-        { 960, [] },
-        { 961, [] }
+        { 960, [new(960, 0, new(-333.54f, 270.85f, -361.49f)),
+                new(960, 1, new(13.12f, 275.57f, -756.40f)),
+                new(960, 2, new(661.78f, 439.98f, 411.76f)),
+                new(960, 3, new(539.27f, 438.00f, 239.40f)),
+                new(960, 4, new(424.57f, 283.38f, -679.76f)),
+                new(960, 5, new(-238.79f, 320.39f, -295.14f)),
+                new(960, 6, new(-385.22f, 262.52f, -629.85f)),
+                new(960, 7, new(751.88f, 439.98f, 357.90f)),
+                new(960, 8, new(637.20f, 439.24f, 289.67f)),
+                new(960, 9, new(567.50f, 440.93f, 402.14f))] },
     };
+    private static readonly Dictionary<uint, HashSet<AetherCurrentRecord>> AetherCurrentsData = [];
+    private static Dictionary<uint, HashSet<AetherCurrentRecord>> SelectedAetherCurrentsData = [];
 
-    private static uint selectedTab;
+    private static bool UseLocalMark = true;
 
     public override void Init()
     {
-        Service.ClientState.TerritoryChanged += OnZoneChanged;
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "AetherCurrent", OnAddon);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "AetherCurrent", OnAddon);
+        var aetherCurrentsObjectID = LuminaCache.Get<EObjName>()
+                                        .Where(x => x.Singular.RawString.Equals("风脉泉"))
+                                        .Select(x => x.RowId).ToArray();
+
+        var levelSheet = LuminaCache.Get<Level>();
+        var indexTracker = new Dictionary<uint, HashSet<uint>>(); // Zone - Index
+        foreach (var current in aetherCurrentsObjectID)
+        {
+            var foundData = levelSheet.FirstOrDefault(x => x.Object == current);
+            if (foundData == null) continue;
+
+            var zone = foundData.Territory.Row;
+            if (NewVersionZones.Contains(zone)) continue;
+
+            var pos = new Vector3(foundData.X, foundData.Y, foundData.Z);
+            var index = 0U;
+
+            indexTracker.TryAdd(zone, []);
+
+            while (indexTracker[zone].Contains(index)) index++;
+            indexTracker[zone].Add(index);
+
+            AetherCurrentsData.TryAdd(zone, []);
+            AetherCurrentsData[zone].Add(new(zone, index, pos));
+        }
+
+        foreach (var validZone in ValidZones) SelectedAetherCurrentsData.TryAdd(validZone, []);
 
         Overlay ??= new Overlay(this);
         Overlay.Flags |= ImGuiWindowFlags.NoMove;
+
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "AetherCurrent", OnAddon);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "AetherCurrent", OnAddon);
+        Service.ClientState.TerritoryChanged += OnZoneChanged;
     }
 
-    public override unsafe void OverlayUI()
+    public override void OverlayPreDraw()
     {
-        var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("AetherCurrent");
-        if (addon == null) return;
+        if (AetherCurrentAddon == null) Overlay.IsOpen = false;
+    }
 
-        var pos = new Vector2(addon->GetX() + 6, addon->GetY() - ImGui.GetWindowSize().Y + 6);
+    public override void OverlayUI()
+    {
+        var pos = new Vector2(AetherCurrentAddon->GetX() + 6, AetherCurrentAddon->GetY() - ImGui.GetWindowSize().Y + 6);
         ImGui.SetWindowPos(pos);
 
-        selectedTab = addon->AtkValues[3].Int switch
-        {
-            0 => 0,
-            1 => 1,
-            2 => 2,
-            3 => 3,
-            _ => selectedTab
-        };
+        ImGui.BeginGroup();
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Operation")}:");
 
-        if (ImGui.Button(Service.Lang.GetText("AutoMarkAetherCurrents-RefreshDisplay")))
-            MarkAetherCurrents(Service.ClientState.TerritoryType, false);
+        ImGui.SameLine();
+        ImGui.Checkbox(Service.Lang.GetText("AutoMarkAetherCurrents-UseLocalMark"), ref UseLocalMark);
+        ImGuiOm.TooltipHover(Service.Lang.GetText("AutoMarkAetherCurrents-UseLocalMarkHelp"));
+
+        ImGui.Spacing();
+
+        if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Sync,
+                                               Service.Lang.GetText("AutoMarkAetherCurrents-RefreshDisplay")))
+            MarkAetherCurrents(Service.ClientState.TerritoryType, false, UseLocalMark);
         ImGuiOm.TooltipHover(Service.Lang.GetText("AutoMarkAetherCurrents-FieldMarkerHelp"), 25f);
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoMarkAetherCurrents-DisplayLeftCurrents")))
-            MarkAetherCurrents(Service.ClientState.TerritoryType, true);
+        if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Random,
+                                               Service.Lang.GetText("AutoMarkAetherCurrents-DisplayLeftCurrents")))
+            MarkAetherCurrents(Service.ClientState.TerritoryType, true, UseLocalMark);
         ImGuiOm.TooltipHover(Service.Lang.GetText("AutoMarkAetherCurrents-DisplayLeftCurrentsHelp"));
 
-        ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoMarkAetherCurrents-RemoveAllWaymarks")))
-        {
-            for (var i = 0; i < 8; i++)
-                FieldMarkerHelper.Remove((FieldMarkerHelper.FieldMarkerPoint)i);
-        }
+        if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Eraser,
+                                               Service.Lang.GetText("AutoMarkAetherCurrents-RemoveAllWaymarks")))
+            for (var i = 0U; i < 8; i++) FieldMarkerHelper.RemoveLocal(i);
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("AutoMarkAetherCurrents-RemoveSelectedAC")))
-        {
-            foreach (var zoneCurrents in SelectedAetherCurrents)
-                zoneCurrents.Value.Clear();
-        }
+        if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.TrashAlt,
+                                               Service.Lang.GetText("AutoMarkAetherCurrents-RemoveSelectedAC")))
+            foreach (var zoneCurrents in SelectedAetherCurrentsData) zoneCurrents.Value.Clear();
+        ImGui.EndGroup();
 
-        ImGui.Separator();
+        ImGui.SameLine();
+        ImGui.Dummy(ImGuiHelpers.ScaledVector2(3f));
 
+        ImGui.SameLine();
+        ImGui.BeginGroup();
         ImGui.TextColored(ImGuiColors.DalamudOrange,
                           $"{Service.Lang.GetText("AutoMarkAetherCurrents-ManuallySelectCurrent")}:");
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoMarkAetherCurrents-ManuallySelectCurrentHelp"), 25f);
@@ -278,71 +195,109 @@ public class AutoMarkAetherCurrents : DailyModuleBase
         if (ImGui.BeginTabBar("AutoMarkAetherCurrent-ManuallySelect"))
         {
             var tabs = new[] { "3.0", "4.0", "5.0", "6.0" };
-            foreach (var tab in tabs)
-                if (selectedTab != Array.IndexOf(tabs, tab))
-                    ImGui.SetTabItemClosed(tab);
 
-            void DisplayRegion(string tab, IReadOnlyCollection<(string Name, int Id, bool isNew)> regions)
-            {
-                if (ImGui.BeginTabItem(tab))
-                {
-                    void DisplayHalf((string Name, int Id, bool isNew)[] half)
-                    {
-                        ImGui.BeginGroup();
-                        ImGui.BeginGroup();
-                        foreach (var region in half)
-                        {
-                            ImGui.AlignTextToFramePadding();
-                            ImGui.Text(region.Name);
-                        }
+            foreach (var tab in tabs) 
+                if (AetherCurrentAddon->AtkValues[3].Int != Array.IndexOf(tabs, tab)) ImGui.SetTabItemClosed(tab);
 
-                        ImGui.EndGroup();
-
-                        ImGui.SameLine();
-                        ImGui.BeginGroup();
-                        foreach (var region in half)
-                            if (region.isNew)
-                                DrawManuallySelectGroupNew(region.Name, (uint)region.Id, ref SelectedAetherCurrents);
-                            else
-                                DrawManuallySelectGroupOld(region.Name, (uint)region.Id, ref SelectedAetherCurrents);
-                        ImGui.EndGroup();
-                        ImGui.EndGroup();
-                    }
-
-                    DisplayHalf(regions.Take(3).ToArray());
-                    ImGui.SameLine();
-                    DisplayHalf(regions.Skip(3).ToArray());
-
-                    ImGui.EndTabItem();
-                }
-            }
-
-            DisplayRegion(
-                "3.0",
-                [
-                    ("库尔札斯西部高地", 397, false), ("龙堡内陆低地", 399, false), ("阿巴拉提亚云海", 401, false), ("龙堡参天高地", 398, false),
-                    ("翻云雾海", 400, false)
-                ]);
-            DisplayRegion(
-                "4.0",
-                [
-                    ("基拉巴尼亚边区", 612, false), ("基拉巴尼亚山区", 620, false), ("基拉巴尼亚湖区", 621, false), ("红玉海", 613, false),
-                    ("延夏", 614, false), ("太阳神草原", 622, false)
-                ]);
-            DisplayRegion(
-                "5.0",
-                [
-                    ("雷克兰德", 813, false), ("伊尔美格", 816, false), ("拉凯提卡大森林", 817, false), ("安穆·艾兰", 815, false),
-                    ("珂露西亚岛", 814, false), ("黑风海", 818, false)
-                ]);
-            DisplayRegion(
-                "6.0",
-                [
-                    ("迷津", 956, true), ("加雷马", 958, true), ("厄尔庇斯", 961, true), ("萨维奈岛", 957, true), ("叹息海", 959, true),
-                    ("天外天垓", 960, true)
-                ]);
+            DisplayRegion("3.0", false, [397, 399, 401, 398, 400]);
+            DisplayRegion("4.0", false, [612, 620, 621, 613, 614, 622]);
+            DisplayRegion("5.0", false, [813, 816, 817, 815, 814, 818]);
+            DisplayRegion("6.0", true,  [956, 958, 961, 957, 959, 960]);
 
             ImGui.EndTabBar();
+        }
+        ImGui.EndGroup();
+
+        return;
+
+        void DisplayRegion(string tab, bool isNew, IReadOnlyCollection<uint> regions)
+        {
+            if (ImGui.BeginTabItem(tab))
+            {
+                DisplayHalf(isNew, regions.Take(3).ToArray());
+
+                ImGui.SameLine();
+                DisplayHalf(isNew, regions.Skip(3).ToArray());
+
+                ImGui.EndTabItem();
+            }
+        }
+
+        void DisplayHalf(bool isNew, uint[] half)
+        {
+            ImGui.BeginGroup();
+            ImGui.BeginGroup();
+            foreach (var region in half)
+            {
+                var zoneName = LuminaCache.GetRow<TerritoryType>(region).PlaceName.Value.Name.RawString;
+                if (string.IsNullOrWhiteSpace(zoneName)) continue;
+
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text(zoneName);
+            }
+
+            ImGui.EndGroup();
+
+            ImGui.SameLine();
+
+            ImGui.BeginGroup();
+            foreach (var region in half)
+                if (isNew) ManuallySelectGroupNew(region, ref SelectedAetherCurrentsData);
+                else ManuallySelectGroupOld(region, ref SelectedAetherCurrentsData);
+            ImGui.EndGroup();
+
+            ImGui.EndGroup();
+        }
+
+        void ManuallySelectGroupNew(uint zoneID, ref Dictionary<uint, HashSet<AetherCurrentRecord>> selectedCurrents)
+        {
+            var zoneName = LuminaCache.GetRow<TerritoryType>(zoneID).PlaceName.Value.Name.RawString;
+            if (string.IsNullOrWhiteSpace(zoneName)) return;
+
+            if (!AetherCurrentsPresetData.TryGetValue(zoneID, out var data)) return;
+            ImGui.PushID($"{zoneName}_{zoneID}");
+
+            for (var i = 9; i >= 0; i--)
+            {
+                var aetherCurrent = data.FirstOrDefault(d => d.Index == i);
+                if (aetherCurrent == null) break;
+
+                var decoBool = selectedCurrents[zoneID].Contains(aetherCurrent);
+                if (ImGui.Checkbox($"###{zoneName}{i}", ref decoBool))
+                {
+                    if (!selectedCurrents[zoneID].Remove(aetherCurrent))
+                        selectedCurrents[zoneID].Add(aetherCurrent);
+                }
+
+                if (i != 0) ImGui.SameLine();
+            }
+
+            ImGui.PopID();
+        }
+
+        void ManuallySelectGroupOld(uint zoneID, ref Dictionary<uint, HashSet<AetherCurrentRecord>> selectedCurrents)
+        {
+            var zoneName = LuminaCache.GetRow<TerritoryType>(zoneID).PlaceName.Value.Name.RawString;
+            if (string.IsNullOrWhiteSpace(zoneName)) return;
+
+            if (!AetherCurrentsData.TryGetValue(zoneID, out var data)) return;
+            ImGui.PushID(zoneName);
+            for (var i = 3; i >= 0; i--)
+            {
+                var aetherCurrent = data.FirstOrDefault(d => d.Index == i);
+                if (aetherCurrent == null) break;
+
+                var decoBool = selectedCurrents[zoneID].Contains(aetherCurrent);
+                if (ImGui.Checkbox($"###{zoneName}{i}", ref decoBool))
+                {
+                    if (!selectedCurrents[zoneID].Remove(aetherCurrent))
+                        selectedCurrents[zoneID].Add(aetherCurrent);
+                }
+
+                if (i != 0) ImGui.SameLine();
+            }
+
+            ImGui.PopID();
         }
     }
 
@@ -356,93 +311,52 @@ public class AutoMarkAetherCurrents : DailyModuleBase
         };
     }
 
-    private void DrawManuallySelectGroupOld(
-        string territoryName, uint territoryID, ref Dictionary<uint, HashSet<AetherCurrent>> selectedCurrents)
+    private static void OnZoneChanged(ushort zoneID)
     {
-        ImGui.PushID(territoryName);
-        for (var i = 3; i >= 0; i--)
-        {
-            var aetherCurrent =
-                PresetAetherCurrentsData.FirstOrDefault(d => d.TerritoryID == territoryID && d.AetherCurrent.Index == i)
-                                        .AetherCurrent;
-            if (aetherCurrent == null) break;
-            var decoBool = selectedCurrents[territoryID].Contains(aetherCurrent);
-            if (ImGui.Checkbox($"###{territoryName}{i}", ref decoBool))
-            {
-                if (!selectedCurrents[territoryID].Remove(aetherCurrent))
-                    selectedCurrents[territoryID].Add(aetherCurrent);
-            }
-
-            if (i != 0) ImGui.SameLine();
-        }
-
-        ImGui.PopID();
+        MarkAetherCurrents(zoneID, false, UseLocalMark);
     }
 
-    private void DrawManuallySelectGroupNew(
-        string territoryName, uint territoryID, ref Dictionary<uint, HashSet<AetherCurrent>> selectedCurrents)
+    private static void MarkAetherCurrents(ushort zoneID, bool isFirstPage = false, bool isLocal = true)
     {
-        ImGui.PushID(territoryName);
-        for (var i = 9; i >= 0; i--)
-        {
-            var aetherCurrent =
-                PresetAetherCurrentsData.FirstOrDefault(d => d.TerritoryID == territoryID && d.AetherCurrent.Index == i)
-                                        .AetherCurrent;
-            if (aetherCurrent == null) break;
-            var decoBool = selectedCurrents[territoryID].Contains(aetherCurrent);
-            if (ImGui.Checkbox($"###{territoryName}{i}", ref decoBool))
-            {
-                if (!selectedCurrents[territoryID].Remove(aetherCurrent))
-                    selectedCurrents[territoryID].Add(aetherCurrent);
-            }
+        if (!ValidZones.Contains(zoneID)) return;
+        var isNew = NewVersionZones.Contains(zoneID);
 
-            if (i != 0) ImGui.SameLine();
-        }
+        _ = isNew
+                ? AetherCurrentsPresetData.TryGetValue(zoneID, out var dataSet)
+                : AetherCurrentsData.TryGetValue(zoneID, out dataSet);
 
-        ImGui.PopID();
-    }
+        if (dataSet == null || dataSet.Count == 0) return;
 
-    private void OnZoneChanged(ushort territoryID)
-    {
-        MarkAetherCurrents(territoryID, false);
-    }
+        var indexesLength = Enum.GetValues(typeof(FieldMarkerHelper.FieldMarkerPoint)).Length;
+        var currentZone = Service.ClientState.TerritoryType;
 
-    private void MarkAetherCurrents(ushort territoryID, bool isFirstPage)
-    {
-        if (!ValidTerritories.Contains(territoryID)) return;
-
-        var waymarkIndexesLength = Enum.GetValues(typeof(FieldMarkerHelper.FieldMarkerPoint)).Length;
-
-        List<(uint TerritoryID, AetherCurrent AetherCurrent)> result =
-            SelectedAetherCurrents.TryGetValue(Service.ClientState.TerritoryType, out var selectedResult) &&
-            selectedResult.Any()
-                ? selectedResult.Select(selected => ((uint)Service.ClientState.TerritoryType, selected)).ToList()
-                : PresetAetherCurrentsData
-                  .Where(i => i.TerritoryID == Service.ClientState.TerritoryType &&
-                              (isFirstPage
-                                   ? i.AetherCurrent.Index >= waymarkIndexesLength
-                                   : i.AetherCurrent.Index < waymarkIndexesLength))
-                  .Select(i => (i.TerritoryID, i.AetherCurrent))
-                  .OrderBy(i => i.AetherCurrent.Index)
-                  .ToList();
+        var result = SelectedAetherCurrentsData.TryGetValue(currentZone, out var selectedResult) &&
+                     selectedResult.Count != 0
+                         ? selectedResult
+                         : dataSet.Where(i => isFirstPage ? i.Index >= indexesLength : i.Index < indexesLength)
+                                  .ToHashSet();
 
 
-        var currentIndex = 0;
+        var currentIndex = 0U;
 
         foreach (var point in result)
         {
-            if (currentIndex >= waymarkIndexesLength) break;
+            if (currentIndex >= indexesLength) break;
 
             var currentMarker = (FieldMarkerHelper.FieldMarkerPoint)currentIndex;
 
-            FieldMarkerHelper.Place(currentMarker, point.AetherCurrent.Position, true);
+            if (isLocal) FieldMarkerHelper.PlaceLocal(currentMarker, point.Position, true);
+            else FieldMarkerHelper.PlaceOnline(currentMarker, point.Position);
             currentIndex++;
         }
 
         if (currentIndex != 8)
         {
-            for (; currentIndex < waymarkIndexesLength; currentIndex++)
-                FieldMarkerHelper.Place((FieldMarkerHelper.FieldMarkerPoint)currentIndex, Vector3.Zero, false);
+            for (; currentIndex < indexesLength; currentIndex++)
+            {
+                if (isLocal) FieldMarkerHelper.PlaceLocal(currentIndex, Vector3.Zero, false);
+                else FieldMarkerHelper.RemoveOnline(currentIndex);
+            }
         }
     }
 
