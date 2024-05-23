@@ -93,10 +93,26 @@ public enum ExecuteCommandFlag
     ResetStrkingDummy = 319,
 
     /// <summary>
+    /// 请求收藏柜的数据
+    /// </summary>
+    RequestCabinet = 424,
+
+    /// <summary>
     /// 存入物品至收藏柜
     /// <para><c>param1</c>: 物品在 Cabinet.csv 中的对应索引</para>
     /// </summary>
-    StoreToCabinet,
+    StoreToCabinet = 425,
+
+    /// <summary>
+    /// 从收藏柜中取回物品
+    /// <para><c>param1</c>: 物品在 Cabinet.csv 中的对应索引</para>
+    /// </summary>
+    RestoreFromCabinet = 426,
+
+    /// <summary>
+    /// 请求陆行鸟鞍囊的数据
+    /// </summary>
+    RequestSaddle = 444,
 
     /// <summary>
     /// 为 临危受命 等级同步
@@ -115,6 +131,21 @@ public enum ExecuteCommandFlag
     /// <para><c>param1</c>: 类型 (0 - 正常退本, 1 - 一段时间未操作)</para>
     /// </summary>
     LeaveDuty = 819,
+
+    /// <summary>
+    /// 领取战利水晶
+    /// </summary>
+    CollectTrophyCrystal = 1200,
+
+    /// <summary>
+    /// 请求金碟游乐场面板 整体 信息
+    /// </summary>
+    RequestGSGeneral = 1850,
+
+    /// <summary>
+    /// 请求金碟游乐场面板 萌宠之王 信息
+    /// </summary>
+    RequestGSLordofVerminion = 2010,
 
     /// <summary>
     /// 启用/解除自动加入新人频道设置
@@ -149,6 +180,11 @@ public enum ExecuteCommandFlag
     /// <para><c>param1</c>: 投影模板索引</para>
     /// </summary>
     ApplyGlamourPlate = 2357,
+
+    /// <summary>
+    /// 请求金碟游乐场面板 多玛方城战 信息
+    /// </summary>
+    RequestGSMahjong = 2550,
 
     /// <summary>
     /// 收取无人岛屯货仓库探索结果
