@@ -582,7 +582,8 @@ public unsafe class CustomizeGameObject : DailyModuleBase
     {
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
 
-        ResetAllCustomizeFromHistory();
+        if (Service.ClientState.LocalPlayer != null)
+            ResetAllCustomizeFromHistory();
         CustomizeHistory.Clear();
 
         base.Uninit();
