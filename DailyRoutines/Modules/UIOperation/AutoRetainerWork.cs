@@ -350,6 +350,8 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
     public override void ConfigUI()
     {
+        ConflictKeyText();
+
         ImGui.AlignTextToFramePadding();
         ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("AutoRetainersDispatchTitle")}:");
         ImGuiOm.TooltipHover(Service.Lang.GetText("AutoRetainersDispatchDescription"));
@@ -366,7 +368,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
         ImGui.Spacing();
 
-        ConflictKeyText();
+        ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("AutoRetainerPriceAdjustTitle")}:");
 
         ItemConfigSelector();
 
