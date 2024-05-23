@@ -13,7 +13,8 @@ public unsafe class GlamourPlateApplyCommand : DailyModuleBase
 
     public override void Init()
     {
-        Service.CommandManager.AddSubCommand(Command, new CommandInfo(OnCommand));
+        Service.CommandManager.AddSubCommand(Command, 
+            new CommandInfo(OnCommand) { HelpMessage = Service.Lang.GetText("GlamourPlateApplyCommand-CommandHelp") });
     }
 
     private static void OnCommand(string command, string arguments)

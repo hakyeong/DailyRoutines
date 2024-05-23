@@ -48,7 +48,7 @@ public enum ExecuteCommandFlag
     /// <summary>
     /// 收起时尚配饰
     /// </summary>
-    WithdrawParasol,
+    WithdrawParasol = 109,
 
     /// <summary>
     /// 传送至指定的以太之光

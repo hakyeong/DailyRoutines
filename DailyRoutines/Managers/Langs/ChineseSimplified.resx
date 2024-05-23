@@ -1782,4 +1782,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoMarkAetherCurrents-UseLocalMarkHelp" xml:space="preserve">
     <value>如有展示给队友的需要, 取消勾选此处后点击下方 刷新标点显示 按钮, 模块会转为使用在线标点 (请自行评估风险)</value>
   </data>
+  <data name="GlamourPlateApplyCommand-CommandHelp" xml:space="preserve">
+    <value>应用指定的投影模板</value>
+  </data>
 </root>
