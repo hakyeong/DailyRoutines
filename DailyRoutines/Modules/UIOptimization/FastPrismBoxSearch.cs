@@ -179,6 +179,7 @@ public unsafe class FastPrismBoxSearch : DailyModuleBase
     private void OnAddonPlate(AddonEvent type, AddonArgs args)
     {
         if (MiragePrismPrismBox == null) return;
+        Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.RequestCabinet);
 
         if (type == AddonEvent.PostSetup)
             AddonHelper.Callback(MiragePrismMiragePlate, true, 13, (uint)ModuleConfig.DefaultSlot);
