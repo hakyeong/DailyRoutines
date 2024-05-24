@@ -1747,7 +1747,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>待获取 (选中目标后点击左侧按钮)</value>
   </data>
   <data name="InstantReturnDescription" xml:space="preserve">
-    <value>启用后, 让游戏原生的返回无需咏唱等待, 并且不再进入冷却</value>
+    <value>启用后, 让游戏原生的返回无需咏唱等待, 并且不再进入冷却 (拉拉菲尔族不可用)</value>
   </data>
   <data name="InstantReturnTitle" xml:space="preserve">
     <value>即刻返回</value>
