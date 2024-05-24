@@ -80,6 +80,11 @@ public class Main : Window, IDisposable
         MainSettings.Init();
     }
 
+    public override void OnOpen()
+    {
+        _ = CheckboxSize;
+    }
+
     public override void Draw()
     {
         ImGui.SetNextItemWidth(-1f);
