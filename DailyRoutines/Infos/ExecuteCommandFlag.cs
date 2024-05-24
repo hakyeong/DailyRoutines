@@ -75,6 +75,12 @@ public enum ExecuteCommandFlag
     ChangeTitle = 302,
 
     /// <summary>
+    /// 请求挑战笔记具体类别下数据
+    /// <para><c>param1</c>: 类别索引 (从 1 开始)</para>
+    /// </summary>
+    RequestContentsNoteCategory = 310,
+
+    /// <summary>
     /// 清除场地标点
     /// </summary>
     ClearFieldMarkers = 313,
@@ -155,9 +161,20 @@ public enum ExecuteCommandFlag
     QuestRedo = 824,
 
     /// <summary>
+    /// 庭院相关操作
+    /// <para><c>param2</c>: 45 - 布置庭具状态</para>
+    /// </summary>
+    Garden = 1123,
+
+    /// <summary>
     /// 领取战利水晶
     /// </summary>
     CollectTrophyCrystal = 1200,
+
+    /// <summary>
+    /// 请求挑战笔记数据
+    /// </summary>
+    RequestContentsNote = 1301,
 
     /// <summary>
     /// 陆行鸟装甲
@@ -231,10 +248,37 @@ public enum ExecuteCommandFlag
     RequestDutySupport = 2653,
 
     /// <summary>
+    /// 请求无人岛工房排班数据
+    /// <para><c>param1</c>: 具体天数 (0 为本周期第一天, 7 为下周期第一天)</para>
+    /// </summary>
+    MJIWorkshopRequest = 3254,
+    
+    /// <summary>
+    /// 请求无人岛工房排班物品数据
+    /// </summary>
+    MJIWorkshopRequestItem = 3258,
+
+    /// <summary>
+    /// 无人岛工房排班
+    /// <para><c>param1</c>: 物品和排班时间段</para>
+    /// <para><c>param2</c>: 具体天数 (0 为本周期第一天, 7 为下周期第一天)</para>
+    /// <para><c>param4</c>: 添加/删除 (0 - 添加, 1 - 删除)</para>
+    /// </summary>
+    MJIWorkshopAssign = 3259,
+
+    /// <summary>
     /// 收取无人岛屯货仓库探索结果
     /// <para><c>param1</c>: 仓库索引</para>
     /// </summary>
     MJIGranaryCollect = 3262,
+
+    /// <summary>
+    /// 无人岛屯货仓库派遣探险
+    /// <para><c>param1</c>: 仓库索引</para>
+    /// <para><c>param2</c>: 目的地索引</para>
+    /// <para><c>param3</c>: 探索天数</para>
+    /// </summary>
+    MJIGranaryAssign = 3264,
 
     /// <summary>
     /// 托管单块无人岛耕地
