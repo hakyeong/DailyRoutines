@@ -537,7 +537,7 @@ public unsafe class AutoDiscard : DailyModuleBase
                     {
                         ContextMenu->Close(true);
                         Service.Chat.Print(
-                            new SeStringBuilder().Append(DRPrefix()).AddUiForeground(" 未找到可用的出售页面", 17).Build());
+                            new SeStringBuilder().Append(DRPrefix).AddUiForeground(" 未找到可用的出售页面", 17).Build());
                         TaskManager.Abort();
                     }
 
@@ -551,7 +551,7 @@ public unsafe class AutoDiscard : DailyModuleBase
                     {
                         ContextMenu->Close(true);
                         Service.Chat.Print(
-                            new SeStringBuilder().Append(DRPrefix()).AddUiForeground(" 未找到可用的出售页面", 17).Build());
+                            new SeStringBuilder().Append(DRPrefix).AddUiForeground(" 未找到可用的出售页面", 17).Build());
                         TaskManager.Abort();
                     }
 
@@ -560,7 +560,7 @@ public unsafe class AutoDiscard : DailyModuleBase
 
                 ContextMenu->Close(true);
                 Service.Chat.Print(
-                    new SeStringBuilder().Append(DRPrefix()).AddUiForeground(" 未找到可用的出售页面", 17).Build());
+                    new SeStringBuilder().Append(DRPrefix).AddUiForeground(" 未找到可用的出售页面", 17).Build());
                 TaskManager.Abort();
                 break;
         }

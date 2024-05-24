@@ -30,7 +30,7 @@ public class AutoNotifyDutyName : DailyModuleBase
         if (!PresetData.Contents.TryGetValue(territory, out var content)) return;
         var contentName = content.Name.RawString;
 
-        var message = new SeStringBuilder().Append(DRPrefix()).Append(" ")
+        var message = new SeStringBuilder().Append(DRPrefix).Append(" ")
                                            .Append(Service.Lang.GetSeString(
                                                        "AutoNotifyDutyName-NoticeMessage", contentName));
         Service.Chat.Print(message.Build());

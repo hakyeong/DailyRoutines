@@ -15,38 +15,36 @@ namespace DailyRoutines.Infos;
 
 public static class Widgets
 {
-    private static SeString? rPrefix;
-    private static SeString? drPrefix;
-    private static SeString? dailyRoutinesPrefix;
+    public static Vector2 CheckboxSize => checkboxSize.Value;
+    public static SeString RPrefix => rPrefix.Value;
+    public static SeString DRPrefix => drPrefix.Value;
+    public static SeString DailyRoutinesPrefix => dailyRoutinesPrefix.Value;
 
-    public static SeString DRPrefix()
+    private static readonly Lazy<Vector2> checkboxSize = new(() =>
     {
-        return drPrefix ??= new SeStringBuilder()
-                           .AddUiForeground(SeIconChar.BoxedLetterD.ToIconString(), 34)
-                           .AddUiForeground(SeIconChar.BoxedLetterR.ToIconString(), 34)
-                           .AddUiForegroundOff().Build();
-    }
+        var decoBool = false;
+        ImGui.Checkbox("", ref decoBool);
+        return ImGui.GetItemRectSize();
+    });
 
-    public static SeString DailyRoutinesPrefix()
-    {
-        return dailyRoutinesPrefix ??= new SeStringBuilder()
-                            .AddUiForeground("[Daily Routines]", 34)
-                            .AddUiForegroundOff().Build();
-    }
+    private static readonly Lazy<SeString> rPrefix = new(() =>
+                                                             new SeStringBuilder()
+                                                                 .AddUiForeground(
+                                                                     SeIconChar.BoxedLetterR.ToIconString(), 34)
+                                                                 .AddUiForegroundOff().Build());
 
-    public static SeString RPrefix()
-    {
-        return rPrefix ??= new SeStringBuilder()
-                           .AddUiForeground(SeIconChar.BoxedLetterR.ToIconString(), 34)
-                           .AddUiForegroundOff().Build();
-    }
+    private static readonly Lazy<SeString> drPrefix = new(() =>
+                                                              new SeStringBuilder()
+                                                                  .AddUiForeground(
+                                                                      SeIconChar.BoxedLetterD.ToIconString(), 34)
+                                                                  .AddUiForeground(
+                                                                      SeIconChar.BoxedLetterR.ToIconString(), 34)
+                                                                  .AddUiForegroundOff().Build());
 
-    public static SeString RPrefix(string text)
-    {
-        if (rPrefix == null) RPrefix();
-
-        return new SeStringBuilder().Append(rPrefix).Append(text).Build();
-    }
+    private static readonly Lazy<SeString> dailyRoutinesPrefix = new(() =>
+                                                                         new SeStringBuilder()
+                                                                             .AddUiForeground("[Daily Routines]", 34)
+                                                                             .AddUiForegroundOff().Build());
 
     public static void PreviewImageWithHelpText(
         string helpText, string imageUrl, Vector2 imageSize = default,
@@ -75,20 +73,23 @@ public static class Widgets
     public static bool CNWorldSelectCombo(ref World? selectedWorld, ref string worldSearchInput)
     {
         var selectState = false;
-        if (ImGui.BeginCombo("###WorldSelectCombo", selectedWorld == null ? "" : selectedWorld.Name.RawString, ImGuiComboFlags.HeightLarge))
+        if (ImGui.BeginCombo("###WorldSelectCombo", selectedWorld == null ? "" : selectedWorld.Name.RawString,
+                             ImGuiComboFlags.HeightLarge))
         {
-            ImGui.InputTextWithHint("###WorldSearchInput", Service.Lang.GetText("PleaseSearch"), ref worldSearchInput, 32);
+            ImGui.InputTextWithHint("###WorldSearchInput", Service.Lang.GetText("PleaseSearch"), ref worldSearchInput,
+                                    32);
 
             ImGui.Separator();
             foreach (var world in PresetData.CNWorlds)
             {
                 var worldName = world.Value.Name.RawString;
                 var dcName = world.Value.DataCenter.Value.Name.RawString;
-                if (!string.IsNullOrWhiteSpace(worldSearchInput) && 
+                if (!string.IsNullOrWhiteSpace(worldSearchInput) &&
                     !worldName.Contains(worldSearchInput) && !dcName.Contains(worldSearchInput))
                     continue;
 
-                if (ImGui.Selectable($"[{dcName}] {worldName}", selectedWorld != null && selectedWorld.RowId == world.Key))
+                if (ImGui.Selectable($"[{dcName}] {worldName}",
+                                     selectedWorld != null && selectedWorld.RowId == world.Key))
                 {
                     selectedWorld = world.Value;
                     ImGui.CloseCurrentPopup();
@@ -107,7 +108,8 @@ public static class Widgets
     public static bool ContentSelectCombo(ref ContentFinderCondition? selectedContent, ref string contentSearchInput)
     {
         var selectState = false;
-        if (ImGui.BeginCombo("###ContentSelectCombo", selectedContent == null ? "" : selectedContent.Name.RawString, ImGuiComboFlags.HeightLarge))
+        if (ImGui.BeginCombo("###ContentSelectCombo", selectedContent == null ? "" : selectedContent.Name.RawString,
+                             ImGuiComboFlags.HeightLarge))
             ImGui.EndCombo();
 
         if (ImGui.IsItemClicked())
@@ -158,13 +160,14 @@ public static class Widgets
                     ImGui.RadioButton("", selectedContent == contentPair.Value);
 
                     ImGui.TableNextColumn();
-                    ImGui.Image(ImageHelper.GetIcon(contentPair.Value.ContentType.Value.Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(20f));
+                    ImGui.Image(ImageHelper.GetIcon(contentPair.Value.ContentType.Value.Icon).ImGuiHandle,
+                                ImGuiHelpers.ScaledVector2(20f));
 
                     ImGui.TableNextColumn();
                     ImGui.Text(contentPair.Value.ClassJobLevelRequired.ToString());
 
                     ImGui.TableNextColumn();
-                    if (ImGui.Selectable(contentName, false, 
+                    if (ImGui.Selectable(contentName, false,
                                          ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups))
                     {
                         selectedContent = contentPair.Value;
@@ -180,6 +183,7 @@ public static class Widgets
 
                 ImGui.EndTable();
             }
+
             ImGui.EndPopup();
         }
 
@@ -190,7 +194,11 @@ public static class Widgets
     {
         var selectState = false;
 
-        if (ImGui.BeginCombo("###ActionSelectCombo", selectedAction == null ? "" : $"[{selectedAction.ClassJob.Value?.Name.RawString}] {selectedAction.Name.RawString} ({selectedAction.RowId})", ImGuiComboFlags.HeightLarge))
+        if (ImGui.BeginCombo("###ActionSelectCombo",
+                             selectedAction == null
+                                 ? ""
+                                 : $"[{selectedAction.ClassJob.Value?.Name.RawString}] {selectedAction.Name.RawString} ({selectedAction.RowId})",
+                             ImGuiComboFlags.HeightLarge))
             ImGui.EndCombo();
 
         if (ImGui.IsItemClicked())
@@ -244,7 +252,10 @@ public static class Widgets
                     ImGui.Text(actionPair.Value.ClassJobLevel.ToString());
 
                     ImGui.TableNextColumn();
-                    if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(actionPair.Value.Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(20f), actionName, false, ImGuiSelectableFlags.DontClosePopups | ImGuiSelectableFlags.SpanAllColumns))
+                    if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(actionPair.Value.Icon).ImGuiHandle,
+                                                        ImGuiHelpers.ScaledVector2(20f), actionName, false,
+                                                        ImGuiSelectableFlags.DontClosePopups |
+                                                        ImGuiSelectableFlags.SpanAllColumns))
                     {
                         selectedAction = actionPair.Value;
                         selectState = true;
@@ -256,6 +267,7 @@ public static class Widgets
 
                 ImGui.EndTable();
             }
+
             ImGui.EndPopup();
         }
 
@@ -266,8 +278,8 @@ public static class Widgets
     {
         var selectState = false;
 
-        if (ImGui.BeginCombo("###MountSelectCombo", 
-                             selectedMount == null ? "" : $"{selectedMount.Singular.RawString} ({selectedMount.RowId})", 
+        if (ImGui.BeginCombo("###MountSelectCombo",
+                             selectedMount == null ? "" : $"{selectedMount.Singular.RawString} ({selectedMount.RowId})",
                              ImGuiComboFlags.HeightLarge))
             ImGui.EndCombo();
 
@@ -314,7 +326,7 @@ public static class Widgets
                     ImGui.Image(ImageHelper.GetIcon(mountPair.Value.Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(20f));
 
                     ImGui.TableNextColumn();
-                    if (ImGui.Selectable(mountName, false, 
+                    if (ImGui.Selectable(mountName, false,
                                          ImGuiSelectableFlags.DontClosePopups | ImGuiSelectableFlags.SpanAllColumns))
                     {
                         selectedMount = mountPair.Value;
@@ -327,6 +339,7 @@ public static class Widgets
 
                 ImGui.EndTable();
             }
+
             ImGui.EndPopup();
         }
 

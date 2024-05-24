@@ -141,7 +141,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
     {
         if (!ModuleConfig.SendMessage || !result || ModifiedLocation == null) return;
 
-        var message = new SeStringBuilder().Append(DRPrefix())
+        var message = new SeStringBuilder().Append(DRPrefix)
                                            .Append(Service.Lang.GetText("AutoReplaceLocationAction-RedirectMessage",
                                                                         ModifiedLocation))
                                            .Build();

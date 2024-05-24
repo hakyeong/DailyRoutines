@@ -283,7 +283,7 @@ public abstract class DailyModuleBase
             var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
 
             Clipboard.SetText(base64);
-            Service.Chat.Print(new SeStringBuilder().Append(DRPrefix())
+            Service.Chat.Print(new SeStringBuilder().Append(DRPrefix)
                                                     .Append(" 已成功导出配置至剪贴板")
                                                     .Build());
         }
@@ -305,7 +305,7 @@ public abstract class DailyModuleBase
                 var config = JsonSerializer.Deserialize<T>(json);
                 if (config != null)
                 {
-                    Service.Chat.Print(new SeStringBuilder().Append(DRPrefix())
+                    Service.Chat.Print(new SeStringBuilder().Append(DRPrefix)
                                                             .Append($" 已成功导入配置")
                                                             .Build());
                 }

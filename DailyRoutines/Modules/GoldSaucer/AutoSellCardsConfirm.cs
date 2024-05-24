@@ -99,7 +99,7 @@ public class AutoSellCardsConfirm : DailyModuleBase
         var isCardInDeck = Convert.ToBoolean(addon->AtkValues[204].Byte);
         if (!isCardInDeck)
         {
-            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ")
+            var message = new SeStringBuilder().Append(DRPrefix).Append(" ")
                                                .Append(Service.Lang.GetSeString(
                                                            "AutoSellCardsConfirm-CurrentCardNotInDeckMessage")).Build();
             Service.Chat.Print(message);

@@ -28,7 +28,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
         IsEnabled = true,
         IsReturn = false,
         UseDefaultPrefix = true,
-        Name = new SeStringBuilder().Append(DRPrefix()).Append(Service.Lang.GetText("ExpandItemMenuSearch-CollectorSearch")).Build(),
+        Name = new SeStringBuilder().Append(DRPrefix).Append(Service.Lang.GetText("ExpandItemMenuSearch-CollectorSearch")).Build(),
         OnClicked = OnCollector,
         IsSubmenu = false,
         PrefixColor = 34
@@ -39,7 +39,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
         IsEnabled = true,
         IsReturn = false,
         UseDefaultPrefix = true,
-        Name = new SeStringBuilder().Append(DRPrefix()).Append(Service.Lang.GetText("ExpandItemMenuSearch-WikiSearch")).Build(),
+        Name = new SeStringBuilder().Append(DRPrefix).Append(Service.Lang.GetText("ExpandItemMenuSearch-WikiSearch")).Build(),
         OnClicked = OnWiki,
         IsSubmenu = false,
         PrefixColor = 34

@@ -125,7 +125,7 @@ public unsafe class AutoPlayCards : DailyModuleBase
         string jobNameText = CardSendInfo.member.ClassJob.GameData.Name.ExtractText(),
                memberNameText = CardSendInfo.member.Name.TextValue;
 
-        var message = new SeStringBuilder().Append(DRPrefix()).Append(" ").Append(
+        var message = new SeStringBuilder().Append(DRPrefix).Append(" ").Append(
             Service.Lang.GetSeString("AutoPlayCards-Message",
                                      UseAantonomasia
                                          ? CardSendInfo.card.IsMelee

@@ -29,7 +29,7 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
         IsEnabled = true,
         IsReturn = false,
         UseDefaultPrefix = true,
-        Name = new SeStringBuilder().Append(DRPrefix()).Append(Service.Lang.GetText("ExpandPlayerMenuSearch-RisingStoneSearch")).Build(),
+        Name = new SeStringBuilder().Append(DRPrefix).Append(Service.Lang.GetText("ExpandPlayerMenuSearch-RisingStoneSearch")).Build(),
         OnClicked = OnClickRisingStone,
         IsSubmenu = false,
         PrefixColor = 34
@@ -40,7 +40,7 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
         IsEnabled = true,
         IsReturn = false,
         UseDefaultPrefix = true,
-        Name = new SeStringBuilder().Append(DRPrefix()).Append(Service.Lang.GetText("ExpandPlayerMenuSearch-FFLogsSearch")).Build(),
+        Name = new SeStringBuilder().Append(DRPrefix).Append(Service.Lang.GetText("ExpandPlayerMenuSearch-FFLogsSearch")).Build(),
         OnClicked = OnClickFFLogs,
         IsSubmenu = false,
         PrefixColor = 34
@@ -51,7 +51,7 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
         IsEnabled = true,
         IsReturn = false,
         UseDefaultPrefix = true,
-        Name = new SeStringBuilder().Append(DRPrefix()).Append(Service.Lang.GetText("ExpandPlayerMenuSearch-TiebaSearch")).Build(),
+        Name = new SeStringBuilder().Append(DRPrefix).Append(Service.Lang.GetText("ExpandPlayerMenuSearch-TiebaSearch")).Build(),
         OnClicked = OnClickTieba,
         IsSubmenu = false,
         PrefixColor = 34

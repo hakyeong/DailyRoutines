@@ -961,7 +961,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         {
             if (ModuleConfig.SendProcessMessage)
             {
-                var message = new SeStringBuilder().Append(DRPrefix()).Append(
+                var message = new SeStringBuilder().Append(DRPrefix).Append(
                     Service.Lang.GetSeString("AutoRetainerPriceAdjust-NoPriceDataFound",
                                              itemDetails.ItemPayload, itemDetails.RetainerName)).Build();
                 Service.Chat.Print(message);
@@ -1088,7 +1088,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                     var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-PriceAdjustSuccessfully",
                                                            itemDetails.ItemPayload, itemDetails.RetainerName,
                                                            itemDetails.OrigPrice, price);
-                    Service.Chat.Print(new SeStringBuilder().Append(DRPrefix()).Append(message).Build());
+                    Service.Chat.Print(new SeStringBuilder().Append(DRPrefix).Append(message).Build());
                 }
 
                 priceComponent->SetValue((int)price);
@@ -1224,7 +1224,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             var conditionMessage = new SeStringBuilder().AddUiForeground(condition.ToString(), 60).Build();
             var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-DetectAbortCondition",
                                                    itemDetails.ItemPayload, itemDetails.RetainerName, conditionMessage);
-            Service.Chat.Print(new SeStringBuilder().Append(DRPrefix()).Append(message).Build());
+            Service.Chat.Print(new SeStringBuilder().Append(DRPrefix).Append(message).Build());
         }
     }
 
@@ -1696,7 +1696,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
 
             Clipboard.SetText(base64);
-            Service.Chat.Print(new SeStringBuilder().Append(DRPrefix())
+            Service.Chat.Print(new SeStringBuilder().Append(DRPrefix)
                                                     .Append(
                                                         $" 已成功导出 {config.ItemName} {(config.IsHQ ? "(HQ) " : "")}的配置至剪贴板")
                                                     .Build());
@@ -1718,7 +1718,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 var json = Encoding.UTF8.GetString(Convert.FromBase64String(base64));
                 var config = JsonSerializer.Deserialize<ItemConfig>(json);
                 if (config != null)
-                    Service.Chat.Print(new SeStringBuilder().Append(DRPrefix())
+                    Service.Chat.Print(new SeStringBuilder().Append(DRPrefix)
                                                             .Append(
                                                                 $" 已成功导入 {config.ItemName} {(config.IsHQ ? "(HQ) " : "")}的配置")
                                                             .Build());

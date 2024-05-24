@@ -337,7 +337,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
                         {
                             AddonHelper.Callback(addon, true, callbackIndex, i);
                             var job = LuminaCache.GetRow<ClassJob>(player.JobID);
-                            var message = new SeStringBuilder().Append(DRPrefix()).Append(" ")
+                            var message = new SeStringBuilder().Append(DRPrefix).Append(" ")
                                                                .Append(Service.Lang.GetSeString(
                                                                            "AutoPlayerCommend-NoticeMessage",
                                                                            job.ToBitmapFontIcon(), job.Name.RawString,
