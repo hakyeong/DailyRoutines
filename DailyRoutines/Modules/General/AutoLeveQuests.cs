@@ -8,8 +8,10 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Hooking;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
+using Dalamud.Utility.Signatures;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Application.Network.WorkDefinitions;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -30,6 +32,10 @@ public unsafe class AutoLeveQuests : DailyModuleBase
     private static AtkUnitBase* SelectIconString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectIconString");
     private static AtkUnitBase* GuildLeve => (AtkUnitBase*)Service.Gui.GetAddonByName("GuildLeve");
 
+    private delegate byte IsTargetableDelegate(GameObject* gameObj);
+    [Signature("40 53 48 83 EC 20 F3 0F 10 89 ?? ?? ?? ?? 0F 57 C0 0F 2E C8 48 8B D9 7A 0A",
+               DetourName = nameof(IsTargetableDetour))]
+    private static Hook<IsTargetableDelegate>? IsTargetableHook;
 
     private const string LeveAllowanceSig = "88 05 ?? ?? ?? ?? 0F B7 41 06";
     private static Dictionary<uint, Leve> LeveQuests = [];
@@ -39,18 +45,19 @@ public unsafe class AutoLeveQuests : DailyModuleBase
     private static GameObject* LeveReceiver;
     private static string SearchString = string.Empty;
 
+    private static float RandomRotation;
     private static int OperationDelay;
 
     public override void Init()
     {
+        Service.Hook.InitializeFromAttributes(this);
         Service.ClientState.TerritoryChanged += OnZoneChanged;
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
 
         AddConfig("OperationDelay", 0);
         OperationDelay = GetConfig<int>("OperationDelay");
 
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", AlwaysYes);
-        Service.ExecuteCommandManager.Register(OnPreExecuteCommand);
+        RandomRotation = new Random().Next(0, 360);
     }
 
     public override void ConfigUI()
@@ -124,14 +131,25 @@ public unsafe class AutoLeveQuests : DailyModuleBase
 
         ImGui.SameLine();
         ImGui.BeginDisabled(isLeveEmpty || isLeveNPCNotQualified);
-        if (ImGui.Button(Service.Lang.GetText("Start"))) EnqueueARound();
+        if (ImGui.Button(Service.Lang.GetText("Start")))
+        {
+            Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", AlwaysYes);
+            Service.ExecuteCommandManager.Register(OnPreExecuteCommand);
+            IsTargetableHook?.Enable();
+            EnqueueARound();
+        }
 
         ImGui.EndDisabled();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("Stop")))
+        {
             TaskManager.Abort();
+            Service.AddonLifecycle.UnregisterListener(AlwaysYes);
+            IsTargetableHook?.Disable();
+            Service.ExecuteCommandManager.Unregister(OnPreExecuteCommand);
+        }
 
         if (isLeveEmpty)
             ImGuiHelpers.ScaledDummy(6f);
@@ -175,6 +193,9 @@ public unsafe class AutoLeveQuests : DailyModuleBase
         if (SelectedLeve == null || allowances <= 0)
         {
             TaskManager.Abort();
+            Service.AddonLifecycle.UnregisterListener(AlwaysYes);
+            IsTargetableHook?.Disable();
+            Service.ExecuteCommandManager.Unregister(OnPreExecuteCommand);
             return;
         }
 
@@ -308,6 +329,19 @@ public unsafe class AutoLeveQuests : DailyModuleBase
         if (command != 3 || !TaskManager.IsBusy) return;
 
         param1 = int.MinValue / 4;
+    }
+
+    private static byte IsTargetableDetour(GameObject* pTarget)
+    {
+        var isTargetable = IsTargetableHook.Original(pTarget);
+
+        if ((nint)pTarget == Service.ClientState.LocalPlayer.Address)
+        {
+            pTarget->Rotation = RandomRotation;
+            pTarget->Rotate(RandomRotation);
+        }
+
+        return isTargetable;
     }
 
     private static void OnZoneChanged(ushort zone)
