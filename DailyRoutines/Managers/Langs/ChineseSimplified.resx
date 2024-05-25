@@ -1794,6 +1794,12 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="CustomizeGameObject-NoTaretNotice" xml:space="preserve">
     <value>当前无目标, 请选中任一有效目标</value>
   </data>
+  <data name="CustomizeGCRankDescription" xml:space="preserve">
+    <value>启用并配置完毕后, 允许自定义当前角色的军衔等级</value>
+  </data>
+  <data name="CustomizeGCRankTitle" xml:space="preserve">
+    <value>自定义军衔等级</value>
+  </data>
   <data name="Note" xml:space="preserve">
     <value>备注</value>
   </data>
