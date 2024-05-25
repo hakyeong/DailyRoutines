@@ -37,7 +37,9 @@ public unsafe class AutoLeveQuests : DailyModuleBase
                DetourName = nameof(IsTargetableDetour))]
     private static Hook<IsTargetableDelegate>? IsTargetableHook;
 
-    private const string LeveAllowanceSig = "88 05 ?? ?? ?? ?? 0F B7 41 06";
+    [Signature("88 05 ?? ?? ?? ?? 0F B7 41 06", ScanType = ScanType.StaticAddress)]
+    private static byte LeveAllowances;
+
     private static Dictionary<uint, Leve> LeveQuests = [];
 
     private static Leve? SelectedLeve;
@@ -189,8 +191,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
 
     public void EnqueueARound()
     {
-        var allowances = *(byte*)Service.SigScanner.GetStaticAddressFromSig(LeveAllowanceSig);
-        if (SelectedLeve == null || allowances <= 0)
+        if (SelectedLeve == null || LeveAllowances <= 0)
         {
             TaskManager.Abort();
             Service.AddonLifecycle.UnregisterListener(AlwaysYes);
@@ -335,11 +336,9 @@ public unsafe class AutoLeveQuests : DailyModuleBase
     {
         var isTargetable = IsTargetableHook.Original(pTarget);
 
-        if ((nint)pTarget == Service.ClientState.LocalPlayer.Address)
-        {
-            pTarget->Rotation = RandomRotation;
-            pTarget->Rotate(RandomRotation);
-        }
+        var localPlayer = (GameObject*)Service.ClientState.LocalPlayer.Address;
+        localPlayer->Rotation = RandomRotation;
+        localPlayer->Rotate(RandomRotation);
 
         return isTargetable;
     }
