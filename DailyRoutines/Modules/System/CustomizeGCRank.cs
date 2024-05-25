@@ -62,6 +62,8 @@ public unsafe class CustomizeGCRank : DailyModuleBase
                 break;
         }
 
+        OriginalRank = null;
+
         base.Uninit();
     }
 }
