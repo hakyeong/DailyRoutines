@@ -1681,7 +1681,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>最高同步装等</value>
   </data>
   <data name="AutoCheckItemLevelDescription" xml:space="preserve">
-    <value>进入副本后, 自动检查小队所有成员的装等, 并提醒装等异常的成员</value>
+    <value>进入副本后, 自动检查小队所有成员的装等, 并突出标记装等异常的队员</value>
   </data>
   <data name="AutoCheckItemLevelTitle" xml:space="preserve">
     <value>自动检查装等</value>
