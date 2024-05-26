@@ -4,6 +4,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using System.Collections.Generic;
 using System.Numerics;
 using DailyRoutines.Windows;
+using Dalamud.Utility.Signatures;
 
 namespace DailyRoutines.Managers;
 
@@ -17,6 +18,9 @@ public unsafe class UseActionManager : IDailyManager
         ref ActionType type, ref uint actionID, ref ulong targetID, ref Vector3 location, ref uint a4);
     public delegate void PostUseActionLocationDelegate(bool result, ActionType actionType, uint actionID, ulong targetID, Vector3 location, uint a4);
 
+    public delegate void PreUseActionPetMoveDelegate(ref bool isPrevented, ref int a1, ref Vector3 location, ref int perActionID, ref int a4, ref int a5, ref int a6);
+    public delegate void PostUseActionPetMoveDelegate(int a1, Vector3 location, int perActionID, int a4, int a5, int a6);
+
     private delegate bool useActionDelegate(
         ActionManager* actionManager, ActionType actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
         uint queueState = 0, uint a6 = 0, void* a7 = null);
@@ -24,6 +28,10 @@ public unsafe class UseActionManager : IDailyManager
 
     private delegate bool useActionLocationDelegate(ActionManager* manager, ActionType type, uint actionID, ulong targetID, Vector3* location, uint a4);
     private static Hook<useActionLocationDelegate>? UseActionLocationHook;
+
+    private delegate bool useActionPetMoveDelegate(int a1, Vector3* position, int petActionID, int a4, int a5, int a6);
+    [Signature("E8 ?? ?? ?? ?? EB 1A 48 8B 53 08", DetourName = nameof(UseActionPetMoveDetour))]
+    private static Hook<useActionPetMoveDelegate>? UseActionPetMoveHook;
 
     // PreUseAction
     private static readonly Dictionary<string, PreUseActionDelegate>? MethodsInfoPreUseAction = [];
@@ -39,6 +47,13 @@ public unsafe class UseActionManager : IDailyManager
     private static readonly Dictionary<string, PostUseActionLocationDelegate>? MethodsInfoPostUseActionLocation = [];
     private static PostUseActionLocationDelegate[]? _methodsPostUseActionLocation = [];
 
+    // PreUseActionPetMove
+    private static readonly Dictionary<string, PreUseActionPetMoveDelegate>? MethodsInfoPreUseActionPetMove = [];
+    private static PreUseActionPetMoveDelegate[]? _methodsPreUseActionPetMove = [];
+    // PostUseActionPetMove
+    private static readonly Dictionary<string, PostUseActionPetMoveDelegate>? MethodsInfoPostUseActionPetMove = [];
+    private static PostUseActionPetMoveDelegate[]? _methodsPostUseActionPetMove = [];
+
     private void Init()
     {
         UseActionHook = Service.Hook.HookFromAddress<useActionDelegate>(
@@ -47,6 +62,9 @@ public unsafe class UseActionManager : IDailyManager
 
         UseActionLocationHook = Service.Hook.HookFromAddress<useActionLocationDelegate>((nint)ActionManager.MemberFunctionPointers.UseActionLocation, UseActionLocationDetour);
         UseActionLocationHook.Enable();
+
+        Service.Hook.InitializeFromAttributes(this);
+        UseActionPetMoveHook.Enable();
     }
 
     #region PreUseAction
@@ -205,6 +223,84 @@ public unsafe class UseActionManager : IDailyManager
     }
     #endregion
 
+    #region PreUseActionPetMove
+    public bool Register(params PreUseActionPetMoveDelegate[] methods)
+    {
+        var state = true;
+        foreach (var method in methods)
+        {
+            var uniqueName = GetUniqueName(method);
+            if (!MethodsInfoPreUseActionPetMove.TryAdd(uniqueName, method)) state = false;
+        }
+
+        UpdateMethodsArrayPreUseActionPetMove();
+        return state;
+    }
+
+    public bool Unregister(params PreUseActionPetMoveDelegate[] methods)
+    {
+        var state = true;
+        foreach (var method in methods)
+        {
+            var uniqueName = GetUniqueName(method);
+            if (!MethodsInfoPreUseActionPetMove.Remove(uniqueName)) state = false;
+        }
+
+        UpdateMethodsArrayPreUseActionPetMove();
+        return state;
+    }
+
+    private static void UpdateMethodsArrayPreUseActionPetMove()
+    {
+        _methodsPreUseActionPetMove = [.. MethodsInfoPreUseActionPetMove.Values];
+    }
+
+    private static string GetUniqueName(PreUseActionPetMoveDelegate method)
+    {
+        var methodInfo = method.Method;
+        return $"{methodInfo.DeclaringType.FullName}_{methodInfo.Name}";
+    }
+    #endregion
+
+    #region PostUseActionPetMove
+    public bool Register(params PostUseActionPetMoveDelegate[] methods)
+    {
+        var state = true;
+        foreach (var method in methods)
+        {
+            var uniqueName = GetUniqueName(method);
+            if (!MethodsInfoPostUseActionPetMove.TryAdd(uniqueName, method)) state = false;
+        }
+
+        UpdateMethodsArrayPostUseActionPetMove();
+        return state;
+    }
+
+    public bool Unregister(params PostUseActionPetMoveDelegate[] methods)
+    {
+        var state = true;
+        foreach (var method in methods)
+        {
+            var uniqueName = GetUniqueName(method);
+            if (!MethodsInfoPostUseActionPetMove.Remove(uniqueName)) state = false;
+        }
+
+        UpdateMethodsArrayPostUseActionPetMove();
+        return state;
+    }
+
+    private static void UpdateMethodsArrayPostUseActionPetMove()
+    {
+        _methodsPostUseActionPetMove = [.. MethodsInfoPostUseActionPetMove.Values];
+    }
+
+    private static string GetUniqueName(PostUseActionPetMoveDelegate method)
+    {
+        var methodInfo = method.Method;
+        return $"{methodInfo.DeclaringType.FullName}_{methodInfo.Name}";
+    }
+    #endregion
+
     #region Hooks
     private static bool UseActionDetour(
         ActionManager* actionManager, ActionType actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
@@ -254,6 +350,29 @@ public unsafe class UseActionManager : IDailyManager
 
         return original;
     }
+
+    private static bool UseActionPetMoveDetour(int a1, Vector3* location, int petActionID, int a3, int a4, int a5)
+    {
+        Service.Log.Debug($"{a1} {*location} {petActionID} {a3} {a4} {a5}");
+
+        var isPrevented = false;
+        var location0 = *location;
+        foreach (var preUseAction in _methodsPreUseActionPetMove)
+        {
+            preUseAction.Invoke(ref isPrevented, ref a1, ref location0, ref petActionID, ref a3, ref a4, ref a5);
+        }
+
+        if (isPrevented) return false;
+
+        var original = UseActionPetMoveHook.Original(a1, location, petActionID, a3, a4, a5);
+
+        foreach (var postUseAction in _methodsPostUseActionPetMove)
+        {
+            postUseAction.Invoke(a1, location0, petActionID, a3, a4, a5);
+        }
+
+        return original;
+    }
     #endregion
 
     private void Uninit()
@@ -263,5 +382,8 @@ public unsafe class UseActionManager : IDailyManager
 
         UseActionLocationHook?.Dispose();
         UseActionLocationHook = null;
+
+        UseActionPetMoveHook?.Dispose();
+        UseActionPetMoveHook = null;
     }
 }
