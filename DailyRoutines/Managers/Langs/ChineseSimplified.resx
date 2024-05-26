@@ -1809,4 +1809,36 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Note" xml:space="preserve">
     <value>备注</value>
   </data>
+  <data name="AutoAdjustScreenBrightnessDescription" xml:space="preserve">
+    <value>启用并配置完成后, 在当前游戏画面较亮时降低屏幕亮度, 亮度较低时维持/还原亮度</value>
+  </data>
+  <data name="AutoAdjustScreenBrightnessTitle" xml:space="preserve">
+    <value>自动调节屏幕亮度</value>
+  </data>
+  <data name="AutoAdjustScreenBrightness-AdjustSpeed" xml:space="preserve">
+    <value>调整速度</value>
+  </data>
+  <data name="AutoAdjustScreenBrightness-BrightnessMin" xml:space="preserve">
+    <value>最低亮度</value>
+  </data>
+  <data name="AutoAdjustScreenBrightness-BrightnessOriginal" xml:space="preserve">
+    <value>原始亮度</value>
+  </data>
+  <data name="AutoAdjustScreenBrightness-CurrentSceneBrightness" xml:space="preserve">
+    <value>当前画面亮度</value>
+  </data>
+  <data name="AutoAdjustScreenBrightness-CurrentScreenBrightness" xml:space="preserve">
+    <value>当前屏幕亮度</value>
+  </data>
+  <data name="AutoAdjustScreenBrightness-Threshold" xml:space="preserve">
+    <value>调节阈值</value>
+  </data>
+  <data name="AutoAdjustScreenBrightness-ThresholdHelp" xml:space="preserve">
+    <value>高于阈值则缓慢降低亮度至最低亮度, 若低于阈值则维持/恢复原始亮度
+
+若对阈值把握不准, 可以以野外的白天碧空的阿拉基利, 群花馆, 副本内的各种究极魔法为参考</value>
+  </data>
+  <data name="AutoAdjustScreenBrightness-BrightnessOriginalHelp" xml:space="preserve">
+    <value>原始亮度取每次模块初始化时的电脑亮度, 不会保存, 可以手动在此处修改</value>
+  </data>
 </root>
