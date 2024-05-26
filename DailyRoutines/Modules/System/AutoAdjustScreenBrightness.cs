@@ -329,7 +329,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
             }
             catch (Exception ex)
             {
-                Trace.WriteLine(ex.Message);
+                Service.Log.Error(ex.Message);
             }
 
             return bLevels;

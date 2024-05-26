@@ -36,6 +36,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
     [Signature("48 85 C9 0F 84 ?? ?? ?? ?? 4C 8B DC 53 55", DetourName = nameof(Utf8StringSetStringDetour))]
     private static Hook<Utf8StringSetStringDelegate>? Utf8StringSetStringHook;
 
+    private static byte LeveAllowances;
     public class ReplacePattern : IComparable<ReplacePattern>, IEquatable<ReplacePattern>
     {
         public string Key { get; set; } = string.Empty;
