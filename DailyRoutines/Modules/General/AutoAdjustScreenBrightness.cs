@@ -22,21 +22,19 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
     private class Config : ModuleConfiguration
     {
         // 百分比
-        public int BrightnessThreshold = 75;
+        public int BrightnessThreshold = 55;
+        public int BrightnessThresholdContent = 65;
         public int BrightnessMin = 30;
-        public int BrightnessMax = 100;
-        public int AdjustSpeed = 100;
+        public int AdjustSpeed = 50;
     }
-
-    private static CancellationTokenSource? CancellationTokenSource;
 
     private static int ScreenBrightness;
     private static double SceneBrightness;
 
-
     private static readonly ScreenHelper Screen = new();
     private static int OriginalBrightness = 100;
 
+    private static CancellationTokenSource? CancellationTokenSource;
     private static Config ModuleConfig = null!;
 
 
@@ -45,7 +43,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
         ModuleConfig = LoadConfig<Config>() ?? new();
 
         var origBrightness = Screen.GetCurrentBrightness();
-        OriginalBrightness = origBrightness + 10;
+        OriginalBrightness = origBrightness + 10; // Windows 亮度设置的问题
 
         CancellationTokenSource ??= new();
         BrightnessMonitor(CancellationTokenSource.Token);
@@ -64,17 +62,25 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
 
         ImGuiHelpers.ScaledDummy(5f);
 
+        ImGui.BeginGroup();
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
         ImGui.SliderInt($"{Service.Lang.GetText("AutoAdjustScreenBrightness-Threshold")} (%)",
                         ref ModuleConfig.BrightnessThreshold, -10, 100);
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);
 
+        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        ImGui.SliderInt($"{Service.Lang.GetText("AutoAdjustScreenBrightness-ThresholdContent")} (%)",
+                        ref ModuleConfig.BrightnessThresholdContent, -10, 100);
+        if (ImGui.IsItemDeactivatedAfterEdit())
+            SaveConfig(ModuleConfig);
+        ImGui.EndGroup();
+
         ImGuiOm.TooltipHover(Service.Lang.GetText("AutoAdjustScreenBrightness-ThresholdHelp"));
 
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
         ImGui.SliderInt($"{Service.Lang.GetText("AutoAdjustScreenBrightness-AdjustSpeed")} (%)",
-                        ref ModuleConfig.AdjustSpeed, 1, 500);
+                        ref ModuleConfig.AdjustSpeed, 1, 200);
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);
 
@@ -94,13 +100,19 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
 
         ImGuiOm.TooltipHover(Service.Lang.GetText("AutoAdjustScreenBrightness-BrightnessOriginalHelp"));
     }
-    
+
     public static void BrightnessMonitor(CancellationToken token)
     {
+        // 缓冲区间
+        const int hysteresis = 5;
+        // 步幅
+        var stepSize = ModuleConfig.AdjustSpeed == 0 ? 1 : (ModuleConfig.AdjustSpeed / 10) + 1;
+        // 是否已恢复原始亮度
+        var haveRestored = false;
+
         var currentBrightness = OriginalBrightness;
         var targetBrightness = OriginalBrightness;
-        var stepSize = ModuleConfig.AdjustSpeed == 0 ? 1 : (ModuleConfig.AdjustSpeed / 10) + 1;
-        var haveRestored = false;
+        var lastSignificantBrightness = OriginalBrightness;
 
         Task.Run(async () =>
         {
@@ -112,20 +124,21 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
                     continue;
                 }
 
-                var bitmap = CaptureScreen();
+                using var bitmap = CaptureScreen();
                 if (token.IsCancellationRequested)
                 {
-                    bitmap.Dispose();
                     return;
                 }
 
                 ScreenBrightness = Screen.GetCurrentBrightness();
                 SceneBrightness = CalculateBrightPixelsPercentage(bitmap);
 
-                bitmap.Dispose();
-
-                targetBrightness = SceneBrightness > ModuleConfig.BrightnessThreshold ? 
-                                       ModuleConfig.BrightnessMin : OriginalBrightness;
+                // 防抖动
+                if (Math.Abs(SceneBrightness - lastSignificantBrightness) > hysteresis)
+                {
+                    targetBrightness = SceneBrightness > (Flags.BoundByDuty() ? ModuleConfig.BrightnessThresholdContent : ModuleConfig.BrightnessThreshold) ? ModuleConfig.BrightnessMin : OriginalBrightness;
+                    lastSignificantBrightness = (int)SceneBrightness;
+                }
 
                 await Task.Delay(100, token);
             }
@@ -191,7 +204,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
         Marshal.Copy(bitmapData.Scan0, pixels, 0, byteCount);
         bitmap.UnlockBits(bitmapData);
 
-        var brightPixels = 0;
+        var brightPixels = 0D;
         var totalPixels = centerWidth * centerHeight;
         for (var y = 0; y < centerHeight; y++)
         {
@@ -203,28 +216,24 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
                 var green = pixels[xIndex + 1];
                 var red = pixels[xIndex + 2];
 
-                var brightness = ((GammaCorrect(red) * 0.299f) + (GammaCorrect(green) * 0.587f) +
-                                  (GammaCorrect(blue) * 0.114f)) / 255;
+                var perceivedBrightness = (0.299 * red + 0.587 * green + 0.114 * blue) / 255.0;
 
-                if (brightness > 0.65) brightPixels++;
+                // 接近白色的像素标记为刺眼
+                if (perceivedBrightness > 0.8)
+                {
+                    perceivedBrightness = 1.0;
+                    brightPixels += 0.5;
+                }
+
+                if (perceivedBrightness > 0.75)
+                    brightPixels++;
             }
         }
 
-        return (double)brightPixels / totalPixels * 100;
+        brightPixels = Math.Min(totalPixels, brightPixels);
+
+        return brightPixels / totalPixels * 100;
     }
-
-    private static float GammaCorrect(float colorValue)
-    {
-        Service.GameConfig.TryGet(SystemConfigOption.Gamma, out uint gammaPercentage);
-
-        const float minGamma = 1.8f;
-        const float maxGamma = 2.4f;
-        var gamma = minGamma + ((maxGamma - minGamma) * gammaPercentage / 100.0f);
-
-        var inverseGamma = 1.0f / gamma;
-        return (float)Math.Pow(colorValue / 255.0, inverseGamma) * 255;
-    }
-
 
     public override void Uninit()
     {

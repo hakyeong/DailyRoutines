@@ -1831,7 +1831,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>当前屏幕亮度</value>
   </data>
   <data name="AutoAdjustScreenBrightness-Threshold" xml:space="preserve">
-    <value>调节阈值</value>
+    <value>调节阈值 (野外)</value>
   </data>
   <data name="AutoAdjustScreenBrightness-ThresholdHelp" xml:space="preserve">
     <value>高于阈值则缓慢降低亮度至最低亮度, 若低于阈值则维持/恢复原始亮度
@@ -1847,5 +1847,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoAdjustScreenBrightness-BrightnessMinHelp" xml:space="preserve">
     <value>在当前画面亮度超过设置阈值后, 会将屏幕亮度调整至此处设置的最低值</value>
+  </data>
+  <data name="AutoAdjustScreenBrightness-ThresholdContent" xml:space="preserve">
+    <value>调节阈值 (副本)</value>
   </data>
 </root>
