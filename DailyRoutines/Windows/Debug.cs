@@ -19,6 +19,7 @@ public class Debug() : Window("Daily Routines - 调试窗口", ImGuiWindowFlags.
         public bool ShowLogMessageLog;
         public bool ShowUseActionLog;
         public bool ShowUseActionLocationLog;
+        public bool ShowUseActionPetMoveLog;
     }
 
     internal static Config DebugConfig = new();
@@ -102,6 +103,7 @@ public class Debug() : Window("Daily Routines - 调试窗口", ImGuiWindowFlags.
 
         ImGui.Checkbox("显示 Action 日志###Use Action Manager", ref DebugConfig.ShowUseActionLog);
         ImGui.Checkbox("显示 Location Action 日志###Use Action Manager", ref DebugConfig.ShowUseActionLocationLog);
+        ImGui.Checkbox("显示 Pet Move 日志###Use Action Manager", ref DebugConfig.ShowUseActionPetMoveLog);
     }
 
     public void Dispose()

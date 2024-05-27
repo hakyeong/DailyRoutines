@@ -19,19 +19,19 @@ public unsafe class UseActionManager : IDailyManager
     public delegate void PostUseActionLocationDelegate(bool result, ActionType actionType, uint actionID, ulong targetID, Vector3 location, uint a4);
 
     public delegate void PreUseActionPetMoveDelegate(ref bool isPrevented, ref int a1, ref Vector3 location, ref int perActionID, ref int a4, ref int a5, ref int a6);
-    public delegate void PostUseActionPetMoveDelegate(int a1, Vector3 location, int perActionID, int a4, int a5, int a6);
+    public delegate void PostUseActionPetMoveDelegate(bool result, int a1, Vector3 location, int perActionID, int a4, int a5, int a6);
 
-    private delegate bool useActionDelegate(
+    internal delegate bool useActionDelegate(
         ActionManager* actionManager, ActionType actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
         uint queueState = 0, uint a6 = 0, void* a7 = null);
-    private static Hook<useActionDelegate>? UseActionHook;
+    internal static Hook<useActionDelegate>? UseActionHook;
 
-    private delegate bool useActionLocationDelegate(ActionManager* manager, ActionType type, uint actionID, ulong targetID, Vector3* location, uint a4);
-    private static Hook<useActionLocationDelegate>? UseActionLocationHook;
+    internal delegate bool useActionLocationDelegate(ActionManager* manager, ActionType type, uint actionID, ulong targetID, Vector3* location, uint a4);
+    internal static Hook<useActionLocationDelegate>? UseActionLocationHook;
 
-    private delegate bool useActionPetMoveDelegate(int a1, Vector3* position, int petActionID, int a4, int a5, int a6);
+    internal delegate bool useActionPetMoveDelegate(int a1, Vector3* position, int petActionID, int a4, int a5, int a6);
     [Signature("E8 ?? ?? ?? ?? EB 1A 48 8B 53 08", DetourName = nameof(UseActionPetMoveDetour))]
-    private static Hook<useActionPetMoveDelegate>? UseActionPetMoveHook;
+    internal static Hook<useActionPetMoveDelegate>? UseActionPetMoveHook;
 
     // PreUseAction
     private static readonly Dictionary<string, PreUseActionDelegate>? MethodsInfoPreUseAction = [];
@@ -353,6 +353,9 @@ public unsafe class UseActionManager : IDailyManager
 
     private static bool UseActionPetMoveDetour(int a1, Vector3* location, int petActionID, int a3, int a4, int a5)
     {
+        if (Debug.DebugConfig.ShowUseActionPetMoveLog)
+            Service.Log.Debug($"[Use Action Manager] 召唤物移动技能\n类型:{a1} | ID:{petActionID} | 地点:{*location} | a3: {a3} | a4:{a4} | a5: {a5}");
+
         Service.Log.Debug($"{a1} {*location} {petActionID} {a3} {a4} {a5}");
 
         var isPrevented = false;
@@ -368,7 +371,7 @@ public unsafe class UseActionManager : IDailyManager
 
         foreach (var postUseAction in _methodsPostUseActionPetMove)
         {
-            postUseAction.Invoke(a1, location0, petActionID, a3, a4, a5);
+            postUseAction.Invoke(original, a1, location0, petActionID, a3, a4, a5);
         }
 
         return original;
