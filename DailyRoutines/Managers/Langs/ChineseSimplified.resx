@@ -1839,6 +1839,13 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
 若对阈值把握不准, 可以以野外的白天碧空的阿拉基利, 群花馆, 副本内的各种究极魔法为参考</value>
   </data>
   <data name="AutoAdjustScreenBrightness-BrightnessOriginalHelp" xml:space="preserve">
-    <value>原始亮度取每次模块初始化时的电脑亮度, 不会保存, 可以手动在此处修改</value>
+    <value>原始亮度取每次模块初始化时的电脑亮度, 不会保存, 可以手动在此处修改
+在将游戏切入后台时, 会尝试还原一次原始亮度</value>
+  </data>
+  <data name="AutoAdjustScreenBrightness-AdjustSpeedHelp" xml:space="preserve">
+    <value>亮度调整采取平滑曲线, 此处数值设置越大, 屏幕亮度调整速度越快</value>
+  </data>
+  <data name="AutoAdjustScreenBrightness-BrightnessMinHelp" xml:space="preserve">
+    <value>在当前画面亮度超过设置阈值后, 会将屏幕亮度调整至此处设置的最低值</value>
   </data>
 </root>
