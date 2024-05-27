@@ -60,7 +60,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
         ImGui.Text($"{Service.Lang.GetText("AutoAdjustScreenBrightness-CurrentSceneBrightness")}: {Math.Round(SceneBrightness, 2)}%%");
         ImGui.EndGroup();
 
-        ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin() - ImGuiHelpers.ScaledVector2(2f), ImGui.GetItemRectMax() + ImGuiHelpers.ScaledVector2(2f), ImGui.ColorConvertFloat4ToU32(ImGuiColors.DalamudWhite), 2f, ImDrawFlags.RoundCornersTop, 3f);
+        ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin() - ImGuiHelpers.ScaledVector2(2f), ImGui.GetItemRectMax() + ImGuiHelpers.ScaledVector2(2f), ImGui.ColorConvertFloat4ToU32(ImGuiColors.DalamudWhite), 2f, ImDrawFlags.RoundCornersAll, 3f);
 
         ImGuiHelpers.ScaledDummy(5f);
 
@@ -108,16 +108,10 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
             {
                 if (!WindowFunctions.ApplicationIsActivated())
                 {
-                    if (!haveRestored)
-                    {
-                        targetBrightness = OriginalBrightness;
-                        haveRestored = true;
-                    }
                     await Task.Delay(100, token);
                     continue;
                 }
 
-                haveRestored = false;
                 var bitmap = CaptureScreen();
                 if (token.IsCancellationRequested)
                 {
@@ -143,10 +137,20 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
             {
                 if (!WindowFunctions.ApplicationIsActivated())
                 {
-                    targetBrightness = OriginalBrightness;
-                    Screen.SetBrightness(targetBrightness);
+                    if (!haveRestored)
+                    {
+                        targetBrightness = OriginalBrightness;
+                        Screen.SetBrightness(targetBrightness);
+                        haveRestored = true;
+                    }
                     await Task.Delay(500, token);
                     continue;
+                }
+
+                if (haveRestored)
+                {
+                    Screen.SetBrightness(targetBrightness);
+                    haveRestored = false;
                 }
 
                 if (currentBrightness != targetBrightness)
