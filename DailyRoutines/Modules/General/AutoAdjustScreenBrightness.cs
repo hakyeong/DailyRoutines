@@ -7,7 +7,6 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.Config;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using ECommons.Interop;
