@@ -29,6 +29,11 @@ public class AutoReplaceLocationAction : DailyModuleBase
             { 188,   true }, // 野战治疗阵
         };
 
+        public readonly Dictionary<uint, bool> EnabledPetActions = new()
+        {
+            { 3, true }, // 移动
+        };
+
         public bool SendMessage = true;
     }
 
@@ -46,6 +51,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
         Service.FrameworkManager.Register(OnUpdate);
         Service.UseActionManager.Register(OnPreUseActionLocation);
         Service.UseActionManager.Register(OnPostUseActionLocation);
+        Service.UseActionManager.Register(OnPreUseActionPetMove);
     }
 
     public override void ConfigUI()
@@ -76,13 +82,32 @@ public class AutoReplaceLocationAction : DailyModuleBase
                     SaveConfig(ModuleConfig);
                 }
             }
+
+            foreach (var actionPair in ModuleConfig.EnabledPetActions)
+            {
+                var action = LuminaCache.GetRow<PetAction>(actionPair.Key);
+
+                ImGui.TableNextRow();
+
+                ImGui.TableNextColumn();
+                ImGuiOm.TextImage(action.Name.RawString, ImageHelper.GetIcon((uint)action.Icon).ImGuiHandle,
+                                  ImGuiHelpers.ScaledVector2(20f));
+
+                ImGui.TableNextColumn();
+                var state = actionPair.Value;
+                if (ImGui.Checkbox($"###{actionPair.Key}_{action.Name.RawString}", ref state))
+                {
+                    ModuleConfig.EnabledPetActions[actionPair.Key] = state;
+                    SaveConfig(ModuleConfig);
+                }
+            }
             ImGui.EndTable();
         }
     }
 
     private static void OnUpdate(IFramework framework)
     {
-        if (!EzThrottler.Throttle("AutoPlaceEarthlyStar", 1000)) return;
+        if (!EzThrottler.Throttle("AutoReplaceLocationAction", 1000)) return;
         if (!Flags.BoundByDuty()) return;
 
         if (CurrentMapID == Service.ClientState.MapId) return;
@@ -102,8 +127,8 @@ public class AutoReplaceLocationAction : DailyModuleBase
     private static void OnPreUseActionLocation(ref bool isPrevented, ref ActionType type, ref uint actionID,
                                                ref ulong targetID, ref Vector3 location, ref uint a4)
     {
-        if (type != ActionType.Action || !ModuleConfig.EnabledActions.TryGetValue(actionID, out bool isEnabled) || !isEnabled)
-            return;
+        if (type != ActionType.Action || 
+            !ModuleConfig.EnabledActions.TryGetValue(actionID, out var isEnabled) || !isEnabled) return;
 
         var resultLocation = ZoneMapMarkers.Values
                                            .Select(x => x.ToVector3() as Vector3?)
@@ -113,6 +138,35 @@ public class AutoReplaceLocationAction : DailyModuleBase
             UpdateLocationIfClose(ref location, resultLocation.Value, 15);
         else
             HandleAlternativeLocation(ref location);
+    }
+
+    private static unsafe void OnPreUseActionPetMove(
+        ref bool isPrevented, ref int a1, ref Vector3 location, ref int perActionID, ref int a4, ref int a5, ref int a6)
+    {
+        if (!ModuleConfig.EnabledPetActions.TryGetValue(3, out var isEnabled) || !isEnabled) return;
+
+        var resultLocation = ZoneMapMarkers.Values
+                                           .Select(x => x.ToVector3() as Vector3?)
+                                           .FirstOrDefault(x => x.HasValue && Vector3.Distance(x.Value, Service.ClientState.LocalPlayer.Position) < 25);
+
+        if (resultLocation != null)
+            UpdateLocationIfClose(ref location, resultLocation.Value, 15);
+        else
+            HandleAlternativeLocation(ref location);
+
+        if (ModifiedLocation != null)
+        {
+            isPrevented = true;
+            var modifiedLocation = (Vector3)ModifiedLocation;
+            UseActionManager.UseActionPetMoveHook.Original(1800, &modifiedLocation, 3, 0, 0, 0);
+
+            var message = new SeStringBuilder().Append(DRPrefix)
+                                               .Append(Service.Lang.GetText("AutoReplaceLocationAction-RedirectMessage",
+                                                                            ModifiedLocation))
+                                               .Build();
+            Service.Chat.Print(message);
+            ModifiedLocation = null;
+        }
     }
 
     private static void UpdateLocationIfClose(ref Vector3 currentLocation, Vector3 candidateLocation, float proximityThreshold)
@@ -153,6 +207,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
     {
         Service.UseActionManager.Unregister(OnPreUseActionLocation);
         Service.UseActionManager.Unregister(OnPostUseActionLocation);
+        Service.UseActionManager.Unregister(OnPreUseActionPetMove);
         ModifiedLocation = null;
 
         base.Uninit();
