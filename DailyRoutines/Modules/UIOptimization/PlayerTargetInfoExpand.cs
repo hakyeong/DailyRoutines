@@ -49,8 +49,9 @@ public unsafe class PlayerTargetInfoExpand : DailyModuleBase
     {
         ModuleConfig = LoadConfig<Config>() ?? new();
 
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "_TargetInfoMainTarget", OnMainTarget);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "_FocusTargetInfo", OnFocusTarget);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "_TargetInfo", UpdateTargetInfo);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "_TargetInfoMainTarget", UpdateTargetInfoMainTarget);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "_FocusTargetInfo", UpdateFocusTargetInfo);
     }
 
     public override void ConfigUI()
@@ -119,10 +120,28 @@ public unsafe class PlayerTargetInfoExpand : DailyModuleBase
         }
     }
 
-    private static void OnMainTarget(AddonEvent type, AddonArgs args)
+    private static void UpdateTargetInfo(AddonEvent type, AddonArgs args)
     {
         var addon = (AtkUnitBase*)args.Addon;
-        if (addon == null) return;
+        if (addon == null || !addon->IsVisible) return;
+
+        // 目标
+        var target = Service.Target.Target;
+        var node0 = addon->GetTextNodeById(16);
+        if (node0 != null && target is Character { ObjectKind: ObjectKind.Player } chara0)
+            node0->SetText(ReplacePatterns(ModuleConfig.TargetPattern, Payloads, chara0));
+
+        // 目标的目标
+        var targetsTarget = Service.Target.Target?.TargetObject;
+        var node1 = addon->GetTextNodeById(7);
+        if (node1 != null && targetsTarget is Character { ObjectKind: ObjectKind.Player } chara1)
+            node1->SetText(ReplacePatterns(ModuleConfig.TargetsTargetPattern, Payloads, chara1));
+    }
+
+    private static void UpdateTargetInfoMainTarget(AddonEvent type, AddonArgs args)
+    {
+        var addon = (AtkUnitBase*)args.Addon;
+        if (addon == null || !addon->IsVisible) return;
 
         // 目标
         var target = Service.Target.Target;
@@ -137,10 +156,10 @@ public unsafe class PlayerTargetInfoExpand : DailyModuleBase
             node1->SetText(ReplacePatterns(ModuleConfig.TargetsTargetPattern, Payloads, chara1));
     }
 
-    private static void OnFocusTarget(AddonEvent type, AddonArgs args)
+    private static void UpdateFocusTargetInfo(AddonEvent type, AddonArgs args)
     {
         var addon = (AtkUnitBase*)args.Addon;
-        if (addon == null) return;
+        if (addon == null || !addon->IsVisible) return;
 
         // 焦点目标
         var target = Service.Target.FocusTarget;
