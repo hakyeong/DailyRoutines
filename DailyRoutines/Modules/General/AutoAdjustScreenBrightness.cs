@@ -261,11 +261,15 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
         private readonly ManagementScope scope = new("root\\WMI");
         private readonly SelectQuery queryBrightness = new("WmiMonitorBrightness");
         private readonly SelectQuery queryMethods = new("WmiMonitorBrightnessMethods");
+        private readonly ManagementObjectSearcher searcherBrightness;
+        private readonly ManagementObjectSearcher searcherMethods;
 
         public bool IsSupported { get; private set; }
 
         public ScreenHelper()
         {
+            searcherBrightness = new ManagementObjectSearcher(scope, queryBrightness);
+            searcherMethods = new ManagementObjectSearcher(scope, queryMethods);
             validBrightnessLevels = GetBrightnessLevels();
             IsSupported = validBrightnessLevels.Length > 0;
         }
@@ -278,8 +282,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
 
         public int GetCurrentBrightness()
         {
-            using var searcher = new ManagementObjectSearcher(scope, queryBrightness);
-            foreach (var o in searcher.Get())
+            foreach (var o in searcherBrightness.Get())
             {
                 var obj = (ManagementObject)o;
                 return (byte)obj.GetPropertyValue("CurrentBrightness");
@@ -299,21 +302,19 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
 
         public void SetBrightness(byte brightness)
         {
-            using var searcher = new ManagementObjectSearcher(scope, queryMethods);
-            foreach (var o in searcher.Get())
+            foreach (var o in searcherMethods.Get())
             {
                 var obj = (ManagementObject?)o;
-                obj.InvokeMethod("WmiSetBrightness", [uint.MaxValue, brightness]);
+                obj?.InvokeMethod("WmiSetBrightness", new object[] { uint.MaxValue, brightness });
                 break;
             }
         }
 
         private byte[] GetBrightnessLevels()
         {
-            using var searcher = new ManagementObjectSearcher(scope, queryBrightness);
             try
             {
-                foreach (var o in searcher.Get())
+                foreach (var o in searcherBrightness.Get())
                 {
                     var obj = (ManagementObject)o;
                     return (byte[])obj.GetPropertyValue("Level");
