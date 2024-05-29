@@ -25,6 +25,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
         public int BrightnessThresholdContent = 65;
         public int BrightnessMin = 30;
         public int AdjustSpeed = 50;
+        public bool DisableInCutscene = true;
     }
 
     private static int ScreenBrightness;
@@ -60,6 +61,9 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
         ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin() - ImGuiHelpers.ScaledVector2(2f), ImGui.GetItemRectMax() + ImGuiHelpers.ScaledVector2(2f), ImGui.ColorConvertFloat4ToU32(ImGuiColors.DalamudWhite), 2f, ImDrawFlags.RoundCornersAll, 3f);
 
         ImGuiHelpers.ScaledDummy(5f);
+
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoAdjustScreenBrightness-DisableInCutscene"), ref ModuleConfig.DisableInCutscene))
+            SaveConfig(ModuleConfig);
 
         ImGui.BeginGroup();
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
@@ -117,7 +121,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
         {
             while (true)
             {
-                if (!WindowFunctions.ApplicationIsActivated())
+                if ((ModuleConfig.DisableInCutscene && Flags.WatchingCutscene) || !WindowFunctions.ApplicationIsActivated())
                 {
                     await Task.Delay(100, token);
                     continue;
@@ -147,7 +151,13 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
         {
             while (true)
             {
-                if (!WindowFunctions.ApplicationIsActivated())
+                if (ModuleConfig.DisableInCutscene && Flags.WatchingCutscene)
+                {
+                    await Task.Delay(100, token);
+                    continue;
+                }
+
+                if ((ModuleConfig.DisableInCutscene && Flags.WatchingCutscene) || !WindowFunctions.ApplicationIsActivated())
                 {
                     if (!haveRestored)
                     {
