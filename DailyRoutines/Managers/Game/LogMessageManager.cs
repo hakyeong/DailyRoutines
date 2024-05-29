@@ -114,19 +114,6 @@ public unsafe class LogMessageManager : IDailyManager
         return state;
     }
 
-    public bool Unregister(params MethodInfo[] methods)
-    {
-        var state = true;
-        foreach (var method in methods)
-        {
-            var uniqueName = GetUniqueName(method);
-            if (!MethodsInfo.Remove(uniqueName)) state = false;
-        }
-
-        UpdateMethodsArray();
-        return state;
-    }
-
     private static void OnReceiveLogMessages(uint logMessageID)
     {
         var logKind = LuminaCache.GetRow<LogMessage>(logMessageID).LogKind;
@@ -145,11 +132,6 @@ public unsafe class LogMessageManager : IDailyManager
     private static string GetUniqueName(LogMessageDelegate method)
     {
         var methodInfo = method.Method;
-        return $"{methodInfo.DeclaringType.FullName}_{methodInfo.Name}";
-    }
-
-    private static string GetUniqueName(MemberInfo methodInfo)
-    {
         return $"{methodInfo.DeclaringType.FullName}_{methodInfo.Name}";
     }
 
