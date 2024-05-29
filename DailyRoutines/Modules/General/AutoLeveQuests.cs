@@ -32,10 +32,9 @@ public unsafe class AutoLeveQuests : DailyModuleBase
     private static AtkUnitBase* SelectIconString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectIconString");
     private static AtkUnitBase* GuildLeve => (AtkUnitBase*)Service.Gui.GetAddonByName("GuildLeve");
 
-    private delegate byte IsTargetableDelegate(GameObject* gameObj);
-    [Signature("40 53 48 83 EC 20 F3 0F 10 89 ?? ?? ?? ?? 0F 57 C0 0F 2E C8 48 8B D9 7A 0A",
-               DetourName = nameof(IsTargetableDetour))]
-    private static Hook<IsTargetableDelegate>? IsTargetableHook;
+    private delegate void GameObjectRotateDelegate(GameObject* obj, float value);
+    [Signature("E8 ?? ?? ?? ?? 83 FE 4F", DetourName = nameof(GameObjectRotateDetour))]
+    private static Hook<GameObjectRotateDelegate>? GameObjectRotateHook;
 
     [Signature("88 05 ?? ?? ?? ?? 0F B7 41 06", ScanType = ScanType.StaticAddress)]
     private static byte LeveAllowances;
@@ -137,7 +136,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
         {
             Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", AlwaysYes);
             Service.ExecuteCommandManager.Register(OnPreExecuteCommand);
-            IsTargetableHook?.Enable();
+            GameObjectRotateHook?.Enable();
             EnqueueARound();
         }
 
@@ -149,7 +148,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
         {
             TaskManager.Abort();
             Service.AddonLifecycle.UnregisterListener(AlwaysYes);
-            IsTargetableHook?.Disable();
+            GameObjectRotateHook?.Disable();
             Service.ExecuteCommandManager.Unregister(OnPreExecuteCommand);
         }
 
@@ -195,7 +194,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
         {
             TaskManager.Abort();
             Service.AddonLifecycle.UnregisterListener(AlwaysYes);
-            IsTargetableHook?.Disable();
+            GameObjectRotateHook?.Disable();
             Service.ExecuteCommandManager.Unregister(OnPreExecuteCommand);
             return;
         }
@@ -332,15 +331,12 @@ public unsafe class AutoLeveQuests : DailyModuleBase
         param1 = int.MinValue / 4;
     }
 
-    private static byte IsTargetableDetour(GameObject* pTarget)
+    private static void GameObjectRotateDetour(GameObject* obj, float value)
     {
-        var isTargetable = IsTargetableHook.Original(pTarget);
+        if ((nint)obj != Service.ClientState.LocalPlayer.Address)
+            GameObjectRotateHook.Original(obj, value);
 
-        var localPlayer = (GameObject*)Service.ClientState.LocalPlayer.Address;
-        localPlayer->Rotation = RandomRotation;
-        localPlayer->Rotate(RandomRotation);
-
-        return isTargetable;
+        GameObjectRotateHook.Original(obj, RandomRotation);
     }
 
     private static void OnZoneChanged(ushort zone)
