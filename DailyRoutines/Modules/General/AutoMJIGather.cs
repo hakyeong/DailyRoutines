@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
@@ -9,14 +11,18 @@ using DailyRoutines.Notifications;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Hooking;
+using Dalamud.Interface;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using Dalamud.Plugin.Services;
+using Dalamud.Utility.Signatures;
 using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.MJI;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
-using FFXIVClientStructs.FFXIV.Component.GUI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
 using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 
@@ -25,219 +31,190 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoMJIGatherTitle", "AutoMJIGatherDescription", ModuleCategories.一般)]
 public class AutoMJIGather : DailyModuleBase
 {
-    #region StaticStatisitics
-
-    private class AutoMJIGatherGroup
+    private class Config : ModuleConfiguration
     {
-        public bool Enabled { get; set; }
-        public HashSet<Vector3>? Nodes { get; set; }
-
-        public AutoMJIGatherGroup() { }
-
-        public AutoMJIGatherGroup(bool enabled, HashSet<Vector3> nodes)
-        {
-            Enabled = enabled;
-            Nodes = nodes;
-        }
+        public readonly List<IslandGatherPoint> IslandGatherPoints = [];
+        public bool StopWhenReachingCap = true;
     }
 
-    private static readonly HashSet<Vector3> FarmCorpsPos =
-    [
-        // 第一行
-        new Vector3(-240, 57.9f, 101),
-        new Vector3(-240, 57.9f, 106.5f),
-        new Vector3(-240, 57.9f, 112),
-        new Vector3(-240, 57.9f, 117.5f),
-        new Vector3(-240, 57.9f, 123),
-        new Vector3(-240, 57.9f, 101),
-        // 第二行
-        new Vector3(-216, 60.4f, 97),
-        new Vector3(-216, 60.4f, 102.5f),
-        new Vector3(-216, 60.4f, 108),
-        new Vector3(-216, 60.4f, 113.5f),
-        new Vector3(-216, 60.4f, 119),
-        // 第三行
-        new Vector3(-189, 66.4f, 105),
-        new Vector3(-189, 66.4f, 110.5f),
-        new Vector3(-189, 66.4f, 116),
-        new Vector3(-189, 66.4f, 121.5f),
-        new Vector3(-189, 66.4f, 127),
-        // 第四行
-        new Vector3(-179, 66.4f, 105),
-        new Vector3(-179, 66.4f, 110.5f),
-        new Vector3(-179, 66.4f, 116),
-        new Vector3(-179, 66.4f, 121.5f),
-        new Vector3(-179, 66.4f, 127)
-    ];
+    private class IslandGatherPoint : IEquatable<IslandGatherPoint>, IComparable<IslandGatherPoint>
+    {
+        public string Name { get; set; } = string.Empty;
+        public bool Enabled { get; set; }
+        public List<Vector3> Points { get; set; } = [];
 
-    #endregion
+        public IslandGatherPoint() { }
 
-    private static Dictionary<string, AutoMJIGatherGroup> GatherNodes = [];
-    private static bool ConfigStopWhenReachCaps;
+        public IslandGatherPoint(string name) => Name = name;
+
+        public override bool Equals(object? obj) => Equals(obj as IslandGatherPoint);
+
+        public bool Equals(IslandGatherPoint? other) => other != null && Name == other.Name;
+
+        public override int GetHashCode() => Name.GetHashCode();
+
+        public int CompareTo(IslandGatherPoint? other) => other == null ? 1 : string.Compare(Name, other.Name, StringComparison.Ordinal);
+    }
+
     private static int CurrentGatherIndex;
     private static bool IsOnDataCollecting;
     private static List<Vector3> QueuedGatheringList = [];
 
+    private delegate bool IsPlayerOnDivingDelegate(nint a1);
+    [Signature("E8 ?? ?? ?? ?? 84 C0 74 ?? F3 0F 10 35 ?? ?? ?? ?? F3 0F 10 3D ?? ?? ?? ?? F3 44 0F 10 05", 
+               DetourName = nameof(IsPlayingOnDivingDetour))]
+    private static Hook<IsPlayerOnDivingDelegate>? IsPlayerOnDivingHook;
+
+    [Signature("4C 8D 35 ?? ?? ?? ?? 48 8B 09", ScanType = ScanType.Text)]
+    private static nint UnknownPtrInTargetSystem;
+
+    private static bool IsOnDiving;
+
+    private static Config ModuleConfig = null!;
+
     public override void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
+        ModuleConfig = LoadConfig<Config>() ?? new();
 
-        AddConfig("GatherNodes", GatherNodes);
-        AddConfig("StopWhenReachCaps", true);
+        Service.Hook.InitializeFromAttributes(this);
+        IsPlayerOnDivingHook.Enable();
 
-        GatherNodes =
-            GetConfig<Dictionary<string, AutoMJIGatherGroup>>("GatherNodes");
-        ConfigStopWhenReachCaps = GetConfig<bool>("StopWhenReachCaps");
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 15000, ShowDebug = false };
 
         Service.Chat.ChatMessage += OnChatMessage;
+        Service.FrameworkManager.Register(OnUpdate);
     }
 
     public override void ConfigUI()
     {
         ImGui.BeginDisabled(Service.ClientState.TerritoryType != 1055 || TaskManager.IsBusy);
-        ImGui.SetNextItemWidth(350f * ImGuiHelpers.GlobalScale);
-        if (ImGui.BeginCombo("##AutoMJIGather-GatherNodes",
-                             Service.Lang.GetText("AutoMJIGather-NodesInfo", GatherNodes.Count,
-                                                  GatherNodes.Count(x => x.Value.Enabled),
-                                                  GatherNodes.Values.Where(group => group.Enabled)
-                                                             .SelectMany(group => group.Nodes).Count()),
-                             ImGuiComboFlags.HeightLarge))
-        {
-            if (ImGui.Button(Service.Lang.GetText("AutoMJIGather-CollectGatherPointsInfo",
-                                                  IsOnDataCollecting
-                                                      ? Service.Lang.GetText("Stop")
-                                                      : Service.Lang.GetText("Start"))))
-            {
-                if (IsOnDataCollecting)
-                {
-                    Service.FrameworkManager.Unregister(OnUpdate);
-                    IsOnDataCollecting = false;
-                }
-                else
-                {
-                    var keysToRemove = GatherNodes
-                                       .Where(pair => pair.Value.Nodes == null ||
-                                                      pair.Value.Nodes.Any(node => node.Y < 0))
-                                       .Select(pair => pair.Key)
-                                       .ToList();
 
-                    foreach (var key in keysToRemove) GatherNodes.Remove(key);
-                    Service.FrameworkManager.Register(OnUpdate);
-                    IsOnDataCollecting = true;
-                }
-            }
-
-            ImGuiOm.HelpMarker(Service.Lang.GetText("AutoMJIGather-CollectGatherPointsHelp"));
-
-            ImGui.Separator();
-
-            if (GatherNodes.Count != 0)
-            {
-                ImGui.BeginGroup();
-                foreach (var nodeGroup in GatherNodes)
-                {
-                    var groupState = nodeGroup.Value.Enabled;
-                    if (ImGui.Checkbox($"##{nodeGroup.Key}", ref groupState))
-                    {
-                        GatherNodes[nodeGroup.Key] = new AutoMJIGatherGroup(groupState, nodeGroup.Value.Nodes);
-                        UpdateConfig("GatherNodes", GatherNodes);
-                        CurrentGatherIndex = 0;
-                        QueuedGatheringList.Clear();
-                    }
-                }
-
-                ImGui.EndGroup();
-
-                ImGui.SameLine();
-                ImGui.BeginGroup();
-                foreach (var nodeGroup in GatherNodes)
-                {
-                    ImGui.AlignTextToFramePadding();
-                    ImGui.Text($"{nodeGroup.Key}");
-                }
-
-                ImGui.EndGroup();
-
-                ImGui.SameLine();
-                ImGui.Spacing();
-
-                ImGui.SameLine();
-                ImGui.BeginGroup();
-                foreach (var nodeGroup in GatherNodes)
-                {
-                    ImGui.AlignTextToFramePadding();
-                    ImGui.Text($"{nodeGroup.Value.Nodes.Count}");
-                }
-
-                ImGui.EndGroup();
-            }
-
-            ImGui.EndCombo();
-        }
-
-        ImGui.SameLine();
-        ImGui.BeginDisabled(IsOnDataCollecting || GatherNodes.Count == 0);
+        ImGui.BeginDisabled(IsOnDataCollecting);
         if (ImGui.Button(Service.Lang.GetText("Start")))
         {
             TaskManager.Enqueue(SwitchToGatherMode);
-            QueuedGatheringList = GatherNodes.Values
-                                             .Where(group => group.Enabled)
-                                             .SelectMany(group => group.Nodes ?? Enumerable.Empty<Vector3>())
-                                             .ToList();
+            QueuedGatheringList = ModuleConfig.IslandGatherPoints
+                                              .Where(group => group.Enabled)
+                                              .SelectMany(group => group.Points ?? Enumerable.Empty<Vector3>())
+                                              .ToList();
 
-            if (QueuedGatheringList.Count != 0 && QueuedGatheringList.Count > 10)
-                Gather(QueuedGatheringList);
-            else
-                Service.Chat.PrintError(Service.Lang.GetText("AutoMJIGather-InsufficientGatherNodes"));
+            if (!IsPlayerOnDivingHook.IsEnabled) IsPlayerOnDivingHook.Enable();
+
+            if (QueuedGatheringList.Count != 0 && QueuedGatheringList.Count > 10) Gather(QueuedGatheringList);
+            else Service.Chat.PrintError(Service.Lang.GetText("AutoMJIGather-InsufficientGatherNodes"));
         }
 
         ImGui.EndDisabled();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
+        if (ImGui.Button(Service.Lang.GetText("Stop")))
+        {
+            TaskManager.Abort();
+            IsOnDiving = false;
+        }
 
+        ImGui.SameLine();
         ImGui.Text(Service.Lang.GetText("AutoMJIGather-GatherProcessInfo",
                                         QueuedGatheringList.Count == 0 ? 0 : CurrentGatherIndex + 1,
                                         QueuedGatheringList.Count));
 
+        ImGui.SameLine();
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoMJIGather-StopWhenReachCaps"), ref ModuleConfig.StopWhenReachingCap))
+            SaveConfig(ModuleConfig);
+
         ImGui.Spacing();
 
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoMJIGather-StopWhenReachCaps"), ref ConfigStopWhenReachCaps))
-            UpdateConfig("StopWhenReachCaps", ConfigStopWhenReachCaps);
-    }
-
-    private void OnUpdate(IFramework framework)
-    {
-        if (!IsOnDataCollecting)
+        var tableSize = (ImGui.GetContentRegionAvail() / 3 + ImGuiHelpers.ScaledVector2(50f)) with { Y = 0 };
+        if (ImGui.BeginTable("GatherPointsTable1", 3, ImGuiTableFlags.Borders, tableSize))
         {
-            Service.FrameworkManager.Unregister(OnUpdate);
-            return;
+            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
+            ImGui.TableSetupColumn("名称", ImGuiTableColumnFlags.None, 40);
+            ImGui.TableSetupColumn("数量", ImGuiTableColumnFlags.None, 20);
+
+            ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+
+            ImGui.TableNextColumn();
+            if (IsOnDataCollecting) ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.HealerGreen);
+            if (ImGuiOm.SelectableIconCentered("DataCollect", FontAwesomeIcon.Play))
+            {
+                IsOnDataCollecting ^= true;
+                if (!IsOnDataCollecting) SaveConfig(ModuleConfig);
+            }
+            if (IsOnDataCollecting) ImGui.PopStyleColor();
+            ImGuiOm.TooltipHover(Service.Lang.GetText("AutoMJIGather-CollectGatherPointsHelp"));
+
+            ImGui.TableNextColumn();
+            ImGuiOm.Text(Service.Lang.GetText("Name"));
+
+            ImGui.TableNextColumn();
+            ImGuiOm.Text(Service.Lang.GetText("Amount"));
+
+            foreach (var gatherPoint in ModuleConfig.IslandGatherPoints.Take(ModuleConfig.IslandGatherPoints.Count / 2))
+            {
+                if (gatherPoint.Enabled) ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudYellow);
+                ImGui.TableNextRow();
+
+                ImGui.TableNextColumn();
+                var isEnabled = gatherPoint.Enabled;
+                if (ImGui.Checkbox($"###{gatherPoint.Name}", ref isEnabled))
+                    gatherPoint.Enabled = isEnabled;
+
+                ImGui.TableNextColumn();
+                ImGui.Text(gatherPoint.Name);
+
+                ImGui.TableNextColumn();
+                ImGui.Text(gatherPoint.Points.Count.ToString());
+                if (gatherPoint.Enabled) ImGui.PopStyleColor();
+            }
+
+            ImGui.EndTable();
         }
 
-        foreach (var obj in Service.ObjectTable)
+        ImGui.SameLine();
+        if (ImGui.BeginTable("GatherPointsTable2", 3, ImGuiTableFlags.Borders, tableSize))
         {
-            if (obj.Position.Y < 0 || obj.ObjectKind != ObjectKind.CardStand ||
-                FarmCorpsPos.Contains(obj.Position)) continue;
+            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
+            ImGui.TableSetupColumn("名称", ImGuiTableColumnFlags.None, 40);
+            ImGui.TableSetupColumn("数量", ImGuiTableColumnFlags.None, 20);
 
-            var objName = obj.Name.ExtractText();
-            if (string.IsNullOrWhiteSpace(objName)) continue;
-            if (!GatherNodes.ContainsKey(objName)) GatherNodes.Add(objName, new AutoMJIGatherGroup(false, []));
-            if (GatherNodes[objName].Nodes.Add(obj.Position))
-                UpdateConfig("GatherNodes", GatherNodes);
-        }
-    }
+            ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
 
-    private void OnChatMessage(
-        XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
-    {
-        if (!ConfigStopWhenReachCaps) return;
-        if (!TaskManager.IsBusy || (ushort)type != 2108) return;
+            ImGui.TableNextColumn();
+            if (IsOnDataCollecting) ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.HealerGreen);
+            if (ImGuiOm.SelectableIconCentered("DataCollect", FontAwesomeIcon.Play))
+            {
+                IsOnDataCollecting ^= true;
+                if (!IsOnDataCollecting) SaveConfig(ModuleConfig);
+            }
+            if (IsOnDataCollecting) ImGui.PopStyleColor();
+            ImGuiOm.TooltipHover(Service.Lang.GetText("AutoMJIGather-CollectGatherPointsHelp"));
 
-        if (message.ExtractText().Contains("持有数量已达到上限"))
-        {
-            TaskManager.Abort();
-            WinToast.Notify("", Service.Lang.GetText("AutoMJIGather-ReachCapsMessage"), ToolTipIcon.Warning);
+            ImGui.TableNextColumn();
+            ImGuiOm.Text(Service.Lang.GetText("Name"));
+
+            ImGui.TableNextColumn();
+            ImGuiOm.Text(Service.Lang.GetText("Amount"));
+
+            foreach (var gatherPoint in ModuleConfig.IslandGatherPoints.Skip(ModuleConfig.IslandGatherPoints.Count / 2))
+            {
+                if (gatherPoint.Enabled) ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudYellow);
+                ImGui.TableNextRow();
+
+                ImGui.TableNextColumn();
+                var isEnabled = gatherPoint.Enabled;
+                if (ImGui.Checkbox($"###{gatherPoint.Name}", ref isEnabled))
+                    gatherPoint.Enabled = isEnabled;
+
+                ImGui.TableNextColumn();
+                ImGui.Text(gatherPoint.Name);
+
+                ImGui.TableNextColumn();
+                ImGui.Text(gatherPoint.Points.Count.ToString());
+                if (gatherPoint.Enabled) ImGui.PopStyleColor();
+            }
+
+            ImGui.EndTable();
         }
     }
 
@@ -245,56 +222,46 @@ public class AutoMJIGather : DailyModuleBase
     {
         if (IsOccupied()) return false;
 
-        TaskManager.Enqueue(() => Teleport(nodes[CurrentGatherIndex]));
-        TaskManager.DelayNext(500);
+        TaskManager.Enqueue(SwitchToGatherMode);
+        TaskManager.Enqueue(() => { IsOnDiving = nodes[CurrentGatherIndex].Y < 0; });
+        TaskManager.Enqueue(() =>
+        {
+            var node = nodes[CurrentGatherIndex];
+            return node.Y switch
+            {
+                < 0 when !IsPlayerOnDivingHook.Original(Service.ClientState.LocalPlayer.Address + 528) => Teleport(node),
+                > 0 when IsPlayerOnDivingHook.Original(Service.ClientState.LocalPlayer.Address + 528) => TeleportWhenDiving(node),
+                _ => node.Y > 0 ? Teleport(node) : TeleportWhenDiving(node)
+            };
+        });
+
+        TaskManager.DelayNext(100);
         TaskManager.Enqueue(() => InteractWithNearestObject(nodes[CurrentGatherIndex]));
-        TaskManager.DelayNext(2000);
+
+        TaskManager.DelayNext(100);
         TaskManager.Enqueue(() => Gather(QueuedGatheringList));
+
+        TaskManager.DelayNext(100);
         if (CurrentGatherIndex + 1 >= nodes.Count)
         {
             TaskManager.Abort();
             TaskManager.Enqueue(() => CurrentGatherIndex = 0);
             TaskManager.Enqueue(() => Gather(QueuedGatheringList));
         }
-        else
-            TaskManager.Enqueue(() => CurrentGatherIndex++);
+        else TaskManager.Enqueue(() => CurrentGatherIndex++);
 
         return true;
     }
 
-    private unsafe bool? SwitchToGatherMode()
+    private static unsafe bool? SwitchToGatherMode()
     {
-        if (MJIManager.Instance()->CurrentMode == 1) return true;
-
-        if (TryGetAddonByName<AtkUnitBase>("MJIHud", out var hud) && IsAddonAndNodesReady(hud))
-        {
-            AddonHelper.Callback(hud, true, 11, 0);
-            if (TryGetAddonByName<AtkUnitBase>("ContextIconMenu", out var menu) && IsAddonAndNodesReady(menu))
-            {
-                AddonHelper.Callback(menu, true, 0, 1, 82043, 0, 0);
-                TaskManager.Enqueue(CloseContextIconMenu);
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static unsafe bool? CloseContextIconMenu()
-    {
-        if (TryGetAddonByName<AtkUnitBase>("ContextIconMenu", out var menu) && IsAddonAndNodesReady(menu))
-        {
-            AddonHelper.Callback(menu, true, -1);
-            menu->Close(true);
-            return true;
-        }
-
-        return true;
+        AgentHelper.SendEvent(AgentId.MJIHud, 2, 0, 1, 82042U, 0U, 0);
+        return MJIManager.Instance()->CurrentMode == 1;
     }
 
     private bool? Teleport(Vector3 pos)
     {
-        if (IsGathering()) return false;
+        if (IsOnGathering()) return false;
         if (Service.ClientState.TerritoryType != 1055)
         {
             TaskManager.Abort();
@@ -302,17 +269,35 @@ public class AutoMJIGather : DailyModuleBase
             return true;
         }
 
-        if (Service.ClientState.LocalPlayer != null)
-        {
-            var address = Service.ClientState.LocalPlayer.Address;
-            MemoryHelper.Write(address + 176, pos.X);
-            MemoryHelper.Write(address + 180, pos.Y);
-            MemoryHelper.Write(address + 184, pos.Z);
+        var localPlayer = Service.ClientState.LocalPlayer;
+        if (localPlayer == null) return false;
 
+        var address = localPlayer.Address + 176;
+        MemoryHelper.Write(address, pos.X);
+        MemoryHelper.Write(address + 4, pos.Y);
+        MemoryHelper.Write(address + 8, pos.Z);
+
+        return true;
+
+    }
+
+    private bool? TeleportWhenDiving(Vector3 pos)
+    {
+        if (IsOnGathering()) return false;
+        if (Service.ClientState.TerritoryType != 1055)
+        {
+            TaskManager.Abort();
+            WinToast.Notify("", Service.Lang.GetText("AutoMJIGather-NotInIslandMessage"), ToolTipIcon.Warning);
             return true;
         }
 
-        return false;
+        var ptr = UnknownPtrInTargetSystem;
+        var address = Marshal.ReadInt32(ptr + 3) + ptr + 22151;
+
+        MemoryHelper.Write(address, pos.X);
+        MemoryHelper.Write(address + 4, pos.Y);
+        MemoryHelper.Write(address + 8, pos.Z);
+        return true;
     }
 
     private unsafe bool? InteractWithNearestObject(Vector3 node)
@@ -321,34 +306,87 @@ public class AutoMJIGather : DailyModuleBase
 
         var nearObjects = Service.ObjectTable
                                  .Where(x => x.ObjectKind is ObjectKind.CardStand &&
-                                             GetGameDistanceFromObject(
-                                                 (GameObject*)Service.ClientState.LocalPlayer.Address,
-                                                 (GameObject*)x.Address) <= 2).ToArray();
-        if (!nearObjects.Any())
+                                             Vector3.Distance(x.Position, Service.ClientState.LocalPlayer.Position) <= 2)
+                                 .ToArray();
+
+        if (nearObjects.Length == 0)
         {
             Service.Log.Warning("没有找到采集点, 正在重新定位坐标");
-            Teleport(node with { Y = node.Y - 1 });
+            _ = node.Y > 0 ? Teleport(node with { Y = node.Y - 1 }) : TeleportWhenDiving(node with { Y = node.Y - 1 });
             return false;
         }
 
-        if (IsGathering()) return false;
+        if (IsOnGathering()) return false;
 
         TargetSystem.Instance()->InteractWithObject((GameObject*)nearObjects.FirstOrDefault().Address);
-
         return true;
     }
 
-    private static bool IsGathering()
+    private static bool IsOnGathering()
     {
         return Service.Condition[ConditionFlag.Jumping] ||
                Service.Condition[ConditionFlag.Jumping61] ||
-               Service.Condition[ConditionFlag.OccupiedInQuestEvent];
+               Service.Condition[ConditionFlag.OccupiedInQuestEvent] ||
+               Service.Condition[ConditionFlag.Casting] ||
+               Service.Condition[ConditionFlag.BetweenAreas];
+    }
+
+    private static bool IsPlayingOnDivingDetour(nint a1)
+    {
+        var original = IsPlayerOnDivingHook.Original(a1);
+        if (Service.ClientState.TerritoryType != 1055)
+        {
+            IsPlayerOnDivingHook.Disable();
+            return original;
+        }
+
+        return IsOnDiving;
+    }
+
+    private static void OnUpdate(IFramework _)
+    {
+        if (!IsOnDataCollecting || Service.ClientState.TerritoryType != 1055) return;
+
+        foreach (var obj in Service.ObjectTable)
+        {
+            // 排除非采集点和特定耕地
+            if (obj.ObjectKind != ObjectKind.CardStand || 
+                obj.DataId == 0 || obj.DataId == 2013159) continue;
+
+            if (string.IsNullOrWhiteSpace(obj.Name.TextValue)) continue;
+
+            var newGatherPoint = new IslandGatherPoint(obj.Name.TextValue);
+            if (!ModuleConfig.IslandGatherPoints.Contains(newGatherPoint))
+            {
+                ModuleConfig.IslandGatherPoints.Add(newGatherPoint);
+                newGatherPoint.Points.Add(obj.Position);
+            }
+            else
+            {
+                var existingPoint = ModuleConfig.IslandGatherPoints.Find(p => p.Equals(newGatherPoint));
+                if (!existingPoint.Points.Contains(obj.Position))
+                    existingPoint.Points.Add(obj.Position);
+            }
+        }
+    }
+
+    private void OnChatMessage(
+        XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
+    {
+        if (!ModuleConfig.StopWhenReachingCap) return;
+        if (!TaskManager.IsBusy || (ushort)type != 2108) return;
+
+        if (message.TextValue.Contains("持有数量已达到上限"))
+        {
+            TaskManager.Abort();
+            IsPlayerOnDivingHook.Disable();
+            WinToast.Notify("", Service.Lang.GetText("AutoMJIGather-ReachCapsMessage"), ToolTipIcon.Warning);
+        }
     }
 
     public override void Uninit()
     {
-        UpdateConfig("GatherNodes", GatherNodes);
-
+        Service.FrameworkManager.Unregister(OnUpdate);
         Service.Chat.ChatMessage -= OnChatMessage;
         QueuedGatheringList.Clear();
         IsOnDataCollecting = false;

@@ -362,20 +362,14 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>自动完成仙人微彩</value>
   </data>
   <data name="AutoMJIGather-CollectGatherPointsHelp" xml:space="preserve">
-    <value>因物体渲染距离限制, 初次使用请先开启数据采集模式, 然后飞遍全岛一次记录各采集点数据, 后续使用无需再次采集数据
-(由于游戏过图限制, 该模块采集方式无法处理水下采集点, 如有需要, 请使用 visland)</value>
-  </data>
-  <data name="AutoMJIGather-CollectGatherPointsInfo" xml:space="preserve">
-    <value>{0}获取采集点数据</value>
+    <value>因物体渲染距离限制, 初次使用请先在此处开启数据采集模式, 
+然后飞遍全岛一次记录各采集点数据, 后续使用无需再次采集数据</value>
   </data>
   <data name="AutoMJIGather-GatherProcessInfo" xml:space="preserve">
     <value>当前进度: {0} / {1}</value>
   </data>
   <data name="AutoMJIGather-InsufficientGatherNodes" xml:space="preserve">
     <value>已选择的采集点数量过少 (≤ 10), 请重新选择</value>
-  </data>
-  <data name="AutoMJIGather-NodesInfo" xml:space="preserve">
-    <value>已获取 {0} 类采集点, 已选择 {1} 类, 共 {2} 个</value>
   </data>
   <data name="AutoMJIGather-NotInIslandMessage" xml:space="preserve">
     <value>当前未处于无人岛区域, 已停止采集</value>
@@ -1856,5 +1850,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="OptimizedInteractionTitle" xml:space="preserve">
     <value>游戏原生交互优化</value>
+  </data>
+  <data name="Amount" xml:space="preserve">
+    <value>数量</value>
   </data>
 </root>
