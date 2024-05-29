@@ -1851,4 +1851,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoAdjustScreenBrightness-ThresholdContent" xml:space="preserve">
     <value>调节阈值 (副本)</value>
   </data>
+  <data name="OptimizedInteractionDescription" xml:space="preserve">
+    <value>优化了游戏的交互逻辑, 取消了物体在视野外、物体被遮挡、跳跃时、低空飞行时等的禁止交互限制</value>
+  </data>
+  <data name="OptimizedInteractionTitle" xml:space="preserve">
+    <value>游戏原生交互优化</value>
+  </data>
 </root>
