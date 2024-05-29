@@ -38,17 +38,6 @@ public unsafe class OptimizedInteraction : DailyModuleBase
     [Signature("40 53 57 41 56 48 83 EC ?? 48 8B 02", DetourName = nameof(CheckTargetPositionDetour))]
     private static Hook<CheckTargetPositionDelegate>? CheckTargetPositionHook;
 
-    // 检查目标是否位于同一环境
-    private delegate bool IsTargetInSameEnvironmentDelegate(nint a1);
-    [Signature("E8 ?? ?? ?? ?? 3A D8 74 ?? 48 8B 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 0F 84", 
-               DetourName = nameof(IsTargetInSameEnvironmentDetour))]
-    private static Hook<IsTargetInSameEnvironmentDelegate>? IsTargetInSameEnvironmentHook;
-
-    // 玩家当前是否正在潜水
-    private delegate bool IsPlayerOnDivingDelegate(nint a1);
-    [Signature("E8 ?? ?? ?? ?? 84 C0 74 ?? F3 0F 10 35 ?? ?? ?? ?? F3 0F 10 3D ?? ?? ?? ?? F3 44 0F 10 05")]
-    private static IsPlayerOnDivingDelegate? IsPlayerOnDiving;
-
     public override void Init()
     {
         Service.Hook.InitializeFromAttributes(this);
@@ -58,7 +47,6 @@ public unsafe class OptimizedInteraction : DailyModuleBase
         IsPlayerOnJumping0Hook.Enable();
         IsPlayerOnJumping1Hook.Enable();
         CheckTargetPositionHook.Enable();
-        IsTargetInSameEnvironmentHook.Enable();
     }
 
     private static bool CameraObjectBlockedDetour(nint a1, nint a2, nint a3)
@@ -88,11 +76,5 @@ public unsafe class OptimizedInteraction : DailyModuleBase
     {
         // var original = CheckTargetPositionHook.Original(a1, a2, a3, a4, a5);
         return true;
-    }
-
-    private static bool IsTargetInSameEnvironmentDetour(nint a1)
-    {
-        // var original = IsTargetInSameEnvironmentHook.Original(a1);
-        return IsPlayerOnDiving(Service.ClientState.LocalPlayer.Address + 528);
     }
 }
