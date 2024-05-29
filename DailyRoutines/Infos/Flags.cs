@@ -52,8 +52,13 @@ public static class Flags
                                         Service.Condition[ConditionFlag.BoundByDuty95] ||
                                         Service.Condition[ConditionFlag.InDutyQueue];
 
+    public static bool WatchingCutscene => Service.Condition[ConditionFlag.WatchingCutscene] ||
+                                           Service.Condition[ConditionFlag.WatchingCutscene78];
+
     public static bool IsCasting => Service.Condition[ConditionFlag.Casting] || Service.Condition[ConditionFlag.Casting87];
+
     public static bool IsOnMount => Service.Condition[ConditionFlag.Mounted] || Service.Condition[ConditionFlag.Mounted2];
+
     public static bool CanMount => !Service.Condition[ConditionFlag.Mounted] && !Service.Condition[ConditionFlag.Mounting] && !Service.Condition[ConditionFlag.InCombat] && !Service.Condition[ConditionFlag.Casting];
 
 
