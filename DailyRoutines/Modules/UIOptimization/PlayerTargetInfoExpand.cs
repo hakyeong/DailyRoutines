@@ -177,8 +177,9 @@ public unsafe class PlayerTargetInfoExpand : DailyModuleBase
 
     public override void Uninit()
     {
-        Service.AddonLifecycle.UnregisterListener(OnMainTarget);
-        Service.AddonLifecycle.UnregisterListener(OnFocusTarget);
+        Service.AddonLifecycle.UnregisterListener(UpdateTargetInfo);
+        Service.AddonLifecycle.UnregisterListener(UpdateTargetInfoMainTarget);
+        Service.AddonLifecycle.UnregisterListener(UpdateFocusTargetInfo);
 
         base.Uninit();
     }
