@@ -135,14 +135,7 @@ public class AutoShowDutyGuide : DailyModuleBase
             if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
             {
                 ImGui.SetClipboardText(text);
-                Service.DalamudNotice.AddNotification(new()
-                {
-                    Title = "Daily Routines",
-                    Content = Service.Lang.GetText("AutoShowDutyGuide-CopyNotice"),
-                    Type = NotificationType.Success,
-                    InitialDuration = TimeSpan.FromSeconds(3),
-                    ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1)
-                });
+                NotifyHelper.NotificationSuccess(Service.Lang.GetText("AutoShowDutyGuide-CopyNotice"));
             }
             ImGui.PopID();
 

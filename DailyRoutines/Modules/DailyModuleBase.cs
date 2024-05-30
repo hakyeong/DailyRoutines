@@ -9,6 +9,7 @@ using System;
 using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
+using DailyRoutines.Helpers;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin.Services;
@@ -324,11 +325,7 @@ public abstract class DailyModuleBase
         if (Service.KeyState[Service.Config.ConflictKey])
         {
             TaskManager?.Abort();
-            Service.DalamudNotice.AddNotification(new()
-            {
-                Content = Service.Lang.GetText("ConflictKey-InterruptMessage"), Title = "Daily Routines",
-                Type = NotificationType.Success
-            });
+            NotifyHelper.NotificationSuccess(Service.Lang.GetText("ConflictKey-InterruptMessage"));
             return true;
         }
 

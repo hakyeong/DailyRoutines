@@ -1,5 +1,6 @@
 using System.Net.Http;
 using System.Threading.Tasks;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Objects.Types;
@@ -126,11 +127,7 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
 
                 if (result.data.Count == 0)
                 {
-                    Service.DalamudNotice.AddNotification(new Notification
-                    {
-                        Content = Service.Lang.GetText("ExpandPlayerMenuSearch-RisingStoneInfoNotFound"),
-                        Type = NotificationType.Error
-                    });
+                    NotifyHelper.NotificationError(Service.Lang.GetText("ExpandPlayerMenuSearch-RisingStoneInfoNotFound"));
                     break;
                 }
 
@@ -145,11 +142,7 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
 
                 if (!isFound)
                 {
-                    Service.DalamudNotice.AddNotification(new Notification
-                    {
-                        Content = Service.Lang.GetText("ExpandPlayerMenuSearch-NextPageMessage", 0),
-                        Type = NotificationType.Info
-                    });
+                    NotifyHelper.NotificationInfo(Service.Lang.GetText("ExpandPlayerMenuSearch-NextPageMessage", 0));
                     await Task.Delay(delayBetweenRequests);
                     page++;
                 }

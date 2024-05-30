@@ -26,11 +26,7 @@ public class AutoConstantlyInspect : DailyModuleBase
     {
         if (Service.KeyState[Service.Config.ConflictKey])
         {
-            Service.DalamudNotice.AddNotification(new()
-            {
-                Content = Service.Lang.GetText("ConflictKey-InterruptMessage"), Title = "Daily Routines",
-                Type = NotificationType.Success
-            });
+            NotifyHelper.NotificationSuccess(Service.Lang.GetText("ConflictKey-InterruptMessage"));
             return;
         }
 
