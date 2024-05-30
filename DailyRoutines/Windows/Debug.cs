@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Reflection;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Modules;
 using Dalamud.Interface.Colors;

@@ -1,6 +1,6 @@
 using System;
 
-namespace DailyRoutines.Infos;
+namespace DailyRoutines.Modules;
 
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public class ModuleDescriptionAttribute(string titleKey, string descriptionKey, ModuleCategories category) : Attribute

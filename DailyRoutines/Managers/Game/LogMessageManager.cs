@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Reflection;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Windows;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Hooking;

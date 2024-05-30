@@ -8,7 +8,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using DailyRoutines.Infos;
+using DailyRoutines.Modules;
 using Newtonsoft.Json;
 
 namespace DailyRoutines.Managers;

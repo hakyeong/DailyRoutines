@@ -1,5 +1,4 @@
 using System.Linq;
-using DailyRoutines.Infos;
 using DailyRoutines.Windows;
 using Dalamud.Interface.Windowing;
 

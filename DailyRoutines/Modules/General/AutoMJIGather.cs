@@ -124,7 +124,7 @@ public class AutoMJIGather : DailyModuleBase
             SaveConfig(ModuleConfig);
 
         ImGui.Spacing();
-
+        
         var tableSize = (ImGui.GetContentRegionAvail() / 3 + ImGuiHelpers.ScaledVector2(50f)) with { Y = 0 };
         if (ImGui.BeginTable("GatherPointsTable1", 3, ImGuiTableFlags.Borders, tableSize))
         {

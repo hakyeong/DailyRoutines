@@ -1,3 +1,3 @@
-namespace DailyRoutines.Infos;
+namespace DailyRoutines.Managers;
 
 public interface IDailyManager { }

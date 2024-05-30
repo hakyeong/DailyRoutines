@@ -1,4 +1,4 @@
-namespace DailyRoutines.Infos;
+namespace DailyRoutines.Modules;
 
 public enum ModuleCategories
 {

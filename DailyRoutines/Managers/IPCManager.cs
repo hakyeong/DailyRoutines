@@ -2,7 +2,6 @@ using System.Reflection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using DailyRoutines.Infos;
 using DailyRoutines.IPC;
 using DailyRoutines.Modules;
 using Dalamud.Plugin;

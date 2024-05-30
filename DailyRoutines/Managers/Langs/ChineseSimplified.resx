@@ -1804,7 +1804,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>备注</value>
   </data>
   <data name="AutoAdjustScreenBrightnessDescription" xml:space="preserve">
-    <value>启用并配置完成后, 在当前游戏画面较亮时降低屏幕亮度, 亮度较低时维持/还原亮度</value>
+    <value>启用并配置完成后, 在当前游戏画面较亮时降低屏幕亮度, 亮度较低时维持/还原亮度
+(亮度调节依赖于 WMI , 若无法启用则代表系统不支持相关功能)</value>
   </data>
   <data name="AutoAdjustScreenBrightnessTitle" xml:space="preserve">
     <value>自动调节屏幕亮度</value>

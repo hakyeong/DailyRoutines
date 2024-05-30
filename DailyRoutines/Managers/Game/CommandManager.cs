@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using DailyRoutines.Infos;
 using DailyRoutines.Modules;
 using DailyRoutines.Windows;
 using Dalamud.Game.Command;

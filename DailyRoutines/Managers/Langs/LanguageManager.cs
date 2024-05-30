@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using DailyRoutines.Infos;
 using Dalamud.Game.Text.SeStringHandling;
 
 namespace DailyRoutines.Managers;

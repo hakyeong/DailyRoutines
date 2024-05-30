@@ -1,4 +1,3 @@
-using DailyRoutines.Infos;
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using System.Collections.Generic;

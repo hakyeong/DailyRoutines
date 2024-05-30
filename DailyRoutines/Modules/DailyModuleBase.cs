@@ -9,7 +9,6 @@ using System;
 using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
-using DailyRoutines.Infos;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Plugin.Services;

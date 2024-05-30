@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
-using DailyRoutines.Infos;
 using Dalamud.Plugin.Services;
 
 namespace DailyRoutines.Managers;
