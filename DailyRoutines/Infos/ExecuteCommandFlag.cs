@@ -134,7 +134,7 @@ public enum ExecuteCommandFlag
     /// <summary>
     /// 请求陆行鸟鞍囊的数据
     /// </summary>
-    RequestSaddle = 444,
+    RequestSaddleBag = 444,
 
     /// <summary>
     /// 放弃任务投票
