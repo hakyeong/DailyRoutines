@@ -135,14 +135,14 @@ public unsafe class CustomizeGameObject : DailyModuleBase
         var tableSize = ImGui.GetContentRegionAvail() with { Y = 0 };
         if (ImGui.BeginTable("###ConfigTable", 7, ImGuiTableFlags.Borders, tableSize))
         {
-            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
+            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
             ImGui.TableSetupColumn("备注", ImGuiTableColumnFlags.None, 40);
             ImGui.TableSetupColumn("模式", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("ModelSkeletonID").X);
             ImGui.TableSetupColumn("值", ImGuiTableColumnFlags.None, 30);
             ImGui.TableSetupColumn("缩放比例", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("99.99").X);
-            ImGui.TableSetupColumn("缩放特效", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
+            ImGui.TableSetupColumn("缩放特效", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
             ImGui.TableSetupColumn("操作", ImGuiTableColumnFlags.WidthFixed,
-                                   (4 * CheckboxSize.X) + (4 * ImGui.GetStyle().ItemSpacing.X));
+                                   (4 * Styles.CheckboxSize.X) + (4 * ImGui.GetStyle().ItemSpacing.X));
 
             ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
 

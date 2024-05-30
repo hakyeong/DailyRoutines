@@ -15,7 +15,6 @@ namespace DailyRoutines.Infos;
 
 public static class Widgets
 {
-    public static Vector2 CheckboxSize => checkboxSize.Value;
     public static SeString RPrefix => rPrefix.Value;
     public static SeString DRPrefix => drPrefix.Value;
     public static SeString DailyRoutinesPrefix => dailyRoutinesPrefix.Value;

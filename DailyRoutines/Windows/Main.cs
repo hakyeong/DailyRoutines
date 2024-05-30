@@ -82,7 +82,7 @@ public class Main : Window, IDisposable
 
     public override void OnOpen()
     {
-        _ = CheckboxSize;
+        Styles.Refresh();
     }
 
     public override void Draw()

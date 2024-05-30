@@ -128,7 +128,7 @@ public class AutoMJIGather : DailyModuleBase
         var tableSize = (ImGui.GetContentRegionAvail() / 3 + ImGuiHelpers.ScaledVector2(50f)) with { Y = 0 };
         if (ImGui.BeginTable("GatherPointsTable1", 3, ImGuiTableFlags.Borders, tableSize))
         {
-            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
+            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
             ImGui.TableSetupColumn("名称", ImGuiTableColumnFlags.None, 40);
             ImGui.TableSetupColumn("数量", ImGuiTableColumnFlags.None, 20);
 
@@ -174,7 +174,7 @@ public class AutoMJIGather : DailyModuleBase
         ImGui.SameLine();
         if (ImGui.BeginTable("GatherPointsTable2", 3, ImGuiTableFlags.Borders, tableSize))
         {
-            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
+            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
             ImGui.TableSetupColumn("名称", ImGuiTableColumnFlags.None, 40);
             ImGui.TableSetupColumn("数量", ImGuiTableColumnFlags.None, 20);
 
