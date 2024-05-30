@@ -19,13 +19,6 @@ public static class Widgets
     public static SeString DRPrefix => drPrefix.Value;
     public static SeString DailyRoutinesPrefix => dailyRoutinesPrefix.Value;
 
-    private static readonly Lazy<Vector2> checkboxSize = new(() =>
-    {
-        var decoBool = false;
-        ImGui.Checkbox("", ref decoBool);
-        return ImGui.GetItemRectSize();
-    });
-
     private static readonly Lazy<SeString> rPrefix = new(() =>
                                                              new SeStringBuilder()
                                                                  .AddUiForeground(
@@ -176,7 +169,6 @@ public static class Widgets
                     ImGui.TableNextColumn();
                     ImGui.Text(placeName);
 
-                    if (ImGui.IsWindowAppearing() && selectedContent == contentPair.Value) ImGui.SetScrollHereY();
                     ImGui.PopID();
                 }
 
@@ -260,7 +252,6 @@ public static class Widgets
                         selectState = true;
                     }
 
-                    if (ImGui.IsWindowAppearing() && selectedAction == actionPair.Value) ImGui.SetScrollHereY();
                     ImGui.PopID();
                 }
 
@@ -332,7 +323,6 @@ public static class Widgets
                         selectState = true;
                     }
 
-                    if (ImGui.IsWindowAppearing() && selectedMount == mountPair.Value) ImGui.SetScrollHereY();
                     ImGui.PopID();
                 }
 
