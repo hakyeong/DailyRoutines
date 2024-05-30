@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
@@ -163,6 +165,92 @@ public static class Widgets
                                          ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups))
                     {
                         selectedContent = contentPair.Value;
+                        selectState = true;
+                    }
+
+                    ImGui.TableNextColumn();
+                    ImGui.Text(placeName);
+
+                    ImGui.PopID();
+                }
+
+                ImGui.EndTable();
+            }
+
+            ImGui.EndPopup();
+        }
+
+        return selectState;
+    }
+
+    public static bool ContentSelectCombo(ref HashSet<uint> selected, ref string contentSearchInput)
+    {
+        var selectState = false;
+        if (ImGui.BeginCombo("###ContentSelectCombo", $"当前已选中 {selected.Count} 个副本", ImGuiComboFlags.HeightLarge))
+            ImGui.EndCombo();
+
+        if (ImGui.IsItemClicked())
+            ImGui.OpenPopup("###ContentSelectPopup");
+
+        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(450f, 400f));
+        if (ImGui.BeginPopup("###ContentSelectPopup"))
+        {
+            ImGui.SetNextItemWidth(-1f);
+            ImGui.InputTextWithHint
+                ("###ContentSearchInput", Service.Lang.GetText("PleaseSearch"), ref contentSearchInput, 32);
+
+            ImGui.Separator();
+
+            var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
+            if (ImGui.BeginTable("###ContentSelectTable", 5, ImGuiTableFlags.Borders, tableSize))
+            {
+                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
+                ImGui.TableSetupColumn("Icon", ImGuiTableColumnFlags.WidthFixed, 20f * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupColumn("Level", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("123").X);
+                ImGui.TableSetupColumn("DutyName", ImGuiTableColumnFlags.WidthStretch, 40);
+                ImGui.TableSetupColumn("PlaceName", ImGuiTableColumnFlags.WidthStretch, 40);
+
+                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+                ImGui.TableNextColumn();
+                ImGui.Text("");
+                ImGui.TableNextColumn();
+                ImGui.Text("类型");
+                ImGui.TableNextColumn();
+                ImGui.Text("等级");
+                ImGui.TableNextColumn();
+                ImGui.Text("副本名");
+                ImGui.TableNextColumn();
+                ImGui.Text("区域名");
+
+                var selectedCopy = selected;
+                var data = PresetData.Contents.OrderByDescending(x => selectedCopy.Contains(x.Key));
+                foreach (var contentPair in data)
+                {
+                    var contentName = contentPair.Value.Name.RawString;
+                    var placeName = contentPair.Value.TerritoryType.Value.PlaceName.Value.Name.RawString;
+                    if (!string.IsNullOrWhiteSpace(contentSearchInput) &&
+                        !contentName.Contains(contentSearchInput, StringComparison.OrdinalIgnoreCase) &&
+                        !placeName.Contains(contentSearchInput, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    ImGui.PushID($"{contentName}_{contentPair.Key}");
+                    ImGui.TableNextRow();
+
+                    ImGui.TableNextColumn();
+                    var state = selected.Contains(contentPair.Key);
+                    ImGui.Checkbox("", ref state);
+
+                    ImGui.TableNextColumn();
+                    ImGui.Image(ImageHelper.GetIcon(contentPair.Value.ContentType.Value.Icon).ImGuiHandle,
+                                ImGuiHelpers.ScaledVector2(20f));
+
+                    ImGui.TableNextColumn();
+                    ImGui.Text(contentPair.Value.ClassJobLevelRequired.ToString());
+
+                    ImGui.TableNextColumn();
+                    if (ImGui.Selectable(contentName, state,
+                                         ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups))
+                    {
+                        if (!selected.Remove(contentPair.Key)) selected.Add(contentPair.Key);
                         selectState = true;
                     }
 
