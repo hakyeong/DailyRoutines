@@ -24,7 +24,7 @@ public unsafe class AutoRefocus : DailyModuleBase
         Service.Hook.InitializeFromAttributes(this);
         SetFocusTargetByObjectIDHook?.Enable();
 
-        if (Flags.BoundByDuty()) OnZoneChange(Service.ClientState.TerritoryType);
+        if (Flags.BoundByDuty) OnZoneChange(Service.ClientState.TerritoryType);
         Service.ClientState.TerritoryChanged += OnZoneChange;
         Service.FrameworkManager.Register(OnUpdate);
     }

@@ -5,7 +5,7 @@ namespace DailyRoutines.Infos;
 
 public static class Flags
 {
-    public static bool OccupiedInEvent() => Service.Condition[ConditionFlag.Occupied]
+    public static bool OccupiedInEvent => Service.Condition[ConditionFlag.Occupied]
                || Service.Condition[ConditionFlag.Occupied30]
                || Service.Condition[ConditionFlag.Occupied33]
                || Service.Condition[ConditionFlag.Occupied38]
@@ -44,10 +44,10 @@ public static class Flags
                || Service.Condition[ConditionFlag.UsingHousingFunctions]
                || Service.ClientState.LocalPlayer?.IsTargetable != true;
 
-    public static bool BetweenAreas() => Service.Condition[ConditionFlag.BetweenAreas] || Service.Condition[ConditionFlag.BetweenAreas51];
+    public static bool BetweenAreas => Service.Condition[ConditionFlag.BetweenAreas] || Service.Condition[ConditionFlag.BetweenAreas51];
 
 
-    public static bool BoundByDuty() => Service.Condition[ConditionFlag.BoundByDuty] ||
+    public static bool BoundByDuty => Service.Condition[ConditionFlag.BoundByDuty] ||
                                         Service.Condition[ConditionFlag.BoundByDuty56] ||
                                         Service.Condition[ConditionFlag.BoundByDuty95] ||
                                         Service.Condition[ConditionFlag.InDutyQueue];

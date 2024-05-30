@@ -49,7 +49,7 @@ public class AutoNotifyCutSceneEnd : DailyModuleBase
 
     private static unsafe void OnPartyList(AddonEvent type, AddonArgs args)
     {
-        if (IsSomeoneInCutscene || IsDutyEnd || Service.ClientState.IsPvP || !Flags.BoundByDuty()) return;
+        if (IsSomeoneInCutscene || IsDutyEnd || Service.ClientState.IsPvP || !Flags.BoundByDuty) return;
 
         var isSBInCutScene = Service.PartyList.Any(member => member.GameObject != null &&
                                                              ((Character*)member.GameObject.Address)->CharacterData

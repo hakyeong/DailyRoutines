@@ -64,7 +64,7 @@ public unsafe class AutoCheckItemLevel : DailyModuleBase
                 {
                     if (!EzThrottler.Throttle("AutoCheckItemLevel-CheckCharacterIL", 1000)) return false;
                     if (InterruptByConflictKey()) return true;
-                    if (!Flags.BoundByDuty())
+                    if (!Flags.BoundByDuty)
                     {
                         TaskManager.Abort();
                         return true;

@@ -19,7 +19,7 @@ public class AutoNotifyRecruitmentEnd : DailyModuleBase
         XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
         if (type != XivChatType.SystemMessage) return;
-        if (Flags.BoundByDuty()) return;
+        if (Flags.BoundByDuty) return;
 
         var content = message.ExtractText();
 

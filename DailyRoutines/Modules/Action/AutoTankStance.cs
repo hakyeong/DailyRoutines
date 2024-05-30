@@ -76,7 +76,7 @@ public class AutoTankStance : DailyModuleBase
 
     private static unsafe bool? CheckCurrentJob()
     {
-        if (Flags.BetweenAreas()) return false;
+        if (Flags.BetweenAreas) return false;
 
         var player = Service.ClientState.LocalPlayer;
         if (player == null || player.ClassJob.Id == 0 || !player.IsTargetable) return false;

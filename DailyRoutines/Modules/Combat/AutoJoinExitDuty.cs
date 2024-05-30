@@ -40,7 +40,7 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
 
     private void OnCommand(string command, string arguments)
     {
-        if (Flags.BoundByDuty())
+        if (Flags.BoundByDuty)
         {
             Service.Chat.PrintError(Service.Lang.GetText("AutoJoinExitDuty-AlreadyInDutyNotice"), "Daily Routines");
             return;
@@ -172,7 +172,7 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
     private static bool? ExitDuty()
     {
         if (Service.Condition[ConditionFlag.WaitingForDutyFinder] ||
-            Service.Condition[ConditionFlag.InDutyQueue] || Flags.BetweenAreas()) return false;
+            Service.Condition[ConditionFlag.InDutyQueue] || Flags.BetweenAreas) return false;
 
         AbandonDuty(false);
         return true;

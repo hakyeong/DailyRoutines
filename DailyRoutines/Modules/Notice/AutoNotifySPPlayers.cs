@@ -242,7 +242,7 @@ public unsafe class AutoNotifySPPlayers : DailyModuleBase
     {
         if (ModuleConfig.NotifiedPlayer.Count == 0 ||
             Service.ClientState.LocalPlayer == null ||
-            Flags.BetweenAreas()) return;
+            Flags.BetweenAreas) return;
 
         if ((ObjectKind)obj->ObjectKind != ObjectKind.Player || !obj->IsCharacter()) return;
         var chara = (Character*)obj;

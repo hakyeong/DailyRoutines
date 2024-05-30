@@ -128,7 +128,7 @@ public class AutoNoviceNetwork : DailyModuleBase
     private unsafe void OnAfkStateCheck(object? sender, ElapsedEventArgs e)
     {
         if (!ConfigIsTryJoinWhenInactive || IsInNoviceNetwork || TaskManager.IsBusy) return;
-        if (Flags.BoundByDuty() || Flags.OccupiedInEvent()) return;
+        if (Flags.BoundByDuty || Flags.OccupiedInEvent) return;
 
         var idleTime = GetIdleTime();
         if (idleTime > TimeSpan.FromSeconds(10) || Framework.Instance()->WindowInactive)

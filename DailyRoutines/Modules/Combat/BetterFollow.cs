@@ -300,7 +300,7 @@ public unsafe class BetterFollow : DailyModuleBase
             // 自己无了
             if (Service.ClientState.LocalPlayer == null) StopFollow(true);
             // 过图了或者死了
-            if (Service.ClientState.LocalPlayer.IsDead || Flags.BetweenAreas()) StopFollow(true);
+            if (Service.ClientState.LocalPlayer.IsDead || Flags.BetweenAreas) StopFollow(true);
             // 进剧情了
             if (Service.ClientState.LocalPlayer.OnlineStatus.GameData.RowId == 15) StopFollow(true);
         }
@@ -383,11 +383,11 @@ public unsafe class BetterFollow : DailyModuleBase
         // 在战斗
         if (ModuleConfig.OnCombatOver && Service.Condition[ConditionFlag.InCombat]) return;
         // 在副本里
-        if (!ModuleConfig.OnDuty && Flags.BoundByDuty()) return;
+        if (!ModuleConfig.OnDuty && Flags.BoundByDuty) return;
         //自己无了
         if (Service.ClientState.LocalPlayer == null) return;
         // 过图了或者死了
-        if (Service.ClientState.LocalPlayer.IsDead || Flags.BetweenAreas()) return;
+        if (Service.ClientState.LocalPlayer.IsDead || Flags.BetweenAreas) return;
         // 在读条
         if (Service.ClientState.LocalPlayer.IsCasting) return;
         // 在看剧情

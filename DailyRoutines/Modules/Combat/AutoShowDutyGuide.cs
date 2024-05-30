@@ -64,7 +64,7 @@ public class AutoShowDutyGuide : DailyModuleBase
         Overlay.ShowCloseButton = false;
 
         Service.ClientState.TerritoryChanged += OnZoneChange;
-        if (Flags.BoundByDuty())
+        if (Flags.BoundByDuty)
             OnZoneChange(Service.ClientState.TerritoryType);
     }
 
@@ -78,7 +78,7 @@ public class AutoShowDutyGuide : DailyModuleBase
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);
 
-        ImGui.BeginDisabled(Flags.BoundByDuty());
+        ImGui.BeginDisabled(Flags.BoundByDuty);
         if (ImGui.Checkbox(Service.Lang.GetText("AutoShowDutyGuide-DebugMode"), ref IsOnDebug))
         {
             if (IsOnDebug) OnZoneChange(172);
@@ -98,7 +98,7 @@ public class AutoShowDutyGuide : DailyModuleBase
 
     public override void OverlayUI()
     {
-        if (!IsOnDebug && (!Flags.BoundByDuty() || GuideText.Count <= 0))
+        if (!IsOnDebug && (!Flags.BoundByDuty || GuideText.Count <= 0))
         {
             Overlay.IsOpen = false;
             GuideText.Clear();
@@ -175,8 +175,8 @@ public class AutoShowDutyGuide : DailyModuleBase
 
     private static bool? GetSastashaHint()
     {
-        if (Flags.BetweenAreas()) return false;
-        if (!Flags.BoundByDuty()) return true;
+        if (Flags.BetweenAreas) return false;
+        if (!Flags.BoundByDuty) return true;
 
         var blueObj = Service.ObjectTable.FirstOrDefault(x => x.IsValid() && x.IsTargetable && x.DataId == (uint)Sastasha.蓝珊瑚);
         var redObj = Service.ObjectTable.FirstOrDefault(x => x.IsValid() && x.IsTargetable && x.DataId == (uint)Sastasha.红珊瑚);

@@ -220,7 +220,7 @@ public class AutoMJIGather : DailyModuleBase
 
     private bool? Gather(IReadOnlyList<Vector3> nodes)
     {
-        if (IsOccupied()) return false;
+        if (Flags.OccupiedInEvent) return false;
 
         TaskManager.Enqueue(SwitchToGatherMode);
         TaskManager.Enqueue(() => { IsOnDiving = nodes[CurrentGatherIndex].Y < 0; });

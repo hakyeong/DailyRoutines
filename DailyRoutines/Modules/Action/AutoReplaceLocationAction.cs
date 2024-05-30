@@ -108,7 +108,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
     private static void OnUpdate(IFramework framework)
     {
         if (!EzThrottler.Throttle("AutoReplaceLocationAction", 1000)) return;
-        if (!Flags.BoundByDuty()) return;
+        if (!Flags.BoundByDuty) return;
 
         if (CurrentMapID == Service.ClientState.MapId) return;
 

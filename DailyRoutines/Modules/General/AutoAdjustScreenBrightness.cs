@@ -139,7 +139,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
                 // 防抖动
                 if (Math.Abs(SceneBrightness - lastSignificantBrightness) > hysteresis)
                 {
-                    targetBrightness = SceneBrightness > (Flags.BoundByDuty() ? ModuleConfig.BrightnessThresholdContent : ModuleConfig.BrightnessThreshold) ? ModuleConfig.BrightnessMin : OriginalBrightness;
+                    targetBrightness = SceneBrightness > (Flags.BoundByDuty ? ModuleConfig.BrightnessThresholdContent : ModuleConfig.BrightnessThreshold) ? ModuleConfig.BrightnessMin : OriginalBrightness;
                     lastSignificantBrightness = (int)SceneBrightness;
                 }
 
