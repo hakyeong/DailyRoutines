@@ -2,6 +2,7 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
+using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace DailyRoutines.Modules;
 
@@ -19,12 +20,13 @@ public class InstantReturn : DailyModuleBase
         ReturnHook?.Enable();
     }
 
-    private static byte ReturnDetour(nint a1)
+    private static unsafe byte ReturnDetour(nint a1)
     {
-        if (Service.ClientState.IsPvPExcludingDen)
+        if (Service.ClientState.IsPvPExcludingDen || 
+            ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 6) != 0)
             return ReturnHook.Original(a1);
 
-        Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.InstantReturn, 0, 0, 0, 0);
+        Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.InstantReturn);
         return 1;
     }
 }
