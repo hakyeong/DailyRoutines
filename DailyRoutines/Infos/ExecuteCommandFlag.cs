@@ -161,6 +161,11 @@ public enum ExecuteCommandFlag
     QuestRedo = 824,
 
     /// <summary>
+    /// 刷新物品栏
+    /// </summary>
+    InventoryRefresh = 830,
+
+    /// <summary>
     /// 庭院相关操作
     /// <para><c>param2</c>: 45 - 布置庭具状态</para>
     /// </summary>
