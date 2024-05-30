@@ -31,12 +31,6 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoMJIGatherTitle", "AutoMJIGatherDescription", ModuleCategories.一般)]
 public class AutoMJIGather : DailyModuleBase
 {
-    private class Config : ModuleConfiguration
-    {
-        public readonly List<IslandGatherPoint> IslandGatherPoints = [];
-        public bool StopWhenReachingCap = true;
-    }
-
     private class IslandGatherPoint : IEquatable<IslandGatherPoint>, IComparable<IslandGatherPoint>
     {
         public string Name { get; set; } = string.Empty;
@@ -56,9 +50,11 @@ public class AutoMJIGather : DailyModuleBase
         public int CompareTo(IslandGatherPoint? other) => other == null ? 1 : string.Compare(Name, other.Name, StringComparison.Ordinal);
     }
 
-    private static int CurrentGatherIndex;
-    private static bool IsOnDataCollecting;
-    private static List<Vector3> QueuedGatheringList = [];
+    private class Config : ModuleConfiguration
+    {
+        public readonly List<IslandGatherPoint> IslandGatherPoints = [];
+        public bool StopWhenReachingCap = true;
+    }
 
     private delegate bool IsPlayerOnDivingDelegate(nint a1);
     [Signature("E8 ?? ?? ?? ?? 84 C0 74 ?? F3 0F 10 35 ?? ?? ?? ?? F3 0F 10 3D ?? ?? ?? ?? F3 44 0F 10 05", 
@@ -69,6 +65,9 @@ public class AutoMJIGather : DailyModuleBase
     private static nint UnknownPtrInTargetSystem;
 
     private static bool IsOnDiving;
+    private static int CurrentGatherIndex;
+    private static bool IsOnDataCollecting;
+    private static List<Vector3> QueuedGatheringList = [];
 
     private static Config ModuleConfig = null!;
 
@@ -87,9 +86,10 @@ public class AutoMJIGather : DailyModuleBase
 
     public override void ConfigUI()
     {
-        ImGui.BeginDisabled(Service.ClientState.TerritoryType != 1055 || TaskManager.IsBusy);
+        ImGui.BeginGroup();
+        ImGui.BeginDisabled(Service.ClientState.TerritoryType != 1055);
 
-        ImGui.BeginDisabled(IsOnDataCollecting);
+        ImGui.BeginDisabled(IsOnDataCollecting || TaskManager.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("Start")))
         {
             TaskManager.Enqueue(SwitchToGatherMode);
@@ -103,8 +103,6 @@ public class AutoMJIGather : DailyModuleBase
             if (QueuedGatheringList.Count != 0 && QueuedGatheringList.Count > 10) Gather(QueuedGatheringList);
             else Service.Chat.PrintError(Service.Lang.GetText("AutoMJIGather-InsufficientGatherNodes"));
         }
-
-        ImGui.EndDisabled();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
@@ -125,7 +123,7 @@ public class AutoMJIGather : DailyModuleBase
 
         ImGui.Spacing();
         
-        var tableSize = (ImGui.GetContentRegionAvail() / 3 + ImGuiHelpers.ScaledVector2(50f)) with { Y = 0 };
+        var tableSize = ((ImGui.GetContentRegionAvail() / 3) + ImGuiHelpers.ScaledVector2(50f)) with { Y = 0 };
         if (ImGui.BeginTable("GatherPointsTable1", 3, ImGuiTableFlags.Borders, tableSize))
         {
             ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
@@ -216,11 +214,21 @@ public class AutoMJIGather : DailyModuleBase
 
             ImGui.EndTable();
         }
+
+        ImGui.EndDisabled();
+        ImGui.EndGroup();
+
+        ImGuiOm.TooltipDisableHelp(
+        [
+            new(Service.ClientState.TerritoryType != 1059, "当前区域非无人岛"),
+            new(IsOnDataCollecting, "当前正在进行数据采集"),
+            new(TaskManager.IsBusy, "当前正在进行采集")
+        ], "由于以下原因被禁用");
     }
 
     private bool? Gather(IReadOnlyList<Vector3> nodes)
     {
-        if (Flags.OccupiedInEvent) return false;
+        if (Flags.IsOnMount || Flags.OccupiedInEvent) return false;
 
         TaskManager.Enqueue(SwitchToGatherMode);
         TaskManager.Enqueue(() => { IsOnDiving = nodes[CurrentGatherIndex].Y < 0; });
