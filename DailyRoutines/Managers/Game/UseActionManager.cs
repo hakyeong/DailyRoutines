@@ -375,6 +375,18 @@ public unsafe class UseActionManager : IDailyManager
     }
     #endregion
 
+    #region Invokes
+    
+    public bool UseAction(ActionType type, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0, uint queueState = 0, uint a6 = 0, void* a7 = null) 
+        => UseActionHook.Original(ActionManager.Instance(), type, actionID, targetID, a4, queueState, a6, a7);
+
+    public bool UseActionLocation(ActionType type, uint actionID, ulong targetID, Vector3 location, uint a4) 
+        => UseActionLocationHook.Original(ActionManager.Instance(), type, actionID, targetID, &location, a4);
+
+    public bool UseActionPetMove(Vector3 location) => UseActionPetMoveHook.Original(1800, &location, 3, 0, 0, 0);
+
+    #endregion
+
     private void Uninit()
     {
         UseActionHook?.Dispose();
