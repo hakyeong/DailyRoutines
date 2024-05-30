@@ -1879,4 +1879,13 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoSwitchIMEWhenInputTitle" xml:space="preserve">
     <value>自动切换输入法</value>
   </data>
+  <data name="AutoReplaceLocationAction-BlacklistContents" xml:space="preserve">
+    <value>黑名单副本</value>
+  </data>
+  <data name="AutoReplaceLocationAction-EnableCenterArg" xml:space="preserve">
+    <value>启用 &lt;center&gt; 命令参数</value>
+  </data>
+  <data name="AutoReplaceLocationAction-EnableCenterArgHelp" xml:space="preserve">
+    <value>勾选后, 可以使用形如 /ac 野战治疗阵 &lt;center&gt; 的命令来尝试将任何地面放置类技能放置于场中 (与下方的技能启用相互独立,可单独使用该命令参数)</value>
+  </data>
 </root>

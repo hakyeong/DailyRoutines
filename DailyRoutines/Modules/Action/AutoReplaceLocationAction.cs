@@ -5,12 +5,18 @@ using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Hooking;
+using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
+using Dalamud.Memory;
 using Dalamud.Plugin.Services;
+using Dalamud.Utility.Signatures;
 using ECommons.MathHelpers;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 
@@ -35,14 +41,24 @@ public class AutoReplaceLocationAction : DailyModuleBase
         };
 
         public bool SendMessage = true;
+        public bool EnableCenterArgument = true;
+        public HashSet<uint> BlacklistContent = [];
     }
+
+    // 返回值为 GameObject*, 无对象则为 0
+    private delegate nint ParseActionCommandArgDelegate(nint a1, nint arg, bool a3, bool a4);
+    [Signature("E8 ?? ?? ?? ?? 4C 8B F8 49 B8", DetourName = nameof(ParseActionCommandArgDetour))]
+    private static Hook<ParseActionCommandArgDelegate>? ParseActionCommandArgHook;
 
     private static Config ModuleConfig = null!;
 
     private static uint CurrentMapID;
     private static readonly Dictionary<MapMarker, Vector2> ZoneMapMarkers = [];
+    private static bool IsNeedToModify;
     private static Vector3? ModifiedLocation;
 
+    private static ContentFinderCondition? SelectedContent;
+    private static string ContentSearchInput = string.Empty;
 
     public override void Init()
     {
@@ -52,6 +68,9 @@ public class AutoReplaceLocationAction : DailyModuleBase
         Service.UseActionManager.Register(OnPreUseActionLocation);
         Service.UseActionManager.Register(OnPostUseActionLocation);
         Service.UseActionManager.Register(OnPreUseActionPetMove);
+
+        Service.Hook.InitializeFromAttributes(this);
+        ParseActionCommandArgHook.Enable();
     }
 
     public override void ConfigUI()
@@ -59,20 +78,32 @@ public class AutoReplaceLocationAction : DailyModuleBase
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("WorkTheory")}:");
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoReplaceLocationAction-TheoryHelp"), 30f);
 
-        ImGui.Checkbox(Service.Lang.GetText("AutoReplaceLocationAction-SendMessage"), ref ModuleConfig.SendMessage);
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoReplaceLocationAction-SendMessage"), ref ModuleConfig.SendMessage))
+            SaveConfig(ModuleConfig);
+
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoReplaceLocationAction-EnableCenterArg"), ref ModuleConfig.EnableCenterArgument))
+            SaveConfig(ModuleConfig);
+
+        ImGuiOm.HelpMarker(Service.Lang.GetText("AutoReplaceLocationAction-EnableCenterArgHelp"));
+
+        ImGui.AlignTextToFramePadding();
+        ImGui.Text($"{Service.Lang.GetText("AutoReplaceLocationAction-BlacklistContents")}:");
+
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+        if (ContentSelectCombo(ref ModuleConfig.BlacklistContent, ref ContentSearchInput)) SaveConfig(ModuleConfig);
 
         var tableSize = new Vector2(ImGui.GetContentRegionAvail().X / 3, 0);
         if (ImGui.BeginTable("ActionEnableTable", 2, ImGuiTableFlags.Borders, tableSize))
         {
+            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
+            ImGui.TableSetupColumn("名称");
+
             foreach (var actionPair in ModuleConfig.EnabledActions)
             {
                 var action = LuminaCache.GetRow<Action>(actionPair.Key);
 
                 ImGui.TableNextRow();
-
-                ImGui.TableNextColumn();
-                ImGuiOm.TextImage(action.Name.RawString, ImageHelper.GetIcon(action.Icon).ImGuiHandle,
-                          ImGuiHelpers.ScaledVector2(20f));
 
                 ImGui.TableNextColumn();
                 var state = actionPair.Value;
@@ -81,6 +112,10 @@ public class AutoReplaceLocationAction : DailyModuleBase
                     ModuleConfig.EnabledActions[actionPair.Key] = state;
                     SaveConfig(ModuleConfig);
                 }
+
+                ImGui.TableNextColumn();
+                ImGuiOm.TextImage(action.Name.RawString, ImageHelper.GetIcon(action.Icon).ImGuiHandle,
+                          ImGuiHelpers.ScaledVector2(20f));
             }
 
             foreach (var actionPair in ModuleConfig.EnabledPetActions)
@@ -90,16 +125,16 @@ public class AutoReplaceLocationAction : DailyModuleBase
                 ImGui.TableNextRow();
 
                 ImGui.TableNextColumn();
-                ImGuiOm.TextImage(action.Name.RawString, ImageHelper.GetIcon((uint)action.Icon).ImGuiHandle,
-                                  ImGuiHelpers.ScaledVector2(20f));
-
-                ImGui.TableNextColumn();
                 var state = actionPair.Value;
                 if (ImGui.Checkbox($"###{actionPair.Key}_{action.Name.RawString}", ref state))
                 {
                     ModuleConfig.EnabledPetActions[actionPair.Key] = state;
                     SaveConfig(ModuleConfig);
                 }
+
+                ImGui.TableNextColumn();
+                ImGuiOm.TextImage(action.Name.RawString, ImageHelper.GetIcon((uint)action.Icon).ImGuiHandle,
+                                  ImGuiHelpers.ScaledVector2(20f));
             }
             ImGui.EndTable();
         }
@@ -127,12 +162,17 @@ public class AutoReplaceLocationAction : DailyModuleBase
     private static void OnPreUseActionLocation(ref bool isPrevented, ref ActionType type, ref uint actionID,
                                                ref ulong targetID, ref Vector3 location, ref uint a4)
     {
-        if (type != ActionType.Action || 
-            !ModuleConfig.EnabledActions.TryGetValue(actionID, out var isEnabled) || !isEnabled) return;
+        if (ModuleConfig.BlacklistContent.Contains(Service.ClientState.TerritoryType)) return;
+        if (!IsNeedToModify && (type != ActionType.Action ||
+                                !ModuleConfig.EnabledActions.TryGetValue(actionID, out var isEnabled) ||
+                                !isEnabled)) return;
 
         var resultLocation = ZoneMapMarkers.Values
                                            .Select(x => x.ToVector3() as Vector3?)
-                                           .FirstOrDefault(x => x.HasValue && Vector3.Distance(x.Value, Service.ClientState.LocalPlayer.Position) < 25);
+                                           .FirstOrDefault(
+                                               x => x.HasValue &&
+                                                    Vector3.Distance(
+                                                        x.Value, Service.ClientState.LocalPlayer.Position) < 25);
 
         if (resultLocation != null)
             UpdateLocationIfClose(ref location, resultLocation.Value, 15);
@@ -143,7 +183,8 @@ public class AutoReplaceLocationAction : DailyModuleBase
     private static unsafe void OnPreUseActionPetMove(
         ref bool isPrevented, ref int a1, ref Vector3 location, ref int perActionID, ref int a4, ref int a5, ref int a6)
     {
-        if (!ModuleConfig.EnabledPetActions.TryGetValue(3, out var isEnabled) || !isEnabled) return;
+        if (ModuleConfig.BlacklistContent.Contains(Service.ClientState.TerritoryType)) return;
+        if (!IsNeedToModify && (!ModuleConfig.EnabledPetActions.TryGetValue(3, out var isEnabled) || !isEnabled)) return;
 
         var resultLocation = ZoneMapMarkers.Values
                                            .Select(x => x.ToVector3() as Vector3?)
@@ -167,6 +208,19 @@ public class AutoReplaceLocationAction : DailyModuleBase
             Service.Chat.Print(message);
             ModifiedLocation = null;
         }
+    }
+
+    private static unsafe nint ParseActionCommandArgDetour(nint a1, nint arg, bool a3, bool a4)
+    {
+        var original = ParseActionCommandArgHook.Original(a1, arg, a3, a4);
+        if (!ModuleConfig.EnableCenterArgument || 
+            ModuleConfig.BlacklistContent.Contains(Service.ClientState.TerritoryType)) return original;
+
+        var parsedArg = MemoryHelper.ReadSeStringNullTerminated(arg).TextValue;
+        if (!parsedArg.Equals("<center>")) return original;
+
+        IsNeedToModify = true;
+        return (nint)Control.GetLocalPlayer();
     }
 
     private static void UpdateLocationIfClose(ref Vector3 currentLocation, Vector3 candidateLocation, float proximityThreshold)
@@ -193,14 +247,13 @@ public class AutoReplaceLocationAction : DailyModuleBase
     private static void OnPostUseActionLocation(bool result, ActionType actionType, uint actionID, 
                                                 ulong targetID, Vector3 location, uint a4)
     {
-        if (!ModuleConfig.SendMessage || !result || ModifiedLocation == null) return;
+        if (!result || ModifiedLocation == null) return;
 
-        var message = new SeStringBuilder().Append(DRPrefix)
-                                           .Append(Service.Lang.GetText("AutoReplaceLocationAction-RedirectMessage",
-                                                                        ModifiedLocation))
-                                           .Build();
-        Service.Chat.Print(message);
+        if (ModuleConfig.SendMessage)
+            NotifyHelper.Chat(Service.Lang.GetText("AutoReplaceLocationAction-RedirectMessage", ModifiedLocation));
+
         ModifiedLocation = null;
+        IsNeedToModify = false;
     }
 
     public override void Uninit()
@@ -209,6 +262,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
         Service.UseActionManager.Unregister(OnPostUseActionLocation);
         Service.UseActionManager.Unregister(OnPreUseActionPetMove);
         ModifiedLocation = null;
+        IsNeedToModify = false;
 
         base.Uninit();
     }
