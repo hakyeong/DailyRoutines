@@ -1858,4 +1858,25 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoAdjustScreenBrightness-DisableInCutscene" xml:space="preserve">
     <value>在过场剧情中禁用</value>
   </data>
+  <data name="AutoSwitchIMEWhenInput-InputMode" xml:space="preserve">
+    <value>输入模式</value>
+  </data>
+  <data name="AutoSwitchIMEWhenInput-Layout" xml:space="preserve">
+    <value>布局</value>
+  </data>
+  <data name="AutoSwitchIMEWhenInput-RestoreWhenFocusStop" xml:space="preserve">
+    <value>输入框失焦后还原</value>
+  </data>
+  <data name="AutoSwitchIMEWhenInput-SavedIME" xml:space="preserve">
+    <value>当前选择: {0}</value>
+  </data>
+  <data name="AutoSwitchIMEWhenInput-SentenceMode" xml:space="preserve">
+    <value>语句模式</value>
+  </data>
+  <data name="AutoSwitchIMEWhenInputDescription" xml:space="preserve">
+    <value>启用并配置完毕后, 在游戏内输入框输入时自动强制切换至指定输入法的指定状态</value>
+  </data>
+  <data name="AutoSwitchIMEWhenInputTitle" xml:space="preserve">
+    <value>自动切换输入法</value>
+  </data>
 </root>
