@@ -80,7 +80,8 @@ public class AutoReplaceLocationAction : DailyModuleBase
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoReplaceLocationAction-TheoryHelp"), 30f);
 
         ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputFloat(Service.Lang.GetText("AutoReplaceLocationAction-AdjustDistance"), ref ModuleConfig.AdjustDistance, 0, 0, "%.1f"))
+        ImGui.InputFloat(Service.Lang.GetText("AutoReplaceLocationAction-AdjustDistance"), ref ModuleConfig.AdjustDistance, 0, 0, "%.1f");
+        if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoReplaceLocationAction-SendMessage"), ref ModuleConfig.SendMessage))
