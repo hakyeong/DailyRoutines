@@ -1638,6 +1638,9 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoReplaceLocationAction-RedirectMessage" xml:space="preserve">
     <value> 已成功重定向地面技能至: {0}</value>
   </data>
+  <data name="AutoReplaceLocationAction-AdjustDistance" xml:space="preserve">
+    <value>重定向阈值距离</value>
+  </data>
   <data name="AutoReplaceLocationAction-SendMessage" xml:space="preserve">
     <value>发送重定向成功消息</value>
   </data>
