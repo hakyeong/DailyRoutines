@@ -40,6 +40,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
             { 3, true }, // 移动
         };
 
+        public float AdjustDistance = 15;
         public bool SendMessage = true;
         public bool EnableCenterArgument = true;
         public HashSet<uint> BlacklistContent = [];
@@ -77,6 +78,10 @@ public class AutoReplaceLocationAction : DailyModuleBase
     {
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("WorkTheory")}:");
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoReplaceLocationAction-TheoryHelp"), 30f);
+
+        ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
+        if (ImGui.InputFloat(Service.Lang.GetText("AutoReplaceLocationAction-AdjustDistance"), ref ModuleConfig.AdjustDistance, 0, 0, "%.1f"))
+            SaveConfig(ModuleConfig);
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoReplaceLocationAction-SendMessage"), ref ModuleConfig.SendMessage))
             SaveConfig(ModuleConfig);
@@ -175,7 +180,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
                                                         x.Value, Service.ClientState.LocalPlayer.Position) < 25);
 
         if (resultLocation != null)
-            UpdateLocationIfClose(ref location, resultLocation.Value, 15);
+            UpdateLocationIfClose(ref location, resultLocation.Value, ModuleConfig.AdjustDistance);
         else
             HandleAlternativeLocation(ref location);
     }
@@ -191,7 +196,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
                                            .FirstOrDefault(x => x.HasValue && Vector3.Distance(x.Value, Service.ClientState.LocalPlayer.Position) < 25);
 
         if (resultLocation != null)
-            UpdateLocationIfClose(ref location, resultLocation.Value, 15);
+            UpdateLocationIfClose(ref location, resultLocation.Value, ModuleConfig.AdjustDistance);
         else
             HandleAlternativeLocation(ref location);
 
@@ -240,7 +245,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
             var map = LuminaCache.GetRow<Map>(CurrentMapID);
             var modifiedLocation = MapHelper.MapToWorld(new Vector2(6.125f), map).ToVector3();
 
-            UpdateLocationIfClose(ref location, modifiedLocation, 15);
+            UpdateLocationIfClose(ref location, modifiedLocation, ModuleConfig.AdjustDistance);
         }
     }
 
