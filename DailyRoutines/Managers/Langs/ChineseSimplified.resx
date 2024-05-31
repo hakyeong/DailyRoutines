@@ -1903,4 +1903,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="DisableZoneHeader" xml:space="preserve">
     <value>由于以下原因被禁用</value>
   </data>
+  <data name="AutoMJIGather-HUDNoFound" xml:space="preserve">
+    <value>未找到开拓管理面板, 已停止采集</value>
+  </data>
 </root>

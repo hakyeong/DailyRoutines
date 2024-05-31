@@ -23,6 +23,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.MJI;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 
@@ -47,12 +48,13 @@ public class AutoMJIGather : DailyModuleBase
 
         public override int GetHashCode() => Name.GetHashCode();
 
-        public int CompareTo(IslandGatherPoint? other) => other == null ? 1 : string.Compare(Name, other.Name, StringComparison.Ordinal);
+        public int CompareTo(IslandGatherPoint? other) =>
+            other == null ? 1 : string.Compare(Name, other.Name, StringComparison.Ordinal);
     }
 
     private class Config : ModuleConfiguration
     {
-        public readonly List<IslandGatherPoint> IslandGatherPoints = [];
+        public List<IslandGatherPoint> IslandGatherPoints = [];
         public bool StopWhenReachingCap = true;
     }
 
@@ -104,8 +106,10 @@ public class AutoMJIGather : DailyModuleBase
                                                 if (QueuedGatheringList.Count != 0 && QueuedGatheringList.Count > 10)
                                                     Gather(QueuedGatheringList);
                                                 else
+                                                {
                                                     NotifyHelper.NotificationError(
                                                         Service.Lang.GetText("AutoMJIGather-InsufficientGatherNodes"));
+                                                }
                                             }
                                         }, [
                                             new(IsOnDataCollecting,
@@ -114,7 +118,7 @@ public class AutoMJIGather : DailyModuleBase
                                                 Service.Lang.GetText("AutoMJIGather-DisableHelp-Gathering")),
                                             new(Flags.IsOnMount,
                                                 Service.Lang.GetText("AutoMJIGather-DisableHelp-Mouting"))
-                                        ], Service.Lang.GetText("DisableZoneHelp"));
+                                        ], Service.Lang.GetText("DisableZoneHeader"));
 
                                         ImGui.SameLine();
                                         if (ImGui.Button(Service.Lang.GetText("Stop")))
@@ -127,7 +131,7 @@ public class AutoMJIGather : DailyModuleBase
                                         new(Service.ClientState.TerritoryType != 1055,
                                             Service.Lang.GetText("AutoMJIGather-DisableHelp-NotInIsland"))
                                     ],
-                                    Service.Lang.GetText("DisableZoneHelp"));
+                                    Service.Lang.GetText("DisableZoneHeader"));
 
         ImGui.SameLine();
         ImGui.Text(Service.Lang.GetText("AutoMJIGather-GatherProcessInfo",
@@ -275,8 +279,19 @@ public class AutoMJIGather : DailyModuleBase
         return true;
     }
 
-    private static unsafe bool? SwitchToGatherMode()
+    private unsafe bool? SwitchToGatherMode()
     {
+        if (MJIManager.Instance()->CurrentMode == 1) return true;
+
+        var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("MJIHud");
+        if (addon == null)
+        {
+            NotifyHelper.NotificationError(Service.Lang.GetText("AutoMJIGather-HUDNoFound"));
+            TaskManager.Abort();
+            return true;
+        }
+
+        AddonHelper.Callback(addon, true, 11, 0);
         AgentHelper.SendEvent(AgentId.MJIHud, 2, 0, 1, 82042U, 0U, 0);
         return MJIManager.Instance()->CurrentMode == 1;
     }
