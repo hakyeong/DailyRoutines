@@ -1888,4 +1888,19 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoReplaceLocationAction-EnableCenterArgHelp" xml:space="preserve">
     <value>勾选后, 可以使用形如 /ac 野战治疗阵 &lt;center&gt; 的命令来尝试将任何地面放置类技能放置于场中 (与下方的技能启用相互独立,可单独使用该命令参数)</value>
   </data>
+  <data name="AutoMJIGather-DisableHelp-DataCollecting" xml:space="preserve">
+    <value>当前正在进行数据采集</value>
+  </data>
+  <data name="AutoMJIGather-DisableHelp-Gathering" xml:space="preserve">
+    <value>当前正在进行采集</value>
+  </data>
+  <data name="AutoMJIGather-DisableHelp-Mouting" xml:space="preserve">
+    <value>当前正在坐骑上</value>
+  </data>
+  <data name="AutoMJIGather-DisableHelp-NotInIsland" xml:space="preserve">
+    <value>当前区域非无人岛</value>
+  </data>
+  <data name="DisableZoneHeader" xml:space="preserve">
+    <value>由于以下原因被禁用</value>
+  </data>
 </root>
