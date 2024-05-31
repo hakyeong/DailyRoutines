@@ -12,8 +12,8 @@ public class ExecuteCommandManager : IDailyManager
     [Signature("48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 8B E9 41 8B D9 48 8B 0D ?? ?? ?? ?? 41 8B F8 8B F2", DetourName = nameof(ExecuteCommandDetour))]
     private static Hook<ExecuteCommandDelegate>? ExecuteCommandHook;
 
-    public delegate void PreExecuteCommandDelegate(
-        ref int command, ref int param1, ref int param2, ref int param3, ref int param4);
+    public delegate void PreExecuteCommandDelegate(ref bool isPrevented, ref int command, ref int param1, ref int param2, ref int param3, 
+                                                   ref int param4);
     public delegate void ExecuteCommandReceivedDelegate(int command, int param1, int param2, int param3, int param4);
 
     private static Dictionary<string, ExecuteCommandReceivedDelegate>? MethodsInfoReceive;
@@ -53,10 +53,13 @@ public class ExecuteCommandManager : IDailyManager
         if (Debug.DebugConfig.ShowExecuteCommandLog)
             Service.Log.Debug($"[Execute Command Manager]\n命令:{command} | p1:{param1} | p2:{param2} | p3:{param3} | p4:{param4}");
 
+        var isPrevented = false;
         for (var i = 0; i < _lengthPre; i++)
         {
-            _methodsPre[i].Invoke(ref command, ref param1, ref param2, ref param3, ref param4);
+            _methodsPre[i].Invoke(ref isPrevented, ref command, ref param1, ref param2, ref param3, ref param4);
         }
+
+        if (isPrevented) return 0;
 
         var original = ExecuteCommandHook.Original(command, param1, param2, param3, param4);
 
