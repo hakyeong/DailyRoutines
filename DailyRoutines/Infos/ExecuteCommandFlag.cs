@@ -75,6 +75,12 @@ public enum ExecuteCommandFlag
     ChangeTitle = 302,
 
     /// <summary>
+    /// 请求过场剧情数据
+    /// <para><c>param1</c>: 过场剧情在 Cutscene.csv 中的对应索引</para>
+    /// </summary>
+    RequestCutscene307 = 307,
+
+    /// <summary>
     /// 请求挑战笔记具体类别下数据
     /// <para><c>param1</c>: 类别索引 (从 1 开始)</para>
     /// </summary>
@@ -166,10 +172,23 @@ public enum ExecuteCommandFlag
     InventoryRefresh = 830,
 
     /// <summary>
+    /// 请求过场剧情数据
+    /// <para><c>param1</c>: 过场剧情在 Cutscene.csv 中的对应索引</para>
+    /// </summary>
+    RequestCutscene831 = 831,
+
+    /// <summary>
     /// 庭院相关操作
     /// <para><c>param2</c>: 45 - 布置庭具状态</para>
     /// </summary>
     Garden = 1123,
+
+    /// <summary>
+    /// 修理潜水艇部件
+    /// <para><c>param1</c>: 潜水艇索引</para>
+    /// <para><c>param2</c>: 潜水艇部件索引</para>
+    /// </summary>
+    RepairSubmarinePart = 1153,
 
     /// <summary>
     /// 领取战利水晶
