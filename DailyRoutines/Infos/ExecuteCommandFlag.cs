@@ -184,6 +184,12 @@ public enum ExecuteCommandFlag
     Garden = 1123,
 
     /// <summary>
+    /// 设置房屋背景音乐
+    /// <para><c>param1</c>: 管弦乐曲在 Orchestrion.csv 中的对应索引</para>
+    /// </summary>
+    SetHouseBackgroundMusic = 1145,
+
+    /// <summary>
     /// 修理潜水艇部件
     /// <para><c>param1</c>: 潜水艇索引</para>
     /// <para><c>param2</c>: 潜水艇部件索引</para>
