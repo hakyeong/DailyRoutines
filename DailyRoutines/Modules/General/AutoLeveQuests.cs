@@ -183,6 +183,8 @@ public unsafe class AutoLeveQuests : DailyModuleBase
             Service.AddonLifecycle.UnregisterListener(AlwaysYes);
             GameObjectRotateHook?.Disable();
             Service.ExecuteCommandManager.Unregister(OnPreExecuteCommand);
+
+            NotifyHelper.ToastInfo(Service.Lang.GetText("AutoLeveQuests-CompleteHelp"));
             return;
         }
 

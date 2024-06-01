@@ -1924,4 +1924,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoLeveQuests-DisableHelp-SameNPC" xml:space="preserve">
     <value>理符发行人和委托人重复</value>
   </data>
+  <data name="AutoLeveQuests-CompleteHelp" xml:space="preserve">
+    <value>批量完成生产理符任务完成</value>
+  </data>
+  <data name="AutoLeveQuests-CurrentLeveAllowances" xml:space="preserve">
+    <value>当前理符限额: {0} </value>
+  </data>
 </root>
