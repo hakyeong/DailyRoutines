@@ -105,7 +105,7 @@ public class Main : Window, IDisposable
         {
             if (string.IsNullOrEmpty(SearchString))
             {
-                DrawModulesFavorites(Modules);
+                DrawModulesFavorites(ModulesFavorite);
 
                 foreach (var category in Enum.GetValues(typeof(ModuleCategories)))
                     DrawModules((ModuleCategories)category);
@@ -126,7 +126,6 @@ public class Main : Window, IDisposable
             for (var i = 0; i < modules.Count; i++)
             {
                 var module = modules[i];
-                if (!Service.Config.ModuleFavorites.Contains(module.Module.Name)) continue;
 
                 ImGui.PushID($"{module.Category}-{module.Description}-{module.Title}-{module.Module}");
                 DrawModuleUI(module, false);
