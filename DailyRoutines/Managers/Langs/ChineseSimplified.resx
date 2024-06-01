@@ -363,7 +363,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoMJIGather-CollectGatherPointsHelp" xml:space="preserve">
     <value>因物体渲染距离限制, 初次使用请先在此处开启数据采集模式, 
-然后飞遍全岛一次记录各采集点数据, 后续使用无需再次采集数据</value>
+等待模块完成自动数据采集, 后续使用无需再次采集数据</value>
   </data>
   <data name="AutoMJIGather-GatherProcessInfo" xml:space="preserve">
     <value>当前进度: {0} / {1}</value>

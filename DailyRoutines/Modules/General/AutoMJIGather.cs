@@ -13,18 +13,21 @@ using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Hooking;
 using Dalamud.Interface;
+using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
 using Dalamud.Memory;
-using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using ECommons.Automation;
 using ECommons.Throttlers;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.MJI;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
+using Newtonsoft.Json;
 using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 
 namespace DailyRoutines.Modules;
@@ -38,9 +41,19 @@ public class AutoMJIGather : DailyModuleBase
         public bool          Enabled { get; set; }
         public List<Vector3> Points  { get; set; } = [];
 
-        public IslandGatherPoint() { }
+        [JsonIgnore]
+        public Lazy<IDalamudTextureWrap?> MapIcon { get; set; }
 
-        public IslandGatherPoint(string name) { Name = name; }
+        public IslandGatherPoint()
+        {
+            MapIcon = new Lazy<IDalamudTextureWrap?>(() => ImageHelper.GetIcon(GatheringItemsIcon[Name]));
+        }
+
+        public IslandGatherPoint(string name)
+        {
+            Name = name;
+            MapIcon = new Lazy<IDalamudTextureWrap?>(() => ImageHelper.GetIcon(GatheringItemsIcon[Name]));
+        }
 
         public override bool Equals(object? obj) => Equals(obj as IslandGatherPoint);
 
@@ -71,6 +84,8 @@ public class AutoMJIGather : DailyModuleBase
     private static int CurrentGatherIndex;
     private static bool IsOnDataCollecting;
     private static List<Vector3> QueuedGatheringList = [];
+    private static Dictionary<string, uint> GatheringItemsIcon = [];
+    private static List<Vector3> DataCollectWaypoints = [];
 
     private static Config ModuleConfig = null!;
 
@@ -84,8 +99,13 @@ public class AutoMJIGather : DailyModuleBase
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 15000, ShowDebug = false };
 
         Service.Chat.ChatMessage += OnChatMessage;
-        Service.FrameworkManager.Register(OnUpdate);
+
+        GatheringItemsIcon = LuminaCache.Get<MJIGatheringObject>()
+                                        .Where(x => x.MapIcon != 0)
+                                        .ToDictionary(x => x.Name.Value.Singular.RawString, x => x.MapIcon);
     }
+
+    #region UI
 
     public override void ConfigUI()
     {
@@ -117,19 +137,29 @@ public class AutoMJIGather : DailyModuleBase
                                             new(TaskManager.IsBusy,
                                                 Service.Lang.GetText("AutoMJIGather-DisableHelp-Gathering")),
                                             new(Flags.IsOnMount,
-                                                Service.Lang.GetText("AutoMJIGather-DisableHelp-Mouting"))
+                                                Service.Lang.GetText("AutoMJIGather-DisableHelp-Mouting")),
                                         ], Service.Lang.GetText("DisableZoneHeader"));
 
                                         ImGui.SameLine();
-                                        if (ImGui.Button(Service.Lang.GetText("Stop")))
-                                        {
-                                            TaskManager.Abort();
-                                            IsOnDiving = false;
-                                        }
+                                        ImGuiOm.DisableZoneWithHelp(() =>
+                                                                    {
+                                                                        if (ImGui.Button(Service.Lang.GetText("Stop")))
+                                                                        {
+                                                                            TaskManager.Abort();
+                                                                            IsOnDiving = false;
+                                                                            IsPlayerOnDivingHook.Disable();
+                                                                        }
+                                                                    },
+                                                                    [
+                                                                        new(IsOnDataCollecting,
+                                                                            Service.Lang.GetText(
+                                                                                "AutoMJIGather-DisableHelp-DataCollecting")),
+                                                                    ],
+                                                                    Service.Lang.GetText("DisableZoneHeader"));
                                     },
                                     [
                                         new(Service.ClientState.TerritoryType != 1055,
-                                            Service.Lang.GetText("AutoMJIGather-DisableHelp-NotInIsland"))
+                                            Service.Lang.GetText("AutoMJIGather-DisableHelp-NotInIsland")),
                                     ],
                                     Service.Lang.GetText("DisableZoneHeader"));
 
@@ -155,11 +185,7 @@ public class AutoMJIGather : DailyModuleBase
             ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
 
             ImGui.TableNextColumn();
-            if (ImGuiOm.SelectableIconCentered("DataCollect", FontAwesomeIcon.Play, IsOnDataCollecting))
-            {
-                IsOnDataCollecting ^= true;
-                if (!IsOnDataCollecting) SaveConfig(ModuleConfig);
-            }
+            DrawDataCollectButton();
 
             ImGuiOm.TooltipHover(Service.Lang.GetText("AutoMJIGather-CollectGatherPointsHelp"));
 
@@ -180,6 +206,9 @@ public class AutoMJIGather : DailyModuleBase
                 ImGui.EndDisabled();
 
                 ImGui.TableNextColumn();
+                ImGui.Image(gatherPoint.MapIcon.Value.ImGuiHandle, ImGuiHelpers.ScaledVector2(20f));
+
+                ImGui.SameLine();
                 if (ImGui.Selectable(gatherPoint.Name, isEnabled, ImGuiSelectableFlags.SpanAllColumns))
                 {
                     gatherPoint.Enabled ^= true;
@@ -203,11 +232,7 @@ public class AutoMJIGather : DailyModuleBase
             ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
 
             ImGui.TableNextColumn();
-            if (ImGuiOm.SelectableIconCentered("DataCollect", FontAwesomeIcon.Play, IsOnDataCollecting))
-            {
-                IsOnDataCollecting ^= true;
-                if (!IsOnDataCollecting) SaveConfig(ModuleConfig);
-            }
+            DrawDataCollectButton();
 
             ImGuiOm.TooltipHover(Service.Lang.GetText("AutoMJIGather-CollectGatherPointsHelp"));
 
@@ -228,6 +253,9 @@ public class AutoMJIGather : DailyModuleBase
                 ImGui.EndDisabled();
 
                 ImGui.TableNextColumn();
+                ImGui.Image(gatherPoint.MapIcon.Value.ImGuiHandle, ImGuiHelpers.ScaledVector2(20f));
+
+                ImGui.SameLine();
                 if (ImGui.Selectable(gatherPoint.Name, isEnabled, ImGuiSelectableFlags.SpanAllColumns))
                 {
                     gatherPoint.Enabled ^= true;
@@ -241,6 +269,46 @@ public class AutoMJIGather : DailyModuleBase
             ImGui.EndTable();
         }
     }
+
+    private void DrawDataCollectButton()
+    {
+        ImGuiOm.DisableZoneWithHelp(() =>
+                                    {
+                                        if (ImGuiOm.SelectableIconCentered(
+                                                "DataCollect", FontAwesomeIcon.Play, IsOnDataCollecting))
+                                        {
+                                            IsOnDataCollecting ^= true;
+                                            if (IsOnDataCollecting)
+                                            {
+                                                if (DataCollectWaypoints.Count == 0)
+                                                {
+                                                    DataCollectWaypoints = MergeAndTransform(LuminaCache.Get<MJIGatheringItem>()
+                                                        .Where(x => x.Item.Value != null)
+                                                        .Select(item => new Vector2(item.X, item.Y))
+                                                        .ToList(), 50);
+                                                }
+                                                IsPlayerOnDivingHook.Enable();
+                                                DataCollect(DataCollectWaypoints);
+                                            }
+                                            else
+                                            {
+                                                TaskManager.Abort();
+                                                IsOnDiving = false;
+                                                IsPlayerOnDivingHook.Disable();
+                                                SaveConfig(ModuleConfig);
+                                            }
+                                        }
+                                    },
+                                    [
+                                        new(Service.ClientState.TerritoryType != 1055,
+                                            Service.Lang.GetText("AutoMJIGather-DisableHelp-NotInIsland")),
+                                    ],
+                                    Service.Lang.GetText("DisableZoneHeader"));
+    }
+
+    #endregion
+
+    #region Queues
 
     private bool? Gather(IReadOnlyList<Vector3> nodes)
     {
@@ -257,7 +325,7 @@ public class AutoMJIGather : DailyModuleBase
                     Teleport(node),
                 > 0 when IsPlayerOnDivingHook.Original(Service.ClientState.LocalPlayer.Address + 528) =>
                     TeleportWhenDiving(node),
-                _ => node.Y > 0 ? Teleport(node) : TeleportWhenDiving(node)
+                _ => node.Y > 0 ? Teleport(node) : TeleportWhenDiving(node),
             };
         });
 
@@ -278,6 +346,69 @@ public class AutoMJIGather : DailyModuleBase
 
         return true;
     }
+
+    private unsafe void DataCollect(IReadOnlyList<Vector3> nodes)
+    {
+        for (var i = 0; i < nodes.Count; i++)
+        {
+            var index = i;
+            var node = nodes[i];
+            TaskManager.Enqueue(() => { IsOnDiving = node.Y < 0; });
+            TaskManager.Enqueue(() =>
+            {
+                return node.Y switch
+                {
+                    < 0 when !IsPlayerOnDivingHook.Original(Service.ClientState.LocalPlayer.Address + 528) =>
+                        Teleport(node),
+                    > 0 when IsPlayerOnDivingHook.Original(Service.ClientState.LocalPlayer.Address + 528) =>
+                        TeleportWhenDiving(node),
+                    _ => node.Y > 0 ? Teleport(node) : TeleportWhenDiving(node),
+                };
+            });
+
+            TaskManager.Enqueue(() =>
+            {
+                foreach (var obj in Service.ObjectTable)
+                {
+                    // 排除非采集点和特定耕地
+                    if (obj.ObjectKind != ObjectKind.CardStand ||
+                        obj.DataId == 0 || obj.DataId == 2013159) continue;
+
+                    if (string.IsNullOrWhiteSpace(obj.Name.TextValue)) continue;
+
+                    var newGatherPoint = new IslandGatherPoint(obj.Name.TextValue);
+                    if (!ModuleConfig.IslandGatherPoints.Contains(newGatherPoint))
+                    {
+                        ModuleConfig.IslandGatherPoints.Add(newGatherPoint);
+                        newGatherPoint.Points.Add(obj.Position);
+                    }
+                    else
+                    {
+                        var existingPoint = ModuleConfig.IslandGatherPoints.Find(p => p.Equals(newGatherPoint));
+                        if (!existingPoint.Points.Contains(obj.Position))
+                            existingPoint.Points.Add(obj.Position);
+                    }
+                }
+            });
+
+            TaskManager.Enqueue(() => { NotifyHelper.NotificationInfo($"({index + 1}/{nodes.Count}) 扫描 {node} 周围环境中"); });
+            TaskManager.DelayNext(1000);
+        }
+
+        TaskManager.Enqueue(() =>
+        {
+            TaskManager.Abort();
+            IsOnDiving = false;
+            IsPlayerOnDivingHook.Disable();
+            SaveConfig(ModuleConfig);
+            IsOnDataCollecting = false;
+        });
+        TaskManager.Enqueue(() => Service.UseActionManager.UseAction(ActionType.GeneralAction, 27));
+    }
+
+    #endregion
+
+    #region Utils
 
     private unsafe bool? SwitchToGatherMode()
     {
@@ -374,6 +505,33 @@ public class AutoMJIGather : DailyModuleBase
                Service.Condition[ConditionFlag.BetweenAreas];
     }
 
+    private static List<Vector3> MergeAndTransform(List<Vector2> points, float maxDistance)
+    {
+        var merged = new List<Vector3>();
+
+        while (points.Count != 0)
+        {
+            var basePoint = points.First();
+            var closePoints = points.Where(p => Vector2.Distance(p, basePoint) <= maxDistance).ToList();
+            var midpoint = new Vector2(closePoints.Average(p => p.X), closePoints.Average(p => p.Y));
+            points = points.Except(closePoints).ToList();
+
+            merged.AddRange(
+            [
+                new(midpoint.X, -40, midpoint.Y),
+                new(midpoint.X, 10, midpoint.Y),
+                new(midpoint.X, 100, midpoint.Y),
+                new(midpoint.X, 200, midpoint.Y),
+            ]);
+        }
+
+        return merged;
+    }
+
+    #endregion
+
+    #region Events & Hooks
+
     private static bool IsPlayingOnDivingDetour(nint a1)
     {
         if (Service.ClientState.TerritoryType != 1055)
@@ -383,34 +541,6 @@ public class AutoMJIGather : DailyModuleBase
         }
 
         return IsOnDiving;
-    }
-
-    private static void OnUpdate(IFramework _)
-    {
-        if (!EzThrottler.Throttle("AutoMJIGather-DataCollect", 100)) return;
-        if (!IsOnDataCollecting || Service.ClientState.TerritoryType != 1055) return;
-
-        foreach (var obj in Service.ObjectTable)
-        {
-            // 排除非采集点和特定耕地
-            if (obj.ObjectKind != ObjectKind.CardStand ||
-                obj.DataId == 0 || obj.DataId == 2013159) continue;
-
-            if (string.IsNullOrWhiteSpace(obj.Name.TextValue)) continue;
-
-            var newGatherPoint = new IslandGatherPoint(obj.Name.TextValue);
-            if (!ModuleConfig.IslandGatherPoints.Contains(newGatherPoint))
-            {
-                ModuleConfig.IslandGatherPoints.Add(newGatherPoint);
-                newGatherPoint.Points.Add(obj.Position);
-            }
-            else
-            {
-                var existingPoint = ModuleConfig.IslandGatherPoints.Find(p => p.Equals(newGatherPoint));
-                if (!existingPoint.Points.Contains(obj.Position))
-                    existingPoint.Points.Add(obj.Position);
-            }
-        }
     }
 
     private void OnChatMessage(
@@ -429,9 +559,10 @@ public class AutoMJIGather : DailyModuleBase
         }
     }
 
+    #endregion
+
     public override void Uninit()
     {
-        Service.FrameworkManager.Unregister(OnUpdate);
         Service.Chat.ChatMessage -= OnChatMessage;
         QueuedGatheringList.Clear();
         IsOnDataCollecting = false;
