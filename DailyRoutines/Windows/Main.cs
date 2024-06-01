@@ -9,6 +9,7 @@ using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Modules;
+using Dalamud;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
@@ -26,13 +27,13 @@ public class Main : Window, IDisposable
 {
     public class ModuleInfo
     {
-        public Type Module { get; set; } = null!;
-        public string[]? PrecedingModule { get; set; }
-        public string Title { get; set; } = null!;
-        public string Description { get; set; } = null!;
-        public string? Author { get; set; }
-        public bool WithConfigUI { get; set; }
-        public ModuleCategories Category { get; set; }
+        public Type             Module          { get; set; } = null!;
+        public string[]?        PrecedingModule { get; set; }
+        public string           Title           { get; set; } = null!;
+        public string           Description     { get; set; } = null!;
+        public string?          Author          { get; set; }
+        public bool             WithConfigUI    { get; set; }
+        public ModuleCategories Category        { get; set; }
     }
 
     private static readonly List<ModuleInfo> Modules = [];
@@ -40,10 +41,16 @@ public class Main : Window, IDisposable
 
     internal static string SearchString = string.Empty;
 
-    public Main() : base("Daily Routines - 主界面")
+    public Main() : base("Daily Routines - 主界面###DailyRoutines-Main")
     {
         Flags = ImGuiWindowFlags.NoScrollbar;
         SizeConstraints = new WindowSizeConstraints { MinimumSize = new(650, 300) };
+
+        if (Service.ClientState.ClientLanguage != (ClientLanguage)4)
+        {
+            WindowName =
+                "Daily Routines - 主界面 (本插件不對國際服提供支持 / This Plugin ONLY Provides Help For CN Client)###DailyRoutines-Main";
+        }
 
         var allModules = Assembly.GetExecutingAssembly().GetTypes()
                                  .Where(t => typeof(DailyModuleBase).IsAssignableFrom(t) &&
@@ -64,9 +71,11 @@ public class Main : Window, IDisposable
                                      Category = type.GetCustomAttribute<ModuleDescriptionAttribute>()?.Category ??
                                                 ModuleCategories.一般,
                                      Author = ((DailyModuleBase)Activator.CreateInstance(type)!).Author,
-                                     WithConfigUI = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
-                                                        .Any(m => m.Name == "ConfigUI" && 
-                                                                  m.DeclaringType != typeof(DailyModuleBase))
+                                     WithConfigUI = type
+                                                    .GetMethods(BindingFlags.Instance | BindingFlags.Public |
+                                                                BindingFlags.DeclaredOnly)
+                                                    .Any(m => m.Name == "ConfigUI" &&
+                                                              m.DeclaringType != typeof(DailyModuleBase)),
                                  })
                                  .ToList();
 
@@ -80,16 +89,14 @@ public class Main : Window, IDisposable
         MainSettings.Init();
     }
 
-    public override void OnOpen()
-    {
-        Styles.Refresh();
-    }
+    public override void OnOpen() { Styles.Refresh(); }
 
     public override void Draw()
     {
         ImGui.SetNextItemWidth(-1f);
         ImGui.InputTextWithHint("##MainWindow-SearchInput", $"{Service.Lang.GetText("PleaseSearch")}...",
                                 ref SearchString, 100);
+
         ImGui.Separator();
 
         if (ImGui.BeginTabBar("BasicTab", ImGuiTabBarFlags.FittingPolicyScroll))
@@ -98,6 +105,7 @@ public class Main : Window, IDisposable
             {
                 foreach (var category in Enum.GetValues(typeof(ModuleCategories)))
                     DrawModules((ModuleCategories)category);
+
                 MainSettings.Draw();
             }
             else
@@ -175,6 +183,7 @@ public class Main : Window, IDisposable
         var origCursorPosX = ImGui.GetCursorPosX();
         ImGui.SetCursorPosX(ImGui.GetWindowWidth() - (ImGui.CalcTextSize(moduleText).X * 0.8f) -
                             (4 * ImGui.GetStyle().FramePadding.X));
+
         ImGui.SetWindowFontScale(0.8f);
         ImGui.TextDisabled(moduleText);
         ImGui.SetWindowFontScale(1f);
@@ -186,6 +195,7 @@ public class Main : Window, IDisposable
             ImGui.SetCursorPosX(origCursorPosX + ImGui.CalcTextSize(moduleInfo.Title).X +
                                 (ImGui.GetStyle().FramePadding.X * 8) +
                                 (isModuleEnabled && moduleInfo.WithConfigUI ? 20f : -15f));
+
             ImGui.TextColored(ImGuiColors.DalamudGrey3, $"{Service.Lang.GetText("Author")}: {moduleInfo.Author}");
         }
 
@@ -234,9 +244,11 @@ public class Main : Window, IDisposable
                     ImGui.TextDisabled("/");
                 }
             }
+
             ImGui.SameLine(0, 0);
             ImGuiOm.TextDisabledWrapped(")");
         }
+
         ImGui.EndGroup();
 
         return;
@@ -263,39 +275,41 @@ public class MainSettings
 {
     public class VersionInfo
     {
-        public Version Version { get; set; } = new();
-        public DateTime PublishTime { get; set; } = DateTime.MinValue;
-        public string Changelog { get; set; } = string.Empty;
-        public int DownloadCount { get; set; }
+        public Version  Version       { get; set; } = new();
+        public DateTime PublishTime   { get; set; } = DateTime.MinValue;
+        public string   Changelog     { get; set; } = string.Empty;
+        public int      DownloadCount { get; set; }
     }
 
     public class GameEvent
     {
-        public uint ID { get; set; }
+        public uint                ID          { get; set; }
         public DalamudLinkPayload? LinkPayload { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string Url { get; set; } = string.Empty;
-        public DateTime BeginTime { get; set; } = DateTime.MinValue;
-        public DateTime EndTime { get; set; } = DateTime.MaxValue;
-        public Vector4 Color { get; set; }
+        public string              Name        { get; set; } = string.Empty;
+        public string              Url         { get; set; } = string.Empty;
+        public DateTime            BeginTime   { get; set; } = DateTime.MinValue;
+        public DateTime            EndTime     { get; set; } = DateTime.MaxValue;
+        public Vector4             Color       { get; set; }
+
         /// <summary>
-        /// 0 - 正在进行; 1 - 未开始; 2 - 已结束
+        ///     0 - 正在进行; 1 - 未开始; 2 - 已结束
         /// </summary>
         public uint State { get; set; }
+
         /// <summary>
-        /// 如果已结束, 则为 -1
+        ///     如果已结束, 则为 -1
         /// </summary>
         public int DaysLeft { get; set; } = int.MaxValue;
     }
 
     public class GameNews
     {
-        public string Title { get; set; } = string.Empty;
-        public string Url { get; set; } = string.Empty;
-        public string PublishDate { get; set; } = string.Empty;
-        public string Summary { get; set; } = string.Empty;
+        public string Title         { get; set; } = string.Empty;
+        public string Url           { get; set; } = string.Empty;
+        public string PublishDate   { get; set; } = string.Empty;
+        public string Summary       { get; set; } = string.Empty;
         public string HomeImagePath { get; set; } = string.Empty;
-        public int SortIndex { get; set; }
+        public int    SortIndex     { get; set; }
     }
 
     private static string ConflictKeySearchString = string.Empty;
@@ -336,7 +350,7 @@ public class MainSettings
             DrawGameNews();
             ImGui.EndGroup();
             ImGui.Separator();
-            
+
             DrawTooltips();
 
             ImGui.EndTabItem();
@@ -381,6 +395,7 @@ public class MainSettings
             ImGui.SetNextItemWidth(-1f);
             ImGui.InputTextWithHint("##ConflictKeySearchBar", $"{Service.Lang.GetText("PleaseSearch")}...",
                                     ref ConflictKeySearchString, 20);
+
             ImGui.Separator();
 
             var validKeys = Service.KeyState.GetValidVirtualKeys();
@@ -388,6 +403,7 @@ public class MainSettings
             {
                 if (!string.IsNullOrWhiteSpace(ConflictKeySearchString) && !keyToSelect.GetFancyName()
                         .Contains(ConflictKeySearchString, StringComparison.OrdinalIgnoreCase)) continue;
+
                 if (ImGui.Selectable(keyToSelect.GetFancyName()))
                 {
                     Service.Config.ConflictKey = keyToSelect;
@@ -410,7 +426,11 @@ public class MainSettings
             Service.Config.Save();
 
             if (Service.Config.AllowAnonymousUpload)
-                Task.Run(() => OnlineStatsManager.UploadEntry(new OnlineStatsManager.ModulesState(OnlineStatsManager.GetEncryptedMachineCode())));
+            {
+                Task.Run(async () =>
+                             await OnlineStatsManager.UploadEntry(
+                                 new OnlineStatsManager.ModulesState(OnlineStatsManager.GetEncryptedMachineCode())));
+            }
         }
 
         ImGuiOm.HelpMarker(Service.Lang.GetText("Settings-AllowAnonymousUploadHelp"), 25f);
@@ -477,7 +497,8 @@ public class MainSettings
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("CurrentVersion")}:");
 
         ImGui.SameLine();
-        ImGui.TextColored(Plugin.Version < LatestVersionInfo.Version ? ImGuiColors.DPSRed : ImGuiColors.DalamudWhite, $"{Plugin.Version}");
+        ImGui.TextColored(Plugin.Version < LatestVersionInfo.Version ? ImGuiColors.DPSRed : ImGuiColors.DalamudWhite,
+                          $"{Plugin.Version}");
 
         if (Plugin.Version < LatestVersionInfo.Version)
             ImGuiOm.TooltipHover(Service.Lang.GetText("LowVersionWarning"));
@@ -499,6 +520,7 @@ public class MainSettings
                 ImGui.Image(imageHandle.ImGuiHandle, imageHandle.Size * 0.8f);
             else
                 ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
+
             ImGui.Unindent();
         }
     }
@@ -547,8 +569,10 @@ public class MainSettings
                 var statusStr = activity.State == 2 ? Service.Lang.GetText("GameCalendar-EventEnded") : "";
                 ImGui.PushStyleColor(ImGuiCol.Button, activity.Color);
                 ImGui.BeginDisabled(activity.State == 2);
-                if (ImGui.Button($"{activity.Name} {statusStr}###{activity.Url}", buttonSize with { Y = (2 * framePadding.Y) + buttonSize.Y }))
+                if (ImGui.Button($"{activity.Name} {statusStr}###{activity.Url}",
+                                 buttonSize with { Y = (2 * framePadding.Y) + buttonSize.Y }))
                     Util.OpenLink($"{activity.Url}");
+
                 ImGui.EndDisabled();
                 ImGui.PopStyleColor();
 
@@ -558,7 +582,8 @@ public class MainSettings
                     ImGui.TextColored(ImGuiColors.DalamudOrange, "距离");
 
                     ImGui.SameLine();
-                    ImGui.TextColored(ImGuiColors.HealerGreen, $"{(activity.State is 0 ? Service.Lang.GetText("End") : Service.Lang.GetText("Start"))}");
+                    ImGui.TextColored(ImGuiColors.HealerGreen,
+                                      $"{(activity.State is 0 ? Service.Lang.GetText("End") : Service.Lang.GetText("Start"))}");
 
                     ImGui.SameLine();
                     ImGui.TextColored(ImGuiColors.DalamudOrange, "还有: ");
@@ -566,29 +591,13 @@ public class MainSettings
                     ImGui.SameLine();
                     ImGui.Text($"{activity.DaysLeft} 天");
 
-                    ImGui.TextColored(ImGuiColors.DalamudOrange, activity.State is 0 ? $"{Service.Lang.GetText("EndTime")}: " : $"{Service.Lang.GetText("StartTime")}: ");
+                    ImGui.TextColored(ImGuiColors.DalamudOrange,
+                                      activity.State is 0
+                                          ? $"{Service.Lang.GetText("EndTime")}: "
+                                          : $"{Service.Lang.GetText("StartTime")}: ");
 
                     ImGui.SameLine();
                     ImGui.Text(activity.State is 0 ? $"{activity.EndTime}" : $"{activity.BeginTime}");
-
-                    /*ImGui.SameLine();
-                    ImGui.TextColored(
-                        activity.BeginTime > DateTime.Now ? ImGuiColors.DPSRed : ImGuiColors.HealerGreen,
-                        activity.BeginTime > DateTime.Now
-                            ? Service.Lang.GetText("GameCalendar-EventNotStarted")
-                            : Service.Lang.GetText("GameCalendar-EventStarted"));
-
-                    ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("EndTime")}: ");
-
-                    ImGui.SameLine();
-                    ImGui.Text($"{activity.EndTime}");
-
-                    ImGui.SameLine();
-                    ImGui.TextColored(
-                        activity.EndTime < DateTime.Now ? ImGuiColors.DPSRed : ImGuiColors.HealerGreen,
-                        activity.EndTime > DateTime.Now
-                            ? Service.Lang.GetText("GameCalendar-EventNotEnded")
-                            : Service.Lang.GetText("GameCalendar-EventEnded"));*/
 
                     ImGui.EndTooltip();
                 }
@@ -666,6 +675,7 @@ public class MainSettings
                                .AddUiForeground(
                                    $" {DateTime.Now.ToShortDateString()} {Service.Lang.GetText("GameCalendar")}", 2)
                                .Build());
+
             var orderNumber = 1;
             foreach (var gameEvent in GameCalendars)
             {
@@ -676,8 +686,9 @@ public class MainSettings
                                                    .Add(RawPayload.LinkTerminator)
                                                    .AddUiForeground(
                                                        $" ({Service.Lang.GetText("GameCalendar-EndTimeMessage",
-                                                           gameEvent.DaysLeft)})", 2)
+                                                                                 gameEvent.DaysLeft)})", 2)
                                                    .Build();
+
                 Service.Chat.Print(message);
                 orderNumber++;
             }
@@ -733,11 +744,12 @@ public class MainSettings
                     BeginTime = beginTime,
                     EndTime = endTime,
                     Color = DarkenColor(HexToVector4(activity.color), 0.3f),
-                    State = (currentTime < beginTime) ? 1U :
-                            (currentTime <= endTime) ? 0U : 2U,
-                    DaysLeft = (currentTime < beginTime) ? (beginTime - DateTime.Now).Days :
-                               (currentTime <= endTime) ? (endTime - DateTime.Now).Days : int.MaxValue,
+                    State = currentTime < beginTime ? 1U :
+                            currentTime <= endTime ? 0U : 2U,
+                    DaysLeft = currentTime < beginTime ? (beginTime - DateTime.Now).Days :
+                               currentTime <= endTime ? (endTime - DateTime.Now).Days : int.MaxValue,
                 };
+
                 GameCalendars.Add(gameEvent);
             }
 
@@ -756,6 +768,7 @@ public class MainSettings
     {
         const string url =
             "https://cqnews.web.sdo.com/api/news/newsList?gameCode=ff&CategoryCode=5309,5310,5311,5312,5313&pageIndex=0&pageSize=5";
+
         var response = await client.GetStringAsync(url);
         var result = JsonConvert.DeserializeObject<FileFormat.RSGameNews>(response);
 
@@ -764,15 +777,16 @@ public class MainSettings
             GameNewsList.Clear();
             foreach (var activity in result.Data)
             {
-                var gameNews = new GameNews()
+                var gameNews = new GameNews
                 {
                     Title = activity.Title,
                     Url = activity.Author,
                     SortIndex = activity.SortIndex,
                     Summary = activity.Summary,
                     HomeImagePath = activity.HomeImagePath,
-                    PublishDate = activity.PublishDate
+                    PublishDate = activity.PublishDate,
                 };
+
                 GameNewsList.Add(gameNews);
             }
         }
