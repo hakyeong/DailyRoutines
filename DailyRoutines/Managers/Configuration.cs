@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using DailyRoutines.Modules;
 using Dalamud.Configuration;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Plugin;
@@ -12,13 +10,13 @@ namespace DailyRoutines.Managers;
 [Serializable]
 public class Configuration : IPluginConfiguration
 {
-    public int Version { get; set; } = 0;
-    public string SelectedLanguage { get; set; } = string.Empty;
-    public VirtualKey ConflictKey { get; set; } = VirtualKey.SHIFT;
-    public bool SendCalendarToChatWhenLogin { get; set; } = false;
-    public bool IsHideOutdatedEvent { get; set; } = true;
-    public bool AllowAnonymousUpload { get; set; } = true;
-    public Dictionary<string, bool> ModuleEnabled { get; set; } = [];
+    public int                      Version                     { get; set; } = 0;
+    public VirtualKey               ConflictKey                 { get; set; } = VirtualKey.SHIFT;
+    public bool                     SendCalendarToChatWhenLogin { get; set; } = false;
+    public bool                     IsHideOutdatedEvent         { get; set; } = true;
+    public bool                     AllowAnonymousUpload        { get; set; } = true;
+    public Dictionary<string, bool> ModuleEnabled               { get; set; } = [];
+    public HashSet<string>            ModuleFavorites             { get; set; } = [];
 
     [NonSerialized]
     private DalamudPluginInterface? pluginInterface;

@@ -1936,4 +1936,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoUnlockAllOrchestrionsListenTitle" xml:space="preserve">
     <value>自动解锁管弦乐琴试听</value>
   </data>
+  <data name="Favorite" xml:space="preserve">
+    <value>收藏</value>
+  </data>
+  <data name="Settings-ModuleInfoDisplayShort" xml:space="preserve">
+    <value>分类: {0} / 作者: {1}</value>
+  </data>
 </root>

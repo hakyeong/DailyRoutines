@@ -38,6 +38,7 @@ public class Main : Window, IDisposable
 
     private static readonly List<ModuleInfo> Modules = [];
     private static readonly Dictionary<ModuleCategories, List<ModuleInfo>> categorizedModules = [];
+    private static readonly List<ModuleInfo> ModulesFavorite = [];
 
     internal static string SearchString = string.Empty;
 
@@ -85,6 +86,7 @@ public class Main : Window, IDisposable
             categorizedModules[group.Key] =
                 [.. group.OrderBy(m => m.Title)];
         });
+        ModulesFavorite.AddRange(allModules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
 
         MainSettings.Init();
     }
@@ -103,6 +105,8 @@ public class Main : Window, IDisposable
         {
             if (string.IsNullOrEmpty(SearchString))
             {
+                DrawModulesFavorites(Modules);
+
                 foreach (var category in Enum.GetValues(typeof(ModuleCategories)))
                     DrawModules((ModuleCategories)category);
 
@@ -112,6 +116,26 @@ public class Main : Window, IDisposable
                 DrawModulesSearchResult(Modules);
 
             ImGui.EndTabBar();
+        }
+    }
+
+    private static void DrawModulesFavorites(IReadOnlyList<ModuleInfo> modules)
+    {
+        if (ImGui.BeginTabItem(Service.Lang.GetText("Favorite")))
+        {
+            for (var i = 0; i < modules.Count; i++)
+            {
+                var module = modules[i];
+                if (!Service.Config.ModuleFavorites.Contains(module.Module.Name)) continue;
+
+                ImGui.PushID($"{module.Category}-{module.Description}-{module.Title}-{module.Module}");
+                DrawModuleUI(module, false);
+                ImGui.PopID();
+
+                if (i < modules.Count - 1) ImGui.Separator();
+            }
+
+            ImGui.EndTabItem();
         }
     }
 
@@ -177,6 +201,8 @@ public class Main : Window, IDisposable
         }
 
         if (fromSearch) ImGuiOm.TooltipHover(moduleInfo.Category.ToString());
+
+        DrawModuleContextMenu(moduleInfo);
 
         var moduleText = $"[{moduleName}]";
         ImGui.SameLine();
@@ -261,6 +287,36 @@ public class Main : Window, IDisposable
             ImGui.PopStyleColor(2);
 
             return collapsingHeader;
+        }
+    }
+
+    private static void DrawModuleContextMenu(ModuleInfo moduleInfo)
+    {
+        if (ImGui.BeginPopupContextItem($"ContextMenu_{moduleInfo.Title}_{moduleInfo.Description}_{moduleInfo.Module.Name}"))
+        {
+            PresetFont.Axis14.Push();
+
+            ImGui.SetWindowFontScale(1.1f);
+            ImGui.Text($"{moduleInfo.Title}");
+
+            ImGui.SetWindowFontScale(0.9f);
+            ImGui.Text(Service.Lang.GetText("Settings-ModuleInfoDisplayShort", moduleInfo.Category, moduleInfo.Author ?? "AtmoOmen"));
+
+            ImGui.SetWindowFontScale(1f);
+            ImGui.Separator();
+
+            var isFavorite = Service.Config.ModuleFavorites.Contains(moduleInfo.Module.Name);
+            if (ImGui.Checkbox(Service.Lang.GetText("Favorite"), ref isFavorite))
+            {
+                if (!Service.Config.ModuleFavorites.Remove(moduleInfo.Module.Name))
+                    Service.Config.ModuleFavorites.Add(moduleInfo.Module.Name);
+
+                ModulesFavorite.Clear();
+                ModulesFavorite.AddRange(Modules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
+            }
+
+            PresetFont.Axis14.Pop();
+            ImGui.EndPopup();
         }
     }
 
