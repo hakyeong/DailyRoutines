@@ -1930,4 +1930,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoLeveQuests-CurrentLeveAllowances" xml:space="preserve">
     <value>当前理符限额: {0} </value>
   </data>
+  <data name="AutoUnlockAllOrchestrionsListenDescription" xml:space="preserve">
+    <value>启用后, 自动解锁管弦乐琴内所有乐谱的试听与本地设置播放</value>
+  </data>
+  <data name="AutoUnlockAllOrchestrionsListenTitle" xml:space="preserve">
+    <value>自动解锁管弦乐琴试听</value>
+  </data>
 </root>
