@@ -1909,4 +1909,19 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoMJIGather-HUDNoFound" xml:space="preserve">
     <value>未找到开拓管理面板, 已停止采集</value>
   </data>
+  <data name="AutoLeveQuests-DisableHelp-Delivering" xml:space="preserve">
+    <value>当前正在批量提交理符任务</value>
+  </data>
+  <data name="AutoLeveQuests-DisableHelp-NullLeve" xml:space="preserve">
+    <value>未选择待提交理符</value>
+  </data>
+  <data name="AutoLeveQuests-DisableHelp-NullMete" xml:space="preserve">
+    <value>未选择理符发行人</value>
+  </data>
+  <data name="AutoLeveQuests-DisableHelp-NullReceiver" xml:space="preserve">
+    <value>未选择理符委托人</value>
+  </data>
+  <data name="AutoLeveQuests-DisableHelp-SameNPC" xml:space="preserve">
+    <value>理符发行人和委托人重复</value>
+  </data>
 </root>
