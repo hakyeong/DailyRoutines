@@ -28,8 +28,11 @@ public class OnlineStatsManager : IDailyManager
 
         [JsonProperty("enabled_modules")]
         public string[] EnabledModules = Service.ModuleManager.Modules
-                                                .Where(x => x.Value.Initialized)
-                                                .Select(x => Service.Lang.GetText(x.Key.GetCustomAttribute<ModuleDescriptionAttribute>()?.TitleKey ?? "DevModuleTitle")).ToArray();
+                                                .Where(x => x.Value.Initialized &&
+                                                            x.Key.GetCustomAttribute<ModuleDescriptionAttribute>() != null)
+                                                .Select(x => Service.Lang.GetText(
+                                                            x.Key.GetCustomAttribute<ModuleDescriptionAttribute>()
+                                                             ?.TitleKey ?? "DevModuleTitle")).ToArray();
 
         [JsonProperty("all_modules_amount")]
         public uint AllModulesAmount = (uint)Service.ModuleManager.Modules.Count;
@@ -37,133 +40,102 @@ public class OnlineStatsManager : IDailyManager
         [JsonProperty("enabled_modules_amount")]
         public uint EnabledModulesAmount = (uint)Service.ModuleManager.Modules.Count(x => x.Value.Initialized);
 
-        public ModulesState(string character)
-        {
-            Character = character;
-        }
+        public ModulesState(string character) { Character = character; }
 
         public ModulesState() { }
     }
 
-    #region Data
     private const string BaseUrlRest = "https://fygyuifkxhpsruanuqfa.supabase.co/rest/v1/";
+
     private const string SupabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5Z3l1aWZreGhwc3J1YW51cWZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTQxODE0MjAsImV4cCI6MjAyOTc1NzQyMH0.eId2N2z-MXspJ6_z043MoMCujIjyIGtAlwVHEND5VIs";
-
-    private static readonly string[] HardwareClasses =
-    [
-        "Win32_Processor",
-        "Win32_BaseBoard",
-        "Win32_BIOS",
-        "Win32_LogicalDisk",
-        "Win32_NetworkAdapter"
-    ];
-
-    private static readonly string[] Properties =
-    [
-        "ProcessorId",
-        "SerialNumber",
-        "SerialNumber",
-        "VolumeSerialNumber",
-        "MACAddress"
-    ];
-
-    private static readonly string?[] Conditions =
-    [
-        null,
-        null,
-        null,
-        "DriveType = 3",
-        "PhysicalAdapter = 'True'"
-    ];
-    #endregion
 
     private static readonly HttpClient Client = new();
 
-    private void Init()
+    public OnlineStatsManager()
     {
         Client.DefaultRequestHeaders.Add("apikey", SupabaseAnonKey);
         Client.DefaultRequestHeaders.Add("Authorization", $"Bearer {SupabaseAnonKey}");
         Client.DefaultRequestHeaders.Add("Prefer", "return=minimal");
-
-        Service.ClientState.Login += OnLogin;
-        Task.Run(() => UploadEntry(new ModulesState(GetEncryptedMachineCode())));
     }
 
-    public static async void UploadEntry(ModulesState entry)
+    private void Init()
     {
-        try
-        {
-            var content = new StringContent(JsonConvert.SerializeObject(entry), Encoding.UTF8, "application/json");
-            var response = await Client.PutAsync($"{BaseUrlRest}ModulesState?character=eq.{entry.Character}", content);
+        Service.ClientState.Login += OnLogin;
+        Task.Run(async () => await UploadEntry(new ModulesState(GetEncryptedMachineCode())));
+    }
 
-            if (response.StatusCode != HttpStatusCode.Created && response.StatusCode != HttpStatusCode.NoContent)
-                Service.Log.Debug($"StatusCode: {response.StatusCode} Content: {response.Content.ReadAsStringAsync().Result}");
-        }
-        catch (Exception e)
-        {
-            Service.Log.Error(e, "Upload failed");
-        }
+    public static async Task UploadEntry(ModulesState entry)
+    {
+        var content = new StringContent(JsonConvert.SerializeObject(entry), Encoding.UTF8, "application/json");
+        var response = await Client.PutAsync($"{BaseUrlRest}ModulesState?character=eq.{entry.Character}", content);
+
+        if (response.StatusCode != HttpStatusCode.Created && response.StatusCode != HttpStatusCode.NoContent)
+            Service.Log.Debug($"StatusCode: {response.StatusCode} Content: {await response.Content.ReadAsStringAsync()}");
     }
 
     public static string GetEncryptedMachineCode()
     {
         var machineCodeBuilder = new StringBuilder();
-        var hardwareValues = GetHardwareValues().ToArray();
+        var hardwareValues = GetHardwareValues();
 
         foreach (var value in hardwareValues)
-        {
             machineCodeBuilder.Append(value);
-        }
 
-        var machineCode = machineCodeBuilder.ToString();
         using var sha256Hash = SHA256.Create();
-        var encryptedCode = GetHash(sha256Hash, machineCode);
-
-        return encryptedCode;
+        return GetHash(sha256Hash, machineCodeBuilder.ToString());
     }
 
-    private static string[] GetHardwareValues()
+    private static IEnumerable<string> GetHardwareValues()
     {
-        var tasks = new List<Task<string>>(HardwareClasses.Length);
+        string[] HardwareClasses =
+        [
+            "Win32_Processor",
+            "Win32_BaseBoard",
+            "Win32_BIOS",
+            "Win32_LogicalDisk",
+            "Win32_NetworkAdapter",
+        ];
+
+        string[] Properties =
+        [
+            "ProcessorId",
+            "SerialNumber",
+            "SerialNumber",
+            "VolumeSerialNumber",
+            "MACAddress",
+        ];
+
+        string?[] Conditions =
+        [
+            null,
+            null,
+            null,
+            "DriveType = 3",
+            "PhysicalAdapter = 'True'",
+        ];
 
         for (var i = 0; i < HardwareClasses.Length; i++)
-        {
-            var index = i;
-            tasks.Add(Task.Run(() => GetSingleHardwareValue(Properties[index], HardwareClasses[index], Conditions[index])));
-        }
-
-        return Task.WhenAll(tasks).Result;
+            yield return GetSingleHardwareValue(Properties[i], HardwareClasses[i], Conditions[i]);
     }
 
-    private static string GetSingleHardwareValue(string property, string className, string? condition = null)
+    private static string GetSingleHardwareValue(string property, string className, string? condition)
     {
-        using var searcher = new ManagementObjectSearcher($"SELECT {property} FROM {className}" + (condition != null ? " WHERE " + condition : ""));
-        var collection = searcher.Get();
-        foreach (var o in collection)
-        {
-            var obj = (ManagementObject)o;
-            try
-            {
-                return obj[property].ToString();
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
-        }
+        using var searcher =
+            new ManagementObjectSearcher($"SELECT {property} FROM {className}" +
+                                         (condition != null ? " WHERE " + condition : ""));
+
+        foreach (var obj in searcher.Get())
+            return obj[property]?.ToString() ?? string.Empty;
+
         return string.Empty;
     }
 
     private static string GetHash(HashAlgorithm hashAlgorithm, string input)
     {
         var data = hashAlgorithm.ComputeHash(Encoding.UTF8.GetBytes(input));
-
         var sBuilder = new StringBuilder();
-
-        foreach (var t in data)
-        {
-            sBuilder.Append(t.ToString("x2"));
-        }
+        foreach (var b in data)
+            sBuilder.Append(b.ToString("x2"));
 
         return sBuilder.ToString();
     }
@@ -171,11 +143,8 @@ public class OnlineStatsManager : IDailyManager
     private static void OnLogin()
     {
         if (!Service.Config.AllowAnonymousUpload) return;
-        Task.Run(() => UploadEntry(new ModulesState(GetEncryptedMachineCode())));
+        Task.Run(async () => await UploadEntry(new ModulesState(GetEncryptedMachineCode())));
     }
 
-    private void Uninit()
-    {
-        Service.ClientState.Login -= OnLogin;
-    }
+    private void Uninit() { Service.ClientState.Login -= OnLogin; }
 }
