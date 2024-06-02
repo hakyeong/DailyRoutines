@@ -39,6 +39,9 @@ public static class Extensions
         return info;
     }
 
+    public static unsafe FFXIVClientStructs.FFXIV.Client.Game.Character.Character* ToCharacterStruct(this Character chara)
+        => (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)chara.Address;
+
     public static ExpandPlayerMenuSearch.CharacterSearchInfo ToCharacterSearchInfo(this CharacterData chara)
     {
         var info = new ExpandPlayerMenuSearch.CharacterSearchInfo()
