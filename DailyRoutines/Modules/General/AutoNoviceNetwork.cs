@@ -117,22 +117,26 @@ public unsafe class AutoNoviceNetwork : DailyModuleBase
             if (!IsNoviceNetworkFlagSet(PlayerState.Instance(), 8U))
                 Chat.Instance.ExecuteCommand("/beginnerchannel on");
         });
+
         TaskManager.Enqueue(TryJoin);
+
         TaskManager.DelayNext(250);
         TaskManager.Enqueue(() => TryTimes++);
-        TaskManager.Enqueue(() => CheckJoinState(false));
+
+        TaskManager.Enqueue(() =>
+        {
+            if (IsInNoviceNetwork)
+            {
+                TaskManager.Abort();
+                return;
+            }
+
+            EnqueueARound();
+        });
     }
 
     private static void TryJoin()
-        => TryJoinNoviceNetwork(InfoModule.Instance()->GetInfoProxyById((InfoProxyId)20));
-
-    private void CheckJoinState(bool isOnlyOneRound)
-    {
-        if (IsInNoviceNetwork)
-            TaskManager.Abort();
-        else if (!isOnlyOneRound)
-            EnqueueARound();
-    }
+        => TryJoinNoviceNetwork(&InfoProxyBeginner.Instance()->InfoProxyInterface);
 
     private static bool IsInNoviceNetwork => InfoProxyBeginner.Instance()->IsInNoviceNetwork;
 
@@ -143,11 +147,7 @@ public unsafe class AutoNoviceNetwork : DailyModuleBase
 
         var idleTime = GetIdleTime();
         if (idleTime > TimeSpan.FromSeconds(10) || Framework.Instance()->WindowInactive)
-        {
-            TaskManager.Enqueue(TryJoin);
-            TaskManager.DelayNext(250);
-            TaskManager.Enqueue(() => CheckJoinState(true));
-        }
+            TryJoin();
     }
 
     public static TimeSpan GetIdleTime()
