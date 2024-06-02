@@ -1,23 +1,22 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Timers;
-using ClickLib;
-using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.Addon.Lifecycle;
-using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
+using Dalamud.Utility.Signatures;
+using ECommons.Automation;
+using ECommons.Throttlers;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
-using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using ImGuiNET;
-using TaskManager = ECommons.Automation.TaskManager;
+using TaskManager = ECommons.Automation.LegacyTaskManager.TaskManager;
 
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoNoviceNetworkTitle", "AutoNoviceNetworkDescription", ModuleCategories.一般)]
-public class AutoNoviceNetwork : DailyModuleBase
+public unsafe class AutoNoviceNetwork : DailyModuleBase
 {
     [StructLayout(LayoutKind.Sequential)]
     private struct LastInputInfo
@@ -26,18 +25,41 @@ public class AutoNoviceNetwork : DailyModuleBase
         public uint LastInputTickCount;
     }
 
-    [DllImport("User32.dll")]
-    private static extern bool GetLastInputInfo(ref LastInputInfo info);
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
+    private struct InfoProxyBeginner
+    {
+        [FieldOffset(0)]
+        public InfoProxyInterface InfoProxyInterface;
+
+        [FieldOffset(24)]
+        public bool IsInNoviceNetwork;
+
+        public static InfoProxyBeginner* Instance() => (InfoProxyBeginner*)InfoModule.Instance()->GetInfoProxyById((InfoProxyId)20);
+    }
+
+    private delegate byte TryJoinNoviceNetworkDelegate(InfoProxyInterface* infoProxy20);
+    [Signature("E8 ?? ?? ?? ?? 45 33 F6 41 B4")]
+    private static TryJoinNoviceNetworkDelegate? TryJoinNoviceNetwork;
+
+    private delegate bool IsNoviceNetworkFlagSetDelegate(PlayerState* instance, uint flag);
+    // 传入 8U 检测是否启用自动加入新人频道
+    [Signature("8B C2 44 8B C2 C1 E8 ?? 4C 8B C9 83 F8 ?? 72 ?? 32 C0 C3 41 83 E0 ?? BA ?? ?? ?? ?? 41 0F B6 C8 D2 E2", ScanType = ScanType.Text)]
+    private static IsNoviceNetworkFlagSetDelegate? IsNoviceNetworkFlagSet;
 
     private static Timer? AfkTimer;
     private static int TryTimes;
-    private static bool IsInNoviceNetwork;
-    private static bool ConfigIsTryJoinWhenInactive;
+    private static bool IsTryJoinWhenInactive;
+    private static bool IsInNoviceNetworkDisplay;
+
+    [DllImport("User32.dll")]
+    private static extern bool GetLastInputInfo(ref LastInputInfo info);
 
     public override void Init()
     {
+        Service.Hook.InitializeFromAttributes(this);
+
         AddConfig("IsTryJoinWhenInactive", false);
-        ConfigIsTryJoinWhenInactive = GetConfig<bool>("IsTryJoinWhenInactive");
+        IsTryJoinWhenInactive = GetConfig<bool>("IsTryJoinWhenInactive");
 
         AfkTimer ??= new Timer(10000);
         AfkTimer.Elapsed += OnAfkStateCheck;
@@ -45,7 +67,6 @@ public class AutoNoviceNetwork : DailyModuleBase
         AfkTimer.Enabled = true;
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", ClickYesButton);
     }
 
     public override void ConfigUI()
@@ -56,7 +77,6 @@ public class AutoNoviceNetwork : DailyModuleBase
             TryTimes = 0;
             TaskManager.Enqueue(EnqueueARound);
         }
-
         ImGui.EndDisabled();
 
         ImGui.SameLine();
@@ -72,69 +92,60 @@ public class AutoNoviceNetwork : DailyModuleBase
         ImGui.PopStyleColor();
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoNoviceNetwork-TryJoinWhenInactive"),
-                           ref ConfigIsTryJoinWhenInactive))
-            UpdateConfig("IsTryJoinWhenInactive", ConfigIsTryJoinWhenInactive);
+                           ref IsTryJoinWhenInactive))
+            UpdateConfig("IsTryJoinWhenInactive", IsTryJoinWhenInactive);
 
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoNoviceNetwork-TryJoinWhenInactiveHelp"));
 
         ImGui.SameLine();
         ImGui.Text($"{Service.Lang.GetText("AutoNoviceNetwork-JoinState")}:");
 
+        if (EzThrottler.Throttle("AutoNoviceNetwork", 1000))
+            IsInNoviceNetworkDisplay = IsInNoviceNetwork;
+
         ImGui.SameLine();
-        ImGui.TextColored(IsInNoviceNetwork ? ImGuiColors.HealerGreen : ImGuiColors.DPSRed,
-                          IsInNoviceNetwork
+        ImGui.TextColored(IsInNoviceNetworkDisplay ? ImGuiColors.HealerGreen : ImGuiColors.DPSRed,
+                          IsInNoviceNetworkDisplay
                               ? Service.Lang.GetText("AutoNoviceNetwork-HaveJoined")
                               : Service.Lang.GetText("AutoNoviceNetwork-HaveNotJoined"));
-
-        ImGui.SameLine();
-        if (ImGui.SmallButton(Service.Lang.GetText("Refresh"))) IsInNoviceNetwork = false;
-    }
-
-    private unsafe void ClickYesButton(AddonEvent type, AddonArgs args)
-    {
-        if (!TaskManager.IsBusy) return;
-        if (TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) &&
-            IsAddonAndNodesReady(&addon->AtkUnitBase))
-        {
-            if (addon->PromptText->NodeText.ExtractText().Contains("新人频道"))
-                Click.SendClick("select_yes");
-        }
     }
 
     private void EnqueueARound()
     {
-        TaskManager.Enqueue(ClickNoviceNetworkButton);
-        TaskManager.DelayNext(500);
+        TaskManager.Enqueue(() =>
+        {
+            if (!IsNoviceNetworkFlagSet(PlayerState.Instance(), 8U))
+                Chat.Instance.ExecuteCommand("/beginnerchannel on");
+        });
+        TaskManager.Enqueue(TryJoin);
+        TaskManager.DelayNext(250);
+        TaskManager.Enqueue(() => TryTimes++);
         TaskManager.Enqueue(() => CheckJoinState(false));
-        TryTimes++;
     }
 
-    private static unsafe void ClickNoviceNetworkButton()
-    {
-        AgentHelper.SendEvent(AgentId.ChatLog, 0, 3);
-    }
+    private static void TryJoin()
+        => TryJoinNoviceNetwork(InfoModule.Instance()->GetInfoProxyById((InfoProxyId)20));
 
     private void CheckJoinState(bool isOnlyOneRound)
     {
-        if (Service.Gui.GetAddonByName("BeginnerChatList") != nint.Zero)
-        {
-            IsInNoviceNetwork = true;
+        if (IsInNoviceNetwork)
             TaskManager.Abort();
-        }
         else if (!isOnlyOneRound)
             EnqueueARound();
     }
 
-    private unsafe void OnAfkStateCheck(object? sender, ElapsedEventArgs e)
+    private static bool IsInNoviceNetwork => InfoProxyBeginner.Instance()->IsInNoviceNetwork;
+
+    private void OnAfkStateCheck(object? sender, ElapsedEventArgs e)
     {
-        if (!ConfigIsTryJoinWhenInactive || IsInNoviceNetwork || TaskManager.IsBusy) return;
+        if (!IsTryJoinWhenInactive || IsInNoviceNetwork || TaskManager.IsBusy) return;
         if (Flags.BoundByDuty || Flags.OccupiedInEvent) return;
 
         var idleTime = GetIdleTime();
         if (idleTime > TimeSpan.FromSeconds(10) || Framework.Instance()->WindowInactive)
         {
-            TaskManager.Enqueue(ClickNoviceNetworkButton);
-            TaskManager.DelayNext(500);
+            TaskManager.Enqueue(TryJoin);
+            TaskManager.DelayNext(250);
             TaskManager.Enqueue(() => CheckJoinState(true));
         }
     }
@@ -154,10 +165,7 @@ public class AutoNoviceNetwork : DailyModuleBase
         AfkTimer?.Dispose();
         AfkTimer = null;
 
-        IsInNoviceNetwork = false;
-        Service.AddonLifecycle.UnregisterListener(ClickYesButton);
         TryTimes = 0;
-
         base.Uninit();
     }
 }

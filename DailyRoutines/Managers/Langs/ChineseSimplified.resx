@@ -513,10 +513,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>已尝试次数</value>
   </data>
   <data name="AutoNoviceNetwork-HaveJoined" xml:space="preserve">
-    <value>已加入过</value>
+    <value>已加入</value>
   </data>
   <data name="AutoNoviceNetwork-HaveNotJoined" xml:space="preserve">
-    <value>未加入过</value>
+    <value>未加入</value>
   </data>
   <data name="AutoNoviceNetwork-JoinState" xml:space="preserve">
     <value>加入状态</value>
