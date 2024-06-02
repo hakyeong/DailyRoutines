@@ -28,4 +28,10 @@ public class AutoNotifyDutyStart : DailyModuleBase
         if (!ConfigOnlyNotifyWhenBackground || (ConfigOnlyNotifyWhenBackground && !IsGameForeground()))
             WinToast.Notify("", Service.Lang.GetText("AutoNotifyDutyStart-NotificationMessage"));
     }
+
+    public override void Uninit()
+    {
+        Service.DutyState.DutyStarted -= OnDutyStart;
+        base.Uninit();
+    }
 }
