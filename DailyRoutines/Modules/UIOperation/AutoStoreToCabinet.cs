@@ -1,19 +1,18 @@
-using DailyRoutines.Managers;
-using DailyRoutines.Windows;
-using Dalamud.Game.Addon.Lifecycle;
-using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using Dalamud.Interface.Colors;
-using ImGuiNET;
 using System.Threading;
 using System.Threading.Tasks;
 using DailyRoutines.Helpers;
+using DailyRoutines.Managers;
+using DailyRoutines.Windows;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Interface.Colors;
+using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
-using DailyRoutines.Infos;
 
 namespace DailyRoutines.Modules;
 
@@ -26,15 +25,15 @@ public class AutoStoreToCabinet : DailyModuleBase
         InventoryType.Inventory4, InventoryType.ArmoryBody, InventoryType.ArmoryEar, InventoryType.ArmoryFeets,
         InventoryType.ArmoryHands, InventoryType.ArmoryHead, InventoryType.ArmoryLegs, InventoryType.ArmoryRings,
         InventoryType.ArmoryNeck, InventoryType.ArmoryWrist, InventoryType.ArmoryRings, InventoryType.ArmoryMainHand,
-        InventoryType.ArmoryOffHand
+        InventoryType.ArmoryOffHand,
     ];
-
-    private static unsafe AtkUnitBase* Cabinet => (AtkUnitBase*)Service.Gui.GetAddonByName("Cabinet");
 
     private static Dictionary<uint, uint>? CabinetItems; // Item ID - Cabinet Index
 
     private static CancellationTokenSource? CancelSource;
     private static bool IsOnTask;
+
+    private static unsafe AtkUnitBase* Cabinet => (AtkUnitBase*)Service.Gui.GetAddonByName("Cabinet");
 
     public override void Init()
     {
@@ -84,17 +83,17 @@ public class AutoStoreToCabinet : DailyModuleBase
                     {
                         foreach (var item in list)
                         {
-                            Service.ExecuteCommandManager.ExecuteCommand(425, (int)item, 0, 0, 0);
+                            Service.ExecuteCommandManager.ExecuteCommand(425, (int)item);
                             await Task.Delay(100);
                         }
                     }
-                } 
-                finally
+                } finally
                 {
                     IsOnTask = false;
                 }
             }, CancelSource.Token);
         }
+
         ImGui.EndDisabled();
 
         ImGui.SameLine();
@@ -142,7 +141,7 @@ public class AutoStoreToCabinet : DailyModuleBase
         {
             AddonEvent.PostSetup => true,
             AddonEvent.PreFinalize => false,
-            _ => Overlay.IsOpen
+            _ => Overlay.IsOpen,
         };
     }
 

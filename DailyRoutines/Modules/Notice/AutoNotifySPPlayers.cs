@@ -26,19 +26,6 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoNotifySPPlayersTitle", "AutoNotifySPPlayersDescription", ModuleCategories.通知)]
 public unsafe class AutoNotifySPPlayers : DailyModuleBase
 {
-    private class NotifiedPlayers
-    {
-        public string Name { get; set; } = string.Empty;
-        public string Command { get; set; } = string.Empty;
-        public HashSet<uint> Zone { get; set; } = [];
-        public HashSet<uint> OnlineStatus { get; set; } = [];
-    }
-
-    private class Config : ModuleConfiguration
-    {
-        public readonly List<NotifiedPlayers> NotifiedPlayer = [];
-    }
-
     private static Config ModuleConfig = null!;
 
     private static Dictionary<uint, OnlineStatus>? OnlineStatuses;
@@ -50,12 +37,11 @@ public unsafe class AutoNotifySPPlayers : DailyModuleBase
     private static string SelectName = string.Empty;
     private static string SelectCommand = string.Empty;
 
-    private delegate byte IsTargetableDelegate(GameObject* gameObj);
+    private static readonly Dictionary<nint, long> NoticeTimeInfo = [];
+
     [Signature("40 53 48 83 EC 20 F3 0F 10 89 ?? ?? ?? ?? 0F 57 C0 0F 2E C8 48 8B D9 7A 0A",
                DetourName = nameof(IsTargetableDetour))]
     private readonly Hook<IsTargetableDelegate>? IsTargetableHook;
-
-    private static readonly Dictionary<nint, long> NoticeTimeInfo = [];
 
 
     public override void Init()
@@ -178,8 +164,9 @@ public unsafe class AutoNotifySPPlayers : DailyModuleBase
                     Name = SelectName,
                     OnlineStatus = SelectedOnlineStatus,
                     Zone = SelectedZone,
-                    Command = SelectCommand
+                    Command = SelectCommand,
                 };
+
                 ModuleConfig.NotifiedPlayer.Add(preset);
                 SaveConfig(ModuleConfig);
             }
@@ -224,17 +211,21 @@ public unsafe class AutoNotifySPPlayers : DailyModuleBase
                 NoticeTimeInfo[targetAddress] = currentTime;
                 CheckGameObject(potentialTarget);
             }
-            else switch (currentTime - lastNoticeTime)
+            else
             {
-                case < 15000:
-                    CheckGameObject(potentialTarget);
-                    break;
-                case > 300000:
-                    NoticeTimeInfo[targetAddress] = currentTime;
-                    CheckGameObject(potentialTarget);
-                    break;
+                switch (currentTime - lastNoticeTime)
+                {
+                    case < 15000:
+                        CheckGameObject(potentialTarget);
+                        break;
+                    case > 300000:
+                        NoticeTimeInfo[targetAddress] = currentTime;
+                        CheckGameObject(potentialTarget);
+                        break;
+                }
             }
         }
+
         return original;
     }
 
@@ -281,4 +272,19 @@ public unsafe class AutoNotifySPPlayers : DailyModuleBase
             }
         }
     }
+
+    private class NotifiedPlayers
+    {
+        public string        Name         { get; set; } = string.Empty;
+        public string        Command      { get; set; } = string.Empty;
+        public HashSet<uint> Zone         { get; set; } = [];
+        public HashSet<uint> OnlineStatus { get; set; } = [];
+    }
+
+    private class Config : ModuleConfiguration
+    {
+        public readonly List<NotifiedPlayers> NotifiedPlayer = [];
+    }
+
+    private delegate byte IsTargetableDelegate(GameObject* gameObj);
 }

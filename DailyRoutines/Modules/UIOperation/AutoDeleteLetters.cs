@@ -1,13 +1,12 @@
 using System.Numerics;
 using ClickLib;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -51,7 +50,7 @@ public unsafe class AutoDeleteLetters : DailyModuleBase
         {
             AddonEvent.PostSetup => true,
             AddonEvent.PreFinalize => false,
-            _ => Overlay.IsOpen
+            _ => Overlay.IsOpen,
         };
     }
 

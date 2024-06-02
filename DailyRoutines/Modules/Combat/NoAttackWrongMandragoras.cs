@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Hooking;
@@ -18,8 +17,6 @@ namespace DailyRoutines.Modules;
                    ModuleCategories.战斗)]
 public unsafe class NoAttackWrongMandragoras : DailyModuleBase
 {
-    private delegate byte IsTargetableDelegate(GameObject* gameObj);
-
     [Signature("40 53 48 83 EC 20 F3 0F 10 89 ?? ?? ?? ?? 0F 57 C0 0F 2E C8 48 8B D9 7A 0A",
                DetourName = nameof(IsTargetableDetour))]
     private static Hook<IsTargetableDelegate>? IsTargetableHook;
@@ -37,7 +34,7 @@ public unsafe class NoAttackWrongMandragoras : DailyModuleBase
                                    .Where(x => x.Singular.RawString.Contains("王后"))
                                    .Select(queen => new[]
                                    {
-                                       queen.RowId - 4, queen.RowId - 3, queen.RowId - 2, queen.RowId - 1, queen.RowId
+                                       queen.RowId - 4, queen.RowId - 3, queen.RowId - 2, queen.RowId - 1, queen.RowId,
                                    })
                                    .ToList();
 
@@ -85,6 +82,7 @@ public unsafe class NoAttackWrongMandragoras : DailyModuleBase
                     var mandragora =
                         ValidBattleNPCs.FirstOrDefault(
                             x => ((GameObject*)x.Address)->GetNpcID() == mandragoraSeries[i]);
+
                     if (mandragora != null && !mandragora.IsDead && mandragora.IsValid())
                         return 0;
                 }
@@ -102,4 +100,6 @@ public unsafe class NoAttackWrongMandragoras : DailyModuleBase
 
         base.Uninit();
     }
+
+    private delegate byte IsTargetableDelegate(GameObject* gameObj);
 }

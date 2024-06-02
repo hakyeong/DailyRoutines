@@ -1,5 +1,4 @@
 using System;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Hooking;
 using Dalamud.Interface.Utility;
@@ -12,15 +11,9 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("SoundEffectThrottlerTitle", "SoundEffectThrottlerDescription", ModuleCategories.系统)]
 public class SoundEffectThrottler : DailyModuleBase
 {
-    private delegate void PlaySoundEffectDelegate(uint sound, nint a2, nint a3, byte a4);
-    [Signature("40 53 41 55 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? F6 05", DetourName = nameof(PlaySoundEffectDetour))]
+    [Signature("40 53 41 55 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? F6 05",
+               DetourName = nameof(PlaySoundEffectDetour))]
     private static Hook<PlaySoundEffectDelegate>? PlaySoundEffectHook;
-
-    private class Config : ModuleConfiguration
-    {
-        public int Throttle = 1000;
-        public int Volume = 3;
-    }
 
     private static Config? ModuleConfig;
 
@@ -41,7 +34,7 @@ public class SoundEffectThrottler : DailyModuleBase
             ModuleConfig.Throttle = Math.Max(100, ModuleConfig.Throttle);
             SaveConfig(ModuleConfig);
         }
-        
+
         ImGuiOm.HelpMarker(Service.Lang.GetText("SoundEffectThrottler-ThrottleHelp", ModuleConfig.Throttle));
 
         ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
@@ -64,5 +57,13 @@ public class SoundEffectThrottler : DailyModuleBase
                 PlaySoundEffectHook.Original(sound, a2, a3, a4);
                 break;
         }
+    }
+
+    private delegate void PlaySoundEffectDelegate(uint sound, nint a2, nint a3, byte a4);
+
+    private class Config : ModuleConfiguration
+    {
+        public int Throttle = 1000;
+        public int Volume = 3;
     }
 }

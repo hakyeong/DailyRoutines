@@ -3,13 +3,12 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using ClickLib;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -42,6 +41,7 @@ public unsafe class AutoFCWSDeliver : DailyModuleBase
 
         var pos = new Vector2(SubmarinePartsMenu->GetX() + 6,
                               SubmarinePartsMenu->GetY() - ImGui.GetWindowSize().Y + 6);
+
         ImGui.SetWindowPos(pos);
 
         ImGui.AlignTextToFramePadding();
@@ -51,6 +51,7 @@ public unsafe class AutoFCWSDeliver : DailyModuleBase
         ImGui.BeginDisabled(TaskManager.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("Start")))
             EnqueueSubmit();
+
         ImGui.EndDisabled();
 
         ImGui.SameLine();
@@ -83,8 +84,10 @@ public unsafe class AutoFCWSDeliver : DailyModuleBase
                 AddonHelper.Callback(SubmarinePartsMenu, true, 0, nodeIndex, 3U);
                 return true;
             });
+
             TaskManager.DelayNext(500);
         }
+
         if (isSomeTasksEnqueued) TaskManager.Enqueue(EnqueueSubmit);
     }
 
@@ -94,7 +97,7 @@ public unsafe class AutoFCWSDeliver : DailyModuleBase
         {
             AddonEvent.PostSetup => true,
             AddonEvent.PreFinalize => true,
-            _ => Overlay.IsOpen
+            _ => Overlay.IsOpen,
         };
     }
 

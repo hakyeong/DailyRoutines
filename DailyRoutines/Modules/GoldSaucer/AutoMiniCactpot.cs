@@ -2,12 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ClickLib;
-using DailyRoutines.Infos;
 using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -18,11 +17,11 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoMiniCactpotTitle", "AutoMiniCactpotDescription", ModuleCategories.金碟)]
 public unsafe class AutoMiniCactpot : DailyModuleBase
 {
+    private const int TotalNumbers = PerfectCactpot.TotalNumbers;
+    private const int TotalLanes = PerfectCactpot.TotalLanes;
     private static int SelectedLineNumber3D4;
 
     private readonly PerfectCactpot perfectCactpot = new();
-    private const int TotalNumbers = PerfectCactpot.TotalNumbers;
-    private const int TotalLanes = PerfectCactpot.TotalLanes;
     private int[] gameState = new int[TotalNumbers];
 
     public override void Init()
@@ -83,7 +82,7 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
                     solution[7], // 右对角线
                     solution[0], // 第一行
                     solution[1], // 第二行
-                    solution[2]  // 第三行
+                    solution[2], // 第三行
                 ];
 
                 // 线
@@ -165,10 +164,15 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
     }
 
     /// <summary>
-    /// https://super-aardvark.github.io/yuryu/
+    ///     https://super-aardvark.github.io/yuryu/
     /// </summary>
     internal sealed class PerfectCactpot
     {
+        public const int TotalNumbers = 9;
+        public const int TotalLanes = 8;
+
+        private const double EPS = 0.00001;
+
         private readonly Dictionary<string, (double Value, bool[] Tiles)> PrecalculatedOpenings = new()
         {
             { "100000000", (1677.7854166666664, [false, false, true, false, false, false, true, false, false]) },
@@ -251,19 +255,14 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
             { "000000006", (1364.3044642857142, [false, false, false, false, true, false, false, false, false]) },
             { "000000007", (1454.5455357142855, [false, false, false, false, true, false, false, false, false]) },
             { "000000008", (1527.0875000000000, [false, false, true, false, true, false, true, false, false]) },
-            { "000000009", (1517.7214285714285, [false, false, true, false, true, false, true, false, false]) }
+            { "000000009", (1517.7214285714285, [false, false, true, false, true, false, true, false, false]) },
         };
 
         private static int[] Payouts =>
         [
             0, 0, 0, 0, 0, 0, 10000, 36, 720, 360, 80, 252, 108, 72, 54, 180, 72, 180, 119, 36, 306, 1080, 144, 1800,
-            3600
+            3600,
         ];
-
-        public const int TotalNumbers = 9;
-        public const int TotalLanes = 8;
-
-        private const double EPS = 0.00001;
 
         internal bool[] Solve(int[] state)
         {
@@ -312,9 +311,7 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
                     tot_win.Add(0);
                 }
                 else
-                {
                     has[state[i]] = 1;
-                }
 
             var num_hidden = tot_win.Count;
             var num_revealed = 9 - num_hidden;
@@ -357,9 +354,7 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
                         options[i] = true;
                     }
                     else if (Math.Abs(tot_win[i] - currentMax) < 0.1f)
-                    {
                         options[i] = true;
-                    }
 
                 return currentMax / permutations;
             }
@@ -382,6 +377,7 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
                         currentMax = tot_win[i];
                         for (var j = 0; j < i; j++)
                             options[ids[j]] = false;
+
                         options[ids[i]] = true;
                     }
                     else if (tot_win[i] > currentMax - EPS) options[ids[i]] = true;
@@ -434,9 +430,6 @@ public unsafe class AutoMiniCactpot : DailyModuleBase
             for (var i = 0; i < reversedSlice.Count; i++) list[begin + i] = reversedSlice[i];
         }
 
-        private void Swap<T>(IList<T> list, int i1, int i2)
-        {
-            (list[i1], list[i2]) = (list[i2], list[i1]);
-        }
+        private void Swap<T>(IList<T> list, int i1, int i2) { (list[i1], list[i2]) = (list[i2], list[i1]); }
     }
 }

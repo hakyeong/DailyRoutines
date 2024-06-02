@@ -11,8 +11,6 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoRefocusTitle", "AutoRefocusDescription", ModuleCategories.Õ½¶·)]
 public unsafe class AutoRefocus : DailyModuleBase
 {
-    private delegate void SetFocusTargetByObjectIDDelegate(TargetSystem* targetSystem, long objectID);
-
     [Signature("E8 ?? ?? ?? ?? BA 0C 00 00 00 48 8D 0D", DetourName = nameof(SetFocusTargetByObjectID))]
     private static Hook<SetFocusTargetByObjectIDDelegate>? SetFocusTargetByObjectIDHook;
 
@@ -64,4 +62,6 @@ public unsafe class AutoRefocus : DailyModuleBase
 
         base.Uninit();
     }
+
+    private delegate void SetFocusTargetByObjectIDDelegate(TargetSystem* targetSystem, long objectID);
 }

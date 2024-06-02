@@ -4,7 +4,7 @@ using System.IO;
 using System.Windows.Forms;
 using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 
 namespace DailyRoutines.Notifications;
 

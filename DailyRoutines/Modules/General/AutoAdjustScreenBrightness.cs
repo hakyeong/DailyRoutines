@@ -18,16 +18,6 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoAdjustScreenBrightnessTitle", "AutoAdjustScreenBrightnessDescription", ModuleCategories.一般)]
 public class AutoAdjustScreenBrightness : DailyModuleBase
 {
-    private class Config : ModuleConfiguration
-    {
-        // 百分比
-        public int BrightnessThreshold = 55;
-        public int BrightnessThresholdContent = 65;
-        public int BrightnessMin = 30;
-        public int AdjustSpeed = 50;
-        public bool DisableInCutscene = true;
-    }
-
     private static int ScreenBrightness;
     private static double SceneBrightness;
 
@@ -55,28 +45,37 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
         ImGui.Text($"{Service.Lang.GetText("AutoAdjustScreenBrightness-CurrentScreenBrightness")}: {ScreenBrightness}%%");
 
         ImGui.SameLine();
-        ImGui.Text($"{Service.Lang.GetText("AutoAdjustScreenBrightness-CurrentSceneBrightness")}: {Math.Round(SceneBrightness, 2)}%%");
+        ImGui.Text(
+            $"{Service.Lang.GetText("AutoAdjustScreenBrightness-CurrentSceneBrightness")}: {Math.Round(SceneBrightness, 2)}%%");
+
         ImGui.EndGroup();
 
-        ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin() - ImGuiHelpers.ScaledVector2(2f), ImGui.GetItemRectMax() + ImGuiHelpers.ScaledVector2(2f), ImGui.ColorConvertFloat4ToU32(ImGuiColors.DalamudWhite), 2f, ImDrawFlags.RoundCornersAll, 3f);
+        ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin() - ImGuiHelpers.ScaledVector2(2f),
+                                          ImGui.GetItemRectMax() + ImGuiHelpers.ScaledVector2(2f),
+                                          ImGui.ColorConvertFloat4ToU32(ImGuiColors.DalamudWhite), 2f,
+                                          ImDrawFlags.RoundCornersAll, 3f);
 
         ImGuiHelpers.ScaledDummy(5f);
 
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoAdjustScreenBrightness-DisableInCutscene"), ref ModuleConfig.DisableInCutscene))
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoAdjustScreenBrightness-DisableInCutscene"),
+                           ref ModuleConfig.DisableInCutscene))
             SaveConfig(ModuleConfig);
 
         ImGui.BeginGroup();
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
         ImGui.SliderInt($"{Service.Lang.GetText("AutoAdjustScreenBrightness-Threshold")} (%)",
                         ref ModuleConfig.BrightnessThreshold, -10, 100);
+
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);
 
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
         ImGui.SliderInt($"{Service.Lang.GetText("AutoAdjustScreenBrightness-ThresholdContent")} (%)",
                         ref ModuleConfig.BrightnessThresholdContent, -10, 100);
+
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);
+
         ImGui.EndGroup();
 
         ImGuiOm.TooltipHover(Service.Lang.GetText("AutoAdjustScreenBrightness-ThresholdHelp"));
@@ -84,6 +83,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
         ImGui.SliderInt($"{Service.Lang.GetText("AutoAdjustScreenBrightness-AdjustSpeed")} (%)",
                         ref ModuleConfig.AdjustSpeed, 1, 200);
+
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);
 
@@ -92,6 +92,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
         ImGui.SliderInt($"{Service.Lang.GetText("AutoAdjustScreenBrightness-BrightnessMin")} (%)",
                         ref ModuleConfig.BrightnessMin, -10, 110);
+
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);
 
@@ -129,9 +130,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
 
                 using var bitmap = CaptureScreen();
                 if (token.IsCancellationRequested)
-                {
                     return;
-                }
 
                 ScreenBrightness = Screen.GetCurrentBrightness();
                 SceneBrightness = CalculateBrightPixelsPercentage(bitmap);
@@ -139,7 +138,13 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
                 // 防抖动
                 if (Math.Abs(SceneBrightness - lastSignificantBrightness) > hysteresis)
                 {
-                    targetBrightness = SceneBrightness > (Flags.BoundByDuty ? ModuleConfig.BrightnessThresholdContent : ModuleConfig.BrightnessThreshold) ? ModuleConfig.BrightnessMin : OriginalBrightness;
+                    targetBrightness =
+                        SceneBrightness > (Flags.BoundByDuty
+                                               ? ModuleConfig.BrightnessThresholdContent
+                                               : ModuleConfig.BrightnessThreshold)
+                            ? ModuleConfig.BrightnessMin
+                            : OriginalBrightness;
+
                     lastSignificantBrightness = (int)SceneBrightness;
                 }
 
@@ -165,6 +170,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
                         Screen.SetBrightness(targetBrightness);
                         haveRestored = true;
                     }
+
                     await Task.Delay(500, token);
                     continue;
                 }
@@ -177,7 +183,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
 
                 if (currentBrightness != targetBrightness)
                 {
-                    var brightnessAdjustment = (targetBrightness > currentBrightness) ? stepSize : -stepSize;
+                    var brightnessAdjustment = targetBrightness > currentBrightness ? stepSize : -stepSize;
                     currentBrightness = Math.Max(0, Math.Min(255, currentBrightness + brightnessAdjustment));
                     Screen.SetBrightness(currentBrightness);
                 }
@@ -225,7 +231,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
                 var green = pixels[xIndex + 1];
                 var red = pixels[xIndex + 2];
 
-                var perceivedBrightness = (0.299 * red + 0.587 * green + 0.114 * blue) / 255.0;
+                var perceivedBrightness = ((0.299 * red) + (0.587 * green) + (0.114 * blue)) / 255.0;
 
                 // 接近白色的像素标记为刺眼
                 if (perceivedBrightness > 0.8)
@@ -255,16 +261,26 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
         Screen.SetBrightness(OriginalBrightness);
     }
 
+    private class Config : ModuleConfiguration
+    {
+        public int AdjustSpeed = 50;
+
+        public int BrightnessMin = 30;
+
+        // 百分比
+        public int BrightnessThreshold = 55;
+        public int BrightnessThresholdContent = 65;
+        public bool DisableInCutscene = true;
+    }
+
     private class ScreenHelper
     {
-        private readonly byte[] validBrightnessLevels;
-        private readonly ManagementScope scope = new("root\\WMI");
         private readonly SelectQuery queryBrightness = new("WmiMonitorBrightness");
         private readonly SelectQuery queryMethods = new("WmiMonitorBrightnessMethods");
+        private readonly ManagementScope scope = new("root\\WMI");
         private readonly ManagementObjectSearcher searcherBrightness;
         private readonly ManagementObjectSearcher searcherMethods;
-
-        public bool IsSupported { get; private set; }
+        private readonly byte[] validBrightnessLevels;
 
         public ScreenHelper()
         {
@@ -273,6 +289,8 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
             validBrightnessLevels = GetBrightnessLevels();
             IsSupported = validBrightnessLevels.Length > 0;
         }
+
+        public bool IsSupported { get; private set; }
 
         public void AdjustBrightness(int change)
         {
@@ -287,6 +305,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
                 var obj = (ManagementObject)o;
                 return (byte)obj.GetPropertyValue("CurrentBrightness");
             }
+
             return 0;
         }
 
@@ -305,7 +324,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
             foreach (var o in searcherMethods.Get())
             {
                 var obj = (ManagementObject?)o;
-                obj?.InvokeMethod("WmiSetBrightness", new object[] { uint.MaxValue, brightness });
+                obj?.InvokeMethod("WmiSetBrightness", [uint.MaxValue, brightness]);
                 break;
             }
         }
@@ -324,6 +343,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
             {
                 Service.Log.Error(ex.Message);
             }
+
             return [];
         }
     }

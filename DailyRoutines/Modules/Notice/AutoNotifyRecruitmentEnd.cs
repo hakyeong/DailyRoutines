@@ -10,10 +10,7 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoNotifyRecruitmentEndTitle", "AutoNotifyRecruitmentEndDescription", ModuleCategories.通知)]
 public class AutoNotifyRecruitmentEnd : DailyModuleBase
 {
-    public override void Init()
-    {
-        Service.Chat.ChatMessage += OnChatMessage;
-    }
+    public override void Init() { Service.Chat.ChatMessage += OnChatMessage; }
 
     private static void OnChatMessage(
         XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)

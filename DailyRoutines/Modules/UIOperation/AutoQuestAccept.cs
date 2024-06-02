@@ -1,5 +1,4 @@
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
@@ -15,10 +14,7 @@ public class AutoQuestAccept : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "JournalAccept", OnAddonSetup);
     }
 
-    public override void ConfigUI()
-    {
-        ConflictKeyText();
-    }
+    public override void ConfigUI() { ConflictKeyText(); }
 
     private unsafe void OnAddonSetup(AddonEvent type, AddonArgs args)
     {

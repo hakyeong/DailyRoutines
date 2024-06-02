@@ -2,7 +2,6 @@ using System;
 using System.Numerics;
 using System.Timers;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
@@ -43,6 +42,7 @@ public class AutoRefreshPartyFinder : DailyModuleBase
 
         if (Service.Gui.GetAddonByName("LookingForGroup") != nint.Zero)
             OnAddonPF(AddonEvent.PostSetup, null);
+
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "LookingForGroup", OnAddonPF);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "LookingForGroup", OnAddonPF);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "LookingForGroup", OnAddonPF);
@@ -82,6 +82,7 @@ public class AutoRefreshPartyFinder : DailyModuleBase
         ImGui.SameLine();
         if (ImGui.Checkbox(Service.Lang.GetText("AutoRefreshPartyFinder-OnlyInactive"), ref ConfigOnlyInactive))
             UpdateConfig("OnlyInactive", ConfigOnlyInactive);
+
         ImGui.EndGroup();
 
         var contentSize = ImGui.GetItemRectSize();

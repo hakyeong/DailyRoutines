@@ -1,9 +1,8 @@
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.JobGauge.Types;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using TaskManager = ECommons.Automation.TaskManager;
+using TaskManager = ECommons.Automation.LegacyTaskManager.TaskManager;
 
 namespace DailyRoutines.Modules;
 

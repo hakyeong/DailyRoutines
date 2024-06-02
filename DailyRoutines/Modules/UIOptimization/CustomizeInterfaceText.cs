@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
@@ -24,64 +23,15 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
     {
         部分匹配,
         完全匹配,
-        正则
+        正则,
     }
 
-    private delegate nint SetPlayerNamePlateDelegate(nint namePlateObjectPtr, bool isPrefixTitle, bool displayTitle,
-                                               nint titlePtr, nint namePtr, nint fcNamePtr, nint prefix, int iconId);
-    [Signature("48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 83 EC ?? 44 0F B6 EA", DetourName = nameof(SetPlayerNamePlayerDetour))]
+    [Signature("48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 83 EC ?? 44 0F B6 EA",
+               DetourName = nameof(SetPlayerNamePlayerDetour))]
     private static Hook<SetPlayerNamePlateDelegate>? SetPlayerNamePlateHook;
 
-    private delegate void Utf8StringSetStringDelegate(AtkTextNode* textNode, nint text);
     [Signature("48 85 C9 0F 84 ?? ?? ?? ?? 4C 8B DC 53 55", DetourName = nameof(Utf8StringSetStringDetour))]
     private static Hook<Utf8StringSetStringDelegate>? Utf8StringSetStringHook;
-
-    public class ReplacePattern : IComparable<ReplacePattern>, IEquatable<ReplacePattern>
-    {
-        public string Key { get; set; } = string.Empty;
-        public string Value { get; set; } = string.Empty;
-        public ReplaceMode Mode { get; set; }
-        public bool Enabled { get; set; }
-        public Regex? Regex { get; set; }
-
-        public ReplacePattern() { }
-
-        public ReplacePattern(string key, string value, ReplaceMode mode, bool enabled)
-        {
-            Key = key;
-            Value = value;
-            Mode = mode;
-            Enabled = enabled;
-        }
-
-        public int CompareTo(ReplacePattern? other)
-        {
-            return other == null ? 1 : string.Compare(Key, other.Key, StringComparison.Ordinal);
-        }
-
-        public bool Equals(ReplacePattern? other)
-        {
-            return other != null && Key == other.Key;
-        }
-
-        public override bool Equals(object? obj)
-        {
-            return obj is ReplacePattern other && Equals(other);
-        }
-
-        public override int GetHashCode()
-        {
-            return Key.GetHashCode();
-        }
-
-        public void Deconstruct(out string key, out string value, out ReplaceMode mode, out bool enabled)
-        {
-            key = Key;
-            value = Value;
-            mode = Mode;
-            enabled = Enabled;
-        }
-    }
 
     private static List<ReplacePattern> ReplacePatterns = [];
 
@@ -211,6 +161,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
                                 ReplacePatterns[i].Key = KeyEditInput;
                                 if (replacePattern.Mode is ReplaceMode.正则)
                                     ReplacePatterns[i].Regex = new Regex(KeyEditInput);
+
                                 UpdateConfig(nameof(ReplacePatterns), ReplacePatterns);
                             }
                         }
@@ -326,6 +277,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
         {
             var original = SetPlayerNamePlateHook.Original(namePlateObjectPtr, isPrefixTitle, displayTitle,
                                                            newTitlePtr, newNamePtr, newFcNamePtr, prefix, iconId);
+
             if (stateName) Marshal.FreeHGlobal(newNamePtr);
             if (stateTitle) Marshal.FreeHGlobal(newTitlePtr);
             if (stateFcName) Marshal.FreeHGlobal(newFcNamePtr);
@@ -340,9 +292,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
     {
         var origText = MemoryHelper.ReadSeStringNullTerminated(originalTextPtr);
         if (origText.Payloads.Count == 0)
-        {
             return (false, originalTextPtr);
-        }
 
         var (state, modifiedText) = ApplyTextReplacements(origText);
 
@@ -381,6 +331,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
                             rawTextPayload.Text = originalText.Replace(pattern.Key, pattern.Value);
                             state = true;
                         }
+
                         break;
                     case ReplaceMode.完全匹配:
                         if (originalText == pattern.Key)
@@ -388,6 +339,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
                             rawTextPayload.Text = pattern.Value;
                             state = true;
                         }
+
                         break;
                     case ReplaceMode.正则:
                         var regex = pattern.Regex;
@@ -396,6 +348,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
                             rawTextPayload.Text = regex.Replace(originalText, pattern.Value);
                             state = true;
                         }
+
                         break;
                 }
             }
@@ -404,4 +357,47 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
         return (state, state ? origText.Encode() : null);
     }
 
+    private delegate nint SetPlayerNamePlateDelegate(
+        nint namePlateObjectPtr, bool isPrefixTitle, bool displayTitle,
+        nint titlePtr, nint namePtr, nint fcNamePtr, nint prefix, int iconId);
+
+    private delegate void Utf8StringSetStringDelegate(AtkTextNode* textNode, nint text);
+
+    public class ReplacePattern : IComparable<ReplacePattern>, IEquatable<ReplacePattern>
+    {
+        public ReplacePattern() { }
+
+        public ReplacePattern(string key, string value, ReplaceMode mode, bool enabled)
+        {
+            Key = key;
+            Value = value;
+            Mode = mode;
+            Enabled = enabled;
+        }
+
+        public string      Key     { get; set; } = string.Empty;
+        public string      Value   { get; set; } = string.Empty;
+        public ReplaceMode Mode    { get; set; }
+        public bool        Enabled { get; set; }
+        public Regex?      Regex   { get; set; }
+
+        public int CompareTo(ReplacePattern? other)
+        {
+            return other == null ? 1 : string.Compare(Key, other.Key, StringComparison.Ordinal);
+        }
+
+        public bool Equals(ReplacePattern? other) { return other != null && Key == other.Key; }
+
+        public override bool Equals(object? obj) { return obj is ReplacePattern other && Equals(other); }
+
+        public override int GetHashCode() { return Key.GetHashCode(); }
+
+        public void Deconstruct(out string key, out string value, out ReplaceMode mode, out bool enabled)
+        {
+            key = Key;
+            value = Value;
+            mode = Mode;
+            enabled = Enabled;
+        }
+    }
 }

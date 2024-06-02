@@ -10,5 +10,5 @@ public enum ModuleCategories
     界面操作,
     金碟,
     雇员,
-    通知
+    通知,
 }

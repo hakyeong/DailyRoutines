@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
@@ -21,19 +20,21 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoMarkAetherCurrentsTitle", "AutoMarkAetherCurrentsDescription", ModuleCategories.系统)]
 public unsafe class AutoMarkAetherCurrents : DailyModuleBase
 {
-    private record AetherCurrentRecord(uint Zone, uint Index, Vector3 Position);
-
-    private static AtkUnitBase* AetherCurrentAddon => (AtkUnitBase*)Service.Gui.GetAddonByName("AetherCurrent");
-
     // 当前: 6.0 版本
     private static readonly HashSet<uint> NewVersionZones = [956, 957, 958, 959, 960, 961];
-    private static readonly HashSet<uint> ValidZones = [397, 398, 399, 400, 401, 612, 613, 614, 620, 621, 622, 
-        813, 814, 815, 816, 817, 818, 956, 957, 958, 959, 960, 961];
+
+    private static readonly HashSet<uint> ValidZones =
+    [
+        397, 398, 399, 400, 401, 612, 613, 614, 620, 621, 622,
+        813, 814, 815, 816, 817, 818, 956, 957, 958, 959, 960, 961,
+    ];
 
     private static readonly Dictionary<uint, HashSet<AetherCurrentRecord>> AetherCurrentsPresetData = new()
     {
         // 迷津
-        { 956, [new(956, 0, new(346.53f, 209.35f, -767.74f)),
+        {
+            956, [
+                new(956, 0, new(346.53f, 209.35f, -767.74f)),
                 new(956, 1, new(748.56f, 106.71f, 66.76f)),
                 new(956, 2, new(-547.73f, -18.02f, 661.87f)),
                 new(956, 3, new(-128.07f, -20.52f, 676.72f)),
@@ -42,9 +43,13 @@ public unsafe class AutoMarkAetherCurrents : DailyModuleBase
                 new(956, 6, new(497.11f, 73.42f, -267.23f)),
                 new(956, 7, new(-176.38f, -10.10f, -242.24f)),
                 new(956, 8, new(-505.14f, -21.82f, -122.60f)),
-                new(956, 9, new(46.28f, -29.80f, 178.88f))] },
+                new(956, 9, new(46.28f, -29.80f, 178.88f)),
+            ]
+        },
         // 萨维奈岛
-        { 957, [new(957, 0, new(-176.10f, 21.53f, 537.84f)),
+        {
+            957, [
+                new(957, 0, new(-176.10f, 21.53f, 537.84f)),
                 new(957, 1, new(-49.27f, 94.07f, -710.76f)),
                 new(957, 2, new(118.47f, 4.93f, -343.87f)),
                 new(957, 3, new(550.02f, 25.48f, -159.08f)),
@@ -53,9 +58,13 @@ public unsafe class AutoMarkAetherCurrents : DailyModuleBase
                 new(957, 6, new(-114.46f, 87.09f, -288.29f)),
                 new(957, 7, new(93.12f, 36.68f, -447.86f)),
                 new(957, 8, new(294.40f, 4.10f, 425.12f)),
-                new(957, 9, new(53.19f, 11.39f, 187.41f))] },
+                new(957, 9, new(53.19f, 11.39f, 187.41f)),
+            ]
+        },
         // 加雷马
-        { 958, [new(958, 0, new(-184.22f, 31.94f, 423.61f)),
+        {
+            958, [
+                new(958, 0, new(-184.22f, 31.94f, 423.61f)),
                 new(958, 1, new(194.82f, -12.84f, 644.31f)),
                 new(958, 2, new(83.09f, 1.53f, 102.02f)),
                 new(958, 3, new(405.30f, -2.24f, 520.32f)),
@@ -64,9 +73,13 @@ public unsafe class AutoMarkAetherCurrents : DailyModuleBase
                 new(958, 6, new(-602.03f, 34.32f, -325.85f)),
                 new(958, 7, new(79.91f, 37.89f, -518.18f)),
                 new(958, 8, new(134.93f, 14.40f, -172.25f)),
-                new(958, 9, new(-144.92f, 17.58f, -420.52f))] },
+                new(958, 9, new(-144.92f, 17.58f, -420.52f)),
+            ]
+        },
         // 叹息海
-        { 959, [new(959, 0, new(42.59f, 124.01f, -167.03f)),
+        {
+            959, [
+                new(959, 0, new(42.59f, 124.01f, -167.03f)),
                 new(959, 1, new(-482.74f, -154.95f, -595.71f)),
                 new(959, 2, new(316.40f, -154.98f, -595.52f)),
                 new(959, 3, new(29.10f, -47.74f, -550.41f)),
@@ -75,9 +88,13 @@ public unsafe class AutoMarkAetherCurrents : DailyModuleBase
                 new(959, 6, new(388.36f, 99.92f, 306.07f)),
                 new(959, 7, new(652.98f, -160.69f, -405.08f)),
                 new(959, 8, new(-733.62f, -139.66f, -733.28f)),
-                new(959, 9, new(21.71f, -133.50f, -385.73f))] },
+                new(959, 9, new(21.71f, -133.50f, -385.73f)),
+            ]
+        },
         // 厄尔庇斯
-        { 961, [new(961, 0, new(628.24f, 8.32f, 107.90f)),
+        {
+            961, [
+                new(961, 0, new(628.24f, 8.32f, 107.90f)),
                 new(961, 1, new(-754.75f, -36.01f, 411.13f)),
                 new(961, 2, new(151.67f, 7.67f, 2.55f)),
                 new(961, 3, new(-144.54f, -26.23f, 551.52f)),
@@ -86,9 +103,13 @@ public unsafe class AutoMarkAetherCurrents : DailyModuleBase
                 new(961, 6, new(-555.62f, 158.12f, 172.43f)),
                 new(961, 7, new(-392.05f, 173.72f, -293.60f)),
                 new(961, 8, new(-761.71f, 160.01f, -108.99f)),
-                new(961, 9, new(-255.51f, 143.08f, -36.97f))] },
+                new(961, 9, new(-255.51f, 143.08f, -36.97f)),
+            ]
+        },
         // 天外天垓
-        { 960, [new(960, 0, new(-333.54f, 270.85f, -361.49f)),
+        {
+            960, [
+                new(960, 0, new(-333.54f, 270.85f, -361.49f)),
                 new(960, 1, new(13.12f, 275.57f, -756.40f)),
                 new(960, 2, new(661.78f, 439.98f, 411.76f)),
                 new(960, 3, new(539.27f, 438.00f, 239.40f)),
@@ -97,18 +118,23 @@ public unsafe class AutoMarkAetherCurrents : DailyModuleBase
                 new(960, 6, new(-385.22f, 262.52f, -629.85f)),
                 new(960, 7, new(751.88f, 439.98f, 357.90f)),
                 new(960, 8, new(637.20f, 439.24f, 289.67f)),
-                new(960, 9, new(567.50f, 440.93f, 402.14f))] },
+                new(960, 9, new(567.50f, 440.93f, 402.14f)),
+            ]
+        },
     };
+
     private static readonly Dictionary<uint, HashSet<AetherCurrentRecord>> AetherCurrentsData = [];
     private static Dictionary<uint, HashSet<AetherCurrentRecord>> SelectedAetherCurrentsData = [];
 
     private static bool UseLocalMark = true;
 
+    private static AtkUnitBase* AetherCurrentAddon => (AtkUnitBase*)Service.Gui.GetAddonByName("AetherCurrent");
+
     public override void Init()
     {
         var aetherCurrentsObjectID = LuminaCache.Get<EObjName>()
-                                        .Where(x => x.Singular.RawString.Equals("风脉泉"))
-                                        .Select(x => x.RowId).ToArray();
+                                                .Where(x => x.Singular.RawString.Equals("风脉泉"))
+                                                .Select(x => x.RowId).ToArray();
 
         var levelSheet = LuminaCache.Get<Level>();
         var indexTracker = new Dictionary<uint, HashSet<uint>>(); // Zone - Index
@@ -165,22 +191,27 @@ public unsafe class AutoMarkAetherCurrents : DailyModuleBase
         if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Sync,
                                                Service.Lang.GetText("AutoMarkAetherCurrents-RefreshDisplay")))
             MarkAetherCurrents(Service.ClientState.TerritoryType, false, UseLocalMark);
+
         ImGuiOm.TooltipHover(Service.Lang.GetText("AutoMarkAetherCurrents-FieldMarkerHelp"), 25f);
 
         ImGui.SameLine();
         if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Random,
                                                Service.Lang.GetText("AutoMarkAetherCurrents-DisplayLeftCurrents")))
             MarkAetherCurrents(Service.ClientState.TerritoryType, true, UseLocalMark);
+
         ImGuiOm.TooltipHover(Service.Lang.GetText("AutoMarkAetherCurrents-DisplayLeftCurrentsHelp"));
 
         if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Eraser,
                                                Service.Lang.GetText("AutoMarkAetherCurrents-RemoveAllWaymarks")))
-            for (var i = 0U; i < 8; i++) FieldMarkerHelper.RemoveLocal(i);
+            for (var i = 0U; i < 8; i++)
+                FieldMarkerHelper.RemoveLocal(i);
 
         ImGui.SameLine();
         if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.TrashAlt,
                                                Service.Lang.GetText("AutoMarkAetherCurrents-RemoveSelectedAC")))
-            foreach (var zoneCurrents in SelectedAetherCurrentsData) zoneCurrents.Value.Clear();
+            foreach (var zoneCurrents in SelectedAetherCurrentsData)
+                zoneCurrents.Value.Clear();
+
         ImGui.EndGroup();
 
         ImGui.SameLine();
@@ -190,22 +221,25 @@ public unsafe class AutoMarkAetherCurrents : DailyModuleBase
         ImGui.BeginGroup();
         ImGui.TextColored(ImGuiColors.DalamudOrange,
                           $"{Service.Lang.GetText("AutoMarkAetherCurrents-ManuallySelectCurrent")}:");
+
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoMarkAetherCurrents-ManuallySelectCurrentHelp"), 25f);
 
         if (ImGui.BeginTabBar("AutoMarkAetherCurrent-ManuallySelect"))
         {
             var tabs = new[] { "3.0", "4.0", "5.0", "6.0" };
 
-            foreach (var tab in tabs) 
-                if (AetherCurrentAddon->AtkValues[3].Int != Array.IndexOf(tabs, tab)) ImGui.SetTabItemClosed(tab);
+            foreach (var tab in tabs)
+                if (AetherCurrentAddon->AtkValues[3].Int != Array.IndexOf(tabs, tab))
+                    ImGui.SetTabItemClosed(tab);
 
             DisplayRegion("3.0", false, [397, 399, 401, 398, 400]);
             DisplayRegion("4.0", false, [612, 620, 621, 613, 614, 622]);
             DisplayRegion("5.0", false, [813, 816, 817, 815, 814, 818]);
-            DisplayRegion("6.0", true,  [956, 958, 961, 957, 959, 960]);
+            DisplayRegion("6.0", true, [956, 958, 961, 957, 959, 960]);
 
             ImGui.EndTabBar();
         }
+
         ImGui.EndGroup();
 
         return;
@@ -244,6 +278,7 @@ public unsafe class AutoMarkAetherCurrents : DailyModuleBase
             foreach (var region in half)
                 if (isNew) ManuallySelectGroupNew(region, ref SelectedAetherCurrentsData);
                 else ManuallySelectGroupOld(region, ref SelectedAetherCurrentsData);
+
             ImGui.EndGroup();
 
             ImGui.EndGroup();
@@ -307,14 +342,11 @@ public unsafe class AutoMarkAetherCurrents : DailyModuleBase
         {
             AddonEvent.PostSetup => true,
             AddonEvent.PreFinalize => false,
-            _ => Overlay.IsOpen
+            _ => Overlay.IsOpen,
         };
     }
 
-    private static void OnZoneChanged(ushort zoneID)
-    {
-        MarkAetherCurrents(zoneID, false, UseLocalMark);
-    }
+    private static void OnZoneChanged(ushort zoneID) { MarkAetherCurrents(zoneID, false, UseLocalMark); }
 
     private static void MarkAetherCurrents(ushort zoneID, bool isFirstPage = false, bool isLocal = true)
     {
@@ -347,16 +379,15 @@ public unsafe class AutoMarkAetherCurrents : DailyModuleBase
 
             if (isLocal) FieldMarkerHelper.PlaceLocal(currentMarker, point.Position, true);
             else FieldMarkerHelper.PlaceOnline(currentMarker, point.Position);
+
             currentIndex++;
         }
 
         if (currentIndex != 8)
         {
             for (; currentIndex < indexesLength; currentIndex++)
-            {
                 if (isLocal) FieldMarkerHelper.PlaceLocal(currentIndex, Vector3.Zero, false);
                 else FieldMarkerHelper.RemoveOnline(currentIndex);
-            }
         }
     }
 
@@ -367,4 +398,6 @@ public unsafe class AutoMarkAetherCurrents : DailyModuleBase
 
         base.Uninit();
     }
+
+    private record AetherCurrentRecord(uint Zone, uint Index, Vector3 Position);
 }

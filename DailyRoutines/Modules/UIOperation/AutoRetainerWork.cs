@@ -35,7 +35,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using Microsoft.Extensions.Caching.Memory;
-using TaskManager = ECommons.Automation.TaskManager;
+using TaskManager = ECommons.Automation.LegacyTaskManager.TaskManager;
 
 namespace DailyRoutines.Modules;
 
@@ -43,18 +43,120 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoRetainerWorkTitle", "AutoRetainerWorkDescription", ModuleCategories.界面操作)]
 public unsafe class AutoRetainerWork : DailyModuleBase
 {
+    private static Config ModuleConfig = null!;
+
+    private static Dictionary<string, Item>? ItemNames;
+    private static Dictionary<string, Item> _ItemNames = [];
+    private static Dictionary<uint, uint>? ItemsSellPrice;
+
+    private static string PresetSearchInput = string.Empty;
+    private static string ItemSearchInput = string.Empty;
+    private static uint NewConfigItemID;
+    private static bool NewConfigItemHQ;
+    private static AbortCondition CondtionInput = AbortCondition.低于最小值;
+    private static AbortBehavior BehaviorInput = AbortBehavior.无;
+    private static Vector2 ChildSizeLeft;
+    private static Vector2 ChildSizeRight;
+
+    private static ItemConfig? SelectedItemConfig;
+    private static ItemKey? CurrentItem;
+    private static int CurrentItemIndex = -1;
+    private static List<MarketBoardHistory.MarketBoardHistoryListing>? ItemHistoryList;
+    private static List<MarketBoardCurrentOfferings.MarketBoardItemListing>? ItemSearchList;
+
+    private static readonly HashSet<ulong> PlayerRetainers = [];
+
+    [Signature(
+        "48 89 5C 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 0F B6 82 ?? ?? ?? ?? 48 8B FA 48 8B D9 38 41 19 74 54",
+        DetourName = nameof(InfoProxyItemSearchAddPageDetour))]
+    private readonly Hook<InfoProxyItemSearchAddPageDelegate>? InfoProxyItemSearchAddPageHook;
+
+    [Signature(
+        "40 53 48 83 EC ?? 48 8B 0D ?? ?? ?? ?? 48 8B DA E8 ?? ?? ?? ?? 48 85 C0 74 ?? 4C 8B 00 48 8B C8 41 FF 90 ?? ?? ?? ?? 48 8B C8 BA ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 74 ?? 48 8D 53 ?? 41 B8 ?? ?? ?? ?? 48 8B C8 48 83 C4 ?? 5B E9 ?? ?? ?? ?? 48 83 C4 ?? 5B C3 CC CC CC CC CC CC CC CC CC CC 40 53",
+        DetourName = nameof(MarketboardHistorDetour))]
+    private readonly Hook<MarketboardPacketDelegate>? MarketboardHistoryHook;
+
+    public override void Init()
+    {
+        ChildSizeLeft = new Vector2(200 * ImGuiHelpers.GlobalScale, 350 * ImGuiHelpers.GlobalScale);
+        ChildSizeRight = new Vector2(450 * ImGuiHelpers.GlobalScale, 350 * ImGuiHelpers.GlobalScale);
+
+        ItemsSellPrice ??= LuminaCache.Get<Item>()
+                                      .Where(x => !string.IsNullOrEmpty(x.Name.RawString) && x.PriceLow != 0)
+                                      .ToDictionary(x => x.RowId, x => x.PriceLow);
+
+        ItemNames ??= LuminaCache.Get<Item>()
+                                 .Where(x => !string.IsNullOrEmpty(x.Name.RawString))
+                                 .GroupBy(x => x.Name.RawString)
+                                 .ToDictionary(x => x.Key, x => x.First());
+
+        _ItemNames = ItemNames.Take(10).ToDictionary(x => x.Key, x => x.Value);
+
+        ModuleConfig = LoadConfig<Config>() ?? new();
+
+        Service.Hook.InitializeFromAttributes(this);
+        MarketboardHistoryHook?.Enable();
+        InfoProxyItemSearchAddPageHook?.Enable();
+
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
+        Overlay ??= new Overlay(this);
+
+        // 出售品列表
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSellList", OnRetainerSellList);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "RetainerSellList", OnRetainerSellList);
+        // 雇员列表
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerList", OnRetainerList);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "RetainerList", OnRetainerList);
+        // 出售详情
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSell", OnRetainerSell);
+
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerItemTransferList", OnEntrustDupsAddons);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerItemTransferProgress",
+                                                OnEntrustDupsAddons);
+    }
+
+    public override void Uninit()
+    {
+        Service.AddonLifecycle.UnregisterListener(OnRetainerSellList);
+        Service.AddonLifecycle.UnregisterListener(OnRetainerList);
+        Service.AddonLifecycle.UnregisterListener(OnRetainerSell);
+        Service.AddonLifecycle.UnregisterListener(OnEntrustDupsAddons);
+
+        Cache.Clear();
+
+        base.Uninit();
+    }
+
+    private class Config : ModuleConfiguration
+    {
+        public readonly Dictionary<string, ItemConfig> ItemConfigs = new()
+        {
+            { new ItemKey(0, false).ToString(), new(0, false) },
+            { new ItemKey(0, true).ToString(), new(0, true) },
+        };
+
+        public int AdjustMethod;
+        public int OperationDelay;
+
+        public bool SendProcessMessage = true;
+    }
+
+    private delegate nint MarketboardPacketDelegate(nint a1, nint packetData);
+
+    private delegate nint InfoProxyItemSearchAddPageDelegate(byte* a1, byte* a2);
+
     #region 预定义
 
     private static readonly InventoryType[] InventoryTypes =
     [
         InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3,
-        InventoryType.Inventory4
+        InventoryType.Inventory4,
     ];
 
     public enum AdjustBehavior
     {
         固定值,
-        百分比
+        百分比,
     }
 
     [Flags]
@@ -66,7 +168,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         低于收购价 = 8,
         大于可接受降价值 = 16,
         高于预期值 = 32,
-        高于最大值 = 64
+        高于最大值 = 64,
     }
 
     public enum AbortBehavior
@@ -77,14 +179,11 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         出售至系统商店,
         改价至最小值,
         改价至预期值,
-        改价至最高值
+        改价至最高值,
     }
 
     public class ItemKey : IEquatable<ItemKey>
     {
-        public uint ItemID { get; set; }
-        public bool IsHQ { get; set; }
-
         public ItemKey() { }
 
         public ItemKey(uint itemID, bool isHQ)
@@ -93,15 +192,8 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             IsHQ = isHQ;
         }
 
-        public override string ToString()
-        {
-            return $"{ItemID}_{(IsHQ ? "HQ" : "NQ")}";
-        }
-
-        public override bool Equals(object? obj)
-        {
-            return Equals(obj as ItemKey);
-        }
+        public uint ItemID { get; set; }
+        public bool IsHQ   { get; set; }
 
         public bool Equals(ItemKey? other)
         {
@@ -111,10 +203,11 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             return ItemID == other.ItemID && IsHQ == other.IsHQ;
         }
 
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(ItemID, IsHQ);
-        }
+        public override string ToString() { return $"{ItemID}_{(IsHQ ? "HQ" : "NQ")}"; }
+
+        public override bool Equals(object? obj) { return Equals(obj as ItemKey); }
+
+        public override int GetHashCode() { return HashCode.Combine(ItemID, IsHQ); }
 
         public static bool operator ==(ItemKey? lhs, ItemKey? rhs)
         {
@@ -122,16 +215,24 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             return lhs.Equals(rhs);
         }
 
-        public static bool operator !=(ItemKey lhs, ItemKey rhs)
-        {
-            return !(lhs == rhs);
-        }
+        public static bool operator !=(ItemKey lhs, ItemKey rhs) { return !(lhs == rhs); }
     }
 
     public class ItemConfig : IEquatable<ItemConfig>
     {
-        public uint ItemID { get; set; }
-        public bool IsHQ { get; set; }
+        public ItemConfig() { }
+
+        public ItemConfig(uint itemID, bool isHQ)
+        {
+            ItemID = itemID;
+            IsHQ = isHQ;
+            ItemName = itemID == 0
+                           ? Service.Lang.GetText("AutoRetainerPriceAdjust-CommonItemPreset")
+                           : LuminaCache.GetRow<Item>(ItemID).Name.RawString;
+        }
+
+        public uint   ItemID   { get; set; }
+        public bool   IsHQ     { get; set; }
         public string ItemName { get; set; } = string.Empty;
 
         /// <summary>
@@ -145,7 +246,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         public Dictionary<AdjustBehavior, int> AdjustValues { get; set; } = new()
         {
             { AdjustBehavior.固定值, 1 },
-            { AdjustBehavior.百分比, 10 }
+            { AdjustBehavior.百分比, 10 },
         };
 
         /// <summary>
@@ -173,22 +274,6 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         /// </summary>
         public Dictionary<AbortCondition, AbortBehavior> AbortLogic { get; set; } = [];
 
-        public ItemConfig() { }
-
-        public ItemConfig(uint itemID, bool isHQ)
-        {
-            ItemID = itemID;
-            IsHQ = isHQ;
-            ItemName = itemID == 0
-                           ? Service.Lang.GetText("AutoRetainerPriceAdjust-CommonItemPreset")
-                           : LuminaCache.GetRow<Item>(ItemID).Name.RawString;
-        }
-
-        public override bool Equals(object? obj)
-        {
-            return Equals(obj as ItemConfig);
-        }
-
         public bool Equals(ItemConfig? other)
         {
             if (other is null || GetType() != other.GetType())
@@ -197,10 +282,9 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             return ItemID == other.ItemID && IsHQ == other.IsHQ;
         }
 
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(ItemID, IsHQ);
-        }
+        public override bool Equals(object? obj) { return Equals(obj as ItemConfig); }
+
+        public override int GetHashCode() { return HashCode.Combine(ItemID, IsHQ); }
 
         public static bool operator ==(ItemConfig? lhs, ItemConfig? rhs)
         {
@@ -208,23 +292,20 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             return lhs.Equals(rhs);
         }
 
-        public static bool operator !=(ItemConfig lhs, ItemConfig rhs)
-        {
-            return !(lhs == rhs);
-        }
+        public static bool operator !=(ItemConfig lhs, ItemConfig rhs) { return !(lhs == rhs); }
     }
 
     #endregion
 
     #region 游戏界面
 
-    private static AtkUnitBase* SelectString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
-    private static AtkUnitBase* SelectYesno => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectYesno");
-    private static AtkUnitBase* RetainerList => (AtkUnitBase*)Service.Gui.GetAddonByName("RetainerList");
-    private static AtkUnitBase* RetainerSell => (AtkUnitBase*)Service.Gui.GetAddonByName("RetainerSell");
+    private static AtkUnitBase* SelectString     => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
+    private static AtkUnitBase* SelectYesno      => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectYesno");
+    private static AtkUnitBase* RetainerList     => (AtkUnitBase*)Service.Gui.GetAddonByName("RetainerList");
+    private static AtkUnitBase* RetainerSell     => (AtkUnitBase*)Service.Gui.GetAddonByName("RetainerSell");
     private static AtkUnitBase* RetainerSellList => (AtkUnitBase*)Service.Gui.GetAddonByName("RetainerSellList");
     private static AtkUnitBase* ItemSearchResult => (AtkUnitBase*)Service.Gui.GetAddonByName("ItemSearchResult");
-    private static AtkUnitBase* Bank => (AtkUnitBase*)Service.Gui.GetAddonByName("Bank");
+    private static AtkUnitBase* Bank             => (AtkUnitBase*)Service.Gui.GetAddonByName("Bank");
 
     private static InfoProxyItemSearch* InfoItemSearch =>
         (InfoProxyItemSearch*)InfoModule.Instance()->GetInfoProxyById(InfoProxyId.ItemSearch);
@@ -235,10 +316,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
     private static readonly MemoryCache Cache = new(new MemoryCacheOptions());
 
-    private static string GetPriceCacheKey(uint itemID, bool isHQ)
-    {
-        return $"{itemID}_{(isHQ ? "HQ" : "NQ")}";
-    }
+    private static string GetPriceCacheKey(uint itemID, bool isHQ) { return $"{itemID}_{(isHQ ? "HQ" : "NQ")}"; }
 
     private static bool TryGetPriceCache(uint itemID, bool isHQ, out uint price)
     {
@@ -257,94 +335,6 @@ public unsafe class AutoRetainerWork : DailyModuleBase
     }
 
     #endregion
-
-    private class Config : ModuleConfiguration
-    {
-        public int AdjustMethod = 0;
-
-        public readonly Dictionary<string, ItemConfig> ItemConfigs = new()
-        {
-            { new ItemKey(0, false).ToString(), new(0, false) },
-            { new ItemKey(0, true).ToString(), new(0, true) }
-        };
-
-        public bool SendProcessMessage = true;
-        public int OperationDelay;
-    }
-
-    private static Config ModuleConfig = null!;
-
-    private delegate nint MarketboardPacketDelegate(nint a1, nint packetData);
-
-    [Signature(
-        "40 53 48 83 EC ?? 48 8B 0D ?? ?? ?? ?? 48 8B DA E8 ?? ?? ?? ?? 48 85 C0 74 ?? 4C 8B 00 48 8B C8 41 FF 90 ?? ?? ?? ?? 48 8B C8 BA ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 74 ?? 48 8D 53 ?? 41 B8 ?? ?? ?? ?? 48 8B C8 48 83 C4 ?? 5B E9 ?? ?? ?? ?? 48 83 C4 ?? 5B C3 CC CC CC CC CC CC CC CC CC CC 40 53",
-        DetourName = nameof(MarketboardHistorDetour))]
-    private readonly Hook<MarketboardPacketDelegate>? MarketboardHistoryHook;
-
-    private delegate nint InfoProxyItemSearchAddPageDelegate(byte* a1, byte* a2);
-
-    [Signature(
-        "48 89 5C 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 0F B6 82 ?? ?? ?? ?? 48 8B FA 48 8B D9 38 41 19 74 54",
-        DetourName = nameof(InfoProxyItemSearchAddPageDetour))]
-    private readonly Hook<InfoProxyItemSearchAddPageDelegate>? InfoProxyItemSearchAddPageHook;
-
-    private static Dictionary<string, Item>? ItemNames;
-    private static Dictionary<string, Item> _ItemNames = [];
-    private static Dictionary<uint, uint>? ItemsSellPrice;
-
-    private static string PresetSearchInput = string.Empty;
-    private static string ItemSearchInput = string.Empty;
-    private static uint NewConfigItemID;
-    private static bool NewConfigItemHQ;
-    private static AbortCondition CondtionInput = AbortCondition.低于最小值;
-    private static AbortBehavior BehaviorInput = AbortBehavior.无;
-    private static Vector2 ChildSizeLeft;
-    private static Vector2 ChildSizeRight;
-
-    private static ItemConfig? SelectedItemConfig;
-    private static ItemKey? CurrentItem;
-    private static int CurrentItemIndex = -1;
-    private static List<MarketBoardHistory.MarketBoardHistoryListing>? ItemHistoryList;
-    private static List<MarketBoardCurrentOfferings.MarketBoardItemListing>? ItemSearchList;
-
-    private static readonly HashSet<ulong> PlayerRetainers = [];
-
-    public override void Init()
-    {
-        ChildSizeLeft = new Vector2(200 * ImGuiHelpers.GlobalScale, 350 * ImGuiHelpers.GlobalScale);
-        ChildSizeRight = new Vector2(450 * ImGuiHelpers.GlobalScale, 350 * ImGuiHelpers.GlobalScale);
-
-        ItemsSellPrice ??= LuminaCache.Get<Item>()
-                                      .Where(x => !string.IsNullOrEmpty(x.Name.RawString) && x.PriceLow != 0)
-                                      .ToDictionary(x => x.RowId, x => x.PriceLow);
-        ItemNames ??= LuminaCache.Get<Item>()
-                                 .Where(x => !string.IsNullOrEmpty(x.Name.RawString))
-                                 .GroupBy(x => x.Name.RawString)
-                                 .ToDictionary(x => x.Key, x => x.First());
-        _ItemNames = ItemNames.Take(10).ToDictionary(x => x.Key, x => x.Value);
-
-        ModuleConfig = LoadConfig<Config>() ?? new();
-
-        Service.Hook.InitializeFromAttributes(this);
-        MarketboardHistoryHook?.Enable();
-        InfoProxyItemSearchAddPageHook?.Enable();
-
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
-        Overlay ??= new Overlay(this);
-
-        // 出售品列表
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSellList", OnRetainerSellList);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "RetainerSellList", OnRetainerSellList);
-        // 雇员列表
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerList", OnRetainerList);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "RetainerList", OnRetainerList);
-        // 出售详情
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerSell", OnRetainerSell);
-
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerItemTransferList", OnEntrustDupsAddons);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerItemTransferProgress",
-                                                OnEntrustDupsAddons);
-    }
 
     #region 模块界面
 
@@ -404,9 +394,11 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 if (ImGui.IsItemDeactivatedAfterEdit())
                 {
                     if (!string.IsNullOrWhiteSpace(ItemSearchInput) && ItemSearchInput.Length > 1)
+                    {
                         _ItemNames = ItemNames
                                      .Where(x => x.Key.Contains(ItemSearchInput, StringComparison.OrdinalIgnoreCase))
                                      .ToDictionary(x => x.Key, x => x.Value);
+                    }
                 }
 
                 ImGui.SameLine();
@@ -431,6 +423,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                                                         item.RowId == NewConfigItemID,
                                                         ImGuiSelectableFlags.DontClosePopups))
                         NewConfigItemID = item.RowId;
+
                 ImGui.EndPopup();
             }
 
@@ -484,6 +477,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         {
             if (ImGui.BeginChild("ItemConfigEditorChild", ChildSizeRight, true))
                 ImGui.EndChild();
+
             return;
         }
 
@@ -492,9 +486,11 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         var itemName = itemConfig.ItemID == 0
                            ? Service.Lang.GetText("AutoRetainerPriceAdjust-CommonItemPreset")
                            : item.Name.RawString;
+
         var itemLogo = ImageHelper.GetIcon(
             itemConfig.ItemID == 0 ? 65002 : (uint)item.Icon,
             itemConfig.IsHQ ? ITextureProvider.IconFlags.ItemHighQuality : ITextureProvider.IconFlags.None);
+
         var itemBuyingPrice = itemConfig.ItemID == 0 ? 1 : item.PriceLow;
 
 
@@ -618,6 +614,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             if (ImGuiOm.ButtonIcon("OpenUniversalis", FontAwesomeIcon.Globe,
                                    Service.Lang.GetText("AutoRetainerPriceAdjust-OpenUniversalis")))
                 Util.OpenLink($"https://universalis.app/market/{itemConfig.ItemID}");
+
             ImGui.EndDisabled();
 
             // 可接受降价值
@@ -665,6 +662,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                     if (ImGui.Selectable(behavior.ToString(), BehaviorInput == behavior,
                                          ImGuiSelectableFlags.DontClosePopups))
                         BehaviorInput = behavior;
+
                 ImGui.EndCombo();
             }
 
@@ -755,10 +753,12 @@ public unsafe class AutoRetainerWork : DailyModuleBase
     {
         var activeAddon = RetainerSellList != null ? RetainerSellList :
                           RetainerList != null ? RetainerList : null;
+
         if (activeAddon == null) return;
 
         var pos = new Vector2(activeAddon->GetX() - ImGui.GetWindowSize().X,
                               activeAddon->GetY() + 6);
+
         ImGui.SetWindowPos(pos);
 
         ImGui.Dummy(new(200f * ImGuiHelpers.GlobalScale, 0f));
@@ -794,11 +794,13 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             if (ImGui.Button($"{Service.Lang.GetText("Stop")}###Share"))
                 TaskManager.Abort();
 
-            if (ImGui.RadioButton(Service.Lang.GetText("AutoShareRetainersGilsEvenly-Method1"), ref ModuleConfig.AdjustMethod, 0))
+            if (ImGui.RadioButton(Service.Lang.GetText("AutoShareRetainersGilsEvenly-Method1"),
+                                  ref ModuleConfig.AdjustMethod, 0))
                 SaveConfig(ModuleConfig);
 
             ImGui.SameLine();
-            if (ImGui.RadioButton(Service.Lang.GetText("AutoShareRetainersGilsEvenly-Method2"), ref ModuleConfig.AdjustMethod, 1))
+            if (ImGui.RadioButton(Service.Lang.GetText("AutoShareRetainersGilsEvenly-Method2"),
+                                  ref ModuleConfig.AdjustMethod, 1))
                 SaveConfig(ModuleConfig);
 
             ImGui.SameLine();
@@ -861,11 +863,13 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             ImGui.SetNextItemWidth(50f * ImGuiHelpers.GlobalScale);
             ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-OperationDelay"),
                            ref ModuleConfig.OperationDelay, 0, 0);
+
             if (ImGui.IsItemDeactivatedAfterEdit())
                 SaveConfig(ModuleConfig);
 
             if (ImGui.Selectable(Service.Lang.GetText("AutoRetainerPriceAdjust-ClearPriceCache")))
                 Cache.Clear();
+
             ImGuiOm.TooltipHover(Service.Lang.GetText("AutoRetainerPriceAdjust-ClearPriceCacheHelp"));
         }
     }
@@ -964,6 +968,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 var message = new SeStringBuilder().Append(DRPrefix).Append(
                     Service.Lang.GetSeString("AutoRetainerPriceAdjust-NoPriceDataFound",
                                              itemDetails.ItemPayload, itemDetails.RetainerName)).Build();
+
                 Service.Chat.Print(message);
             }
 
@@ -976,7 +981,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             AdjustBehavior.固定值 => (uint)((int)marketPrice - itemDetails.Preset.AdjustValues[AdjustBehavior.固定值]),
             AdjustBehavior.百分比 => (uint)(marketPrice *
                                          (1 - (itemDetails.Preset.AdjustValues[AdjustBehavior.百分比] / 100))),
-            _ => marketPrice
+            _ => marketPrice,
         };
 
         #region 意外情况判断
@@ -1015,6 +1020,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         {
             var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.大于可接受降价值))
                                       .Value;
+
             NotifyAbortCondition(AbortCondition.大于可接受降价值);
             EnqueueAbortBehavior(behavior);
             return true;
@@ -1027,6 +1033,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         {
             var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault
                 (x => x.Key.HasFlag(AbortCondition.低于收购价)).Value;
+
             NotifyAbortCondition(AbortCondition.低于收购价);
             EnqueueAbortBehavior(behavior);
             return true;
@@ -1069,7 +1076,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 RetainerName = new SeStringBuilder()
                                .AddUiForeground(
                                    Marshal.PtrToStringUTF8((nint)RetainerManager.Instance()->GetActiveRetainer()->Name),
-                                   62).Build()
+                                   62).Build(),
             };
 
             return result;
@@ -1088,6 +1095,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                     var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-PriceAdjustSuccessfully",
                                                            itemDetails.ItemPayload, itemDetails.RetainerName,
                                                            itemDetails.OrigPrice, price);
+
                     Service.Chat.Print(new SeStringBuilder().Append(DRPrefix).Append(message).Build());
                 }
 
@@ -1187,6 +1195,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                             return TryGetAddonByName<AtkUnitBase>("ContextMenu", out var cm) &&
                                    IsAddonAndNodesReady(cm);
                         });
+
                         TaskManager.EnqueueImmediate(
                             () => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(976).Text.RawString));
 
@@ -1208,12 +1217,15 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                             return TryGetAddonByName<AtkUnitBase>("ContextMenu", out var cm) &&
                                    IsAddonAndNodesReady(cm);
                         });
+
                         TaskManager.EnqueueImmediate(
                             () => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(5480).Text.RawString));
+
                         TaskManager.EnqueueImmediate(() => OperateAndReturn(false));
 
                         return true;
                     });
+
                     break;
             }
         }
@@ -1224,6 +1236,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             var conditionMessage = new SeStringBuilder().AddUiForeground(condition.ToString(), 60).Build();
             var message = Service.Lang.GetSeString("AutoRetainerPriceAdjust-DetectAbortCondition",
                                                    itemDetails.ItemPayload, itemDetails.RetainerName, conditionMessage);
+
             Service.Chat.Print(new SeStringBuilder().Append(DRPrefix).Append(message).Build());
         }
     }
@@ -1304,11 +1317,13 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
                 return true;
             });
+
             TaskManager.Enqueue(() =>
             {
                 RetainerSellList->FireCloseCallback();
                 RetainerSellList->Close(true);
             });
+
             TaskManager.Enqueue(ReturnToRetainerList);
         }
     }
@@ -1474,6 +1489,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             Bank->Close(true);
             return true;
         });
+
         // 回到雇员列表
         TaskManager.Enqueue(ReturnToRetainerList);
     }
@@ -1504,6 +1520,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             Bank->Close(true);
             return true;
         });
+
         // 回到雇员列表
         TaskManager.Enqueue(ReturnToRetainerList);
     }
@@ -1531,6 +1548,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 AddonHelper.Callback(addon, true, 0);
                 return true;
             });
+
             TaskManager.DelayNext(500);
             TaskManager.Enqueue(ExitRetainerInventory);
             TaskManager.Enqueue(() => ClickHelper.SelectString(LuminaCache.GetRow<Addon>(2383).Text.RawString));
@@ -1590,6 +1608,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         {
             Service.Chat.PrintError(Service.Lang.GetText("AutoRetainerPriceAdjust-FailObtainItemInfo"),
                                     "Daily Routines");
+
             TaskManager.Abort();
             return true;
         }
@@ -1612,6 +1631,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         {
             Service.Chat.PrintError(Service.Lang.GetText("AutoRetainerPriceAdjust-FailObtainItemInfo"),
                                     "Daily Routines");
+
             TaskManager.Abort();
             return true;
         }
@@ -1652,6 +1672,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
             if (maxPrice != 0)
                 SetPriceCache(CurrentItem.ItemID, false, maxPrice);
+
             if (maxHQPrice != 0)
                 SetPriceCache(CurrentItem.ItemID, true, maxHQPrice);
 
@@ -1663,6 +1684,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                           .Where(x => !PlayerRetainers.Contains(x.RetainerId) &&
                                       x is { PricePerUnit: > 0, OnMannequin: false })
                           .ToList();
+
         var minPrice = nqItemsList.Count != 0
                            ? nqItemsList.Min(x => x.PricePerUnit)
                            : 0;
@@ -1671,12 +1693,14 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                           .Where(x => !PlayerRetainers.Contains(x.RetainerId) &&
                                       x is { PricePerUnit: > 0, IsHq: true, OnMannequin: false })
                           .ToList();
+
         var minHQPrice = hqItemsList.Count != 0
                              ? hqItemsList.Min(x => x.PricePerUnit)
                              : 0;
 
         if (minPrice > 0)
             SetPriceCache(CurrentItem.ItemID, false, minPrice);
+
         if (minHQPrice > 0)
             SetPriceCache(CurrentItem.ItemID, true, minHQPrice);
 
@@ -1718,10 +1742,13 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 var json = Encoding.UTF8.GetString(Convert.FromBase64String(base64));
                 var config = JsonSerializer.Deserialize<ItemConfig>(json);
                 if (config != null)
+                {
                     Service.Chat.Print(new SeStringBuilder().Append(DRPrefix)
                                                             .Append(
                                                                 $" 已成功导入 {config.ItemName} {(config.IsHQ ? "(HQ) " : "")}的配置")
                                                             .Build());
+                }
+
                 return config;
             }
         }
@@ -1841,7 +1868,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         {
             AddonEvent.PostSetup => true,
             AddonEvent.PreFinalize => false,
-            _ => Overlay.IsOpen
+            _ => Overlay.IsOpen,
         };
 
         switch (type)
@@ -1858,6 +1885,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 {
                     if (InterruptByConflictKey() || TaskManager.IsBusy ||
                         !IsAddonAndNodesReady((AtkUnitBase*)args.Addon)) return;
+
                     Service.Framework.RunOnTick(EnqueueRetainersCollect, TimeSpan.FromSeconds(1));
                 }
 
@@ -1875,7 +1903,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         {
             AddonEvent.PostSetup => true,
             AddonEvent.PreFinalize => false,
-            _ => Overlay.IsOpen
+            _ => Overlay.IsOpen,
         };
     }
 
@@ -1911,6 +1939,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
                     var progressText = MemoryHelper.ReadSeStringNullTerminated((nint)addon->AtkValues[0].String)
                                                    .ExtractText();
+
                     if (string.IsNullOrWhiteSpace(progressText)) return false;
 
                     if (progressText.Contains(LuminaCache.GetRow<Addon>(13528).Text.RawString))
@@ -1922,21 +1951,10 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
                     return false;
                 });
+
                 break;
         }
     }
 
     #endregion
-
-    public override void Uninit()
-    {
-        Service.AddonLifecycle.UnregisterListener(OnRetainerSellList);
-        Service.AddonLifecycle.UnregisterListener(OnRetainerList);
-        Service.AddonLifecycle.UnregisterListener(OnRetainerSell);
-        Service.AddonLifecycle.UnregisterListener(OnEntrustDupsAddons);
-
-        Cache.Clear();
-
-        base.Uninit();
-    }
 }

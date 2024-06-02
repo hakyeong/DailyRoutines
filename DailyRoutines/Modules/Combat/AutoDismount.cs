@@ -5,7 +5,7 @@ using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 
@@ -14,16 +14,12 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoDismountTitle", "AutoDismountDescription", ModuleCategories.战斗)]
 public unsafe class AutoDismount : DailyModuleBase
 {
-    private delegate bool UseActionSelfDelegate(
-        ActionManager* actionManager, uint actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
-        uint a5 = 0, uint a6 = 0, void* a7 = null);
-
-    private Hook<UseActionSelfDelegate>? useActionSelfHook;
+    private static HashSet<uint>? TargetSelfOrAreaActions;
 
     [Signature("E8 ?? ?? ?? ?? 44 0F B6 C3 48 8B D0")]
     private readonly delegate* unmanaged<ulong, GameObject*> GetGameObjectFromObjectID;
 
-    private static HashSet<uint>? TargetSelfOrAreaActions;
+    private Hook<UseActionSelfDelegate>? useActionSelfHook;
 
     public override void Init()
     {
@@ -39,7 +35,7 @@ public unsafe class AutoDismount : DailyModuleBase
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
 
         Service.Condition.ConditionChange += OnConditionChanged;
-        if (Service.Condition[ConditionFlag.Mounted] || Service.Condition[ConditionFlag.Mounted2]) 
+        if (Service.Condition[ConditionFlag.Mounted] || Service.Condition[ConditionFlag.Mounted2])
             OnConditionChanged(ConditionFlag.Mounted, true);
     }
 
@@ -115,4 +111,8 @@ public unsafe class AutoDismount : DailyModuleBase
 
         base.Uninit();
     }
+
+    private delegate bool UseActionSelfDelegate(
+        ActionManager* actionManager, uint actionType, uint actionID, ulong targetID = 0xE000_0000, uint a4 = 0,
+        uint a5 = 0, uint a6 = 0, void* a7 = null);
 }

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using ECommons.GameFunctions;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
@@ -17,7 +17,7 @@ public class AutoSummonPet : DailyModuleBase
         { 28, 17215 },
         // 秘术师 / 召唤师
         { 26, 25798 },
-        { 27, 25798 }
+        { 27, 25798 },
     };
 
     public override void Init()

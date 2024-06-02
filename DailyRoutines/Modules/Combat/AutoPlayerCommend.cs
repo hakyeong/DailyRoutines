@@ -11,7 +11,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using Dalamud.Memory;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -22,101 +22,6 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoPlayerCommendTitle", "AutoPlayerCommendDescription", ModuleCategories.战斗)]
 public unsafe class AutoPlayerCommend : DailyModuleBase
 {
-    private enum PlayerRole
-    {
-        Tank,
-        Healer,
-        DPS,
-        None
-    }
-
-    private class PlayerInfo : IEquatable<PlayerInfo>
-    {
-        public string PlayerName { get; set; } = string.Empty;
-        public uint WorldID { get; set; }
-        public PlayerRole? Role { get; set; } = PlayerRole.None;
-        public uint JobID { get; set; }
-
-        public PlayerInfo() { }
-
-        public PlayerInfo(string name, uint world)
-        {
-            PlayerName = name;
-            WorldID = world;
-        }
-
-        public override bool Equals(object? obj)
-        {
-            return Equals(obj as PlayerInfo);
-        }
-
-        public bool Equals(PlayerInfo? other)
-        {
-            if (other is null || GetType() != other.GetType())
-                return false;
-
-            return PlayerName == other.PlayerName && WorldID == other.WorldID;
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(PlayerName, WorldID);
-        }
-
-        public static bool operator ==(PlayerInfo? lhs, PlayerInfo? rhs)
-        {
-            if (lhs is null) return rhs is null;
-            return lhs.Equals(rhs);
-        }
-
-        public static bool operator !=(PlayerInfo lhs, PlayerInfo rhs)
-        {
-            return !(lhs == rhs);
-        }
-    }
-
-    private class ContentInfo : IEquatable<ContentInfo>
-    {
-        public uint ContentID { get; set; }
-        public uint TerritoryID { get; set; }
-        public ContentInfo() { }
-
-        public override bool Equals(object? obj)
-        {
-            return Equals(obj as ContentInfo);
-        }
-
-        public bool Equals(ContentInfo? other)
-        {
-            if (other is null || GetType() != other.GetType())
-                return false;
-
-            return ContentID == other.ContentID && TerritoryID == other.TerritoryID;
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(ContentID, TerritoryID);
-        }
-
-        public static bool operator ==(ContentInfo? lhs, ContentInfo? rhs)
-        {
-            if (lhs is null) return rhs is null;
-            return lhs.Equals(rhs);
-        }
-
-        public static bool operator !=(ContentInfo lhs, ContentInfo rhs)
-        {
-            return !(lhs == rhs);
-        }
-    }
-
-    private class Config : ModuleConfiguration
-    {
-        public readonly HashSet<PlayerInfo> BlacklistPlayers = [];
-        public readonly HashSet<ContentInfo> BlacklistContents = [];
-    }
-
     private static World? SelectedWorld;
     private static ContentFinderCondition? SelectedContent;
 
@@ -125,7 +30,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
     private static string ContentSearchInput = string.Empty;
 
     private static bool IsNeedToCommend;
-    
+
     private Config? ModuleConfig;
 
     public override void Init()
@@ -182,6 +87,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
                 var blacklist =
                     GetBlacklistInfo(
                         (InfoProxyBlacklist*)InfoModule.Instance()->GetInfoProxyById(InfoProxyId.Blacklist));
+
                 foreach (var player in blacklist)
                     ModuleConfig.BlacklistPlayers.Add(player);
 
@@ -236,6 +142,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
                 {
                     var info = new ContentInfo
                         { ContentID = SelectedContent.RowId, TerritoryID = SelectedContent.TerritoryType.Row };
+
                     if (ModuleConfig.BlacklistContents.Add(info))
                         SaveConfig(ModuleConfig);
                 }
@@ -253,8 +160,11 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
                         $"DeleteBlacklistContent_{contentInfo.ContentID}_{contentInfo.TerritoryID}"))
                 {
                     if (ImGui.Selectable(Service.Lang.GetText("Delete")))
+                    {
                         if (ModuleConfig.BlacklistContents.Remove(contentInfo))
                             SaveConfig(ModuleConfig);
+                    }
+
                     ImGui.EndPopup();
                 }
             }
@@ -293,13 +203,13 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
         var localPlayerInfo = new PlayerInfo(localPlayer.Name.ExtractText(), localPlayer.HomeWorld.GameData.RowId)
         {
             JobID = localPlayer.ClassJob.GameData.RowId,
-            Role = GetCharacterJobRole(localPlayer.ClassJob.GameData.Role)
+            Role = GetCharacterJobRole(localPlayer.ClassJob.GameData.Role),
         };
 
         var allies = Service.PartyList.Select(x => new PlayerInfo(x.Name.ExtractText(), x.World.GameData.RowId)
                             {
                                 Role = GetCharacterJobRole(x.ClassJob.GameData.Role),
-                                JobID = x.ClassJob.GameData.RowId
+                                JobID = x.ClassJob.GameData.RowId,
                             })
                             .Where(x => x != localPlayerInfo && !ModuleConfig.BlacklistPlayers.Contains(x)).ToList();
 
@@ -319,9 +229,9 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
                                            PlayerRole.DPS => 3,
                                            PlayerRole.Healer => 2,
                                            PlayerRole.Tank => 1,
-                                           _ => 0
+                                           _ => 0,
                                        },
-                                       _ => 0
+                                       _ => 0,
                                    };
                                });
 
@@ -333,6 +243,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
                     {
                         var playerNameInAddon =
                             MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i + nameOffset].String);
+
                         if (playerNameInAddon == player.PlayerName)
                         {
                             AddonHelper.Callback(addon, true, callbackIndex, i);
@@ -342,6 +253,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
                                                                            "AutoPlayerCommend-NoticeMessage",
                                                                            job.ToBitmapFontIcon(), job.Name.RawString,
                                                                            player.PlayerName)).Build();
+
                             Service.Chat.Print(message);
                             return;
                         }
@@ -373,7 +285,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
             1 => PlayerRole.Tank,
             2 or 3 => PlayerRole.DPS,
             4 => PlayerRole.Healer,
-            _ => PlayerRole.None
+            _ => PlayerRole.None,
         };
     }
 
@@ -401,5 +313,81 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
         Service.DutyState.DutyCompleted -= OnDutyComplete;
 
         base.Uninit();
+    }
+
+    private enum PlayerRole
+    {
+        Tank,
+        Healer,
+        DPS,
+        None,
+    }
+
+    private class PlayerInfo : IEquatable<PlayerInfo>
+    {
+        public PlayerInfo() { }
+
+        public PlayerInfo(string name, uint world)
+        {
+            PlayerName = name;
+            WorldID = world;
+        }
+
+        public string      PlayerName { get; set; } = string.Empty;
+        public uint        WorldID    { get; set; }
+        public PlayerRole? Role       { get; set; } = PlayerRole.None;
+        public uint        JobID      { get; set; }
+
+        public bool Equals(PlayerInfo? other)
+        {
+            if (other is null || GetType() != other.GetType())
+                return false;
+
+            return PlayerName == other.PlayerName && WorldID == other.WorldID;
+        }
+
+        public override bool Equals(object? obj) { return Equals(obj as PlayerInfo); }
+
+        public override int GetHashCode() { return HashCode.Combine(PlayerName, WorldID); }
+
+        public static bool operator ==(PlayerInfo? lhs, PlayerInfo? rhs)
+        {
+            if (lhs is null) return rhs is null;
+            return lhs.Equals(rhs);
+        }
+
+        public static bool operator !=(PlayerInfo lhs, PlayerInfo rhs) { return !(lhs == rhs); }
+    }
+
+    private class ContentInfo : IEquatable<ContentInfo>
+    {
+        public uint ContentID   { get; set; }
+        public uint TerritoryID { get; set; }
+
+        public bool Equals(ContentInfo? other)
+        {
+            if (other is null || GetType() != other.GetType())
+                return false;
+
+            return ContentID == other.ContentID && TerritoryID == other.TerritoryID;
+        }
+
+        public override bool Equals(object? obj) { return Equals(obj as ContentInfo); }
+
+        public override int GetHashCode() { return HashCode.Combine(ContentID, TerritoryID); }
+
+        public static bool operator ==(ContentInfo? lhs, ContentInfo? rhs)
+        {
+            if (lhs is null) return rhs is null;
+            return lhs.Equals(rhs);
+        }
+
+        public static bool operator !=(ContentInfo lhs, ContentInfo rhs) { return !(lhs == rhs); }
+    }
+
+    private class Config : ModuleConfiguration
+    {
+        public readonly HashSet<ContentInfo> BlacklistContents = [];
+        public readonly HashSet<PlayerInfo> BlacklistPlayers = [];
     }
 }

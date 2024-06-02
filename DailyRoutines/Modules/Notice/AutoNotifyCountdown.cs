@@ -1,12 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using DailyRoutines.Notifications;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using ImGuiNET;
-using DailyRoutines.Notifications;
 using Lumina.Excel.GeneratedSheets;
 using PayloadType = Lumina.Text.Payloads.PayloadType;
 
@@ -15,9 +14,9 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoNotifyCountdownTitle", "AutoNotifyCountdownDescription", ModuleCategories.通知)]
 public class AutoNotifyCountdown : DailyModuleBase
 {
-    public override string? Author { get; set; } = "HSS";
     private static bool ConfigOnlyNotifyWhenBackground;
     private static List<string>? Countdown;
+    public override string? Author { get; set; } = "HSS";
 
     public override void Init()
     {

@@ -13,13 +13,16 @@ public unsafe class GlamourPlateApplyCommand : DailyModuleBase
 
     public override void Init()
     {
-        Service.CommandManager.AddSubCommand(Command, 
-            new CommandInfo(OnCommand) { HelpMessage = Service.Lang.GetText("GlamourPlateApplyCommand-CommandHelp") });
+        Service.CommandManager.AddSubCommand(Command,
+                                             new CommandInfo(OnCommand)
+                                             {
+                                                 HelpMessage = Service.Lang.GetText("GlamourPlateApplyCommand-CommandHelp"),
+                                             });
     }
 
     private static void OnCommand(string command, string arguments)
     {
-        if (string.IsNullOrWhiteSpace(arguments) || 
+        if (string.IsNullOrWhiteSpace(arguments) ||
             !int.TryParse(arguments.Trim(), out var index) || index is < 1 or > 20) return;
 
         var mirageManager = MirageManager.Instance();
@@ -40,8 +43,5 @@ public unsafe class GlamourPlateApplyCommand : DailyModuleBase
         Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.EnterGlamourPlateState, 0, 1);
     }
 
-    public override void Uninit()
-    {
-        Service.CommandManager.RemoveSubCommand(Command);
-    }
+    public override void Uninit() { Service.CommandManager.RemoveSubCommand(Command); }
 }

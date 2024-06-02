@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Numerics;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Notifications;
 using Dalamud.Game.Text;
@@ -55,7 +53,7 @@ public class AutoNotifyMessages : DailyModuleBase
         { XivChatType.CrossLinkShell5, "跨服贝5" },
         { XivChatType.CrossLinkShell6, "跨服贝6" },
         { XivChatType.CrossLinkShell7, "跨服贝7" },
-        { XivChatType.CrossLinkShell8, "跨服贝8" }
+        { XivChatType.CrossLinkShell8, "跨服贝8" },
     };
 
     public override void Init()

@@ -9,10 +9,9 @@ using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Internal;
-using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
@@ -20,34 +19,23 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoShowDutyGuideTitle", "AutoShowDutyGuideDescription", ModuleCategories.战斗)]
 public class AutoShowDutyGuide : DailyModuleBase
 {
-    private enum Sastasha
-    {
-        蓝珊瑚 = 2000212,
-        红珊瑚 = 2001548,
-        绿珊瑚 = 2001549
-    }
-
-    private class Config : ModuleConfiguration
-    {
-        public float FontScale = 1f;
-    }
+    private const string FF14OrgLinkBase = "https://gh.atmoomen.top/novice-network/master/docs/duty/{0}.md";
 
     private static Config ModuleConfig = null!;
 
     private static readonly HttpClient client = new();
-    private const string FF14OrgLinkBase = "https://gh.atmoomen.top/novice-network/master/docs/duty/{0}.md";
     private static uint CurrentDuty;
     private static IDalamudTextureWrap? NoviceIcon;
 
     private static string HintText = string.Empty;
     private static List<string> GuideText = [];
 
+    private static bool IsOnDebug;
+
     private readonly Dictionary<ushort, Func<bool?>> HintsContent = new()
     {
-        { 1036, GetSastashaHint }
+        { 1036, GetSastashaHint },
     };
-
-    private static bool IsOnDebug;
 
     public override void Init()
     {
@@ -89,6 +77,7 @@ public class AutoShowDutyGuide : DailyModuleBase
                 CurrentDuty = 0;
             }
         }
+
         ImGui.EndDisabled();
 
         ImGuiOm.TooltipHover(Service.Lang.GetText("AutoShowDutyGuide-DebugModeHelp"));
@@ -113,6 +102,7 @@ public class AutoShowDutyGuide : DailyModuleBase
         if (ImGuiOm.SelectableImageWithText(NoviceIcon.ImGuiHandle, ImGuiHelpers.ScaledVector2(24f),
                                             Service.Lang.GetText("AutoShowDutyGuide-Source"), false))
             Util.OpenLink($"https://ff14.org/duty/{CurrentDuty}.htm");
+
         ImGui.Separator();
 
         ImGui.PushTextWrapPos(ImGui.GetWindowWidth());
@@ -137,10 +127,12 @@ public class AutoShowDutyGuide : DailyModuleBase
                 ImGui.SetClipboardText(text);
                 NotifyHelper.NotificationSuccess(Service.Lang.GetText("AutoShowDutyGuide-CopyNotice"));
             }
+
             ImGui.PopID();
 
             ImGui.NewLine();
         }
+
         ImGui.SetWindowFontScale(1f);
         ImGui.PopTextWrapPos();
         PresetFont.Axis14.Pop();
@@ -171,9 +163,14 @@ public class AutoShowDutyGuide : DailyModuleBase
         if (Flags.BetweenAreas) return false;
         if (!Flags.BoundByDuty) return true;
 
-        var blueObj = Service.ObjectTable.FirstOrDefault(x => x.IsValid() && x.IsTargetable && x.DataId == (uint)Sastasha.蓝珊瑚);
-        var redObj = Service.ObjectTable.FirstOrDefault(x => x.IsValid() && x.IsTargetable && x.DataId == (uint)Sastasha.红珊瑚);
-        var greenObj = Service.ObjectTable.FirstOrDefault(x => x.IsValid() && x.IsTargetable && x.DataId == (uint)Sastasha.绿珊瑚);
+        var blueObj =
+            Service.ObjectTable.FirstOrDefault(x => x.IsValid() && x.IsTargetable && x.DataId == (uint)Sastasha.蓝珊瑚);
+
+        var redObj = Service.ObjectTable.FirstOrDefault(
+            x => x.IsValid() && x.IsTargetable && x.DataId == (uint)Sastasha.红珊瑚);
+
+        var greenObj =
+            Service.ObjectTable.FirstOrDefault(x => x.IsValid() && x.IsTargetable && x.DataId == (uint)Sastasha.绿珊瑚);
 
         if (blueObj == null && redObj == null && greenObj == null) return false;
 
@@ -202,5 +199,17 @@ public class AutoShowDutyGuide : DailyModuleBase
         Service.ClientState.TerritoryChanged -= OnZoneChange;
 
         base.Uninit();
+    }
+
+    private enum Sastasha
+    {
+        蓝珊瑚 = 2000212,
+        红珊瑚 = 2001548,
+        绿珊瑚 = 2001549,
+    }
+
+    private class Config : ModuleConfiguration
+    {
+        public float FontScale = 1f;
     }
 }

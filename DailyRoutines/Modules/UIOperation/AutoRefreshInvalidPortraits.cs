@@ -1,12 +1,11 @@
 using System.Numerics;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -67,10 +66,7 @@ public unsafe class AutoRefreshInvalidPortraits : DailyModuleBase
         AddonHelper.Callback(&addon->AtkUnitBase, true, 0, 8, 0);
     }
 
-    private void OnAddonList(AddonEvent type, AddonArgs args)
-    {
-        Overlay.IsOpen = type == AddonEvent.PostSetup;
-    }
+    private void OnAddonList(AddonEvent type, AddonArgs args) { Overlay.IsOpen = type == AddonEvent.PostSetup; }
 
     private void EnqueueARound()
     {

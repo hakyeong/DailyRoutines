@@ -1,6 +1,6 @@
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace DailyRoutines.Modules;

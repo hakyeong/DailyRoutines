@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
@@ -17,31 +16,18 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("PlayerTargetInfoExpandTitle", "PlayerTargetInfoExpandDescription", ModuleCategories.界面优化)]
 public unsafe class PlayerTargetInfoExpand : DailyModuleBase
 {
-    private class Payload(string placeholder, string description, Func<Character, string> valueFunc)
-    {
-        public string Placeholder { get; } = placeholder;
-        public string Description { get; } = description;
-        public Func<Character, string> ValueFunc { get; } = valueFunc;
-    }
-
     private static readonly List<Payload> Payloads =
     [
         new Payload("/Name/", Service.Lang.GetText("Name"), c => c.Name.TextValue),
-        new Payload("/Job/", Service.Lang.GetText("Job"), c => c.ClassJob.GameData?.Name.RawString ?? LuminaCache.GetRow<ClassJob>(0).Name.RawString),
+        new Payload("/Job/", Service.Lang.GetText("Job"),
+                    c => c.ClassJob.GameData?.Name.RawString ?? LuminaCache.GetRow<ClassJob>(0).Name.RawString),
         new Payload("/Level/", Service.Lang.GetText("Level"), c => c.Level.ToString()),
         new Payload("/FCTag/", Service.Lang.GetText("PlayerTargetInfoExpand-CompanyTag"), c => c.CompanyTag.TextValue),
         new Payload("/OnlineStatus/", Service.Lang.GetText("PlayerTargetInfoExpand-OnlineStatus"),
                     c => string.IsNullOrWhiteSpace(c.OnlineStatus.GameData?.Name.RawString)
                              ? LuminaCache.GetRow<OnlineStatus>(47).Name.RawString
-                             : c.OnlineStatus.GameData?.Name.RawString)
+                             : c.OnlineStatus.GameData?.Name.RawString),
     ];
-
-    private class Config : ModuleConfiguration
-    {
-        public string TargetPattern = "/Name/ [/Job/] «/FCTag/»";
-        public string TargetsTargetPattern = "/Name/";
-        public string FocusTargetPattern = "/Level/级 /Name/";
-    }
 
     private static Config ModuleConfig = null!;
 
@@ -50,7 +36,9 @@ public unsafe class PlayerTargetInfoExpand : DailyModuleBase
         ModuleConfig = LoadConfig<Config>() ?? new();
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "_TargetInfo", UpdateTargetInfo);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "_TargetInfoMainTarget", UpdateTargetInfoMainTarget);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "_TargetInfoMainTarget",
+                                                UpdateTargetInfoMainTarget);
+
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "_FocusTargetInfo", UpdateFocusTargetInfo);
     }
 
@@ -58,8 +46,11 @@ public unsafe class PlayerTargetInfoExpand : DailyModuleBase
     {
         var tableSize = new Vector2(ImGui.GetContentRegionAvail().X / 2, 0);
         DrawInputAndPreviewText(Service.Lang.GetText("Target"), ref ModuleConfig.TargetPattern);
-        DrawInputAndPreviewText(Service.Lang.GetText("PlayerTargetInfoExpand-TargetsTarget"), ref ModuleConfig.TargetsTargetPattern);
-        DrawInputAndPreviewText(Service.Lang.GetText("PlayerTargetInfoExpand-FocusTarget"), ref ModuleConfig.FocusTargetPattern);
+        DrawInputAndPreviewText(Service.Lang.GetText("PlayerTargetInfoExpand-TargetsTarget"),
+                                ref ModuleConfig.TargetsTargetPattern);
+
+        DrawInputAndPreviewText(Service.Lang.GetText("PlayerTargetInfoExpand-FocusTarget"),
+                                ref ModuleConfig.FocusTargetPattern);
 
         if (ImGui.BeginTable("PayloadDisplay", 2, ImGuiTableFlags.Borders, tableSize))
         {
@@ -172,6 +163,7 @@ public unsafe class PlayerTargetInfoExpand : DailyModuleBase
     {
         foreach (var payload in payloads)
             input = input.Replace(payload.Placeholder, payload.ValueFunc(chara));
+
         return input;
     }
 
@@ -182,5 +174,19 @@ public unsafe class PlayerTargetInfoExpand : DailyModuleBase
         Service.AddonLifecycle.UnregisterListener(UpdateFocusTargetInfo);
 
         base.Uninit();
+    }
+
+    private class Payload(string placeholder, string description, Func<Character, string> valueFunc)
+    {
+        public string                  Placeholder { get; } = placeholder;
+        public string                  Description { get; } = description;
+        public Func<Character, string> ValueFunc   { get; } = valueFunc;
+    }
+
+    private class Config : ModuleConfiguration
+    {
+        public string FocusTargetPattern = "/Level/级 /Name/";
+        public string TargetPattern = "/Name/ [/Job/] «/FCTag/»";
+        public string TargetsTargetPattern = "/Name/";
     }
 }

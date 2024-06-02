@@ -1,10 +1,9 @@
 using ClickLib;
-using DailyRoutines.Infos;
 using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -21,10 +20,7 @@ public class AutoUfoCatcher : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "UfoCatcher", OnAddonSetup);
     }
 
-    public override void ConfigUI()
-    {
-        ConflictKeyText();
-    }
+    public override void ConfigUI() { ConflictKeyText(); }
 
     private void OnAddonSetup(AddonEvent type, AddonArgs args)
     {

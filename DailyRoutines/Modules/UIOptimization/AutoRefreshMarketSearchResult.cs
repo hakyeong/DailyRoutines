@@ -1,9 +1,8 @@
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 
@@ -14,16 +13,12 @@ namespace DailyRoutines.Modules;
                    ModuleCategories.界面优化)]
 public unsafe class AutoRefreshMarketSearchResult : DailyModuleBase
 {
-    private delegate long HandlePricesDelegate(
-        void* unk1, void* unk2, void* unk3, void* unk4, void* unk5, void* unk6,
-        void* unk7);
-
     [Signature("E8 ?? ?? ?? ?? 8B 5B 04 85 DB", DetourName = nameof(HandlePricesDetour))]
     private readonly Hook<HandlePricesDelegate>? HandlePricesHook;
 
     private nint waitMessageCodeChangeAddress = nint.Zero;
-    private byte[] waitMessageCodeOriginalBytes = new byte[5];
     private bool waitMessageCodeError;
+    private byte[] waitMessageCodeOriginalBytes = new byte[5];
 
 
     public override void Init()
@@ -34,6 +29,7 @@ public unsafe class AutoRefreshMarketSearchResult : DailyModuleBase
         waitMessageCodeError = false;
         waitMessageCodeChangeAddress = Service.SigScanner.ScanText(
             "BA ?? ?? ?? ?? E8 ?? ?? ?? ?? 4C 8B C0 BA ?? ?? ?? ?? 48 8B CE E8 ?? ?? ?? ?? 45 33 C9");
+
         if (SafeMemory.ReadBytes(waitMessageCodeChangeAddress, 5, out waitMessageCodeOriginalBytes))
         {
             if (!SafeMemory.WriteBytes(waitMessageCodeChangeAddress, [0xBA, 0xB9, 0x1A, 0x00, 0x00]))
@@ -84,4 +80,8 @@ public unsafe class AutoRefreshMarketSearchResult : DailyModuleBase
 
         base.Uninit();
     }
+
+    private delegate long HandlePricesDelegate(
+        void* unk1, void* unk2, void* unk3, void* unk4, void* unk5, void* unk6,
+        void* unk7);
 }

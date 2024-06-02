@@ -1,16 +1,16 @@
+using System;
+using System.Collections.Generic;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
+using ECommons.Automation.LegacyTaskManager;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using System;
-using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
-using ECommons.Automation;
 using Lumina.Excel.GeneratedSheets;
-using System.Collections.Generic;
 
 namespace DailyRoutines.Modules;
 
@@ -30,7 +30,7 @@ public unsafe class AutoCheckItemLevel : DailyModuleBase
     private void OnZoneChanged(ushort zone)
     {
         if (Service.ClientState.IsPvP) return;
-        if (!PresetData.TryGetContent(zone, out var content) || content.PvP || 
+        if (!PresetData.TryGetContent(zone, out var content) || content.PvP ||
             !ValidContentJobCategories.Contains(content.AcceptClassJobCategory.Row)) return;
 
         Service.Framework.RunOnTick(CheckMembersItemLevel, TimeSpan.FromMilliseconds(500));
@@ -43,10 +43,12 @@ public unsafe class AutoCheckItemLevel : DailyModuleBase
         {
             var content = PresetData.Contents[Service.ClientState.TerritoryType];
             var ssb = new SeStringBuilder();
-            ssb.Append($"{Service.Lang.GetText("AutoCheckItemLevel-ILRequired")}: ").AddUiForeground(content.ItemLevelRequired.ToString(), 34);
+            ssb.Append($"{Service.Lang.GetText("AutoCheckItemLevel-ILRequired")}: ")
+               .AddUiForeground(content.ItemLevelRequired.ToString(), 34);
 
             Service.Chat.Print(ssb.Build());
         });
+
         TaskManager.Enqueue(() =>
         {
             foreach (var member in Service.PartyList)
@@ -70,7 +72,7 @@ public unsafe class AutoCheckItemLevel : DailyModuleBase
                         return true;
                     }
 
-                    if (!TryGetAddonByName<AtkUnitBase>("CharacterInspect", out var addon) || 
+                    if (!TryGetAddonByName<AtkUnitBase>("CharacterInspect", out var addon) ||
                         !IsAddonAndNodesReady(addon) || AgentInspect.Instance()->CurrentObjectID != member.ObjectId)
                     {
                         AgentInspect.Instance()->ExamineCharacter(member.ObjectId);
@@ -122,10 +124,15 @@ public unsafe class AutoCheckItemLevel : DailyModuleBase
                     ssb.AddUiForegroundOff();
                     ssb.Append($" ({member.ClassJob.GameData.Name.RawString})");
                     ssb.Append($" {Service.Lang.GetText("Level")}: ").AddUiForeground(member.Level.ToString(),
-                                                        (ushort)(member.Level >= content.ClassJobLevelSync ? 43 : 17));
+                        (ushort)(member.Level >= content.ClassJobLevelSync ? 43 : 17));
+
                     ssb.Add(new NewLinePayload());
-                    ssb.Append($" {Service.Lang.GetText("AutoCheckItemLevel-ILAverage")}: ").AddUiForeground(avgItemLevel.ToString(), (ushort)(avgItemLevel > content.ItemLevelSync ? 43 : 17));
-                    ssb.Append($" {Service.Lang.GetText("AutoCheckItemLevel-ILMinimum")}: ").AddUiForeground(lowestIL.ToString(), (ushort)(lowestIL > content.ItemLevelRequired ? 43 : 17));
+                    ssb.Append($" {Service.Lang.GetText("AutoCheckItemLevel-ILAverage")}: ")
+                       .AddUiForeground(avgItemLevel.ToString(), (ushort)(avgItemLevel > content.ItemLevelSync ? 43 : 17));
+
+                    ssb.Append($" {Service.Lang.GetText("AutoCheckItemLevel-ILMinimum")}: ")
+                       .AddUiForeground(lowestIL.ToString(), (ushort)(lowestIL > content.ItemLevelRequired ? 43 : 17));
+
                     ssb.Add(new NewLinePayload());
 
                     Service.Chat.Print(ssb.Build());

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using ECommons.GameFunctions;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
@@ -28,7 +28,7 @@ public class AutoTankStance : DailyModuleBase
         // 暗黑骑士
         { 32, 3629 },
         // 绝枪战士
-        { 37, 16142 }
+        { 37, 16142 },
     };
 
     public override void Init()
@@ -88,7 +88,8 @@ public class AutoTankStance : DailyModuleBase
 
         var battlePlayer = player.BattleChara();
         foreach (var status in TankStanceStatuses)
-            if (battlePlayer->GetStatusManager->HasStatus(status)) return true;
+            if (battlePlayer->GetStatusManager->HasStatus(status))
+                return true;
 
         return ActionManager.Instance()->UseAction(ActionType.Action, actionID);
     }

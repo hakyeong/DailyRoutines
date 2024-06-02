@@ -17,7 +17,7 @@ using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
@@ -35,44 +35,6 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoMJIGatherTitle", "AutoMJIGatherDescription", ModuleCategories.一般)]
 public class AutoMJIGather : DailyModuleBase
 {
-    private class IslandGatherPoint : IEquatable<IslandGatherPoint>, IComparable<IslandGatherPoint>
-    {
-        public string        Name    { get; set; } = string.Empty;
-        public bool          Enabled { get; set; }
-        public List<Vector3> Points  { get; set; } = [];
-
-        [JsonIgnore]
-        public Lazy<IDalamudTextureWrap?> MapIcon { get; set; }
-
-        public IslandGatherPoint()
-        {
-            MapIcon = new Lazy<IDalamudTextureWrap?>(() => ImageHelper.GetIcon(GatheringItemsIcon[Name]));
-        }
-
-        public IslandGatherPoint(string name)
-        {
-            Name = name;
-            MapIcon = new Lazy<IDalamudTextureWrap?>(() => ImageHelper.GetIcon(GatheringItemsIcon[Name]));
-        }
-
-        public override bool Equals(object? obj) => Equals(obj as IslandGatherPoint);
-
-        public bool Equals(IslandGatherPoint? other) => other != null && Name == other.Name;
-
-        public override int GetHashCode() => Name.GetHashCode();
-
-        public int CompareTo(IslandGatherPoint? other) =>
-            other == null ? 1 : string.Compare(Name, other.Name, StringComparison.Ordinal);
-    }
-
-    private class Config : ModuleConfiguration
-    {
-        public List<IslandGatherPoint> IslandGatherPoints = [];
-        public bool StopWhenReachingCap = true;
-    }
-
-    private delegate bool IsPlayerOnDivingDelegate(nint a1);
-
     [Signature("E8 ?? ?? ?? ?? 84 C0 74 ?? F3 0F 10 35 ?? ?? ?? ?? F3 0F 10 3D ?? ?? ?? ?? F3 44 0F 10 05",
                DetourName = nameof(IsPlayingOnDivingDetour))]
     private static Hook<IsPlayerOnDivingDelegate>? IsPlayerOnDivingHook;
@@ -104,6 +66,54 @@ public class AutoMJIGather : DailyModuleBase
                                         .Where(x => x.MapIcon != 0)
                                         .ToDictionary(x => x.Name.Value.Singular.RawString, x => x.MapIcon);
     }
+
+    public override void Uninit()
+    {
+        Service.Chat.ChatMessage -= OnChatMessage;
+        QueuedGatheringList.Clear();
+        IsOnDataCollecting = false;
+        CurrentGatherIndex = 0;
+
+        base.Uninit();
+    }
+
+    private class IslandGatherPoint : IEquatable<IslandGatherPoint>, IComparable<IslandGatherPoint>
+    {
+        public IslandGatherPoint()
+        {
+            MapIcon = new Lazy<IDalamudTextureWrap?>(() => ImageHelper.GetIcon(GatheringItemsIcon[Name]));
+        }
+
+        public IslandGatherPoint(string name)
+        {
+            Name = name;
+            MapIcon = new Lazy<IDalamudTextureWrap?>(() => ImageHelper.GetIcon(GatheringItemsIcon[Name]));
+        }
+
+        public string        Name    { get; set; } = string.Empty;
+        public bool          Enabled { get; set; }
+        public List<Vector3> Points  { get; set; } = [];
+
+        [JsonIgnore]
+        public Lazy<IDalamudTextureWrap?> MapIcon { get; set; }
+
+        public int CompareTo(IslandGatherPoint? other) =>
+            other == null ? 1 : string.Compare(Name, other.Name, StringComparison.Ordinal);
+
+        public bool Equals(IslandGatherPoint? other) => other != null && Name == other.Name;
+
+        public override bool Equals(object? obj) => Equals(obj as IslandGatherPoint);
+
+        public override int GetHashCode() => Name.GetHashCode();
+    }
+
+    private class Config : ModuleConfiguration
+    {
+        public List<IslandGatherPoint> IslandGatherPoints = [];
+        public bool StopWhenReachingCap = true;
+    }
+
+    private delegate bool IsPlayerOnDivingDelegate(nint a1);
 
     #region UI
 
@@ -282,11 +292,13 @@ public class AutoMJIGather : DailyModuleBase
                                             {
                                                 if (DataCollectWaypoints.Count == 0)
                                                 {
-                                                    DataCollectWaypoints = MergeAndTransform(LuminaCache.Get<MJIGatheringItem>()
-                                                        .Where(x => x.Item.Value != null)
-                                                        .Select(item => new Vector2(item.X, item.Y))
-                                                        .ToList(), 50);
+                                                    DataCollectWaypoints = MergeAndTransform(
+                                                        LuminaCache.Get<MJIGatheringItem>()
+                                                                   .Where(x => x.Item.Value != null)
+                                                                   .Select(item => new Vector2(item.X, item.Y))
+                                                                   .ToList(), 50);
                                                 }
+
                                                 IsPlayerOnDivingHook.Enable();
                                                 DataCollect(DataCollectWaypoints);
                                             }
@@ -403,6 +415,7 @@ public class AutoMJIGather : DailyModuleBase
             SaveConfig(ModuleConfig);
             IsOnDataCollecting = false;
         });
+
         TaskManager.Enqueue(() => Service.UseActionManager.UseAction(ActionType.GeneralAction, 27));
     }
 
@@ -560,14 +573,4 @@ public class AutoMJIGather : DailyModuleBase
     }
 
     #endregion
-
-    public override void Uninit()
-    {
-        Service.Chat.ChatMessage -= OnChatMessage;
-        QueuedGatheringList.Clear();
-        IsOnDataCollecting = false;
-        CurrentGatherIndex = 0;
-
-        base.Uninit();
-    }
 }

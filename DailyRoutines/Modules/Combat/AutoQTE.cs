@@ -1,9 +1,8 @@
-using System.Windows.Forms;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using ECommons.Automation;
+using ECommons.Interop;
 
 namespace DailyRoutines.Modules;
 
@@ -12,15 +11,9 @@ public class AutoQTE : DailyModuleBase
 {
     private static readonly string[] QTETypes = ["_QTEKeep", "_QTEMash", "_QTEKeepTime", "_QTEButton"];
 
-    public override void Init()
-    {
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, QTETypes, OnQTEAddon);
-    }
+    public override void Init() { Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, QTETypes, OnQTEAddon); }
 
-    private static void OnQTEAddon(AddonEvent type, AddonArgs args)
-    {
-        WindowsKeypress.SendKeypress(Keys.Space);
-    }
+    private static void OnQTEAddon(AddonEvent type, AddonArgs args) { WindowsKeypress.SendKeypress(LimitedKeys.Space); }
 
     public override void Uninit()
     {

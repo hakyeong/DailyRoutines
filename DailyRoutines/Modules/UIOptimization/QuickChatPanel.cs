@@ -16,6 +16,7 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
 using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -30,64 +31,18 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("QuickChatPanelTitle", "QuickChatPanelDescription", ModuleCategories.界面优化)]
 public unsafe class QuickChatPanel : DailyModuleBase
 {
-    public class SavedMacro : IEquatable<SavedMacro>
-    {
-        public uint Category { get; set; } // 0 - Individual; 1 - Shared
-        public int Position { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public uint IconID { get; set; } = 0;
-        public DateTime LastUpdateTime { get; set; } = DateTime.MinValue;
-
-        public bool Equals(SavedMacro? other)
-        {
-            if (other is null) return false;
-            if (ReferenceEquals(this, other)) return true;
-            return Category == other.Category && Position == other.Position;
-        }
-
-        public override bool Equals(object? obj)
-        {
-            if (obj is null) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            return obj.GetType() == GetType() && Equals((SavedMacro)obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Category, Position);
-        }
-    }
-
-    private enum MacroDisplayMode
-    {
-        List,
-        Buttons
-    }
+    private const float DefaultOverlayWidth = 300f;
 
     private static readonly Dictionary<MacroDisplayMode, string> MacroDisplayModeLoc = new()
     {
         { MacroDisplayMode.List, Service.Lang.GetText("QuickChatPanel-List") },
-        { MacroDisplayMode.Buttons, Service.Lang.GetText("QuickChatPanel-Buttons") }
+        { MacroDisplayMode.Buttons, Service.Lang.GetText("QuickChatPanel-Buttons") },
     };
-
-    private class Config : ModuleConfiguration
-    {
-        public readonly List<string> SavedMessages = [];
-        public readonly List<SavedMacro> SavedMacros = [];
-        public readonly Dictionary<uint, string> SoundEffectNotes = [];
-        public float FontScale = 1.5f;
-        public Vector2 ButtonOffset = new(0);
-        public ushort ButtonSize = 48;
-        public int ButtonIcon = 46;
-        public float OverlayHeight = 250f;
-        public MacroDisplayMode OverlayMacroDisplayMode = MacroDisplayMode.Buttons;
-    }
 
     private static Config ModuleConfig = null!;
 
     private static char[] SeIconChars = [];
     private static Vector2 ButtonPos = new(0);
-    private const float DefaultOverlayWidth = 300f;
     private static IAddonEventHandle? MouseClickHandle;
     private static string MessageInput = string.Empty;
     private static int _dropMacroIndex = -1;
@@ -112,6 +67,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
         var tempSeIconList = new List<char>();
         foreach (SeIconChar seIconChar in Enum.GetValues(typeof(SeIconChar)))
             tempSeIconList.Add((char)seIconChar);
+
         SeIconChars = [.. tempSeIconList];
         ItemNames ??= LuminaCache.Get<Item>()
                                  .Where(x => !string.IsNullOrEmpty(x.Name.RawString))
@@ -168,6 +124,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
         ImGui.AlignTextToFramePadding();
         ImGui.TextColored(ImGuiColors.DalamudOrange,
                           $"{Service.Lang.GetText("QuickChatPanel-OverlayMacroDisplayMode")}:");
+
         ImGui.EndGroup();
 
         ImGui.SameLine();
@@ -175,7 +132,9 @@ public unsafe class QuickChatPanel : DailyModuleBase
         // 右半边
         ImGui.BeginGroup();
         ImGui.SetNextItemWidth(240f * ImGuiHelpers.GlobalScale);
-        if (ImGui.BeginCombo("###MessagesCombo", Service.Lang.GetText("QuickChatPanel-SavedMessagesAmountText", ModuleConfig.SavedMessages.Count)))
+        if (ImGui.BeginCombo("###MessagesCombo",
+                             Service.Lang.GetText("QuickChatPanel-SavedMessagesAmountText",
+                                                  ModuleConfig.SavedMessages.Count)))
         {
             ImGui.InputText("###MessageToSaveInput", ref MessageInput, 1000);
 
@@ -243,6 +202,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
                 ImGui.PopID();
             }
+
             ImGui.EndCombo();
         }
 
@@ -271,7 +231,8 @@ public unsafe class QuickChatPanel : DailyModuleBase
         }
 
         ImGui.SameLine();
-        if (ImGuiOm.ButtonIcon("OpenIconBrowser", FontAwesomeIcon.Search, Service.Lang.GetText("QuickChatPanel-OpenIconBrowser")))
+        if (ImGuiOm.ButtonIcon("OpenIconBrowser", FontAwesomeIcon.Search,
+                               Service.Lang.GetText("QuickChatPanel-OpenIconBrowser")))
             Chat.Instance.SendMessage("/xldata icon");
 
         ImGui.Spacing();
@@ -450,6 +411,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
                 ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
                                         ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
+
                 ImGui.EndTabItem();
             }
 
@@ -477,6 +439,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                                 {
                                     var gameMacro =
                                         RaptureMacroModule.Instance()->GetMacro(macro.Category, (uint)macro.Position);
+
                                     RaptureShellModule.Instance()->ExecuteMacro(gameMacro);
                                 }
 
@@ -486,6 +449,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                                 {
                                     var gameMacro =
                                         RaptureMacroModule.Instance()->GetMacro(macro.Category, (uint)macro.Position);
+
                                     RaptureShellModule.Instance()->ExecuteMacro(gameMacro);
                                 }
 
@@ -519,6 +483,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                             case MacroDisplayMode.List:
                                 if (i != ModuleConfig.SavedMacros.Count - 1)
                                     ImGui.Separator();
+
                                 break;
                             case MacroDisplayMode.Buttons:
                                 if ((i + 1) % 5 != 0) ImGui.SameLine();
@@ -542,6 +507,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
                 ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
                                         ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
+
                 ImGui.EndTabItem();
             }
 
@@ -558,6 +524,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
                     if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
                         UIModule.PlayChatSoundEffect(seNote.Key);
+
                     if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
                         Chat.Instance.SendMessage($"<se.{seNote.Key}><se.{seNote.Key}>");
 
@@ -571,6 +538,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
                 ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
                                         ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
+
                 ImGui.EndTabItem();
             }
 
@@ -610,7 +578,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                             Service.Chat.Print(new SeStringBuilder().AddItemLink(item.RowId).Build());
                     }
 
-                    maxTextWidth = ImGui.CalcTextSize(longestText).X + 200f * ImGuiHelpers.GlobalScale;
+                    maxTextWidth = ImGui.CalcTextSize(longestText).X + (200f * ImGuiHelpers.GlobalScale);
 
                     ImGui.SetWindowFontScale(1f);
                     PresetFont.Axis14.Pop();
@@ -637,7 +605,8 @@ public unsafe class QuickChatPanel : DailyModuleBase
                     {
                         var icon = SeIconChars[i];
 
-                        if (ImGui.Button($"{icon}", new(48 * ModuleConfig.FontScale))) ImGui.SetClipboardText(icon.ToString());
+                        if (ImGui.Button($"{icon}", new(48 * ModuleConfig.FontScale)))
+                            ImGui.SetClipboardText(icon.ToString());
 
                         ImGuiOm.TooltipHover($"0x{(int)icon:X4}");
 
@@ -659,6 +628,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
                 ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
                                         ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
+
                 ImGui.EndTabItem();
             }
 
@@ -732,6 +702,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
         var imageNode = AddonHelper.MakeImageNode(nodeId, new AddonHelper.PartInfo(0, 0, 64, 64));
         imageNode->AtkResNode.NodeFlags = NodeFlags.AnchorTop | NodeFlags.AnchorLeft | NodeFlags.Visible |
                                           NodeFlags.Enabled | NodeFlags.EmitsEvents;
+
         imageNode->WrapMode = 1;
         imageNode->Flags = (byte)ImageNodeFlags.AutoFit;
 
@@ -751,10 +722,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                                         OnEvent);
     }
 
-    private void OnEvent(AddonEventType atkEventType, IntPtr atkUnitBase, IntPtr atkResNode)
-    {
-        Overlay.IsOpen ^= true;
-    }
+    private void OnEvent(AddonEventType atkEventType, IntPtr atkUnitBase, IntPtr atkResNode) { Overlay.IsOpen ^= true; }
 
     private static void FreeNode()
     {
@@ -788,6 +756,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
         var iconStartPos =
             new Vector2(cursorScreenPos.X + ((buttonWidth - iconSize.X) / 2), cursorScreenPos.Y + padding);
+
         var iconEndPos = iconStartPos + iconSize;
         var iconPos = new Vector2(cursorScreenPos.X + ((buttonWidth - iconSize.X) / 2), cursorScreenPos.Y + padding);
         var textPos = new Vector2(cursorScreenPos.X + ((buttonWidth - textSize.X) / 2),
@@ -803,7 +772,8 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
     private void SwapMacros(int index1, int index2)
     {
-        (ModuleConfig.SavedMacros[index1], ModuleConfig.SavedMacros[index2]) = (ModuleConfig.SavedMacros[index2], ModuleConfig.SavedMacros[index1]);
+        (ModuleConfig.SavedMacros[index1], ModuleConfig.SavedMacros[index2]) =
+            (ModuleConfig.SavedMacros[index2], ModuleConfig.SavedMacros[index1]);
 
         TaskManager.Abort();
 
@@ -829,5 +799,49 @@ public unsafe class QuickChatPanel : DailyModuleBase
         Service.AddonLifecycle.UnregisterListener(OnAddon);
 
         base.Uninit();
+    }
+
+    public class SavedMacro : IEquatable<SavedMacro>
+    {
+        public uint     Category       { get; set; } // 0 - Individual; 1 - Shared
+        public int      Position       { get; set; }
+        public string   Name           { get; set; } = string.Empty;
+        public uint     IconID         { get; set; } = 0;
+        public DateTime LastUpdateTime { get; set; } = DateTime.MinValue;
+
+        public bool Equals(SavedMacro? other)
+        {
+            if (other is null) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return Category == other.Category && Position == other.Position;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is null) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            return obj.GetType() == GetType() && Equals((SavedMacro)obj);
+        }
+
+        public override int GetHashCode() { return HashCode.Combine(Category, Position); }
+    }
+
+    private enum MacroDisplayMode
+    {
+        List,
+        Buttons,
+    }
+
+    private class Config : ModuleConfiguration
+    {
+        public readonly List<SavedMacro> SavedMacros = [];
+        public readonly List<string> SavedMessages = [];
+        public readonly Dictionary<uint, string> SoundEffectNotes = [];
+        public int ButtonIcon = 46;
+        public Vector2 ButtonOffset = new(0);
+        public ushort ButtonSize = 48;
+        public float FontScale = 1.5f;
+        public float OverlayHeight = 250f;
+        public MacroDisplayMode OverlayMacroDisplayMode = MacroDisplayMode.Buttons;
     }
 }

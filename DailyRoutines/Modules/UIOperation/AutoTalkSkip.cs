@@ -1,24 +1,16 @@
 using ClickLib;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoTalkSkipTitle", "AutoTalkSkipDescription", ModuleCategories.界面操作)]
 public class AutoTalkSkip : DailyModuleBase
 {
-    public override void Init()
-    {
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PreDraw, "Talk", OnAddonDraw);
-    }
+    public override void Init() { Service.AddonLifecycle.RegisterListener(AddonEvent.PreDraw, "Talk", OnAddonDraw); }
 
-    public override void ConfigUI()
-    {
-        ConflictKeyText();
-    }
+    public override void ConfigUI() { ConflictKeyText(); }
 
     private static void OnAddonDraw(AddonEvent type, AddonArgs args)
     {

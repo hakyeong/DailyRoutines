@@ -21,83 +21,6 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("CustomizeGameObjectTitle", "CustomizeGameObjectDescription", ModuleCategories.系统)]
 public unsafe class CustomizeGameObject : DailyModuleBase
 {
-    private struct ChibiTarget
-    {
-        public CustomizeType Type;
-        public string Value;
-        public float Scale;
-    }
-
-    private class CustomizePreset : IComparable<CustomizePreset>, IEquatable<CustomizePreset>
-    {
-        public string Note { get; set; } = string.Empty;
-        public CustomizeType Type { get; set; }
-        public string Value { get; set; } = string.Empty;
-        public float Scale { get; set; }
-        public bool ScaleVFX { get; set; }
-        public bool Enabled { get; set; }
-
-        public int CompareTo(CustomizePreset? other)
-        {
-            if (other == null) return 1;
-
-            var typeComparison = Type.CompareTo(other.Type);
-            if (typeComparison != 0) return typeComparison;
-
-            var valueComparison = string.Compare(Value, other.Value, StringComparison.Ordinal);
-            if (valueComparison != 0) return valueComparison;
-
-            return 0;
-        }
-
-        public override bool Equals(object? obj)
-        {
-            if (obj is CustomizePreset other) return Equals(other);
-            return false;
-        }
-
-        public bool Equals(CustomizePreset? other)
-        {
-            if (other == null) return false;
-
-            return Type == other.Type &&
-                   string.Equals(Value, other.Value, StringComparison.Ordinal);
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Type, Value);
-        }
-
-        public static bool operator ==(CustomizePreset left, CustomizePreset right)
-        {
-            return Equals(left, right);
-        }
-
-        public static bool operator !=(CustomizePreset left, CustomizePreset right)
-        {
-            return !Equals(left, right);
-        }
-    }
-
-    private enum CustomizeType
-    {
-        Name,
-        ModelCharaID,
-        ModelSkeletonID,
-        DataID,
-        ObjectID
-    }
-
-    public override string? Author { get; set; } = "HSS";
-
-    private class Config : ModuleConfiguration
-    {
-        public readonly List<CustomizePreset> CustomizePresets = [];
-    }
-
-    private delegate byte IsTargetableDelegate(GameObjectStruct* gameObj);
-
     [Signature("40 53 48 83 EC 20 F3 0F 10 89 ?? ?? ?? ?? 0F 57 C0 0F 2E C8 48 8B D9 7A 0A",
                DetourName = nameof(IsTargetableDetour))]
     private static Hook<IsTargetableDelegate>? IsTargetableHook;
@@ -117,6 +40,8 @@ public unsafe class CustomizeGameObject : DailyModuleBase
     private static bool ScaleVFXEditInput;
 
     private static readonly Dictionary<nint, (CustomizePreset Preset, float Scale)> CustomizeHistory = [];
+
+    public override string? Author { get; set; } = "HSS";
 
     public override void Init()
     {
@@ -174,8 +99,9 @@ public unsafe class CustomizeGameObject : DailyModuleBase
                                 Type = TypeInput,
                                 Value = ValueInput,
                                 ScaleVFX = ScaleVFXInput,
-                                Note = NoteInput
+                                Note = NoteInput,
                             });
+
                         SaveConfig(ModuleConfig);
                         ImGui.CloseCurrentPopup();
                     }
@@ -531,10 +457,7 @@ public unsafe class CustomizeGameObject : DailyModuleBase
         return isTargetable;
     }
 
-    private static void OnZoneChanged(ushort zone)
-    {
-        CustomizeHistory.Clear();
-    }
+    private static void OnZoneChanged(ushort zone) { CustomizeHistory.Clear(); }
 
     private static void RemovePresetHistory(CustomizePreset? preset)
     {
@@ -587,8 +510,75 @@ public unsafe class CustomizeGameObject : DailyModuleBase
 
         if (Service.ClientState.LocalPlayer != null)
             ResetAllCustomizeFromHistory();
+
         CustomizeHistory.Clear();
 
         base.Uninit();
     }
+
+    private struct ChibiTarget
+    {
+        public CustomizeType Type;
+        public string Value;
+        public float Scale;
+    }
+
+    private class CustomizePreset : IComparable<CustomizePreset>, IEquatable<CustomizePreset>
+    {
+        public string        Note     { get; set; } = string.Empty;
+        public CustomizeType Type     { get; set; }
+        public string        Value    { get; set; } = string.Empty;
+        public float         Scale    { get; set; }
+        public bool          ScaleVFX { get; set; }
+        public bool          Enabled  { get; set; }
+
+        public int CompareTo(CustomizePreset? other)
+        {
+            if (other == null) return 1;
+
+            var typeComparison = Type.CompareTo(other.Type);
+            if (typeComparison != 0) return typeComparison;
+
+            var valueComparison = string.Compare(Value, other.Value, StringComparison.Ordinal);
+            if (valueComparison != 0) return valueComparison;
+
+            return 0;
+        }
+
+        public bool Equals(CustomizePreset? other)
+        {
+            if (other == null) return false;
+
+            return Type == other.Type &&
+                   string.Equals(Value, other.Value, StringComparison.Ordinal);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is CustomizePreset other) return Equals(other);
+            return false;
+        }
+
+        public override int GetHashCode() { return HashCode.Combine(Type, Value); }
+
+        public static bool operator ==(CustomizePreset left, CustomizePreset right) { return Equals(left, right); }
+
+        public static bool operator !=(CustomizePreset left, CustomizePreset right) { return !Equals(left, right); }
+    }
+
+    private enum CustomizeType
+    {
+        Name,
+        ModelCharaID,
+        ModelSkeletonID,
+        DataID,
+        ObjectID,
+    }
+
+    private class Config : ModuleConfiguration
+    {
+        public readonly List<CustomizePreset> CustomizePresets = [];
+    }
+
+    private delegate byte IsTargetableDelegate(GameObjectStruct* gameObj);
 }

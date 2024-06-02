@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
@@ -17,27 +16,15 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("BiggerHDWindowTextTitle", "BiggerHDWindowTextDescription", ModuleCategories.界面优化)]
 public unsafe class BiggerHDWindowText : DailyModuleBase
 {
-
-    private class TextNodeInfo(uint nodeId, params uint[] nodeIds)
-    {
-        public uint[] NodeID { get; set; } = [nodeId, .. nodeIds];
-        public byte? TextFlag1Original { get; set; }
-        public byte? TextFlag2Original { get; set; }
-        public byte TextFlags1 { get; set; } = 195;
-        public byte TextFlags2 { get; set; } = 0;
-        public byte? FontSize { get; set; }
-        public bool Modified { get; set; }
-    }
-
-    private delegate nint TextInputReceiveEventDelegate
-        (AtkComponentTextInput* component, ushort eventCase, uint a3, nint a4, ushort* a5);
-    [Signature("40 55 53 56 57 41 56 48 8D AC 24 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 48 8B 9D", DetourName = nameof(TextInputReceiveEventDetour))]
+    [Signature(
+        "40 55 53 56 57 41 56 48 8D AC 24 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 48 8B 9D",
+        DetourName = nameof(TextInputReceiveEventDetour))]
     private static Hook<TextInputReceiveEventDelegate>? TextInputReceiveEventHook;
 
     private static readonly Dictionary<string, TextNodeInfo> TextWindows = new()
     {
         { "LookingForGroupDetail", new TextNodeInfo(20) },
-        { "LookingForGroupCondition", new TextNodeInfo(22, 16){ TextFlags1 = 224, TextFlags2 = 1} },
+        { "LookingForGroupCondition", new TextNodeInfo(22, 16) { TextFlags1 = 224, TextFlags2 = 1 } },
     };
 
     private static float FontScale = 2f;
@@ -134,10 +121,13 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
         {
             if (info.TextFlag1Original != null)
                 textNode->TextFlags = (byte)info.TextFlag1Original;
+
             if (info.TextFlag2Original != null)
                 textNode->TextFlags2 = (byte)info.TextFlag2Original;
+
             if (info.FontSize != null)
                 textNode->FontSize = (byte)info.FontSize;
+
             info.Modified = false;
         }
     }
@@ -156,4 +146,18 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
 
         base.Uninit();
     }
+
+    private class TextNodeInfo(uint nodeId, params uint[] nodeIds)
+    {
+        public uint[] NodeID            { get; set; } = [nodeId, .. nodeIds];
+        public byte?  TextFlag1Original { get; set; }
+        public byte?  TextFlag2Original { get; set; }
+        public byte   TextFlags1        { get; set; } = 195;
+        public byte   TextFlags2        { get; set; }
+        public byte?  FontSize          { get; set; }
+        public bool   Modified          { get; set; }
+    }
+
+    private delegate nint TextInputReceiveEventDelegate
+        (AtkComponentTextInput* component, ushort eventCase, uint a3, nint a4, ushort* a5);
 }

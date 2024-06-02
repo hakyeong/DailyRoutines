@@ -1,9 +1,8 @@
-using DailyRoutines.Infos;
+using ClickLib.Clicks;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using FFXIVClientStructs.FFXIV.Client.UI;
-using ClickLib.Clicks;
 
 namespace DailyRoutines.Modules;
 

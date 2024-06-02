@@ -4,7 +4,7 @@ using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
@@ -18,21 +18,13 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoMountTitle", "AutoMountDescription", ModuleCategories.战斗)]
 public unsafe class AutoMount : DailyModuleBase
 {
-    private class Config : ModuleConfiguration
-    {
-        public bool MountWhenZoneChange = true;
-        public bool MountWhenGatherEnd = true;
-        public bool MountWhenCombatEnd = true;
-        public uint SelectedMount = 0;
-    }
-
-    private static AtkUnitBase* NowLoading => (AtkUnitBase*)Service.Gui.GetAddonByName("NowLoading");
-    private static AtkUnitBase* FadeMiddle => (AtkUnitBase*)Service.Gui.GetAddonByName("FadeMiddle");
-
     private static Config ModuleConfig = null!;
 
     private static Mount? SelectedMount;
     private static string MountSearchInput = string.Empty;
+
+    private static AtkUnitBase* NowLoading => (AtkUnitBase*)Service.Gui.GetAddonByName("NowLoading");
+    private static AtkUnitBase* FadeMiddle => (AtkUnitBase*)Service.Gui.GetAddonByName("FadeMiddle");
 
     public override void Init()
     {
@@ -51,7 +43,9 @@ public unsafe class AutoMount : DailyModuleBase
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoMount-CurrentMount")}:");
 
         ImGui.SameLine();
-        ImGui.Text(ModuleConfig.SelectedMount == 0 ? Service.Lang.GetText("AutoMount-RandomMount") : LuminaCache.GetRow<Mount>(ModuleConfig.SelectedMount).Singular.RawString);
+        ImGui.Text(ModuleConfig.SelectedMount == 0
+                       ? Service.Lang.GetText("AutoMount-RandomMount")
+                       : LuminaCache.GetRow<Mount>(ModuleConfig.SelectedMount).Singular.RawString);
 
         ImGui.AlignTextToFramePadding();
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoMount-SelecteMount")}:");
@@ -139,7 +133,9 @@ public unsafe class AutoMount : DailyModuleBase
 
     private static bool? UseMount()
     {
-        return ModuleConfig.SelectedMount == 0 ? ActionManager.Instance()->UseAction(ActionType.GeneralAction, 9) : ActionManager.Instance()->UseAction(ActionType.Mount, ModuleConfig.SelectedMount);
+        return ModuleConfig.SelectedMount == 0
+                   ? ActionManager.Instance()->UseAction(ActionType.GeneralAction, 9)
+                   : ActionManager.Instance()->UseAction(ActionType.Mount, ModuleConfig.SelectedMount);
     }
 
     public override void Uninit()
@@ -148,5 +144,13 @@ public unsafe class AutoMount : DailyModuleBase
         Service.Condition.ConditionChange -= OnConditionChanged;
 
         base.Uninit();
+    }
+
+    private class Config : ModuleConfiguration
+    {
+        public bool MountWhenCombatEnd = true;
+        public bool MountWhenGatherEnd = true;
+        public bool MountWhenZoneChange = true;
+        public uint SelectedMount;
     }
 }

@@ -6,9 +6,7 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Hooking;
-using Dalamud.Interface;
 using Dalamud.Interface.Colors;
-using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using Dalamud.Plugin.Services;
@@ -25,29 +23,6 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoReplaceLocationActionTitle", "AutoReplaceLocationActionDescription", ModuleCategories.技能)]
 public class AutoReplaceLocationAction : DailyModuleBase
 {
-    private class Config : ModuleConfiguration
-    {
-        public readonly Dictionary<uint, bool> EnabledActions = new()
-        {
-            { 7439,  true }, // 地星
-            { 25862, true }, // 礼仪之铃
-            { 3569,  true }, // 庇护所
-            { 188,   true }, // 野战治疗阵
-        };
-
-        public readonly Dictionary<uint, bool> EnabledPetActions = new()
-        {
-            { 3, true }, // 移动
-        };
-
-        public float AdjustDistance = 15;
-        public bool SendMessage = true;
-        public bool EnableCenterArgument = true;
-        public HashSet<uint> BlacklistContent = [];
-    }
-
-    // 返回值为 GameObject*, 无对象则为 0
-    private delegate nint ParseActionCommandArgDelegate(nint a1, nint arg, bool a3, bool a4);
     [Signature("E8 ?? ?? ?? ?? 4C 8B F8 49 B8", DetourName = nameof(ParseActionCommandArgDetour))]
     private static Hook<ParseActionCommandArgDelegate>? ParseActionCommandArgHook;
 
@@ -80,14 +55,17 @@ public class AutoReplaceLocationAction : DailyModuleBase
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoReplaceLocationAction-TheoryHelp"), 30f);
 
         ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
-        ImGui.InputFloat(Service.Lang.GetText("AutoReplaceLocationAction-AdjustDistance"), ref ModuleConfig.AdjustDistance, 0, 0, "%.1f");
+        ImGui.InputFloat(Service.Lang.GetText("AutoReplaceLocationAction-AdjustDistance"), ref ModuleConfig.AdjustDistance,
+                         0, 0, "%.1f");
+
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoReplaceLocationAction-SendMessage"), ref ModuleConfig.SendMessage))
             SaveConfig(ModuleConfig);
 
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoReplaceLocationAction-EnableCenterArg"), ref ModuleConfig.EnableCenterArgument))
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoReplaceLocationAction-EnableCenterArg"),
+                           ref ModuleConfig.EnableCenterArgument))
             SaveConfig(ModuleConfig);
 
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoReplaceLocationAction-EnableCenterArgHelp"));
@@ -121,7 +99,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
 
                 ImGui.TableNextColumn();
                 ImGuiOm.TextImage(action.Name.RawString, ImageHelper.GetIcon(action.Icon).ImGuiHandle,
-                          ImGuiHelpers.ScaledVector2(20f));
+                                  ImGuiHelpers.ScaledVector2(20f));
             }
 
             foreach (var actionPair in ModuleConfig.EnabledPetActions)
@@ -142,6 +120,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
                 ImGuiOm.TextImage(action.Name.RawString, ImageHelper.GetIcon((uint)action.Icon).ImGuiHandle,
                                   ImGuiHelpers.ScaledVector2(20f));
             }
+
             ImGui.EndTable();
         }
     }
@@ -165,8 +144,9 @@ public class AutoReplaceLocationAction : DailyModuleBase
                  });
     }
 
-    private static void OnPreUseActionLocation(ref bool isPrevented, ref ActionType type, ref uint actionID,
-                                               ref ulong targetID, ref Vector3 location, ref uint a4)
+    private static void OnPreUseActionLocation(
+        ref bool isPrevented, ref ActionType type, ref uint actionID,
+        ref ulong targetID, ref Vector3 location, ref uint a4)
     {
         if (ModuleConfig.BlacklistContent.Contains(Service.ClientState.TerritoryType)) return;
         if (!IsNeedToModify && (type != ActionType.Action ||
@@ -194,7 +174,10 @@ public class AutoReplaceLocationAction : DailyModuleBase
 
         var resultLocation = ZoneMapMarkers.Values
                                            .Select(x => x.ToVector3() as Vector3?)
-                                           .FirstOrDefault(x => x.HasValue && Vector3.Distance(x.Value, Service.ClientState.LocalPlayer.Position) < 25);
+                                           .FirstOrDefault(
+                                               x => x.HasValue &&
+                                                    Vector3.Distance(x.Value, Service.ClientState.LocalPlayer.Position) <
+                                                    25);
 
         if (resultLocation != null)
             UpdateLocationIfClose(ref location, resultLocation.Value, ModuleConfig.AdjustDistance);
@@ -211,6 +194,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
                                                .Append(Service.Lang.GetText("AutoReplaceLocationAction-RedirectMessage",
                                                                             ModifiedLocation))
                                                .Build();
+
             Service.Chat.Print(message);
             ModifiedLocation = null;
         }
@@ -219,7 +203,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
     private static unsafe nint ParseActionCommandArgDetour(nint a1, nint arg, bool a3, bool a4)
     {
         var original = ParseActionCommandArgHook.Original(a1, arg, a3, a4);
-        if (!ModuleConfig.EnableCenterArgument || 
+        if (!ModuleConfig.EnableCenterArgument ||
             ModuleConfig.BlacklistContent.Contains(Service.ClientState.TerritoryType)) return original;
 
         var parsedArg = MemoryHelper.ReadSeStringNullTerminated(arg).TextValue;
@@ -229,7 +213,8 @@ public class AutoReplaceLocationAction : DailyModuleBase
         return (nint)Control.GetLocalPlayer();
     }
 
-    private static void UpdateLocationIfClose(ref Vector3 currentLocation, Vector3 candidateLocation, float proximityThreshold)
+    private static void UpdateLocationIfClose(
+        ref Vector3 currentLocation, Vector3 candidateLocation, float proximityThreshold)
     {
         if (Vector3.Distance(currentLocation, candidateLocation) < proximityThreshold)
         {
@@ -240,7 +225,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
 
     private static void HandleAlternativeLocation(ref Vector3 location)
     {
-        if (PresetData.TryGetContent(Service.ClientState.TerritoryType, out var content) && 
+        if (PresetData.TryGetContent(Service.ClientState.TerritoryType, out var content) &&
             content.ContentType.Row is 4 or 5)
         {
             var map = LuminaCache.GetRow<Map>(CurrentMapID);
@@ -250,8 +235,9 @@ public class AutoReplaceLocationAction : DailyModuleBase
         }
     }
 
-    private static void OnPostUseActionLocation(bool result, ActionType actionType, uint actionID, 
-                                                ulong targetID, Vector3 location, uint a4)
+    private static void OnPostUseActionLocation(
+        bool result, ActionType actionType, uint actionID,
+        ulong targetID, Vector3 location, uint a4)
     {
         if (!result || ModifiedLocation == null) return;
 
@@ -272,4 +258,28 @@ public class AutoReplaceLocationAction : DailyModuleBase
 
         base.Uninit();
     }
+
+    private class Config : ModuleConfiguration
+    {
+        public readonly Dictionary<uint, bool> EnabledActions = new()
+        {
+            { 7439, true },  // 地星
+            { 25862, true }, // 礼仪之铃
+            { 3569, true },  // 庇护所
+            { 188, true },   // 野战治疗阵
+        };
+
+        public readonly Dictionary<uint, bool> EnabledPetActions = new()
+        {
+            { 3, true }, // 移动
+        };
+
+        public float AdjustDistance = 15;
+        public HashSet<uint> BlacklistContent = [];
+        public bool EnableCenterArgument = true;
+        public bool SendMessage = true;
+    }
+
+    // 返回值为 GameObject*, 无对象则为 0
+    private delegate nint ParseActionCommandArgDelegate(nint a1, nint arg, bool a3, bool a4);
 }

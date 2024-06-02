@@ -1,4 +1,3 @@
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud;
 
@@ -7,11 +6,11 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoEnableAttackTitle", "AutoEnableAttackDescription", ModuleCategories.¼¼ÄÜ)]
 public class AutoEnableAttack : DailyModuleBase
 {
-    private nint AutoAttackAddress = nint.Zero;
-    private byte[] AutoAttackOriginalBytes = new byte[12];
-
     private readonly byte[] AutoAttackOverwriteBytes =
         [0x41, 0xF6, 0x47, 0x39, 0x04, 0x0F, 0x85, 0xA7, 0x00, 0x00, 0x00, 0x90];
+
+    private nint AutoAttackAddress = nint.Zero;
+    private byte[] AutoAttackOriginalBytes = new byte[12];
 
     public override void Init()
     {

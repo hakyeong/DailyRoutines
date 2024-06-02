@@ -1,5 +1,4 @@
 using System.Timers;
-using DailyRoutines.Infos;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 
 namespace DailyRoutines.Modules;
@@ -30,6 +29,7 @@ public class AutoAntiAfk : DailyModuleBase
             AfkTimer.Elapsed -= ResetAfkTimers;
             AfkTimer.Dispose();
         }
+
         AfkTimer = null;
     }
 }

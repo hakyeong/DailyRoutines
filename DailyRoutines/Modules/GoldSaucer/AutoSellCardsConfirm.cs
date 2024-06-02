@@ -1,16 +1,14 @@
 using System;
 using System.Numerics;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Colors;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using ECommons.Throttlers;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -102,6 +100,7 @@ public class AutoSellCardsConfirm : DailyModuleBase
             var message = new SeStringBuilder().Append(DRPrefix).Append(" ")
                                                .Append(Service.Lang.GetSeString(
                                                            "AutoSellCardsConfirm-CurrentCardNotInDeckMessage")).Build();
+
             Service.Chat.Print(message);
 
             TaskManager?.Abort();

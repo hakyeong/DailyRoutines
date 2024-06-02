@@ -2,12 +2,11 @@ using System;
 using System.Collections.Generic;
 using ClickLib;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Utility;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -17,16 +16,10 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoJumboCactpotTitle", "AutoJumboCactpotDescription", ModuleCategories.½ðµú)]
 public class AutoJumboCactpot : DailyModuleBase
 {
-    private enum Mode
-    {
-        Random,
-        Fixed
-    }
-
     private static readonly Dictionary<Mode, string> NumberModeLoc = new()
     {
         { Mode.Random, Service.Lang.GetText("AutoJumboCactpot-Random") },
-        { Mode.Fixed, Service.Lang.GetText("AutoJumboCactpot-Fixed") }
+        { Mode.Fixed, Service.Lang.GetText("AutoJumboCactpot-Fixed") },
     };
 
     private static Mode NumberMode = Mode.Random;
@@ -91,7 +84,7 @@ public class AutoJumboCactpot : DailyModuleBase
             {
                 Mode.Random => rnd.Next(0, 9999),
                 Mode.Fixed => FixedNumber,
-                _ => 0
+                _ => 0,
             };
 
             AddonHelper.Callback(addon, true, number);
@@ -118,5 +111,11 @@ public class AutoJumboCactpot : DailyModuleBase
         Service.AddonLifecycle.UnregisterListener(OnAddon);
 
         base.Uninit();
+    }
+
+    private enum Mode
+    {
+        Random,
+        Fixed,
     }
 }

@@ -3,7 +3,6 @@ using System.Numerics;
 using System.Text.RegularExpressions;
 using ClickLib;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
@@ -12,7 +11,7 @@ using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Colors;
 using Dalamud.Memory;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -26,21 +25,24 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoSubmarineCollectTitle", "AutoSubmarineCollectDescription", ModuleCategories.界面操作)]
 public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 {
-    private static AtkUnitBase* SelectString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
-    private static AtkUnitBase* SelectYesno => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectYesno");
-    // 航行结果
-    private static AtkUnitBase* AirShipExplorationResult =>
-        (AtkUnitBase*)Service.Gui.GetAddonByName("AirShipExplorationResult");
-    // 出发详情
-    private static AtkUnitBase* AirShipExplorationDetail =>
-        (AtkUnitBase*)Service.Gui.GetAddonByName("AirShipExplorationDetail");
-    private static AtkUnitBase* CompanyCraftSupply => (AtkUnitBase*)Service.Gui.GetAddonByName("CompanyCraftSupply");
-
     private static TaskManager? RepairTaskManager;
 
     private static readonly HashSet<uint> CompanyWorkshopZones = [423, 424, 425, 653, 984];
     private static string RequisiteMaterialsName = string.Empty;
     private static int? RequisiteMaterials;
+    private static AtkUnitBase* SelectString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
+
+    private static AtkUnitBase* SelectYesno => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectYesno");
+
+    // 航行结果
+    private static AtkUnitBase* AirShipExplorationResult =>
+        (AtkUnitBase*)Service.Gui.GetAddonByName("AirShipExplorationResult");
+
+    // 出发详情
+    private static AtkUnitBase* AirShipExplorationDetail =>
+        (AtkUnitBase*)Service.Gui.GetAddonByName("AirShipExplorationDetail");
+
+    private static AtkUnitBase* CompanyCraftSupply => (AtkUnitBase*)Service.Gui.GetAddonByName("CompanyCraftSupply");
 
     public override void Init()
     {
@@ -112,6 +114,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
                                                .Append(Service.Lang.GetSeString(
                                                            "AutoSubmarineCollect-LackSpecificItems",
                                                            SeString.CreateItemLink(10373))).Build();
+
             Service.Chat.Print(message);
 
             TaskManager.Abort();
@@ -124,6 +127,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
                                                .Append(Service.Lang.GetSeString(
                                                            "AutoSubmarineCollect-LackSpecificItems",
                                                            SeString.CreateItemLink(10155))).Build();
+
             Service.Chat.Print(message);
 
             TaskManager.Abort();
@@ -179,7 +183,8 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
             RepairTaskManager.Enqueue(RepairSubmarines);
             RepairTaskManager.DelayNext(20);
             RepairTaskManager.Enqueue(() => AddonHelper.Callback(CompanyCraftSupply, true, 5));
-            RepairTaskManager.Enqueue(ClickPreviousVoyageLog); return true;
+            RepairTaskManager.Enqueue(ClickPreviousVoyageLog);
+            return true;
         }
 
         if (SelectString != null && IsAddonAndNodesReady(SelectString))

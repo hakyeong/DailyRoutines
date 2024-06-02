@@ -13,21 +13,11 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoPreventDuplicateStatusTitle", "AutoPreventDuplicateStatusDescription", ModuleCategories.技能)]
 public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
 {
-    private enum DetectType
-    {
-        Self = 0,
-        Member = 1,
-        Target = 2
-    }
-
-    private sealed record DuplicateActionInfo
-        (uint ActionID, DetectType DetectType, uint[] StatusID, uint[] SecondStatusID);
-
     private static readonly Dictionary<DetectType, string> DetectTypeLoc = new()
     {
         { DetectType.Self, Service.Lang.GetText("AutoPreventDuplicateStatus-Self") },
         { DetectType.Member, Service.Lang.GetText("AutoPreventDuplicateStatus-Member") },
-        { DetectType.Target, Service.Lang.GetText("AutoPreventDuplicateStatus-Target") }
+        { DetectType.Target, Service.Lang.GetText("AutoPreventDuplicateStatus-Target") },
     };
 
     private static readonly Dictionary<uint, DuplicateActionInfo> DuplicateActions = new()
@@ -127,7 +117,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
         { 3603, new(3603, DetectType.Target, [148], []) },
         { 24287, new(24287, DetectType.Target, [148], []) },
         { 7523, new(7523, DetectType.Target, [148], []) },
-        { 18317, new(18317, DetectType.Target, [148], []) }
+        { 18317, new(18317, DetectType.Target, [148], []) },
     };
 
     private static Dictionary<uint, bool> ConfigEnabledActions = [];
@@ -139,6 +129,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
 
         DuplicateActions.Keys.Except(ConfigEnabledActions.Keys).ToList()
                         .ForEach(key => ConfigEnabledActions[key] = true);
+
         ConfigEnabledActions.Keys.Except(DuplicateActions.Keys).ToList()
                             .ForEach(key => ConfigEnabledActions.Remove(key));
 
@@ -149,7 +140,9 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
 
     public override void ConfigUI()
     {
-        if (ImGui.BeginCombo("###ActionEnabledCombo", Service.Lang.GetText("AutoPreventDuplicateStatus-EnabledActionAmount", ConfigEnabledActions.Count(x => x.Value)),
+        if (ImGui.BeginCombo("###ActionEnabledCombo",
+                             Service.Lang.GetText("AutoPreventDuplicateStatus-EnabledActionAmount",
+                                                  ConfigEnabledActions.Count(x => x.Value)),
                              ImGuiComboFlags.HeightLarge))
         {
             if (ImGui.BeginTable("###ActionTable", 3, ImGuiTableFlags.Borders))
@@ -228,6 +221,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
             case DetectType.Self:
                 statusManager = ((FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara*)
                                     Service.ClientState.LocalPlayer.Address)->GetStatusManager;
+
                 break;
             case DetectType.Target:
                 if (Service.Target.Target != null && Service.Target.Target is BattleChara)
@@ -275,4 +269,13 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
 
         base.Uninit();
     }
+
+    private enum DetectType
+    {
+        Self = 0,
+        Member = 1,
+        Target = 2,
+    }
+
+    private sealed record DuplicateActionInfo(uint ActionID, DetectType DetectType, uint[] StatusID, uint[] SecondStatusID);
 }

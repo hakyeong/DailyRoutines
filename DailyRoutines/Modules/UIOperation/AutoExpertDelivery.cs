@@ -4,7 +4,6 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using ClickLib;
 using ClickLib.Clicks;
-using DailyRoutines.Infos;
 using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
@@ -25,25 +24,28 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoExpertDeliveryTitle", "AutoExpertDeliveryDescription", ModuleCategories.界面操作)]
 public unsafe class AutoExpertDelivery : DailyModuleBase
 {
-    private static AtkUnitBase* GrandCompanySupplyList =>
-        (AtkUnitBase*)Service.Gui.GetAddonByName("GrandCompanySupplyList");
-    private static AtkUnitBase* GrandCompanySupplyReward =>
-        (AtkUnitBase*)Service.Gui.GetAddonByName("GrandCompanySupplyReward");
-    private static AtkUnitBase* SelectYesno =>
-        (AtkUnitBase*)Service.Gui.GetAddonByName("SelectYesno");
-
     private static readonly List<InventoryType> ValidInventoryTypes =
     [
         InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3,
         InventoryType.Inventory4, InventoryType.ArmoryBody, InventoryType.ArmoryEar, InventoryType.ArmoryFeets,
         InventoryType.ArmoryHands, InventoryType.ArmoryHead, InventoryType.ArmoryLegs, InventoryType.ArmoryRings,
         InventoryType.ArmoryNeck, InventoryType.ArmoryWrist, InventoryType.ArmoryRings, InventoryType.ArmoryMainHand,
-        InventoryType.ArmoryOffHand
+        InventoryType.ArmoryOffHand,
     ];
+
     private static HashSet<uint> HQItems = [];
 
     private static bool SkipWhenHQ;
     private static DateTime? _LastUpdate;
+
+    private static AtkUnitBase* GrandCompanySupplyList =>
+        (AtkUnitBase*)Service.Gui.GetAddonByName("GrandCompanySupplyList");
+
+    private static AtkUnitBase* GrandCompanySupplyReward =>
+        (AtkUnitBase*)Service.Gui.GetAddonByName("GrandCompanySupplyReward");
+
+    private static AtkUnitBase* SelectYesno =>
+        (AtkUnitBase*)Service.Gui.GetAddonByName("SelectYesno");
 
     public override void Init()
     {
@@ -114,6 +116,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
         var parts = Marshal.PtrToStringUTF8((nint)AtkStage.GetSingleton()->GetStringArrayData()[32]->StringArray[2])
                            .Split('/');
+
         var capAmount = int.Parse(parts[1].Replace(",", ""));
 
         var grandCompany = UIState.Instance()->PlayerState.GrandCompany;
@@ -216,7 +219,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         {
             AddonEvent.PostSetup => true,
             AddonEvent.PreFinalize => false,
-            _ => Overlay.IsOpen
+            _ => Overlay.IsOpen,
         };
     }
 

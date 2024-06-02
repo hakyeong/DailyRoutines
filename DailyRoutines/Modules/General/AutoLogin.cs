@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using ClickLib;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -22,51 +21,10 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoLoginTitle", "AutoLoginDescription", ModuleCategories.一般)]
 public class AutoLogin : DailyModuleBase
 {
-    private class LoginInfo(uint worldID, int index) : IEquatable<LoginInfo>
-    {
-        public uint WorldID { get; set; } = worldID;
-        public int CharaIndex { get; set; } = index;
-
-        public override bool Equals(object? obj)
-        {
-            return Equals(obj as LoginInfo);
-        }
-
-        public bool Equals(LoginInfo? other)
-        {
-            if (other is null || GetType() != other.GetType())
-                return false;
-
-            return WorldID == other.WorldID && CharaIndex == other.CharaIndex;
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(WorldID, CharaIndex);
-        }
-
-        public static bool operator ==(LoginInfo? lhs, LoginInfo? rhs)
-        {
-            if (lhs is null) return rhs is null;
-            return lhs.Equals(rhs);
-        }
-
-        public static bool operator !=(LoginInfo lhs, LoginInfo rhs)
-        {
-            return !(lhs == rhs);
-        }
-    }
-
-    private enum BehaviourMode
-    {
-        Once,
-        Repeat
-    }
-
     private static readonly Dictionary<BehaviourMode, string> BehaviourModeLoc = new()
     {
         { BehaviourMode.Once, Service.Lang.GetText("AutoLogin-Once") },
-        { BehaviourMode.Repeat, Service.Lang.GetText("AutoLogin-Repeat") }
+        { BehaviourMode.Repeat, Service.Lang.GetText("AutoLogin-Repeat") },
     };
 
     private static bool HasLoginOnce;
@@ -137,6 +95,7 @@ public class AutoLogin : DailyModuleBase
             if (ImGui.InputInt("##AutoLogin-EnterCharaIndex", ref SelectedCharaIndex, 0, 0,
                                ImGuiInputTextFlags.EnterReturnsTrue))
                 SelectedCharaIndex = Math.Clamp(SelectedCharaIndex, 0, 8);
+
             ImGuiOm.TooltipHover(Service.Lang.GetText("AutoLogin-CharaIndexInputTooltip"));
             ImGui.EndGroup();
 
@@ -167,6 +126,7 @@ public class AutoLogin : DailyModuleBase
                 ImGui.PushStyleColor(ImGuiCol.Text, i % 2 == 0 ? ImGuiColors.TankBlue : ImGuiColors.DalamudWhite);
                 ImGui.Selectable(
                     $"{i + 1}. {Service.Lang.GetText("AutoLogin-LoginInfoDisplayText", world.Name.RawString, world.DataCenter.Value.Name.RawString, info.CharaIndex)}");
+
                 ImGui.PopStyleColor();
 
                 if (ImGui.BeginDragDropSource())
@@ -175,6 +135,7 @@ public class AutoLogin : DailyModuleBase
                     ImGui.TextColored(ImGuiColors.DalamudYellow,
                                       Service.Lang.GetText("AutoLogin-LoginInfoDisplayText", world.Name.RawString,
                                                            world.DataCenter.Value.Name.RawString, info.CharaIndex));
+
                     ImGui.EndDragDropSource();
                 }
 
@@ -347,5 +308,37 @@ public class AutoLogin : DailyModuleBase
         HasLoginOnce = false;
 
         base.Uninit();
+    }
+
+    private class LoginInfo(uint worldID, int index) : IEquatable<LoginInfo>
+    {
+        public uint WorldID    { get; set; } = worldID;
+        public int  CharaIndex { get; set; } = index;
+
+        public bool Equals(LoginInfo? other)
+        {
+            if (other is null || GetType() != other.GetType())
+                return false;
+
+            return WorldID == other.WorldID && CharaIndex == other.CharaIndex;
+        }
+
+        public override bool Equals(object? obj) { return Equals(obj as LoginInfo); }
+
+        public override int GetHashCode() { return HashCode.Combine(WorldID, CharaIndex); }
+
+        public static bool operator ==(LoginInfo? lhs, LoginInfo? rhs)
+        {
+            if (lhs is null) return rhs is null;
+            return lhs.Equals(rhs);
+        }
+
+        public static bool operator !=(LoginInfo lhs, LoginInfo rhs) { return !(lhs == rhs); }
+    }
+
+    private enum BehaviourMode
+    {
+        Once,
+        Repeat,
     }
 }

@@ -1,67 +1,33 @@
-using System.Runtime.InteropServices;
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
-using ECommons.Interop;
-using ImGuiNET;
-using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
+using ECommons.Interop;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoSwitchIMEWhenInputTitle", "AutoSwitchIMEWhenInputDescription", ModuleCategories.系统)]
 public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
 {
-    private class SavedIME : IEquatable<SavedIME>, IComparable<SavedIME>
-    {
-        public string Name { get; set; } = null!;
-        public int Mode { get; set; }
-        public int Sentence { get; set; }
+    [Signature(
+        "40 55 53 56 57 41 56 48 8D AC 24 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 48 8B 9D",
+        DetourName = nameof(TextInputReceiveEventDetour))]
+    private static Hook<TextInputReceiveEventDelegate>? TextInputReceiveEventHook;
 
-        public SavedIME() { }
+    private static Config ModuleConfig = null!;
 
-        public SavedIME(string name, int mode, int sentence)
-        {
-            Name = name;
-            Mode = mode;
-            Sentence = sentence;
-        }
+    private static readonly List<SavedIME> InstalledIME = [];
 
-        public override bool Equals(object? obj) => Equals(obj as SavedIME);
-
-        public bool Equals(SavedIME? other) =>
-            other != null &&
-            Name == other.Name &&
-            Mode == other.Mode &&
-            Sentence == other.Sentence;
-
-        public override int GetHashCode() => HashCode.Combine(Name, Mode, Sentence);
-
-        public int CompareTo(SavedIME? other)
-        {
-            if (other == null) return 1;
-
-            var nameComparison = string.Compare(Name, other.Name, StringComparison.Ordinal);
-            if (nameComparison != 0) return nameComparison;
-
-            var modeComparison = Mode.CompareTo(other.Mode);
-            if (modeComparison != 0) return modeComparison;
-
-            return Sentence.CompareTo(other.Sentence);
-        }
-    }
-
-    private class Config : ModuleConfiguration
-    {
-        public SavedIME? SavedIME;
-        public bool RestoreWhenFocusStop = true;
-    }
+    private static SavedIME? CurrentIME;
 
     [DllImport("imm32.dll")]
     public static extern nint ImmGetContext(nint hWnd);
@@ -71,17 +37,6 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
 
     [DllImport("imm32.dll")]
     public static extern bool ImmSetConversionStatus(nint hIMC, int mode, int sentence);
-
-    private delegate nint TextInputReceiveEventDelegate
-        (AtkComponentTextInput* component, ushort eventCase, uint a3, nint a4, ushort* a5);
-    [Signature("40 55 53 56 57 41 56 48 8D AC 24 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 48 8B 9D", DetourName = nameof(TextInputReceiveEventDetour))]
-    private static Hook<TextInputReceiveEventDelegate>? TextInputReceiveEventHook;
-
-    private static Config ModuleConfig = null!;
-
-    private static readonly List<SavedIME> InstalledIME = [];
-
-    private static SavedIME? CurrentIME;
 
     public override void Init()
     {
@@ -99,7 +54,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
 
         ImGui.Spacing();
 
-        var tableSize = (ImGui.GetContentRegionAvail() / 2 - ImGuiHelpers.ScaledVector2(20f)) with { Y = 0 };
+        var tableSize = ((ImGui.GetContentRegionAvail() / 2) - ImGuiHelpers.ScaledVector2(20f)) with { Y = 0 };
         if (ImGui.BeginTable("IMESelectTable", 4, ImGuiTableFlags.Borders, tableSize))
         {
             ImGui.TableSetupColumn("单选框", ImGuiTableColumnFlags.WidthFixed, Styles.RadioButtionSize.X);
@@ -150,13 +105,16 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
         ImGui.Spacing();
 
         var saved = ModuleConfig.SavedIME;
-        ImGui.Text(Service.Lang.GetText("AutoSwitchIMEWhenInput-SavedIME", saved == null ? "无" : $"{saved.Name} ({saved.Mode}/{saved.Sentence})"));
+        ImGui.Text(Service.Lang.GetText("AutoSwitchIMEWhenInput-SavedIME",
+                                        saved == null ? "无" : $"{saved.Name} ({saved.Mode}/{saved.Sentence})"));
 
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoSwitchIMEWhenInput-RestoreWhenFocusStop"), ref ModuleConfig.RestoreWhenFocusStop))
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoSwitchIMEWhenInput-RestoreWhenFocusStop"),
+                           ref ModuleConfig.RestoreWhenFocusStop))
             SaveConfig(ModuleConfig);
     }
 
-    private static nint TextInputReceiveEventDetour(AtkComponentTextInput* component, ushort eventCase, uint a3, nint a4, ushort* a5)
+    private static nint TextInputReceiveEventDetour(
+        AtkComponentTextInput* component, ushort eventCase, uint a3, nint a4, ushort* a5)
     {
         var original = TextInputReceiveEventHook.Original(component, eventCase, a3, a4, a5);
         switch (eventCase)
@@ -201,8 +159,9 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
         {
             Name = lang.LayoutName,
             Mode = mode,
-            Sentence = sentence
+            Sentence = sentence,
         };
+
         return result;
     }
 
@@ -223,6 +182,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
             var ptr = ImmGetContext(gameHandle);
             if (!ImmSetConversionStatus(ptr, ime.Mode, ime.Sentence))
                 Service.Log.Debug("获取IMM转换状态失败, 切换输入法失败");
+
             break;
         }
 
@@ -234,6 +194,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
             var ptr = ImmGetContext(gameHandle);
             if (!ImmSetConversionStatus(ptr, ime.Mode, ime.Sentence))
                 Service.Log.Debug("获取IMM转换状态失败, 切换输入法失败");
+
             break;
         }
     }
@@ -242,9 +203,8 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
     {
         InstalledIME.Clear();
         if (!WindowFunctions.TryFindGameWindow(out var gameHandle))
-        {
             Service.Log.Debug("获取游戏窗口失败, 刷新输入法失败");
-        }
+
         var hIMC = ImmGetContext(gameHandle);
         if (hIMC == nint.Zero)
         {
@@ -261,7 +221,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
             {
                 Name = lang.LayoutName,
                 Mode = mode,
-                Sentence = sentence
+                Sentence = sentence,
             });
         }
     }
@@ -272,4 +232,52 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
 
         base.Uninit();
     }
+
+    private class SavedIME : IEquatable<SavedIME>, IComparable<SavedIME>
+    {
+        public SavedIME() { }
+
+        public SavedIME(string name, int mode, int sentence)
+        {
+            Name = name;
+            Mode = mode;
+            Sentence = sentence;
+        }
+
+        public string Name     { get; set; } = null!;
+        public int    Mode     { get; set; }
+        public int    Sentence { get; set; }
+
+        public int CompareTo(SavedIME? other)
+        {
+            if (other == null) return 1;
+
+            var nameComparison = string.Compare(Name, other.Name, StringComparison.Ordinal);
+            if (nameComparison != 0) return nameComparison;
+
+            var modeComparison = Mode.CompareTo(other.Mode);
+            if (modeComparison != 0) return modeComparison;
+
+            return Sentence.CompareTo(other.Sentence);
+        }
+
+        public bool Equals(SavedIME? other) =>
+            other != null &&
+            Name == other.Name &&
+            Mode == other.Mode &&
+            Sentence == other.Sentence;
+
+        public override bool Equals(object? obj) => Equals(obj as SavedIME);
+
+        public override int GetHashCode() => HashCode.Combine(Name, Mode, Sentence);
+    }
+
+    private class Config : ModuleConfiguration
+    {
+        public bool RestoreWhenFocusStop = true;
+        public SavedIME? SavedIME;
+    }
+
+    private delegate nint TextInputReceiveEventDelegate
+        (AtkComponentTextInput* component, ushort eventCase, uint a3, nint a4, ushort* a5);
 }

@@ -1,5 +1,4 @@
 using System.Windows.Forms;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
@@ -14,13 +13,11 @@ namespace DailyRoutines.Modules;
                    ModuleCategories.系统)]
 public unsafe class ClipboardMultiLineToOneLine : DailyModuleBase
 {
-    private delegate nint GetClipboardDataDelegate(nint a1);
+    internal static bool IsBlocked;
 
     [Signature("40 53 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 8B D9 BA",
                DetourName = nameof(GetClipboardDataDetour))]
     private readonly Hook<GetClipboardDataDelegate>? GetClipboardDataHook;
-
-    internal static bool IsBlocked;
 
     public override void Init()
     {
@@ -37,7 +34,7 @@ public unsafe class ClipboardMultiLineToOneLine : DailyModuleBase
         {
             AddonEvent.PostSetup => true,
             AddonEvent.PreFinalize => false,
-            _ => IsBlocked
+            _ => IsBlocked,
         };
     }
 
@@ -53,6 +50,7 @@ public unsafe class ClipboardMultiLineToOneLine : DailyModuleBase
 
         var modifiedText = originalText.Replace("\r\n", " ").Replace("\n", " ").Replace("\u000D", " ")
                                        .Replace("\u000D\u000A", " ");
+
         if (modifiedText == originalText) return GetClipboardDataHook.Original(a1);
 
         return (nint)Utf8String.FromString(modifiedText);
@@ -64,4 +62,6 @@ public unsafe class ClipboardMultiLineToOneLine : DailyModuleBase
 
         base.Uninit();
     }
+
+    private delegate nint GetClipboardDataDelegate(nint a1);
 }

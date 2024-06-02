@@ -4,7 +4,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
@@ -24,32 +23,28 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoAntiCensorshipTitle", "AutoAntiCensorshipDescription", ModuleCategories.系统)]
 public unsafe class AutoAntiCensorship : DailyModuleBase
 {
-    private delegate void GetFilteredUtf8StringDelegate(nint vulgarInstance, Utf8String* str);
     [Signature("E8 ?? ?? ?? ?? 48 8B C3 48 83 C4 ?? 5B C3 CC CC CC CC CC CC CC 48 83 EC")]
     private static GetFilteredUtf8StringDelegate? GetFilteredUtf8String;
 
-    private delegate nint Utf8StringCopyDelegate(nint a1, nint a2, nint a3 = 1);
-    [Signature("48 89 5C 24 ?? 57 48 83 EC ?? 48 8B FA 48 8B D9 48 3B D1 74 ?? 48 8B 52 ?? 41 B0 ?? E8 ?? ?? ?? ?? 4C 8B 43 ?? 48 8B 17 48 8B 0B E8 ?? ?? ?? ?? 0F B6 47 ?? 88 43 ?? 48 8B 47 ?? 48 89 43 ?? 48 8B C3 48 8B 5C 24 ?? 48 83 C4 ?? 5F C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 89 5C 24")]
+    [Signature(
+        "48 89 5C 24 ?? 57 48 83 EC ?? 48 8B FA 48 8B D9 48 3B D1 74 ?? 48 8B 52 ?? 41 B0 ?? E8 ?? ?? ?? ?? 4C 8B 43 ?? 48 8B 17 48 8B 0B E8 ?? ?? ?? ?? 0F B6 47 ?? 88 43 ?? 48 8B 47 ?? 48 89 43 ?? 48 8B C3 48 8B 5C 24 ?? 48 83 C4 ?? 5F C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 89 5C 24")]
     private static Utf8StringCopyDelegate? Utf8StringCopy;
 
-    private delegate nint LocalMessageDisplayDelegate(nint a1, nint a2);
     [Signature("40 53 48 83 EC ?? 48 8D 99 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 48 8B 0D",
                DetourName = nameof(LocalMessageDisplayDetour))]
     private static Hook<LocalMessageDisplayDelegate>? LocalMessageDisplayHook;
 
-    private delegate byte ProcessSendedChatDelegate(nint uiModule, byte** message, nint a3);
     [Signature("E8 ?? ?? ?? ?? FE 86 ?? ?? ?? ?? C7 86 ?? ?? ?? ?? ?? ?? ?? ??",
                DetourName = nameof(ProcessSendedChatDetour))]
     private static Hook<ProcessSendedChatDelegate>? ProcessSendedChatHook;
 
-    private delegate nint PartyFinderMessageDisplayDelegate(nint a1, nint a2);
     [Signature("48 89 5C 24 ?? 57 48 83 EC ?? 48 8D 99 ?? ?? ?? ?? 48 8B F9 48 8B CB E8",
                DetourName = nameof(PartyFinderMessageDisplayDetour))]
     private static Hook<PartyFinderMessageDisplayDelegate>? PartyFinderMessageDisplayHook;
 
-    private delegate byte LookingForGroupConditionReceiveEventDelegate(nint a1, nint a2);
-    [Signature("48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ?? ?? ?? ?? B8 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 2B E0 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 48 8B D9",
-               DetourName = nameof(LookingForGroupConditionReceiveEventDetour))]
+    [Signature(
+        "48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ?? ?? ?? ?? B8 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 2B E0 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 48 8B D9",
+        DetourName = nameof(LookingForGroupConditionReceiveEventDetour))]
     private static Hook<LookingForGroupConditionReceiveEventDelegate>? LookingForGroupConditionReceiveEventHook;
 
     private static readonly char[] SpecialChars =
@@ -57,10 +52,10 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
 
     private static Dictionary<char, char>? SpecialCharTranslateDictionary;
     private static Dictionary<char, char>? SpecialCharTranslateDictionaryRe;
+    private string PreviewBypass = string.Empty;
+    private string PreviewCensorship = string.Empty;
 
     private string PreviewInput = string.Empty;
-    private string PreviewCensorship = string.Empty;
-    private string PreviewBypass = string.Empty;
 
     public override void Init()
     {
@@ -182,11 +177,11 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
     }
 
     // 本地聊天消息显示处理函数
-    private static nint LocalMessageDisplayDetour(nint a1, nint a2) 
+    private static nint LocalMessageDisplayDetour(nint a1, nint a2)
         => Utf8StringCopy(a1 + 1096, a2);
 
     // 招募板信息显示处理函数
-    private static nint PartyFinderMessageDisplayDetour(nint a1, nint a2) 
+    private static nint PartyFinderMessageDisplayDetour(nint a1, nint a2)
         => Utf8StringCopy(a1 + 10488, a2);
 
     // 获取屏蔽词处理后的文本
@@ -235,7 +230,8 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
             }
 
             text = tempResult.ToString();
-        } while (isCensored);
+        }
+        while (isCensored);
 
         return ReplaceSpecialChars(text, true);
     }
@@ -266,8 +262,17 @@ public unsafe class AutoAntiCensorship : DailyModuleBase
         return new string(input.Select(c => dic.TryGetValue(c, out var replacement) ? replacement : c).ToArray());
     }
 
-    private static string InsertDots(string input)
-    {
-        return string.Join('.', input.ToCharArray());
-    }
+    private static string InsertDots(string input) { return string.Join('.', input.ToCharArray()); }
+
+    private delegate void GetFilteredUtf8StringDelegate(nint vulgarInstance, Utf8String* str);
+
+    private delegate nint Utf8StringCopyDelegate(nint a1, nint a2, nint a3 = 1);
+
+    private delegate nint LocalMessageDisplayDelegate(nint a1, nint a2);
+
+    private delegate byte ProcessSendedChatDelegate(nint uiModule, byte** message, nint a3);
+
+    private delegate nint PartyFinderMessageDisplayDelegate(nint a1, nint a2);
+
+    private delegate byte LookingForGroupConditionReceiveEventDelegate(nint a1, nint a2);
 }

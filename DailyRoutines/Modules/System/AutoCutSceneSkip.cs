@@ -1,11 +1,10 @@
 using ClickLib;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -16,19 +15,19 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoCutSceneSkipTitle", "AutoCutSceneSkipDescription", ModuleCategories.系统)]
 public class AutoCutSceneSkip : DailyModuleBase
 {
-    private delegate void CutsceneHandleInputDelegate(nint a1);
+    private const string ConditionSig = "75 11 BA ?? ?? ?? ?? 48 8B CF E8 ?? ?? ?? ?? 84 C0 74 52";
+    private static nint ConditionAddress;
+
     [Signature("40 53 48 83 EC 20 80 79 29 00 48 8B D9 0F 85", DetourName = nameof(CutsceneHandleInputDetour))]
     private readonly Hook<CutsceneHandleInputDelegate>? CutsceneHandleInputHook;
 
-    private delegate nint GetCutSceneRowDelegate(uint row);
-    [Signature("48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 44 8B C1 BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 75 ?? 48 83 C4 ?? C3 48 8B 00 48 83 C4 ?? C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 8B 05 ?? ?? ?? ?? BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E9 ?? ?? ?? ?? CC CC CC CC CC CC CC CC 48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 44 8B C1 BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 75 ?? 48 83 C4 ?? C3 48 8B 00 48 83 C4 ?? C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 8B 05 ?? ?? ?? ?? BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E9 ?? ?? ?? ?? CC CC CC CC CC CC CC CC 48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 44 8B CA", DetourName = nameof(GetCutSceneRowDetour))]
+    [Signature(
+        "48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 44 8B C1 BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 75 ?? 48 83 C4 ?? C3 48 8B 00 48 83 C4 ?? C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 8B 05 ?? ?? ?? ?? BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E9 ?? ?? ?? ?? CC CC CC CC CC CC CC CC 48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 44 8B C1 BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 75 ?? 48 83 C4 ?? C3 48 8B 00 48 83 C4 ?? C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 8B 05 ?? ?? ?? ?? BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E9 ?? ?? ?? ?? CC CC CC CC CC CC CC CC 48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 44 8B CA",
+        DetourName = nameof(GetCutSceneRowDetour))]
     private readonly Hook<GetCutSceneRowDelegate>? GetCutSceneRowHook;
 
     private uint CurrentCutscene;
     private bool ProhibitSkippingUnseenCutscene;
-
-    private const string ConditionSig = "75 11 BA ?? ?? ?? ?? 48 8B CF E8 ?? ?? ?? ?? 84 C0 74 52";
-    private static nint ConditionAddress;
 
     public override void Init()
     {
@@ -75,7 +74,8 @@ public class AutoCutSceneSkip : DailyModuleBase
             {
                 if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonAndNodesReady(addon))
                 {
-                    if (addon->GetTextNodeById(2)->NodeText.ExtractText().Contains(LuminaCache.GetRow<Addon>(281).Text.RawString))
+                    if (addon->GetTextNodeById(2)->NodeText.ExtractText()
+                                                           .Contains(LuminaCache.GetRow<Addon>(281).Text.RawString))
                     {
                         var state = Click.TrySendClick("select_string1");
                         if (state)
@@ -83,6 +83,7 @@ public class AutoCutSceneSkip : DailyModuleBase
                             TaskManager.Abort();
                             return true;
                         }
+
                         return false;
                     }
                 }
@@ -101,4 +102,8 @@ public class AutoCutSceneSkip : DailyModuleBase
         CurrentCutscene = row;
         return GetCutSceneRowHook.Original(row);
     }
+
+    private delegate void CutsceneHandleInputDelegate(nint a1);
+
+    private delegate nint GetCutSceneRowDelegate(uint row);
 }

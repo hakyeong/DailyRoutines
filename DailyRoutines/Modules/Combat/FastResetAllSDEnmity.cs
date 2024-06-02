@@ -1,5 +1,4 @@
 using System.Linq;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
@@ -11,9 +10,8 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("FastResetAllSDEnmityTitle", "FastResetAllSDEnmityDescription", ModuleCategories.战斗)]
 public class FastResetAllSDEnmity : DailyModuleBase
 {
-    private static bool IsAddCommand = true;
-
     private const string Command = "resetallsd";
+    private static bool IsAddCommand = true;
 
     public override void Init()
     {
@@ -25,7 +23,7 @@ public class FastResetAllSDEnmity : DailyModuleBase
         {
             Service.CommandManager.AddSubCommand(Command, new CommandInfo(OnCommand)
             {
-                HelpMessage = Service.Lang.GetText("FastResetAllSDEnmity-CommandHelp")
+                HelpMessage = Service.Lang.GetText("FastResetAllSDEnmity-CommandHelp"),
             });
         }
     }
@@ -41,7 +39,7 @@ public class FastResetAllSDEnmity : DailyModuleBase
             {
                 Service.CommandManager.AddSubCommand(Command, new CommandInfo(OnCommand)
                 {
-                    HelpMessage = Service.Lang.GetText("FastResetAllSDEnmity-CommandHelp")
+                    HelpMessage = Service.Lang.GetText("FastResetAllSDEnmity-CommandHelp"),
                 });
             }
             else
@@ -49,10 +47,7 @@ public class FastResetAllSDEnmity : DailyModuleBase
         }
     }
 
-    private static void OnCommand(string command, string arguments)
-    {
-        ResetAllStrikingDummies();
-    }
+    private static void OnCommand(string command, string arguments) { ResetAllStrikingDummies(); }
 
     public static void OnResetStrikingDummies(int command, int objectID, int param2, int param3, int param4)
     {
@@ -66,7 +61,7 @@ public class FastResetAllSDEnmity : DailyModuleBase
         foreach (var strikingDummy in Service.ObjectTable.Where(x => x.ObjectKind == ObjectKind.BattleNpc &&
                                                                      x.TargetObject != null &&
                                                                      (x as BattleChara).NameId == 541))
-            Service.ExecuteCommandManager.ExecuteCommand(319, (int)strikingDummy.ObjectId, 0, 0, 0);
+            Service.ExecuteCommandManager.ExecuteCommand(319, (int)strikingDummy.ObjectId);
     }
 
     public override void Uninit()

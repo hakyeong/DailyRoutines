@@ -1,25 +1,24 @@
-using ClickLib;
-using DailyRoutines.Managers;
-using Dalamud.Memory;
-using Dalamud.Utility.Signatures;
-using ECommons.Automation;
-using FFXIVClientStructs.FFXIV.Client.Game.Control;
-using FFXIVClientStructs.FFXIV.Client.Game.Object;
-using FFXIVClientStructs.FFXIV.Component.GUI;
-using ImGuiNET;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using ClickLib;
+using DailyRoutines.Helpers;
+using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
-using Lumina.Excel.GeneratedSheets;
+using Dalamud.Memory;
+using Dalamud.Utility.Signatures;
+using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Control;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using System;
-using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
-using Dalamud.Game.ClientState.Conditions;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 
 namespace DailyRoutines.Modules;
@@ -27,9 +26,6 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoGardensWorkTitle", "AutoGardensWorkDescription", ModuleCategories.一般)]
 public unsafe class AutoGardensWork : DailyModuleBase
 {
-    [Signature("E8 ?? ?? ?? ?? 44 0F B6 C3 48 8B D0")]
-    private readonly delegate* unmanaged<ulong, GameObject*> GetGameObjectFromObjectID;
-
     private static Dictionary<uint, Item> Seeds = [];
     private static Dictionary<uint, Item> Soils = [];
     private static Dictionary<uint, Item> Fertilizers = [];
@@ -37,7 +33,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
     private static readonly InventoryType[] InventoryTypes =
     [
         InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3,
-        InventoryType.Inventory4
+        InventoryType.Inventory4,
     ];
 
     private static uint SelectedSeed;
@@ -47,15 +43,20 @@ public unsafe class AutoGardensWork : DailyModuleBase
     private static uint[] Gardens = [];
     private static string searchFilterSeed = string.Empty;
 
+    [Signature("E8 ?? ?? ?? ?? 44 0F B6 C3 48 8B D0")]
+    private readonly delegate* unmanaged<ulong, GameObject*> GetGameObjectFromObjectID;
+
     public override void Init()
     {
         var sheet = LuminaCache.Get<Item>();
         Seeds = sheet
                 .Where(x => x.FilterGroup == 20)
                 .ToDictionary(x => x.RowId, x => x);
+
         Soils = sheet
                 .Where(x => x.FilterGroup == 21)
                 .ToDictionary(x => x.RowId, x => x);
+
         Fertilizers = sheet
                       .Where(x => x.FilterGroup == 22)
                       .ToDictionary(x => x.RowId, x => x);
@@ -152,6 +153,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("Start")))
             StartGather();
+
         ImGui.PopID();
 
         // 自动施肥
@@ -196,6 +198,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("Start")))
             StartTend();
+
         ImGui.PopID();
 
         ImGui.EndGroup();

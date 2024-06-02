@@ -9,7 +9,7 @@ using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -21,17 +21,21 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("ExpandItemMenuSearchTitle", "ExpandItemMenuSearchDescription", ModuleCategories.界面优化)]
 public unsafe class ExpandItemMenuSearch : DailyModuleBase
 {
-    public override string? Author { get; set; } = "HSS";
+    private const int ChatLogContextItemId = 0x948;
+
+    private const string CollectorUrl = "https://www.ffxivsc.cn/#/search?text={0}&type=armor";
+    private const string WikiUrl = "https://ff14.huijiwiki.com/index.php?search={0}&profile=default&fulltext=1";
 
     private static readonly MenuItem CollectorItem = new()
     {
         IsEnabled = true,
         IsReturn = false,
         UseDefaultPrefix = true,
-        Name = new SeStringBuilder().Append(DRPrefix).Append(Service.Lang.GetText("ExpandItemMenuSearch-CollectorSearch")).Build(),
+        Name = new SeStringBuilder().Append(DRPrefix).Append(Service.Lang.GetText("ExpandItemMenuSearch-CollectorSearch"))
+                                    .Build(),
         OnClicked = OnCollector,
         IsSubmenu = false,
-        PrefixColor = 34
+        PrefixColor = 34,
     };
 
     private static readonly MenuItem WikiItem = new()
@@ -39,10 +43,11 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
         IsEnabled = true,
         IsReturn = false,
         UseDefaultPrefix = true,
-        Name = new SeStringBuilder().Append(DRPrefix).Append(Service.Lang.GetText("ExpandItemMenuSearch-WikiSearch")).Build(),
+        Name = new SeStringBuilder().Append(DRPrefix).Append(Service.Lang.GetText("ExpandItemMenuSearch-WikiSearch"))
+                                    .Build(),
         OnClicked = OnWiki,
         IsSubmenu = false,
-        PrefixColor = 34
+        PrefixColor = 34,
     };
 
     private static Item? _LastItem;
@@ -59,11 +64,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
     private static bool SearchCollectorByGlamour;
     private static bool SearchWiki;
     private static bool SearchWikiByGlamour;
-
-    private const int ChatLogContextItemId = 0x948;
-
-    private const string CollectorUrl = "https://www.ffxivsc.cn/#/search?text={0}&type=armor";
-    private const string WikiUrl = "https://ff14.huijiwiki.com/index.php?search={0}&profile=default&fulltext=1";
+    public override string? Author { get; set; } = "HSS";
 
     public override void Init()
     {
@@ -86,8 +87,22 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
         Service.FrameworkManager.Register(OnUpdate);
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "CharacterInspect", OnAddon);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, ["CabinetWithdraw", "Shop", "InclusionShop", "CollectablesShop", "FreeCompanyExchange", "FreeCompanyCreditShop", "ShopExchangeCurrency", "ShopExchangeItem", "SkyIslandExchange", "TripleTriadCoinExchange", "FreeCompanyChest", "MJIDisposeShop", "GrandCompanyExchange", "ReconstructionBuyback", "ShopExchangeCoin", "MiragePrismPrismBoxCrystallize", "ItemSearch", "GrandCompanySupplyList"], OnAddon);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, ["CabinetWithdraw", "CharacterInspect", "MiragePrismPrismBoxCrystallize", "Shop", "InclusionShop", "CollectablesShop", "FreeCompanyExchange", "FreeCompanyCreditShop", "ShopExchangeCurrency", "ShopExchangeItem", "SkyIslandExchange", "TripleTriadCoinExchange", "FreeCompanyChest", "MJIDisposeShop", "GrandCompanyExchange", "ReconstructionBuyback", "ShopExchangeCoin", "ItemSearch", "GrandCompanySupplyList"], OnAddon);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup,
+        [
+            "CabinetWithdraw", "Shop", "InclusionShop", "CollectablesShop", "FreeCompanyExchange", "FreeCompanyCreditShop",
+            "ShopExchangeCurrency", "ShopExchangeItem", "SkyIslandExchange", "TripleTriadCoinExchange", "FreeCompanyChest",
+            "MJIDisposeShop", "GrandCompanyExchange", "ReconstructionBuyback", "ShopExchangeCoin",
+            "MiragePrismPrismBoxCrystallize", "ItemSearch", "GrandCompanySupplyList",
+        ], OnAddon);
+
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize,
+        [
+            "CabinetWithdraw", "CharacterInspect", "MiragePrismPrismBoxCrystallize", "Shop", "InclusionShop",
+            "CollectablesShop", "FreeCompanyExchange", "FreeCompanyCreditShop", "ShopExchangeCurrency", "ShopExchangeItem",
+            "SkyIslandExchange", "TripleTriadCoinExchange", "FreeCompanyChest", "MJIDisposeShop", "GrandCompanyExchange",
+            "ReconstructionBuyback", "ShopExchangeCoin", "ItemSearch", "GrandCompanySupplyList",
+        ], OnAddon);
+
         _CharacterInspectItems.Clear();
     }
 
@@ -103,6 +118,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
             if (ImGui.Checkbox(Service.Lang.GetText("ExpandItemMenuSearch-SearchGlamour"),
                                ref SearchCollectorByGlamour))
                 UpdateConfig("SearchCollectorByGlamour", SearchCollectorByGlamour);
+
             ImGui.PopID();
             ImGui.Unindent();
         }
@@ -117,6 +133,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
             if (ImGui.Checkbox(Service.Lang.GetText("ExpandItemMenuSearch-SearchGlamour"),
                                ref SearchWikiByGlamour))
                 UpdateConfig("SearchWikiByGlamour", SearchWikiByGlamour);
+
             ImGui.PopID();
             ImGui.Unindent();
         }
@@ -156,6 +173,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
 
                             _IsOnItemHover = true;
                         });
+
                         break;
                 }
 
@@ -170,6 +188,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
                             _LastHoveredItemID = 0;
                             _CharacterInspectItems.Clear();
                         });
+
                         break;
                     case "MiragePrismPrismBoxCrystallize":
                         _IsOnItemHover = false;
@@ -328,8 +347,10 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
 
                 if (SearchCollector && PresetData.Gears.TryGetValue((uint)_LastDetailItemID, out _))
                     args.AddMenuItem(CollectorItem);
+
                 if (SearchWiki && LuminaCache.TryGetRow((uint)_LastDetailItemID, out _LastItem))
                     args.AddMenuItem(WikiItem);
+
                 break;
         }
     }
@@ -372,10 +393,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
             Util.OpenLink(string.Format(WikiUrl, _LastItem.Name));
     }
 
-    private static bool IsValidChatLogContext(nint agent)
-    {
-        return *(uint*)(agent + ChatLogContextItemId + 8) == 3;
-    }
+    private static bool IsValidChatLogContext(nint agent) { return *(uint*)(agent + ChatLogContextItemId + 8) == 3; }
 
     public override void Uninit()
     {

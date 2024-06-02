@@ -1,6 +1,5 @@
 using System;
 using System.Globalization;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;

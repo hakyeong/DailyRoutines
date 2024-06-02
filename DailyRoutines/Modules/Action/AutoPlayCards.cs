@@ -18,8 +18,6 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoPlayCardsTitle", "AutoPlayCardsDescription", ModuleCategories.技能)]
 public unsafe class AutoPlayCards : DailyModuleBase
 {
-    private record SendInfo(PartyMember member, (bool IsMelee, string Name) card);
-
     private static readonly HashSet<uint> CardStatuses = [1882, 1883, 1884, 1885, 1886, 1887];
 
     private static readonly Dictionary<CardType, (bool IsMelee, string Name)> Cards = new()
@@ -29,7 +27,7 @@ public unsafe class AutoPlayCards : DailyModuleBase
         { CardType.SPEAR, (true, LuminaCache.GetRow<Action>(4403).Name.RawString) },
         { CardType.BOLE, (false, LuminaCache.GetRow<Action>(4403).Name.RawString) },
         { CardType.EWER, (false, LuminaCache.GetRow<Action>(4403).Name.RawString) },
-        { CardType.SPIRE, (false, LuminaCache.GetRow<Action>(4403).Name.RawString) }
+        { CardType.SPIRE, (false, LuminaCache.GetRow<Action>(4403).Name.RawString) },
     };
 
     private static bool SendMessage = true;
@@ -64,7 +62,8 @@ public unsafe class AutoPlayCards : DailyModuleBase
         }
     }
 
-    private static void OnPreUseAction(ref bool isPrevented,
+    private static void OnPreUseAction(
+        ref bool isPrevented,
         ref ActionType actionType, ref uint actionID, ref ulong targetID, ref uint a4,
         ref uint queueState, ref uint a6)
     {
@@ -147,4 +146,6 @@ public unsafe class AutoPlayCards : DailyModuleBase
 
         base.Uninit();
     }
+
+    private record SendInfo(PartyMember member, (bool IsMelee, string Name) card);
 }

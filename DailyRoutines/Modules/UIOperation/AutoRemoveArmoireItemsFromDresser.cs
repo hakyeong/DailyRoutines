@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -15,10 +14,10 @@ namespace DailyRoutines.Modules;
                    ModuleCategories.界面操作)]
 public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
 {
+    private static HashSet<uint>? ArmoireAvailableItems;
+
     private static AtkUnitBase* AddonMiragePrismPrismBox =>
         (AtkUnitBase*)Service.Gui.GetAddonByName("MiragePrismPrismBox");
-
-    private static HashSet<uint>? ArmoireAvailableItems;
 
     public override void Init()
     {

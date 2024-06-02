@@ -11,19 +11,17 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using TaskManager = ECommons.Automation.TaskManager;
+using TaskManager = ECommons.Automation.LegacyTaskManager.TaskManager;
 
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoJoinExitDutyTitle", "AutoJoinExitDutyDescription", ModuleCategories.战斗)]
 public unsafe class AutoJoinExitDuty : DailyModuleBase
 {
-    private static AtkUnitBase* ContentsFinder => (AtkUnitBase*)Service.Gui.GetAddonByName("ContentsFinder");
-
-    private delegate void AbandonDutyDelagte(bool a1);
-
     [Signature("E8 ?? ?? ?? ?? 48 8B 43 28 B1 01")]
     private static AbandonDutyDelagte? AbandonDuty;
+
+    private static AtkUnitBase* ContentsFinder => (AtkUnitBase*)Service.Gui.GetAddonByName("ContentsFinder");
 
     public override void Init()
     {
@@ -34,7 +32,7 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
                                              new CommandInfo(OnCommand)
                                              {
                                                  HelpMessage = Service.Lang.GetText("AutoJoinExitDutyTitle"),
-                                                 ShowInHelp = true
+                                                 ShowInHelp = true,
                                              });
     }
 
@@ -184,4 +182,6 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
 
         base.Uninit();
     }
+
+    private delegate void AbandonDutyDelagte(bool a1);
 }

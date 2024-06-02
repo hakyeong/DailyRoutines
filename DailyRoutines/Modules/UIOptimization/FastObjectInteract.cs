@@ -14,7 +14,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using Dalamud.Plugin.Services;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
@@ -30,34 +30,7 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("FastObjectInteractTitle", "FastObjectInteractDescription", ModuleCategories.界面优化)]
 public unsafe partial class FastObjectInteract : DailyModuleBase
 {
-    private sealed record ObjectWaitSelected(nint GameObject, string Name, ObjectKind Kind, float Distance)
-    {
-        public bool Equals(ObjectWaitSelected? other)
-        {
-            if (other is null || GetType() != other.GetType())
-                return false;
-
-            return GameObject == other.GameObject;
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine((nint)GameObject);
-        }
-    }
-
-    private class Config : ModuleConfiguration
-    {
-        public int MaxDisplayAmount = 5;
-        public bool AllowClickToTarget;
-        public bool WindowInvisibleWhenInteract = true;
-        public float FontScale = 1f;
-        public readonly HashSet<ObjectKind> SelectedKinds = [ObjectKind.EventNpc, ObjectKind.EventObj, ObjectKind.Treasure,             ObjectKind.Aetheryte, ObjectKind.GatheringPoint];
-        public readonly HashSet<string> BlacklistKeys = [];
-        public float MinButtonWidth = 300f;
-        public bool OnlyDisplayInViewRange;
-        public bool LockWindow;
-    }
+    private const string ENPCTiltleText = "[{0}] {1}";
 
     private static readonly Dictionary<ObjectKind, string> ObjectKindLoc = new()
     {
@@ -73,11 +46,11 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         { ObjectKind.Area, "地图传送相关" },
         { ObjectKind.Housing, "家具庭具" },
         { ObjectKind.CardStand, "固定类物体 (如无人岛采集点等)" },
-        { ObjectKind.Ornament, "时尚配饰 (不建议)" }
+        { ObjectKind.Ornament, "时尚配饰 (不建议)" },
     };
+
     private static Dictionary<uint, string>? ENpcTitles;
     private static HashSet<uint>? ImportantENPC;
-    private const string ENPCTiltleText = "[{0}] {1}";
 
     private static Config ModuleConfig = null!;
 
@@ -101,6 +74,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         ENpcTitles ??= LuminaCache.Get<ENpcResident>()
                                   .Where(x => x.Unknown10 && !string.IsNullOrWhiteSpace(x.Title.RawString))
                                   .ToDictionary(x => x.RowId, x => x.Title.RawString);
+
         ImportantENPC ??= LuminaCache.Get<ENpcResident>()
                                      .Where(x => x.Unknown10)
                                      .Select(x => x.RowId)
@@ -139,6 +113,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
         ImGui.InputFloat("###FontScaleInput", ref ModuleConfig.FontScale, 0f, 0f,
                          ModuleConfig.FontScale.ToString(CultureInfo.InvariantCulture));
+
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
             ModuleConfig.FontScale = Math.Max(0.1f, ModuleConfig.FontScale);
@@ -152,6 +127,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
         ImGui.InputFloat("###MinButtonWidthInput", ref ModuleConfig.MinButtonWidth, 0, 0,
                          ModuleConfig.MinButtonWidth.ToString(CultureInfo.InvariantCulture));
+
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
             ModuleConfig.MinButtonWidth = Math.Max(1, ModuleConfig.MinButtonWidth);
@@ -175,7 +151,9 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
-        if (ImGui.BeginCombo("###ObjectKindsSelection", Service.Lang.GetText("FastObjectInteract-SelectedObjectKindsAmount", ModuleConfig.SelectedKinds.Count), ImGuiComboFlags.HeightLarge))
+        if (ImGui.BeginCombo("###ObjectKindsSelection",
+                             Service.Lang.GetText("FastObjectInteract-SelectedObjectKindsAmount",
+                                                  ModuleConfig.SelectedKinds.Count), ImGuiComboFlags.HeightLarge))
         {
             foreach (var kind in ObjectKindLoc)
             {
@@ -197,12 +175,15 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
-        if (ImGui.BeginCombo("###BlacklistObjectsSelection", Service.Lang.GetText("FastObjectInteract-BlacklistKeysListAmount", ModuleConfig.BlacklistKeys.Count), ImGuiComboFlags.HeightLarge))
+        if (ImGui.BeginCombo("###BlacklistObjectsSelection",
+                             Service.Lang.GetText("FastObjectInteract-BlacklistKeysListAmount",
+                                                  ModuleConfig.BlacklistKeys.Count), ImGuiComboFlags.HeightLarge))
         {
             ImGui.SetNextItemWidth(250f * ImGuiHelpers.GlobalScale);
             ImGui.InputTextWithHint("###BlacklistKeyInput",
                                     $"{Service.Lang.GetText("FastObjectInteract-BlacklistKeysListInputHelp")}",
                                     ref BlacklistKeyInput, 100);
+
             ImGui.SameLine();
             if (ImGuiOm.ButtonIcon("###BlacklistKeyInputAdd", FontAwesomeIcon.Plus,
                                    Service.Lang.GetText("FastObjectInteract-Add")))
@@ -229,7 +210,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
             ImGui.EndCombo();
         }
 
-        if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-WindowInvisibleWhenInteract"), 
+        if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-WindowInvisibleWhenInteract"),
                            ref ModuleConfig.WindowInvisibleWhenInteract))
             SaveConfig(ModuleConfig);
 
@@ -243,10 +224,12 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                 Overlay.Flags &= ~ImGuiWindowFlags.NoMove;
         }
 
-        if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-OnlyDisplayInViewRange"), ref ModuleConfig.OnlyDisplayInViewRange))
+        if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-OnlyDisplayInViewRange"),
+                           ref ModuleConfig.OnlyDisplayInViewRange))
             SaveConfig(ModuleConfig);
 
-        if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-AllowClickToTarget"), ref ModuleConfig.AllowClickToTarget))
+        if (ImGui.Checkbox(Service.Lang.GetText("FastObjectInteract-AllowClickToTarget"),
+                           ref ModuleConfig.AllowClickToTarget))
             SaveConfig(ModuleConfig);
     }
 
@@ -295,6 +278,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                     {
                         if (!ModuleConfig.BlacklistKeys.Add(AddToBlacklistNameRegex().Replace(kvp.Value.Name, "").Trim()))
                             return;
+
                         SaveConfig(ModuleConfig);
                     }
 
@@ -313,14 +297,17 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                 ImGui.BeginDisabled(!interactState);
                 if (ButtonText(kvp.Key.ToString(), kvp.Value.Name) && interactState)
                     InteractWithObject((GameObject*)kvp.Value.GameObject, kvp.Value.Kind);
+
                 ImGui.EndDisabled();
 
                 if (ImGui.BeginPopupContextItem($"{kvp.Value.Name}"))
                 {
                     if (ImGui.MenuItem(Service.Lang.GetText("FastObjectInteract-AddToBlacklist")))
                     {
-                        if (!ModuleConfig.BlacklistKeys.Add(FastObjectInteractTitleRegex().Replace(kvp.Value.Name, "").Trim()))
+                        if (!ModuleConfig.BlacklistKeys.Add(FastObjectInteractTitleRegex().Replace(kvp.Value.Name, "")
+                                                                .Trim()))
                             return;
+
                         SaveConfig(ModuleConfig);
                     }
 
@@ -328,6 +315,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                 }
             }
         }
+
         ImGui.EndGroup();
 
         ImGui.SameLine();
@@ -339,13 +327,16 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
             {
                 if (i == instance.Instance) continue;
                 ImGui.BeginDisabled(!aetheryteInstanceState);
-                if (ButtonText(Service.Lang.GetText("FastObjectInteract-InstanceAreaChange", i), Service.Lang.GetText("FastObjectInteract-InstanceAreaChange", i)) && aetheryteInstanceState)
+                if (ButtonText(Service.Lang.GetText("FastObjectInteract-InstanceAreaChange", i),
+                               Service.Lang.GetText("FastObjectInteract-InstanceAreaChange", i)) && aetheryteInstanceState)
                     ChangeInstanceZone(aetheryteInstance, i);
+
                 ImGui.EndDisabled();
             }
-            ImGui.EndGroup();
 
+            ImGui.EndGroup();
         }
+
         WindowWidth = Math.Max(ModuleConfig.MinButtonWidth, ImGui.GetItemRectSize().X);
 
         PresetFont.Axis14.Pop();
@@ -389,8 +380,10 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
                 var gameObj = (GameObject*)obj.Address;
                 if (ModuleConfig.OnlyDisplayInViewRange)
+                {
                     if (!targetSystem->IsObjectInViewRange(gameObj))
                         continue;
+                }
 
                 var objDistance = Vector3.Distance(localPlayer.Position, obj.Position);
                 if (objDistance > 15 || localPlayer.Position.Y - gameObj->Position.Y > 4) continue;
@@ -432,7 +425,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
         TaskManager.Enqueue(() =>
         {
-            if (!TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) || 
+            if (!TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) ||
                 !IsAddonAndNodesReady(addon)) return false;
 
             return ClickHelper.SelectString("切换副本区");
@@ -462,7 +455,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
             ObjectKind.EventNpc => distance < 6.9999999,
             ObjectKind.Aetheryte => distance < 11.0,
             ObjectKind.GatheringPoint => distance < 3.0,
-            _ => distance < 6.0
+            _ => distance < 6.0,
         };
     }
 
@@ -481,6 +474,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         ImGui.GetWindowDrawList()
              .AddText(new Vector2(cursorPos.X + ((buttonWidth - textSize.X) / 2), cursorPos.Y + padding.Y),
                       ImGui.GetColorU32(ImGuiCol.Text), text);
+
         ImGui.SetWindowFontScale(1);
         ImGui.PopID();
 
@@ -500,4 +494,35 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     [GeneratedRegex("\\[.*?\\]")]
     private static partial Regex FastObjectInteractTitleRegex();
+
+    private sealed record ObjectWaitSelected(nint GameObject, string Name, ObjectKind Kind, float Distance)
+    {
+        public bool Equals(ObjectWaitSelected? other)
+        {
+            if (other is null || GetType() != other.GetType())
+                return false;
+
+            return GameObject == other.GameObject;
+        }
+
+        public override int GetHashCode() { return HashCode.Combine(GameObject); }
+    }
+
+    private class Config : ModuleConfiguration
+    {
+        public readonly HashSet<string> BlacklistKeys = [];
+
+        public readonly HashSet<ObjectKind> SelectedKinds =
+        [
+            ObjectKind.EventNpc, ObjectKind.EventObj, ObjectKind.Treasure, ObjectKind.Aetheryte, ObjectKind.GatheringPoint,
+        ];
+
+        public bool AllowClickToTarget;
+        public float FontScale = 1f;
+        public bool LockWindow;
+        public int MaxDisplayAmount = 5;
+        public float MinButtonWidth = 300f;
+        public bool OnlyDisplayInViewRange;
+        public bool WindowInvisibleWhenInteract = true;
+    }
 }

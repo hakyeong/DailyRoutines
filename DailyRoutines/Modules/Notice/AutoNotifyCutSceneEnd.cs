@@ -70,6 +70,7 @@ public class AutoNotifyCutSceneEnd : DailyModuleBase
         var isSBInCutScene = Service.PartyList.Any(member => member.GameObject != null &&
                                                              ((Character*)member.GameObject.Address)->CharacterData
                                                              .OnlineStatus == 15);
+
         if (isSBInCutScene) return;
 
         IsSomeoneInCutscene = false;

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Notifications;
 using Dalamud.Plugin.Services;
@@ -13,12 +12,12 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoNotifyLeveUpdateTitle", "AutoNotifyLeveUpdateDescription", ModuleCategories.通知)]
 public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
 {
-    public override string? Author { get; set; } = "HSS";
     private static DateTime nextLeveCheck = DateTime.MinValue;
     private static DateTime finishTime = DateTime.UtcNow;
-    private static int lastLeve = 0;
+    private static int lastLeve;
     private static bool OnChatMessage;
     private static int NotificationThreshold;
+    public override string? Author { get; set; } = "HSS";
 
     public override void Init()
     {
@@ -38,6 +37,7 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
         ImGui.Text($"{Service.Lang.GetText("AutoNotifyLeveUpdate-NumText")}{lastLeve}");
         ImGui.Text(
             $"{Service.Lang.GetText("AutoNotifyLeveUpdate-FullTimeText")}{finishTime.ToLocalTime().ToString(CultureInfo.CurrentCulture)}");
+
         ImGui.Text(
             $"{Service.Lang.GetText("AutoNotifyLeveUpdate-UpdateTimeText")}{nextLeveCheck.ToLocalTime().ToString(CultureInfo.CurrentCulture)}");
 
@@ -48,6 +48,7 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
         ImGui.PushItemWidth(300f);
         ImGui.SliderInt(Service.Lang.GetText("AutoNotifyLeveUpdate-NotificationThreshold"), ref NotificationThreshold,
                         1, 100);
+
         ImGui.PopItemWidth();
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
@@ -61,6 +62,7 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
         if (!EzThrottler.Throttle("AutoNotifyLeveUpdate", 5000)) return;
         if (Service.ClientState.LocalPlayer == null || !Service.ClientState.IsLoggedIn)
             return;
+
         var NowUtc = DateTime.UtcNow;
         var leveAllowances = QuestManager.Instance()->NumLeveAllowances;
         if (!lastLeve.Equals(leveAllowances))
@@ -92,8 +94,8 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
     {
         if (NowUtc.Hour >= 12)
             return new DateTime(NowUtc.Year, NowUtc.Month, NowUtc.Day + 1, 0, 0, 0, DateTimeKind.Utc);
-        else
-            return new DateTime(NowUtc.Year, NowUtc.Month, NowUtc.Day, 12, 0, 0, DateTimeKind.Utc);
+
+        return new DateTime(NowUtc.Year, NowUtc.Month, NowUtc.Day, 12, 0, 0, DateTimeKind.Utc);
     }
 
 
@@ -105,6 +107,7 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
         if (requiredIncrements % 3 > 0) requiredPeriods++;
         var lastIncrementTimeUtc = new DateTime(NowUtc.Year, NowUtc.Month, NowUtc.Day, NowUtc.Hour >= 12 ? 12 : 0, 0, 0,
                                                 DateTimeKind.Utc);
+
         return lastIncrementTimeUtc.AddHours(12 * requiredPeriods);
     }
 }

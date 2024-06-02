@@ -1,5 +1,4 @@
 using System;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud;
 
@@ -9,7 +8,7 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoSkipPraetoriumTitle", "AutoSkipPraetoriumDescription", ModuleCategories.战斗)]
 public class AutoSkipPraetorium : DailyModuleBase
 {
-    public bool Valid => Offset1 != IntPtr.Zero && Offset2 != IntPtr.Zero;
+    public bool Valid   => Offset1 != IntPtr.Zero && Offset2 != IntPtr.Zero;
     public nint Offset1 { get; private set; }
     public nint Offset2 { get; private set; }
 
@@ -17,6 +16,7 @@ public class AutoSkipPraetorium : DailyModuleBase
     {
         Offset1 = Service.SigScanner.ScanText
             ("75 33 48 8B 0D ?? ?? ?? ?? BA ?? 00 00 00 48 83 C1 10 E8 ?? ?? ?? ?? 83 78");
+
         Offset2 = Service.SigScanner.ScanText("74 18 8B D7 48 8D 0D");
 
         SetEnabled(Valid);

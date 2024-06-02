@@ -1,4 +1,3 @@
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Notifications;
 using Dalamud.Game.Text;
@@ -9,10 +8,7 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoNotifyReadyCheckTitle", "AutoNotifyReadyCheckDescription", ModuleCategories.通知)]
 public class AutoNotifyReadyCheck : DailyModuleBase
 {
-    public override void Init()
-    {
-        Service.Chat.ChatMessage += OnChatMessage;
-    }
+    public override void Init() { Service.Chat.ChatMessage += OnChatMessage; }
 
     private static void OnChatMessage(
         XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)

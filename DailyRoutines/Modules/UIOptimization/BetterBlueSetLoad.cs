@@ -1,6 +1,5 @@
 using System;
 using System.Numerics;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
@@ -34,7 +33,7 @@ public unsafe class BetterBlueSetLoad : DailyModuleBase
         {
             AddonEvent.PostSetup => true,
             AddonEvent.PreFinalize => false,
-            _ => Overlay.IsOpen
+            _ => Overlay.IsOpen,
         };
     }
 
@@ -58,6 +57,7 @@ public unsafe class BetterBlueSetLoad : DailyModuleBase
                 ImGui.SetNextWindowPos(position);
                 ImGui.SetNextWindowBgAlpha(1f);
             }
+
             if (ImGui.Begin($"ApplyPreset{i}",
                             ImGuiWindowFlags.NoDecoration |
                             ImGuiWindowFlags.AlwaysAutoResize |
@@ -72,7 +72,7 @@ public unsafe class BetterBlueSetLoad : DailyModuleBase
                     CompareAndApply((int)i - 4);
                     CompareAndApply((int)i - 4);
                 }
-                    
+
                 ImGui.End();
             }
         }
@@ -112,14 +112,12 @@ public unsafe class BetterBlueSetLoad : DailyModuleBase
         {
             if (finalActions[i] == 0) continue;
             for (var j = 0; j < 24; j++)
-            {
                 if (finalActions[i] == currentActions[j])
                 {
                     actionManager->SwapBlueMageActionSlots(i, j);
                     finalActions[i] = 0;
                     break;
                 }
-            }
         }
 
         for (var i = 0; i < 24; i++)

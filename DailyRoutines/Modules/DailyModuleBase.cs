@@ -1,29 +1,28 @@
-using DailyRoutines.Managers;
-using DailyRoutines.Windows;
-using Dalamud.Hooking;
-using ECommons.Automation;
-using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System;
 using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
 using DailyRoutines.Helpers;
+using DailyRoutines.Managers;
+using DailyRoutines.Windows;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
+using ECommons.Automation.LegacyTaskManager;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace DailyRoutines.Modules;
 
 public abstract class DailyModuleBase
 {
-    public bool Initialized { get; internal set; }
-    public virtual string? Author { get; set; }
-    protected TaskManager? TaskManager { get; set; }
-    protected Overlay? Overlay { get; set; }
+    public         bool         Initialized { get; internal set; }
+    public virtual string?      Author      { get; set; }
+    protected      TaskManager? TaskManager { get; set; }
+    protected      Overlay?     Overlay     { get; set; }
 
     protected string ModuleConfigFile =>
         Path.Join(Service.PluginInterface.GetPluginConfigDirectory(), $"{GetType().Name}.json");
@@ -46,10 +45,7 @@ public abstract class DailyModuleBase
 
     public virtual void OverlayPreOpenCheck() { }
 
-    protected T LoadConfig<T>() where T : ModuleConfiguration
-    {
-        return LoadConfig<T>(GetType().Name);
-    }
+    protected T LoadConfig<T>() where T : ModuleConfiguration { return LoadConfig<T>(GetType().Name); }
 
     protected T LoadConfig<T>(string key) where T : ModuleConfiguration
     {
@@ -73,6 +69,7 @@ public abstract class DailyModuleBase
     {
         if (!T.IsSubclassOf(typeof(ModuleConfiguration)))
             throw new Exception($"{T} is not a ModuleConfiguration class.");
+
         try
         {
             var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
@@ -114,6 +111,7 @@ public abstract class DailyModuleBase
             {
                 Service.Log.Error(
                     $"Failed to save Config: {config.GetType().Name} is not a subclass of ModuleConfiguration.");
+
                 return;
             }
 
@@ -306,9 +304,10 @@ public abstract class DailyModuleBase
                 if (config != null)
                 {
                     Service.Chat.Print(new SeStringBuilder().Append(DRPrefix)
-                                                            .Append($" 已成功导入配置")
+                                                            .Append(" 已成功导入配置")
                                                             .Build());
                 }
+
                 return config;
             }
         }

@@ -6,8 +6,6 @@ using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Interface.ImGuiNotification;
-using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
@@ -18,11 +16,12 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("ExpandPlayerMenuSearchTitle", "ExpandPlayerMenuSearchDescription", ModuleCategories.界面优化)]
 public class ExpandPlayerMenuSearch : DailyModuleBase
 {
-    public class CharacterSearchInfo
-    {
-        public string Name { get; set; } = null!;
-        public string World { get; set; } = null!;
-    }
+    private const string RisingStoneSearchAPI =
+        "https://apiff14risingstones.web.sdo.com/api/common/search?type=6&keywords={0}&page={1}&limit=50";
+
+    private const string RisingStonePlayerInfo = "https://ff14risingstones.web.sdo.com/pc/index.html#/me/info?uuid={0}";
+    private const string FFLogsSearch = "https://cn.fflogs.com/character/CN/{0}/{1}";
+    private const string TiebaSearch = "https://tieba.baidu.com/f/search/res?ie=utf-8&kw=ff14&qw={0}";
 
 
     private static readonly MenuItem RisingStoneItem = new()
@@ -30,10 +29,11 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
         IsEnabled = true,
         IsReturn = false,
         UseDefaultPrefix = true,
-        Name = new SeStringBuilder().Append(DRPrefix).Append(Service.Lang.GetText("ExpandPlayerMenuSearch-RisingStoneSearch")).Build(),
+        Name = new SeStringBuilder().Append(DRPrefix)
+                                    .Append(Service.Lang.GetText("ExpandPlayerMenuSearch-RisingStoneSearch")).Build(),
         OnClicked = OnClickRisingStone,
         IsSubmenu = false,
-        PrefixColor = 34
+        PrefixColor = 34,
     };
 
     private static readonly MenuItem FFLogsItem = new()
@@ -41,10 +41,11 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
         IsEnabled = true,
         IsReturn = false,
         UseDefaultPrefix = true,
-        Name = new SeStringBuilder().Append(DRPrefix).Append(Service.Lang.GetText("ExpandPlayerMenuSearch-FFLogsSearch")).Build(),
+        Name = new SeStringBuilder().Append(DRPrefix).Append(Service.Lang.GetText("ExpandPlayerMenuSearch-FFLogsSearch"))
+                                    .Build(),
         OnClicked = OnClickFFLogs,
         IsSubmenu = false,
-        PrefixColor = 34
+        PrefixColor = 34,
     };
 
     private static readonly MenuItem TiebaItem = new()
@@ -52,19 +53,14 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
         IsEnabled = true,
         IsReturn = false,
         UseDefaultPrefix = true,
-        Name = new SeStringBuilder().Append(DRPrefix).Append(Service.Lang.GetText("ExpandPlayerMenuSearch-TiebaSearch")).Build(),
+        Name = new SeStringBuilder().Append(DRPrefix).Append(Service.Lang.GetText("ExpandPlayerMenuSearch-TiebaSearch"))
+                                    .Build(),
         OnClicked = OnClickTieba,
         IsSubmenu = false,
-        PrefixColor = 34
+        PrefixColor = 34,
     };
 
     private static readonly HttpClient client = new();
-
-    private const string RisingStoneSearchAPI =
-        "https://apiff14risingstones.web.sdo.com/api/common/search?type=6&keywords={0}&page={1}&limit=50";
-    private const string RisingStonePlayerInfo = "https://ff14risingstones.web.sdo.com/pc/index.html#/me/info?uuid={0}";
-    private const string FFLogsSearch = "https://cn.fflogs.com/character/CN/{0}/{1}";
-    private const string TiebaSearch = "https://tieba.baidu.com/f/search/res?ie=utf-8&kw=ff14&qw={0}";
     private static CharacterSearchInfo? _TargetChara;
 
     private static bool RisingStoneEnabled;
@@ -95,6 +91,7 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
 
         if (ImGui.Checkbox(Service.Lang.GetText("ExpandPlayerMenuSearch-FFLogsSearch"), ref FFLogsEnabled))
             UpdateConfig("FFLogsEnabled", FFLogsEnabled);
+
         if (ImGui.Checkbox(Service.Lang.GetText("ExpandPlayerMenuSearch-TiebaSearch"), ref TiebaEnabled))
             UpdateConfig("TiebaEnabled", TiebaEnabled);
     }
@@ -174,6 +171,7 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
         var judgeCriteria1 = !string.IsNullOrWhiteSpace(menuTarget.TargetName) &&
                              menuTarget.TargetHomeWorld.GameData != null &&
                              menuTarget.TargetHomeWorld.GameData.RowId != 0;
+
         var judgeCriteria2 = menuTarget.TargetObject is Character && judgeCriteria1;
 
         switch (args.AddonName)
@@ -183,11 +181,13 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
             case "BlackList":
                 var agentBlackList =
                     (AgentBlacklist*)AgentModule.Instance()->GetAgentByInternalId(AgentId.SocialBlacklist);
+
                 if ((nint)agentBlackList != nint.Zero && agentBlackList->AgentInterface.IsAgentActive())
                 {
                     var playerName = agentBlackList->SelectedPlayerName.ExtractText();
                     var serverName = agentBlackList->SelectedPlayerFullName.ExtractText()
                                                                            .TrimStart(playerName.ToCharArray());
+
                     _TargetChara = new() { Name = playerName, World = serverName };
                     return true;
                 }
@@ -221,8 +221,11 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
             else if (menuTarget.TargetObject is Character chara && judgeCriteria1)
                 _TargetChara = chara.ToCharacterSearchInfo();
             else if (judgeCriteria1)
+            {
                 _TargetChara = new()
                     { Name = menuTarget.TargetName, World = menuTarget.TargetHomeWorld.GameData.Name.RawString };
+            }
+
             return judgeCriteria0 || judgeCriteria2 || judgeCriteria1;
         }
     }
@@ -232,5 +235,11 @@ public class ExpandPlayerMenuSearch : DailyModuleBase
         Service.ContextMenu.OnMenuOpened -= OnMenuOpen;
 
         base.Uninit();
+    }
+
+    public class CharacterSearchInfo
+    {
+        public string Name  { get; set; } = null!;
+        public string World { get; set; } = null!;
     }
 }

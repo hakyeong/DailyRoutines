@@ -1,5 +1,4 @@
 using ClickLib.Clicks;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
@@ -11,10 +10,7 @@ namespace DailyRoutines.Modules;
                    ModuleCategories.界面操作)]
 public unsafe class AutoConfirmDesynthesizeDialog : DailyModuleBase
 {
-    public override void Init()
-    {
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PreDraw, "SalvageDialog", OnAddon);
-    }
+    public override void Init() { Service.AddonLifecycle.RegisterListener(AddonEvent.PreDraw, "SalvageDialog", OnAddon); }
 
     private static void OnAddon(AddonEvent type, AddonArgs args)
     {

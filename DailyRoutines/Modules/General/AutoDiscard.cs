@@ -4,14 +4,12 @@ using System.Linq;
 using System.Numerics;
 using ClickLib.Clicks;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Command;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
-using ECommons.Automation;
-using ECommons.DalamudServices;
+using ECommons.Automation.LegacyTaskManager;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -24,77 +22,19 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoDiscardTitle", "AutoDiscardDescription", ModuleCategories.一般)]
 public unsafe class AutoDiscard : DailyModuleBase
 {
-    private enum DiscardBehaviour
-    {
-        Discard,
-        Sell
-    }
-
-    private class DiscardItemsGroup : IEquatable<DiscardItemsGroup>
-    {
-        public string UniqueName { get; set; } = null!;
-        public HashSet<uint> Items { get; set; } = [];
-        public DiscardBehaviour Behaviour { get; set; } = DiscardBehaviour.Discard;
-
-        public DiscardItemsGroup() { }
-
-        public DiscardItemsGroup(string name)
-        {
-            UniqueName = name;
-        }
-
-        public override bool Equals(object? obj)
-        {
-            return Equals(obj as DiscardItemsGroup);
-        }
-
-        public bool Equals(DiscardItemsGroup? other)
-        {
-            if (other is null || GetType() != other.GetType())
-                return false;
-
-            return UniqueName == other.UniqueName;
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(UniqueName);
-        }
-
-        public static bool operator ==(DiscardItemsGroup? lhs, DiscardItemsGroup? rhs)
-        {
-            if (lhs is null) return rhs is null;
-            return lhs.Equals(rhs);
-        }
-
-        public static bool operator !=(DiscardItemsGroup lhs, DiscardItemsGroup rhs)
-        {
-            return !(lhs == rhs);
-        }
-    }
-
-    private class Config : ModuleConfiguration
-    {
-        public readonly List<DiscardItemsGroup> DiscardGroups = [];
-        public bool EnableCommand;
-    }
-
-    private static AtkUnitBase* SelectYesno => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectYesno");
-    private static AtkUnitBase* ContextMenu => (AtkUnitBase*)Service.Gui.GetAddonByName("ContextMenu");
+    private const string ModuleCommand = "/pdrdiscard";
 
     private static readonly Dictionary<DiscardBehaviour, string> DiscardBehaviourLoc = new()
     {
         { DiscardBehaviour.Discard, Service.Lang.GetText("AutoDiscard-Discard") },
-        { DiscardBehaviour.Sell, Service.Lang.GetText("AutoDiscard-Sell") }
+        { DiscardBehaviour.Sell, Service.Lang.GetText("AutoDiscard-Sell") },
     };
 
     private static readonly InventoryType[] InventoryTypes =
     [
         InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3,
-        InventoryType.Inventory4
+        InventoryType.Inventory4,
     ];
-
-    private const string ModuleCommand = "/pdrdiscard";
 
     private static Config ModuleConfig = null!;
 
@@ -106,6 +46,9 @@ public unsafe class AutoDiscard : DailyModuleBase
     private static Dictionary<string, Item>? ItemNames;
     private static Dictionary<string, Item> _ItemNames = [];
 
+    private static AtkUnitBase* SelectYesno => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectYesno");
+    private static AtkUnitBase* ContextMenu => (AtkUnitBase*)Service.Gui.GetAddonByName("ContextMenu");
+
     public override void Init()
     {
         ModuleConfig = LoadConfig<Config>() ?? new();
@@ -115,6 +58,7 @@ public unsafe class AutoDiscard : DailyModuleBase
                                              x.ItemSortCategory.Row != 3 && x.ItemSortCategory.Row != 4)
                                  .GroupBy(x => x.Name.RawString)
                                  .ToDictionary(x => x.Key, x => x.First());
+
         _ItemNames = ItemNames.Take(10).ToDictionary(x => x.Key, x => x.Value);
 
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
@@ -125,7 +69,7 @@ public unsafe class AutoDiscard : DailyModuleBase
                                               new CommandInfo(OnCommand)
                                               {
                                                   HelpMessage = Service.Lang.GetText("AutoDiscard-CommandHelp"),
-                                                  ShowInHelp = true
+                                                  ShowInHelp = true,
                                               });
         }
     }
@@ -141,7 +85,7 @@ public unsafe class AutoDiscard : DailyModuleBase
                                                   new CommandInfo(OnCommand)
                                                   {
                                                       HelpMessage = Service.Lang.GetText("AutoDiscard-CommandHelp"),
-                                                      ShowInHelp = true
+                                                      ShowInHelp = true,
                                                   });
             }
             else
@@ -157,6 +101,7 @@ public unsafe class AutoDiscard : DailyModuleBase
             var orderColumnWidth = ImGui.CalcTextSize((ModuleConfig.DiscardGroups.Count + 1).ToString()).X + 24;
             ImGui.TableSetupColumn("Order", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize,
                                    orderColumnWidth);
+
             ImGui.TableSetupColumn("UniqueName", ImGuiTableColumnFlags.None, 20f);
             ImGui.TableSetupColumn("Items", ImGuiTableColumnFlags.None, 100f);
             ImGui.TableSetupColumn("Behaviour", ImGuiTableColumnFlags.None, 30f);
@@ -201,6 +146,244 @@ public unsafe class AutoDiscard : DailyModuleBase
 
             ImGui.EndTable();
         }
+    }
+
+    private void OnCommand(string command, string arguments) { EnqueueDiscardGroup(arguments.Trim()); }
+
+    public void EnqueueDiscardGroup(int index)
+    {
+        if (index < 0 || index > ModuleConfig.DiscardGroups.Count) return;
+        var group = ModuleConfig.DiscardGroups[index];
+        if (group.Items.Count > 0)
+            EnqueueDiscardGroup(group);
+    }
+
+    public void EnqueueDiscardGroup(string uniqueName)
+    {
+        var group = ModuleConfig.DiscardGroups.FirstOrDefault(x => x.UniqueName == uniqueName && x.Items.Count > 0);
+        if (group == null) return;
+
+        EnqueueDiscardGroup(group);
+    }
+
+    private void EnqueueDiscardGroup(DiscardItemsGroup group)
+    {
+        foreach (var item in group.Items)
+        {
+            if (!TrySearchItemInInventory(item, out var foundItem) || foundItem.Count <= 0) continue;
+            foreach (var fItem in foundItem)
+            {
+                TaskManager.Enqueue(() => OpenInventoryItemContext(fItem));
+                TaskManager.Enqueue(() => ClickContextMenu(group.Behaviour));
+                TaskManager.DelayNext(500);
+            }
+        }
+    }
+
+    private static bool TrySearchItemInInventory(uint itemID, out List<InventoryItem> foundItem)
+    {
+        foundItem = [];
+        if (Service.Gui.GetAddonByName("InventoryExpansion") == nint.Zero) return false;
+        var inventoryManager = InventoryManager.Instance();
+        if (inventoryManager == null) return false;
+
+        foreach (var type in InventoryTypes)
+        {
+            var container = inventoryManager->GetInventoryContainer(type);
+            if (container == null) return false;
+
+            for (var i = 0; i < container->Size; i++)
+            {
+                var slot = container->GetInventorySlot(i);
+                if (slot->ItemID == itemID) foundItem.Add(*slot);
+            }
+        }
+
+        return foundItem.Count > 0;
+    }
+
+    private static bool OpenInventoryItemContext(InventoryItem item)
+    {
+        if (!EzThrottler.Throttle("AutoDiscard", 100)) return false;
+        var agent = AgentInventoryContext.Instance();
+        if (agent == null) return false;
+
+        agent->OpenForItemSlot(item.Container, item.Slot, GetActiveInventoryAddonID());
+        return true;
+    }
+
+    private bool? ClickContextMenu(DiscardBehaviour behaviour)
+    {
+        if (!EzThrottler.Throttle("AutoDiscard", 100)) return false;
+        if (ContextMenu == null || !IsAddonAndNodesReady(ContextMenu)) return false;
+
+        switch (behaviour)
+        {
+            case DiscardBehaviour.Discard:
+                if (!ClickHelper.ContextMenu("舍弃"))
+                {
+                    ContextMenu->Close(true);
+                    break;
+                }
+
+                TaskManager.DelayNextImmediate(20);
+                TaskManager.EnqueueImmediate(ConfirmDiscard);
+                break;
+            case DiscardBehaviour.Sell:
+                if ((TryGetAddonByName<AtkUnitBase>("RetainerGrid0", out var addonRetainerGrid) &&
+                     IsAddonAndNodesReady(addonRetainerGrid)) ||
+                    (TryGetAddonByName<AtkUnitBase>("RetainerSellList", out var addonRetainerSellList) &&
+                     IsAddonAndNodesReady(addonRetainerSellList)))
+                {
+                    if (!ClickHelper.ContextMenu("委托雇员出售物品"))
+                    {
+                        ContextMenu->Close(true);
+                        Service.Chat.Print(
+                            new SeStringBuilder().Append(DRPrefix).AddUiForeground(" 未找到可用的出售页面", 17).Build());
+
+                        TaskManager.Abort();
+                    }
+
+                    break;
+                }
+
+                if (TryGetAddonByName<AtkUnitBase>("Shop", out var addonShop) &&
+                    IsAddonAndNodesReady(addonShop))
+                {
+                    if (!ClickHelper.ContextMenu("出售"))
+                    {
+                        ContextMenu->Close(true);
+                        Service.Chat.Print(
+                            new SeStringBuilder().Append(DRPrefix).AddUiForeground(" 未找到可用的出售页面", 17).Build());
+
+                        TaskManager.Abort();
+                    }
+
+                    break;
+                }
+
+                ContextMenu->Close(true);
+                Service.Chat.Print(
+                    new SeStringBuilder().Append(DRPrefix).AddUiForeground(" 未找到可用的出售页面", 17).Build());
+
+                TaskManager.Abort();
+                break;
+        }
+
+        return true;
+    }
+
+    private static bool? ConfirmDiscard()
+    {
+        if (!EzThrottler.Throttle("AutoDiscard", 100)) return false;
+        if (SelectYesno == null || !IsAddonAndNodesReady(SelectYesno)) return false;
+
+        var handler = new ClickSelectYesNo();
+        if (SelectYesno->GetNodeById(4)->IsVisible) handler.Confirm();
+        handler.Yes();
+
+        return true;
+    }
+
+
+    private static uint GetActiveInventoryAddonID()
+    {
+        var inventory0 = (AtkUnitBase*)Service.Gui.GetAddonByName("Inventory");
+        if (inventory0 == null) return 0;
+
+        var inventory1 = (AtkUnitBase*)Service.Gui.GetAddonByName("InventoryLarge");
+        if (inventory1 == null) return 0;
+
+        var inventory2 = (AtkUnitBase*)Service.Gui.GetAddonByName("InventoryExpansion");
+        if (inventory2 == null) return 0;
+
+        if (IsAddonAndNodesReady(inventory0)) return inventory0->ID;
+        if (IsAddonAndNodesReady(inventory1)) return inventory1->ID;
+        if (IsAddonAndNodesReady(inventory2)) return inventory2->ID;
+
+        return 0;
+    }
+
+    private static string GenerateUniqueName(string baseName)
+    {
+        var existingNames = ModuleConfig.DiscardGroups.Select(x => x.UniqueName).ToHashSet();
+
+        if (!existingNames.Contains(baseName))
+            return baseName;
+
+        var counter = 0;
+        var numberPart = string.Empty;
+        foreach (var c in baseName.Reverse())
+            if (char.IsDigit(c))
+                numberPart = c + numberPart;
+            else
+                break;
+
+        if (numberPart.Length > 0)
+        {
+            counter = int.Parse(numberPart) + 1;
+            baseName = baseName[..^numberPart.Length];
+        }
+
+        while (true)
+        {
+            var newName = $"{baseName}{counter}";
+
+            if (!existingNames.Contains(newName))
+                return newName;
+
+            counter++;
+        }
+    }
+
+    public override void Uninit()
+    {
+        Service.CommandManager.RemoveCommand(ModuleCommand);
+
+        base.Uninit();
+    }
+
+    private enum DiscardBehaviour
+    {
+        Discard,
+        Sell,
+    }
+
+    private class DiscardItemsGroup : IEquatable<DiscardItemsGroup>
+    {
+        public DiscardItemsGroup() { }
+
+        public DiscardItemsGroup(string name) { UniqueName = name; }
+
+        public string           UniqueName { get; set; } = null!;
+        public HashSet<uint>    Items      { get; set; } = [];
+        public DiscardBehaviour Behaviour  { get; set; } = DiscardBehaviour.Discard;
+
+        public bool Equals(DiscardItemsGroup? other)
+        {
+            if (other is null || GetType() != other.GetType())
+                return false;
+
+            return UniqueName == other.UniqueName;
+        }
+
+        public override bool Equals(object? obj) { return Equals(obj as DiscardItemsGroup); }
+
+        public override int GetHashCode() { return HashCode.Combine(UniqueName); }
+
+        public static bool operator ==(DiscardItemsGroup? lhs, DiscardItemsGroup? rhs)
+        {
+            if (lhs is null) return rhs is null;
+            return lhs.Equals(rhs);
+        }
+
+        public static bool operator !=(DiscardItemsGroup lhs, DiscardItemsGroup rhs) { return !(lhs == rhs); }
+    }
+
+    private class Config : ModuleConfiguration
+    {
+        public readonly List<DiscardItemsGroup> DiscardGroups = [];
+        public bool EnableCommand;
     }
 
     #region Table
@@ -295,6 +478,7 @@ public unsafe class AutoDiscard : DailyModuleBase
             {
                 ImGui.Image(ImageHelper.GetIcon(LuminaCache.GetRow<Item>(item).Icon).ImGuiHandle,
                             ImGuiHelpers.ScaledVector2(20f));
+
                 ImGui.SameLine();
             }
 
@@ -348,14 +532,16 @@ public unsafe class AutoDiscard : DailyModuleBase
             if (ImGui.BeginChild("SearchItemChild", leftChildSize, true))
             {
                 ImGui.SetNextItemWidth(-1f);
-                if (ImGui.InputTextWithHint("###GameItemSearchInput", Service.Lang.GetText("PleaseSearch"), ref ItemSearchInput, 100))
+                if (ImGui.InputTextWithHint("###GameItemSearchInput", Service.Lang.GetText("PleaseSearch"),
+                                            ref ItemSearchInput, 100))
                 {
                     if (!string.IsNullOrWhiteSpace(ItemSearchInput))
                     {
-                        _ItemNames = ItemNames.Where(x => x.Key.Contains(ItemSearchInput, StringComparison.OrdinalIgnoreCase))
-                                              .OrderBy(x => !x.Key.StartsWith(ItemSearchInput))
-                                              .Take(100)
-                                              .ToDictionary(x => x.Key, x => x.Value);
+                        _ItemNames = ItemNames
+                                     .Where(x => x.Key.Contains(ItemSearchInput, StringComparison.OrdinalIgnoreCase))
+                                     .OrderBy(x => !x.Key.StartsWith(ItemSearchInput))
+                                     .Take(100)
+                                     .ToDictionary(x => x.Key, x => x.Value);
                     }
                 }
 
@@ -368,6 +554,7 @@ public unsafe class AutoDiscard : DailyModuleBase
                     {
                         if (!group.Items.Remove(item.RowId))
                             group.Items.Add(item.RowId);
+
                         SaveConfig(ModuleConfig);
                     }
 
@@ -406,6 +593,7 @@ public unsafe class AutoDiscard : DailyModuleBase
         ImGui.BeginDisabled(TaskManager.IsBusy);
         if (ImGuiOm.ButtonIcon($"Run_{index}", FontAwesomeIcon.Play, Service.Lang.GetText("Run")))
             EnqueueDiscardGroup(group);
+
         ImGui.EndDisabled();
 
         ImGui.SameLine();
@@ -419,7 +607,7 @@ public unsafe class AutoDiscard : DailyModuleBase
             var newGroup = new DiscardItemsGroup(GenerateUniqueName(group.UniqueName))
             {
                 Behaviour = group.Behaviour,
-                Items = group.Items
+                Items = group.Items,
             };
 
             ModuleConfig.DiscardGroups.Add(newGroup);
@@ -442,199 +630,4 @@ public unsafe class AutoDiscard : DailyModuleBase
     }
 
     #endregion
-
-    private void OnCommand(string command, string arguments)
-    {
-        EnqueueDiscardGroup(arguments.Trim());
-    }
-
-    public void EnqueueDiscardGroup(int index)
-    {
-        if (index < 0 || index > ModuleConfig.DiscardGroups.Count) return;
-        var group = ModuleConfig.DiscardGroups[index];
-        if (group.Items.Count > 0)
-            EnqueueDiscardGroup(group);
-    }
-
-    public void EnqueueDiscardGroup(string uniqueName)
-    {
-        var group = ModuleConfig.DiscardGroups.FirstOrDefault(x => x.UniqueName == uniqueName && x.Items.Count > 0);
-        if (group == null) return;
-
-        EnqueueDiscardGroup(group);
-    }
-
-    private void EnqueueDiscardGroup(DiscardItemsGroup group)
-    {
-        foreach (var item in group.Items)
-        {
-            if (!TrySearchItemInInventory(item, out var foundItem) || foundItem.Count <= 0) continue;
-            foreach (var fItem in foundItem)
-            {
-                TaskManager.Enqueue(() => OpenInventoryItemContext(fItem));
-                TaskManager.Enqueue(() => ClickContextMenu(group.Behaviour));
-                TaskManager.DelayNext(500);
-            }
-        }
-    }
-
-    private static bool TrySearchItemInInventory(uint itemID, out List<InventoryItem> foundItem)
-    {
-        foundItem = [];
-        if (Service.Gui.GetAddonByName("InventoryExpansion") == nint.Zero) return false;
-        var inventoryManager = InventoryManager.Instance();
-        if (inventoryManager == null) return false;
-
-        foreach (var type in InventoryTypes)
-        {
-            var container = inventoryManager->GetInventoryContainer(type);
-            if (container == null) return false;
-
-            for (var i = 0; i < container->Size; i++)
-            {
-                var slot = container->GetInventorySlot(i);
-                if (slot->ItemID == itemID) foundItem.Add(*slot);
-            }
-        }
-
-        return foundItem.Count > 0;
-    }
-
-    private static bool OpenInventoryItemContext(InventoryItem item)
-    {
-        if (!EzThrottler.Throttle("AutoDiscard", 100)) return false;
-        var agent = AgentInventoryContext.Instance();
-        if (agent == null) return false;
-
-        agent->OpenForItemSlot(item.Container, item.Slot, GetActiveInventoryAddonID());
-        return true;
-    }
-
-    private bool? ClickContextMenu(DiscardBehaviour behaviour)
-    {
-        if (!EzThrottler.Throttle("AutoDiscard", 100)) return false;
-        if (ContextMenu == null || !IsAddonAndNodesReady(ContextMenu)) return false;
-
-        switch (behaviour)
-        {
-            case DiscardBehaviour.Discard:
-                if (!ClickHelper.ContextMenu("舍弃"))
-                {
-                    ContextMenu->Close(true);
-                    break;
-                }
-
-                TaskManager.DelayNextImmediate(20);
-                TaskManager.EnqueueImmediate(ConfirmDiscard);
-                break;
-            case DiscardBehaviour.Sell:
-                if ((TryGetAddonByName<AtkUnitBase>("RetainerGrid0", out var addonRetainerGrid) &&
-                     IsAddonAndNodesReady(addonRetainerGrid)) ||
-                    (TryGetAddonByName<AtkUnitBase>("RetainerSellList", out var addonRetainerSellList) &&
-                     IsAddonAndNodesReady(addonRetainerSellList)))
-                {
-                    if (!ClickHelper.ContextMenu("委托雇员出售物品"))
-                    {
-                        ContextMenu->Close(true);
-                        Service.Chat.Print(
-                            new SeStringBuilder().Append(DRPrefix).AddUiForeground(" 未找到可用的出售页面", 17).Build());
-                        TaskManager.Abort();
-                    }
-
-                    break;
-                }
-
-                if (TryGetAddonByName<AtkUnitBase>("Shop", out var addonShop) &&
-                    IsAddonAndNodesReady(addonShop))
-                {
-                    if (!ClickHelper.ContextMenu("出售"))
-                    {
-                        ContextMenu->Close(true);
-                        Service.Chat.Print(
-                            new SeStringBuilder().Append(DRPrefix).AddUiForeground(" 未找到可用的出售页面", 17).Build());
-                        TaskManager.Abort();
-                    }
-
-                    break;
-                }
-
-                ContextMenu->Close(true);
-                Service.Chat.Print(
-                    new SeStringBuilder().Append(DRPrefix).AddUiForeground(" 未找到可用的出售页面", 17).Build());
-                TaskManager.Abort();
-                break;
-        }
-
-        return true;
-    }
-
-    private static bool? ConfirmDiscard()
-    {
-        if (!EzThrottler.Throttle("AutoDiscard", 100)) return false;
-        if (SelectYesno == null || !IsAddonAndNodesReady(SelectYesno)) return false;
-
-        var handler = new ClickSelectYesNo();
-        if (SelectYesno->GetNodeById(4)->IsVisible) handler.Confirm();
-        handler.Yes();
-
-        return true;
-    }
-
-
-    private static uint GetActiveInventoryAddonID()
-    {
-        var inventory0 = (AtkUnitBase*)Service.Gui.GetAddonByName("Inventory");
-        if (inventory0 == null) return 0;
-
-        var inventory1 = (AtkUnitBase*)Service.Gui.GetAddonByName("InventoryLarge");
-        if (inventory1 == null) return 0;
-
-        var inventory2 = (AtkUnitBase*)Service.Gui.GetAddonByName("InventoryExpansion");
-        if (inventory2 == null) return 0;
-
-        if (IsAddonAndNodesReady(inventory0)) return inventory0->ID;
-        if (IsAddonAndNodesReady(inventory1)) return inventory1->ID;
-        if (IsAddonAndNodesReady(inventory2)) return inventory2->ID;
-
-        return 0;
-    }
-
-    private static string GenerateUniqueName(string baseName)
-    {
-        var existingNames = ModuleConfig.DiscardGroups.Select(x => x.UniqueName).ToHashSet();
-
-        if (!existingNames.Contains(baseName))
-            return baseName;
-
-        var counter = 0;
-        var numberPart = string.Empty;
-        foreach (var c in baseName.Reverse())
-            if (char.IsDigit(c))
-                numberPart = c + numberPart;
-            else
-                break;
-
-        if (numberPart.Length > 0)
-        {
-            counter = int.Parse(numberPart) + 1;
-            baseName = baseName[..^numberPart.Length];
-        }
-
-        while (true)
-        {
-            var newName = $"{baseName}{counter}";
-
-            if (!existingNames.Contains(newName))
-                return newName;
-
-            counter++;
-        }
-    }
-
-    public override void Uninit()
-    {
-        Service.CommandManager.RemoveCommand(ModuleCommand);
-
-        base.Uninit();
-    }
 }

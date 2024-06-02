@@ -1,15 +1,14 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
-using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
@@ -17,7 +16,7 @@ namespace DailyRoutines.Modules;
 public unsafe class AutoCancelCast : DailyModuleBase
 {
     [Signature("48 83 EC 38 33 D2 C7 44 24 20 00 00 00 00 45 33 C9")]
-    private static System.Action? CancelCast;
+    private static Action? CancelCast;
 
     private static HashSet<uint>? TargetAreaActions;
 
@@ -26,7 +25,7 @@ public unsafe class AutoCancelCast : DailyModuleBase
         Service.Hook.InitializeFromAttributes(this);
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
-        TargetAreaActions ??= LuminaCache.Get<Action>()
+        TargetAreaActions ??= LuminaCache.Get<Lumina.Excel.GeneratedSheets.Action>()
                                          .Where(x => x.TargetArea)
                                          .Select(x => x.RowId).ToHashSet();
 

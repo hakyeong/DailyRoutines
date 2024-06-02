@@ -13,7 +13,7 @@ using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Application.Network.WorkDefinitions;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -30,11 +30,6 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoLeveQuestsTitle", "AutoLeveQuestsDescription", ModuleCategories.一般)]
 public unsafe class AutoLeveQuests : DailyModuleBase
 {
-    private static AtkUnitBase* SelectString     => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
-    private static AtkUnitBase* SelectIconString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectIconString");
-    private static AtkUnitBase* GuildLeve        => (AtkUnitBase*)Service.Gui.GetAddonByName("GuildLeve");
-
-    private delegate void GameObjectRotateDelegate(GameObject* obj, float value);
     [Signature("E8 ?? ?? ?? ?? 83 FE 4F", DetourName = nameof(GameObjectRotateDetour))]
     private static Hook<GameObjectRotateDelegate>? GameObjectRotateHook;
 
@@ -50,6 +45,9 @@ public unsafe class AutoLeveQuests : DailyModuleBase
 
     private static byte LeveAllowancesDisplay;
     private static float RandomRotation;
+    private static AtkUnitBase* SelectString     => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
+    private static AtkUnitBase* SelectIconString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectIconString");
+    private static AtkUnitBase* GuildLeve        => (AtkUnitBase*)Service.Gui.GetAddonByName("GuildLeve");
 
     public override void Init()
     {
@@ -64,69 +62,85 @@ public unsafe class AutoLeveQuests : DailyModuleBase
     {
         var childSize = new Vector2(420f, 300f);
         ImGuiOm.DisableZoneWithHelp(() =>
-        {
-            if (ImGui.BeginChild("LeveSelectChild", childSize, true))
-            {
-                if (LeveQuests.Count == 0)
-                {
-                    if (ImGuiOm.SelectableTextCentered(Service.Lang.GetText("AutoLeveQuests-GetAreaLeveData")))
-                        GetMapLeveQuests();
-                }
-                else
-                {
-                    ImGui.SetNextItemWidth(-1f);
-                    ImGui.InputTextWithHint("##AutoLeveQuests-SearchLeveQuest", Service.Lang.GetText("PleaseSearch"), ref SearchString, 128);
-                }
+                                    {
+                                        if (ImGui.BeginChild("LeveSelectChild", childSize, true))
+                                        {
+                                            if (LeveQuests.Count == 0)
+                                            {
+                                                if (ImGuiOm.SelectableTextCentered(
+                                                        Service.Lang.GetText("AutoLeveQuests-GetAreaLeveData")))
+                                                    GetMapLeveQuests();
+                                            }
+                                            else
+                                            {
+                                                ImGui.SetNextItemWidth(-1f);
+                                                ImGui.InputTextWithHint("##AutoLeveQuests-SearchLeveQuest",
+                                                                        Service.Lang.GetText("PleaseSearch"),
+                                                                        ref SearchString, 128);
+                                            }
 
-                ImGui.Separator();
+                                            ImGui.Separator();
 
-                foreach (var leve in LeveQuests)
-                {
-                    var leveName = leve.Value.Name.RawString;
-                    var jobName = leve.Value.ClassJobCategory.Value.Name.RawString;
-                    var leveID = leve.Value.RowId.ToString();
+                                            foreach (var leve in LeveQuests)
+                                            {
+                                                var leveName = leve.Value.Name.RawString;
+                                                var jobName = leve.Value.ClassJobCategory.Value.Name.RawString;
+                                                var leveID = leve.Value.RowId.ToString();
 
-                    if (!string.IsNullOrWhiteSpace(SearchString) &&
-                        !leveName.Contains(SearchString) && !jobName.Contains(SearchString) &&
-                        !leveID.Contains(SearchString))
-                        continue;
+                                                if (!string.IsNullOrWhiteSpace(SearchString) &&
+                                                    !leveName.Contains(SearchString) && !jobName.Contains(SearchString) &&
+                                                    !leveID.Contains(SearchString))
+                                                    continue;
 
-                    if (ImGui.Selectable($"{jobName}{leveName[leveName.IndexOf('：')..]} ({leveID})", SelectedLeve == leve.Value))
-                        SelectedLeve = leve.Value;
-                }
+                                                if (ImGui.Selectable(
+                                                        $"{jobName}{leveName[leveName.IndexOf('：')..]} ({leveID})",
+                                                        SelectedLeve == leve.Value))
+                                                    SelectedLeve = leve.Value;
+                                            }
 
-                ImGui.EndChild();
-            }
-        }, [new(TaskManager.IsBusy, Service.Lang.GetText("AutoLeveQuests-DisableHelp-Delivering"))], Service.Lang.GetText("DisableZoneHeader"));
+                                            ImGui.EndChild();
+                                        }
+                                    },
+                                    [
+                                        new(TaskManager.IsBusy,
+                                            Service.Lang.GetText("AutoLeveQuests-DisableHelp-Delivering")),
+                                    ],
+                                    Service.Lang.GetText("DisableZoneHeader"));
 
         ImGui.SameLine();
         ImGui.BeginGroup();
         var childSize1 = ImGuiHelpers.ScaledVector2(350f, 60f);
         ImGuiOm.DisableZoneWithHelp(() =>
-        {
-            if (ImGui.BeginChild("NPCSelectChild", childSize1, true))
-            {
-                if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-ObtainLevemete")))
-                    LeveMete = TargetSystem.Instance()->Target;
+                                    {
+                                        if (ImGui.BeginChild("NPCSelectChild", childSize1, true))
+                                        {
+                                            if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-ObtainLevemete")))
+                                                LeveMete = TargetSystem.Instance()->Target;
 
-                ImGui.SameLine();
-                ImGui.Text(LeveMete == null
-                               ? Service.Lang.GetText("AutoLeveQuests-ObtainHelp")
-                               : $"{Marshal.PtrToStringUTF8((nint)LeveMete->Name)} ({LeveMete->DataID})");
+                                            ImGui.SameLine();
+                                            ImGui.Text(LeveMete == null
+                                                           ? Service.Lang.GetText("AutoLeveQuests-ObtainHelp")
+                                                           : $"{Marshal.PtrToStringUTF8((nint)LeveMete->Name)} ({LeveMete->DataID})");
 
-                ImGui.Separator();
-                ImGuiHelpers.ScaledDummy(1f);
+                                            ImGui.Separator();
+                                            ImGuiHelpers.ScaledDummy(1f);
 
-                if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-ObtainLeveClient")))
-                    LeveReceiver = TargetSystem.Instance()->Target;
+                                            if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-ObtainLeveClient")))
+                                                LeveReceiver = TargetSystem.Instance()->Target;
 
-                ImGui.SameLine();
-                ImGui.Text(LeveReceiver == null
-                               ? Service.Lang.GetText("AutoLeveQuests-ObtainHelp")
-                               : $"{Marshal.PtrToStringUTF8((nint)LeveReceiver->Name)} ({LeveReceiver->DataID})");
-                ImGui.EndChild();
-            }
-        }, [new(TaskManager.IsBusy, Service.Lang.GetText("AutoLeveQuests-DisableHelp-Delivering"))], Service.Lang.GetText("DisableZoneHeader"));
+                                            ImGui.SameLine();
+                                            ImGui.Text(LeveReceiver == null
+                                                           ? Service.Lang.GetText("AutoLeveQuests-ObtainHelp")
+                                                           : $"{Marshal.PtrToStringUTF8((nint)LeveReceiver->Name)} ({LeveReceiver->DataID})");
+
+                                            ImGui.EndChild();
+                                        }
+                                    },
+                                    [
+                                        new(TaskManager.IsBusy,
+                                            Service.Lang.GetText("AutoLeveQuests-DisableHelp-Delivering")),
+                                    ],
+                                    Service.Lang.GetText("DisableZoneHeader"));
 
         var childSize2 = ImGuiHelpers.ScaledVector2(350f, 90f);
         if (ImGui.BeginChild("OperationChild", childSize2, true))
@@ -150,7 +164,8 @@ public unsafe class AutoLeveQuests : DailyModuleBase
             ], Service.Lang.GetText("DisableZoneHeader"));
 
             ImGui.SameLine();
-            if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Pause, Service.Lang.GetText("Stop"), ImGuiHelpers.ScaledVector2(167f, 45f)))
+            if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Pause, Service.Lang.GetText("Stop"),
+                                                   ImGuiHelpers.ScaledVector2(167f, 45f)))
             {
                 TaskManager.Abort();
                 Service.AddonLifecycle.UnregisterListener(AlwaysYes);
@@ -230,7 +245,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
     private static bool? AcceptLeveQuest()
     {
         if (GuildLeve == null || !IsAddonAndNodesReady(GuildLeve)) return false;
-        
+
         AgentHelper.SendEvent(AgentId.LeveQuest, 0, 3, SelectedLeve.RowId);
 
         return QuestManager.Instance()->LeveQuestsSpan.ToArray().Select(x => (LeveWork?)x)
@@ -348,4 +363,6 @@ public unsafe class AutoLeveQuests : DailyModuleBase
 
         base.Uninit();
     }
+
+    private delegate void GameObjectRotateDelegate(GameObject* obj, float value);
 }
