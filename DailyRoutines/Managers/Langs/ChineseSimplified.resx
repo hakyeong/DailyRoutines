@@ -1457,9 +1457,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Level" xml:space="preserve">
     <value>等级</value>
   </data>
-  <data name="PlayerTargetInfoExpand-CompanyTag" xml:space="preserve">
-    <value>部队名称</value>
-  </data>
   <data name="PlayerTargetInfoExpand-FocusTarget" xml:space="preserve">
     <value>焦点目标</value>
   </data>
@@ -1941,5 +1938,11 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="Settings-ModuleInfoDisplayShort" xml:space="preserve">
     <value>分类: {0} / 作者: {1}</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>描述</value>
+  </data>
+  <data name="PlayerTargetInfoExpand-AvailablePayload" xml:space="preserve">
+    <value>可用负载</value>
   </data>
 </root>

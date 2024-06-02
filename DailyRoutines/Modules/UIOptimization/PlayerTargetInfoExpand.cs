@@ -2,14 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using DailyRoutines.Helpers;
+using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
+using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
+using CharacterStruct = FFXIVClientStructs.FFXIV.Client.Game.Character.Character;
 
 namespace DailyRoutines.Modules;
 
@@ -18,15 +21,29 @@ public unsafe class PlayerTargetInfoExpand : DailyModuleBase
 {
     private static readonly List<Payload> Payloads =
     [
-        new Payload("/Name/", Service.Lang.GetText("Name"), c => c.Name.TextValue),
-        new Payload("/Job/", Service.Lang.GetText("Job"),
+        new Payload("/Name/", "名称", c => c.Name.TextValue),
+        new Payload("/Job/", "职业",
                     c => c.ClassJob.GameData?.Name.RawString ?? LuminaCache.GetRow<ClassJob>(0).Name.RawString),
-        new Payload("/Level/", Service.Lang.GetText("Level"), c => c.Level.ToString()),
-        new Payload("/FCTag/", Service.Lang.GetText("PlayerTargetInfoExpand-CompanyTag"), c => c.CompanyTag.TextValue),
-        new Payload("/OnlineStatus/", Service.Lang.GetText("PlayerTargetInfoExpand-OnlineStatus"),
+        new Payload("/Level/", "等级", c => c.Level.ToString()),
+        new Payload("/FCTag/", "部队", c => c.CompanyTag.TextValue),
+        new Payload("/OnlineStatus/", "在线状态",
                     c => string.IsNullOrWhiteSpace(c.OnlineStatus.GameData?.Name.RawString)
                              ? LuminaCache.GetRow<OnlineStatus>(47).Name.RawString
                              : c.OnlineStatus.GameData?.Name.RawString),
+        new Payload("/Mount/", "坐骑", c => LuminaCache.GetRow<Mount>(c.ToCharacterStruct()->Mount.MountId).Singular.RawString),
+        new Payload("/HomeWorld/", "原始服务器", c => LuminaCache.GetRow<World>(c.ToCharacterStruct()->HomeWorld).Name.RawString),
+        new Payload("/Emote/", "情感动作", c => LuminaCache.GetRow<Emote>(c.ToCharacterStruct()->EmoteController.EmoteId).Name.RawString),
+        new Payload("/TargetsTarget/", "目标的目标", c => c.TargetObject?.Name.TextValue ?? ""),
+        new Payload("/ShieldValue/", "盾值 (百分比)", c => c.ShieldPercentage.ToString()),
+        new Payload("/CurrentHP/", "当前生命值", c => c.CurrentHp.ToString()),
+        new Payload("/MaxHP/", "最大生命值", c => c.MaxHp.ToString()),
+        new Payload("/CurrentMP/", "当前魔力", c => c.CurrentMp.ToString()),
+        new Payload("/MaxMP/", "最大魔力", c => c.MaxMp.ToString()),
+        new Payload("/MaxCP/", "最大制作力", c => c.MaxCp.ToString()),
+        new Payload("/CurrentCP/", "当前制作力", c => c.CurrentCp.ToString()),
+        new Payload("/MaxCP/", "最大制作力", c => c.MaxCp.ToString()),
+        new Payload("/CurrentGP/", "当前采集力", c => c.CurrentGp.ToString()),
+        new Payload("/MaxGP/", "最大采集力", c => c.MaxGp.ToString()),
     ];
 
     private static Config ModuleConfig = null!;
@@ -44,6 +61,7 @@ public unsafe class PlayerTargetInfoExpand : DailyModuleBase
 
     public override void ConfigUI()
     {
+        ImGui.BeginGroup();
         var tableSize = new Vector2(ImGui.GetContentRegionAvail().X / 2, 0);
         DrawInputAndPreviewText(Service.Lang.GetText("Target"), ref ModuleConfig.TargetPattern);
         DrawInputAndPreviewText(Service.Lang.GetText("PlayerTargetInfoExpand-TargetsTarget"),
@@ -51,14 +69,16 @@ public unsafe class PlayerTargetInfoExpand : DailyModuleBase
 
         DrawInputAndPreviewText(Service.Lang.GetText("PlayerTargetInfoExpand-FocusTarget"),
                                 ref ModuleConfig.FocusTargetPattern);
+        ImGui.EndGroup();
 
-        if (ImGui.BeginTable("PayloadDisplay", 2, ImGuiTableFlags.Borders, tableSize))
+        ImGui.SameLine();
+        if (ImGui.BeginTable("PayloadDisplay", 2, ImGuiTableFlags.Borders, tableSize / 1.5f))
         {
             ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
             ImGui.TableNextColumn();
-            ImGui.Text("可用负载");
+            ImGui.Text(Service.Lang.GetText("PlayerTargetInfoExpand-AvailablePayload"));
             ImGui.TableNextColumn();
-            ImGui.Text("描述");
+            ImGui.Text(Service.Lang.GetText("Description"));
 
             foreach (var payload in Payloads)
             {
@@ -78,7 +98,7 @@ public unsafe class PlayerTargetInfoExpand : DailyModuleBase
         {
             if (ImGui.BeginTable(categoryTitle, 2, ImGuiTableFlags.BordersOuter, tableSize))
             {
-                ImGui.TableSetupColumn("###Category", ImGuiTableColumnFlags.None, 10);
+                ImGui.TableSetupColumn("###Category", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("真得要六个字").X);
                 ImGui.TableSetupColumn("###Content", ImGuiTableColumnFlags.None, 50);
 
                 ImGui.TableNextRow();
