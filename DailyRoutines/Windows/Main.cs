@@ -338,13 +338,14 @@ public class MainSettings
 
     public class GameEvent
     {
-        public uint                ID          { get; set; }
-        public DalamudLinkPayload? LinkPayload { get; set; }
-        public string              Name        { get; set; } = string.Empty;
-        public string              Url         { get; set; } = string.Empty;
-        public DateTime            BeginTime   { get; set; } = DateTime.MinValue;
-        public DateTime            EndTime     { get; set; } = DateTime.MaxValue;
-        public Vector4             Color       { get; set; }
+        public uint                ID            { get; set; }
+        public DalamudLinkPayload? LinkPayload   { get; set; }
+        public uint                LinkPayloadID { get; set; }
+        public string              Name          { get; set; } = string.Empty;
+        public string              Url           { get; set; } = string.Empty;
+        public DateTime            BeginTime     { get; set; } = DateTime.MinValue;
+        public DateTime            EndTime       { get; set; } = DateTime.MaxValue;
+        public Vector4             Color         { get; set; }
 
         /// <summary>
         ///     0 - 正在进行; 1 - 未开始; 2 - 已结束
@@ -784,7 +785,10 @@ public class MainSettings
 
         if (result.data.Count > 0)
         {
+            foreach (var activity in GameCalendars)
+                Service.LinkPayloadManager.Unregister(activity.LinkPayloadID);
             GameCalendars.Clear();
+
             foreach (var activity in result.data)
             {
                 var currentTime = DateTime.Now;
@@ -793,7 +797,8 @@ public class MainSettings
                 var gameEvent = new GameEvent
                 {
                     ID = activity.id,
-                    LinkPayload = Service.PluginInterface.AddChatLinkHandler(activity.id, OpenGameEventLinkPayload),
+                    LinkPayload = Service.LinkPayloadManager.Register(OpenGameEventLinkPayload, out var linkPayloadID),
+                    LinkPayloadID = linkPayloadID,
                     Name = activity.name,
                     Url = activity.url,
                     BeginTime = beginTime,
@@ -814,7 +819,7 @@ public class MainSettings
 
     private static void OpenGameEventLinkPayload(uint commandID, SeString message)
     {
-        var link = GameCalendars.FirstOrDefault(x => x.ID == commandID)?.Url;
+        var link = GameCalendars.FirstOrDefault(x => x.LinkPayloadID == commandID)?.Url;
         if (!string.IsNullOrWhiteSpace(link))
             Util.OpenLink(link);
     }
