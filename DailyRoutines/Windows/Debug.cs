@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using DailyRoutines.Managers;
 using DailyRoutines.Modules;
+using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
@@ -10,7 +11,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Windows;
 
-public class Debug() : Window("Daily Routines - 调试窗口", ImGuiWindowFlags.AlwaysAutoResize), IDisposable
+public class Debug() : Window("Daily Routines - 调试窗口###DailyRoutines-Debug", ImGuiWindowFlags.AlwaysAutoResize), IDisposable
 {
     internal class Config
     {
@@ -22,50 +23,21 @@ public class Debug() : Window("Daily Routines - 调试窗口", ImGuiWindowFlags.
     }
 
     internal static Config DebugConfig = new();
-    private static (int commmand, int p1, int p2, int p3, int p4) ExecuteCommandManual = new();
+    private static (int commmand, int p1, int p2, int p3, int p4) ExecuteCommandManual;
 
     public override void Draw()
     {
+        ImGui.PushID("快捷操作");
+        ImGui.TextColored(ImGuiColors.DalamudYellow, "快捷操作:");
+        ImGui.Separator();
+
         if (ImGui.Button("输出模块一览"))
         {
-            var allModules = Assembly.GetExecutingAssembly().GetTypes()
-                                     .Where(t => typeof(DailyModuleBase).IsAssignableFrom(t) &&
-                                                 t is { IsClass: true, IsAbstract: false } &&
-                                                 t.GetCustomAttribute<ModuleDescriptionAttribute>() != null)
-                                     .Select(type => new
-                                     {
-                                         Title = Service.Lang.GetText(
-                                             type.GetCustomAttribute<ModuleDescriptionAttribute>()?.TitleKey ??
-                                             "DevModuleTitle"),
-                                         Description = Service.Lang.GetText(
-                                             type.GetCustomAttribute<ModuleDescriptionAttribute>()?.DescriptionKey ??
-                                             "DevModuleDescription"),
-                                         Category = type.GetCustomAttribute<ModuleDescriptionAttribute>()?.Category ??
-                                                    ModuleCategories.一般,
-                                     })
-                                     .OrderBy(m => m.Category)
-                                     .ToList();
-
-            var groupedModules = allModules.GroupBy(m => m.Category);
-
-            var markdown = "";
-            foreach (var group in groupedModules)
-            {
-                markdown += $"## {group.Key}\n";
-                markdown += "| 名称 | 描述 |\n";
-                markdown += "|------|------|\n";
-
-                foreach (var module in group)
-                {
-                    var formattedDescription = module.Description.Replace("\n", "<br>");
-                    markdown += $"| {module.Title} | {formattedDescription} |\n";
-                }
-
-                markdown += "\n";
-            }
-
+            var markdown = OutputAllModulesMarkdown();
             ImGui.SetClipboardText(markdown);
         }
+
+        ImGui.PopID();
 
         ImGui.PushID("Execute Command Manager");
         ImGui.TextColored(ImGuiColors.DalamudYellow, "Execute Command Manager");
@@ -103,6 +75,47 @@ public class Debug() : Window("Daily Routines - 调试窗口", ImGuiWindowFlags.
         ImGui.Checkbox("显示 Action 日志##Use Action Manager", ref DebugConfig.ShowUseActionLog);
         ImGui.Checkbox("显示 Location Action 日志##Use Action Manager", ref DebugConfig.ShowUseActionLocationLog);
         ImGui.Checkbox("显示 Pet Move 日志##Use Action Manager", ref DebugConfig.ShowUseActionPetMoveLog);
+    }
+
+    private static string OutputAllModulesMarkdown()
+    {
+        var allModules = Assembly.GetExecutingAssembly().GetTypes()
+                                 .Where(t => typeof(DailyModuleBase).IsAssignableFrom(t) &&
+                                             t is { IsClass: true, IsAbstract: false } &&
+                                             t.GetCustomAttribute<ModuleDescriptionAttribute>() != null)
+                                 .Select(type => new
+                                 {
+                                     Title = Service.Lang.GetText(
+                                         type.GetCustomAttribute<ModuleDescriptionAttribute>()?.TitleKey ??
+                                         "DevModuleTitle"),
+                                     Description = Service.Lang.GetText(
+                                         type.GetCustomAttribute<ModuleDescriptionAttribute>()?.DescriptionKey ??
+                                         "DevModuleDescription"),
+                                     Category = type.GetCustomAttribute<ModuleDescriptionAttribute>()?.Category ??
+                                                ModuleCategories.一般,
+                                 })
+                                 .OrderBy(m => m.Category)
+                                 .ToList();
+
+        var groupedModules = allModules.GroupBy(m => m.Category);
+
+        var markdown = "";
+        foreach (var group in groupedModules)
+        {
+            markdown += $"## {group.Key}\n";
+            markdown += "| 名称 | 描述 |\n";
+            markdown += "|------|------|\n";
+
+            foreach (var module in group)
+            {
+                var formattedDescription = module.Description.Replace("\n", "<br>");
+                markdown += $"| {module.Title} | {formattedDescription} |\n";
+            }
+
+            markdown += "\n";
+        }
+
+        return markdown;
     }
 
     public void Dispose()

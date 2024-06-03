@@ -17,6 +17,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
+using Dalamud.Plugin;
 using Dalamud.Utility;
 using ImGuiNET;
 using Newtonsoft.Json;
@@ -368,6 +369,15 @@ public class MainSettings
         public int    SortIndex     { get; set; }
     }
 
+    public class TroubleShootingInfo
+    {
+        public DateTime                   GenerateTime      { get; set; } = DateTime.Now;
+        public string                     PluginName        { get; set; } = Service.PluginInterface.Manifest.Name;
+        public string                     PluginDescription { get; set; } = Service.PluginInterface.Manifest.Description;
+        public Version                    Version           { get; set; } = Service.PluginInterface.Manifest.AssemblyVersion;
+        public List<InstalledPluginState> InstalledPlugins  { get; set; } = Service.PluginInterface.InstalledPlugins.ToList();
+    }
+
     private static string ConflictKeySearchString = string.Empty;
     private static readonly HttpClient client = new();
     private static int TotalDownloadCounts;
@@ -497,7 +507,7 @@ public class MainSettings
     private static void DrawContact()
     {
         PresetFont.Axis18.Push();
-        ImGui.SetWindowFontScale(1.1f * ImGuiHelpers.GlobalScale);
+        ImGui.SetWindowFontScale(1.05f * ImGuiHelpers.GlobalScale);
         ImGuiHelpers.CenterCursorForText(Service.Lang.GetText("ContactHelp"));
         ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("ContactHelp"));
 
