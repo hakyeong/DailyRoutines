@@ -52,7 +52,8 @@ public class Service
         PluginInterface.RemoveChatLinkHandler();
 
         foreach (var property in typeof(Service).GetProperties(BindingFlags.Static | BindingFlags.Public)
-                                                .Where(p => typeof(IDailyManager).IsAssignableFrom(p.PropertyType)).Reverse())
+                                                .Where(p => typeof(IDailyManager).IsAssignableFrom(p.PropertyType))
+                                                .Reverse())
         {
             var manager = (IDailyManager?)property.GetValue(null);
             var managerType = manager?.GetType();
@@ -66,6 +67,7 @@ public class Service
     }
 
     #region DalamudServices
+
     [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
     [PluginService] public static IAddonEventManager AddonEvent { get; private set; } = null!;
     [PluginService] public static IAetheryteList AetheryteList { get; private set; } = null!;
@@ -73,13 +75,13 @@ public class Service
     [PluginService] public static IChatGui Chat { get; private set; } = null!;
     [PluginService] public static IClientState ClientState { get; private set; } = null!;
     /// <summary>
-    /// 如非必要请使用 CommandManager, 而不是 ICommandManager 来添加命令
+    ///     如非必要请使用 CommandManager, 而不是 ICommandManager 来添加命令
     /// </summary>
     [PluginService] public static ICommandManager Command { get; set; } = null!;
     [PluginService] public static ICondition Condition { get; private set; } = null!;
     [PluginService] public static IContextMenu ContextMenu { get; private set; } = null!;
     /// <summary>
-    /// 如非必要请使用 LuminaCache, 而不是 IDataManager 来获取游戏表格数据
+    ///     如非必要请使用 LuminaCache, 而不是 IDataManager 来获取游戏表格数据
     /// </summary>
     [PluginService] public static IDataManager Data { get; private set; } = null!;
     [PluginService] public static IDtrBar DtrBar { get; private set; } = null!;
@@ -87,7 +89,7 @@ public class Service
     [PluginService] public static IFateTable Fate { get; private set; } = null!;
     [PluginService] public static IFlyTextGui FlyText { get; private set; } = null!;
     /// <summary>
-    /// 如果需要挂钩 Update 事件, 请使用 FrameworkManager
+    ///     如果需要挂钩 Update 事件, 请使用 FrameworkManager
     /// </summary>
     [PluginService] public static IFramework Framework { get; private set; } = null!;
     [PluginService] public static IGameConfig GameConfig { get; private set; } = null!;
@@ -109,20 +111,22 @@ public class Service
     [PluginService] public static ITextureProvider Texture { get; private set; } = null!;
     [PluginService] public static ITitleScreenMenu TitleScreenMenu { get; private set; } = null!;
     [PluginService] public static IToastGui Toast { get; private set; } = null!;
+
     #endregion
 
-    public static DalamudPluginInterface PluginInterface { get; private set; } = null!;
-    public static Configuration Config { get; private set; } = null!;
-    public static LanguageManager Lang { get; private set; } = new();
-    public static WindowManager WindowManager { get; private set; } = new();
-    public static UseActionManager UseActionManager { get; private set; } = new();
-    public static CommandManager CommandManager { get; private set; } = new();
-    public static ExecuteCommandManager ExecuteCommandManager { get; private set; } = new();
-    public static LogMessageManager LogMessageManager { get; private set; } = new();
-    public static FrameworkManager FrameworkManager { get; private set; } = new();
-    public static NotifyManager Notify { get; private set; } = new();
-    public static SigScanner SigScanner { get; private set; } = new();
-    public static IPCManager IPCManager { get; private set; } = new();
-    public static ModuleManager ModuleManager { get; private set; } = new();
-    public static OnlineStatsManager DataUploadManager { get; private set; } = new();
+    public static DalamudPluginInterface PluginInterface       { get; private set; } = null!;
+    public static Configuration          Config                { get; private set; } = null!;
+    public static LanguageManager        Lang                  { get; private set; } = new();
+    public static WindowManager          WindowManager         { get; private set; } = new();
+    public static UseActionManager       UseActionManager      { get; private set; } = new();
+    public static CommandManager         CommandManager        { get; private set; } = new();
+    public static ExecuteCommandManager  ExecuteCommandManager { get; private set; } = new();
+    public static LogMessageManager      LogMessageManager     { get; private set; } = new();
+    public static FrameworkManager       FrameworkManager      { get; private set; } = new();
+    public static NotifyManager          Notify                { get; private set; } = new();
+    public static SigScanner             SigScanner            { get; private set; } = new();
+    public static IPCManager             IPCManager            { get; private set; } = new();
+    public static LinkPayloadManager     LinkPayloadManager    { get; private set; } = new();
+    public static ModuleManager          ModuleManager         { get; private set; } = new();
+    public static OnlineStatsManager     DataUploadManager     { get; private set; } = new();
 }
