@@ -275,15 +275,6 @@
   <data name="AutoLeveQuests-ObtainLevemete" xml:space="preserve">
     <value>获取理符发行人</value>
   </data>
-  <data name="AutoLeveQuests-OperationDelay" xml:space="preserve">
-    <value>操作延迟 (毫秒)</value>
-  </data>
-  <data name="AutoLeveQuests-OperationDelayHelp" xml:space="preserve">
-    <value>本模块在运行时会禁止目标选择数据上传至服务器,
-即本地视角下来看在正常选择目标, 但从他人视角下来看你的角色什么都没有选中
-
-如果仍然不放心可以使用小号观察, 或者在此调高操作延迟</value>
-  </data>
   <data name="AutoLeveQuests-SelectedLeve" xml:space="preserve">
     <value>选择理符:</value>
   </data>
@@ -1922,7 +1913,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>理符发行人和委托人重复</value>
   </data>
   <data name="AutoLeveQuests-CompleteHelp" xml:space="preserve">
-    <value>批量完成生产理符任务完成</value>
+    <value>批量提交理符任务已完成</value>
   </data>
   <data name="AutoLeveQuests-CurrentLeveAllowances" xml:space="preserve">
     <value>当前理符限额: {0} </value>
@@ -1965,5 +1956,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="None" xml:space="preserve">
     <value>无</value>
+  </data>
+  <data name="AutoLeveQuests-NoLevesHelp" xml:space="preserve">
+    <value>当前区域无可用理符任务</value>
   </data>
 </root>
