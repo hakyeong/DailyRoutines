@@ -1945,4 +1945,25 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="PlayerTargetInfoExpand-AvailablePayload" xml:space="preserve">
     <value>可用负载</value>
   </data>
+  <data name="AutoSwitchIMEWhenInput-FailFindGameWindow" xml:space="preserve">
+    <value>获取游戏窗口失败</value>
+  </data>
+  <data name="AutoSwitchIMEWhenInput-FailObtainIME" xml:space="preserve">
+    <value>获取当前输入法失败</value>
+  </data>
+  <data name="AutoSwitchIMEWhenInput-FailObtainIMEConvertState" xml:space="preserve">
+    <value>获取IMM转换状态失败</value>
+  </data>
+  <data name="AutoSwitchIMEWhenInput-FailRefreshIME" xml:space="preserve">
+    <value>刷新输入法失败</value>
+  </data>
+  <data name="AutoSwitchIMEWhenInput-FailSwitchIME" xml:space="preserve">
+    <value>切换输入法失败</value>
+  </data>
+  <data name="AutoSwitchIMEWhenInput-InadequateIMEHelp" xml:space="preserve">
+    <value>仅当电脑安装支持两个及以上不同语言输入法有效</value>
+  </data>
+  <data name="None" xml:space="preserve">
+    <value>无</value>
+  </data>
 </root>

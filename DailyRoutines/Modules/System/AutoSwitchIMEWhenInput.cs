@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Hooking;
 using Dalamud.Interface;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
 using ECommons.Interop;
@@ -44,15 +46,17 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
         RefreshIME();
 
         Service.Hook.InitializeFromAttributes(this);
-        TextInputReceiveEventHook.Enable();
+        TextInputReceiveEventHook?.Enable();
     }
 
     public override void ConfigUI()
     {
-        if (EzThrottler.Throttle("AutoSwitchIMEWhenInput-RefreshIME", 1000))
-            RefreshIME();
+        if (EzThrottler.Throttle("AutoSwitchIMEWhenInput-RefreshIME", 1000)) RefreshIME();
 
         ImGui.Spacing();
+
+        if (InstalledIME.Count <= 1)
+            ImGui.TextColored(ImGuiColors.DalamudOrange, Service.Lang.GetText("AutoSwitchIMEWhenInput-InadequateIMEHelp"));
 
         var tableSize = ((ImGui.GetContentRegionAvail() / 2) - ImGuiHelpers.ScaledVector2(20f)) with { Y = 0 };
         if (ImGui.BeginTable("IMESelectTable", 4, ImGuiTableFlags.Borders, tableSize))
@@ -106,7 +110,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
 
         var saved = ModuleConfig.SavedIME;
         ImGui.Text(Service.Lang.GetText("AutoSwitchIMEWhenInput-SavedIME",
-                                        saved == null ? "无" : $"{saved.Name} ({saved.Mode}/{saved.Sentence})"));
+                                        saved == null ? Service.Lang.GetText("None") : $"{saved.Name} ({saved.Mode}/{saved.Sentence})"));
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoSwitchIMEWhenInput-RestoreWhenFocusStop"),
                            ref ModuleConfig.RestoreWhenFocusStop))
@@ -139,14 +143,14 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
         SavedIME? result = null;
         if (!WindowFunctions.TryFindGameWindow(out var gameHandle))
         {
-            Service.Log.Debug("获取游戏窗口失败, 获取当前输入法失败");
+            NotifyHelper.NotificationError($"{Service.Lang.GetText("AutoSwitchIMEWhenInput-FailFindGameWindow")}, {Service.Lang.GetText("AutoSwitchIMEWhenInput-FailObtainIME")}");
             return result;
         }
 
         var hIMC = ImmGetContext(gameHandle);
         if (hIMC == nint.Zero)
         {
-            Service.Log.Debug("获取IMM转换状态失败, 获取当前输入法失败");
+            NotifyHelper.NotificationError($"{Service.Lang.GetText("AutoSwitchIMEWhenInput-FailObtainIMEConvertState")}, {Service.Lang.GetText("AutoSwitchIMEWhenInput-FailObtainIME")}");
             return result;
         }
 
@@ -169,7 +173,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
     {
         if (!WindowFunctions.TryFindGameWindow(out var gameHandle))
         {
-            Service.Log.Debug("获取游戏窗口失败, 切换输入法失败");
+            NotifyHelper.NotificationError($"{Service.Lang.GetText("AutoSwitchIMEWhenInput-FailFindGameWindow")}, {Service.Lang.GetText("AutoSwitchIMEWhenInput-FailSwitchIME")}");
             return;
         }
 
@@ -179,10 +183,6 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
             if (lang.LayoutName == ime.Name) continue;
 
             InputLanguage.CurrentInputLanguage = lang;
-            var ptr = ImmGetContext(gameHandle);
-            if (!ImmSetConversionStatus(ptr, ime.Mode, ime.Sentence))
-                Service.Log.Debug("获取IMM转换状态失败, 切换输入法失败");
-
             break;
         }
 
@@ -193,7 +193,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
             InputLanguage.CurrentInputLanguage = lang;
             var ptr = ImmGetContext(gameHandle);
             if (!ImmSetConversionStatus(ptr, ime.Mode, ime.Sentence))
-                Service.Log.Debug("获取IMM转换状态失败, 切换输入法失败");
+                NotifyHelper.NotificationError($"{Service.Lang.GetText("AutoSwitchIMEWhenInput-FailObtainIMEConvertState")}, {Service.Lang.GetText("AutoSwitchIMEWhenInput-FailSwitchIME")}");
 
             break;
         }
@@ -203,12 +203,12 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
     {
         InstalledIME.Clear();
         if (!WindowFunctions.TryFindGameWindow(out var gameHandle))
-            Service.Log.Debug("获取游戏窗口失败, 刷新输入法失败");
+            NotifyHelper.NotificationError($"{Service.Lang.GetText("AutoSwitchIMEWhenInput-FailFindGameWindow")}, {Service.Lang.GetText("AutoSwitchIMEWhenInput-FailRefreshIME")}");
 
         var hIMC = ImmGetContext(gameHandle);
         if (hIMC == nint.Zero)
         {
-            Service.Log.Debug("获取IMM转换状态失败, 刷新输入法失败");
+            NotifyHelper.NotificationError($"{Service.Lang.GetText("AutoSwitchIMEWhenInput-FailObtainIMEConvertState")}, {Service.Lang.GetText("AutoSwitchIMEWhenInput-FailRefreshIME")}");
             return;
         }
 
