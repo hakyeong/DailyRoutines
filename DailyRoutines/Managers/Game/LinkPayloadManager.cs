@@ -11,7 +11,7 @@ public class LinkPayloadManager : IDailyManager
 
     private void Init() { DistributedPayloads.Clear(); }
 
-    private DalamudLinkPayload Register(Action<uint, SeString> commandAction, out uint id)
+    public DalamudLinkPayload Register(Action<uint, SeString> commandAction, out uint id)
     {
         id = GetUniqueID();
 
@@ -20,10 +20,10 @@ public class LinkPayloadManager : IDailyManager
         return payload;
     }
 
-    private bool TryGetPayload(uint id, out DalamudLinkPayload? payload)
+    public bool TryGetPayload(uint id, out DalamudLinkPayload? payload)
         => DistributedPayloads.TryGetValue(id, out payload);
 
-    private bool Unregister(uint id)
+    public bool Unregister(uint id)
     {
         if (!DistributedPayloads.ContainsKey(id)) return false;
 
