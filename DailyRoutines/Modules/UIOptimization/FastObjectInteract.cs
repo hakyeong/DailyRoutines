@@ -6,20 +6,24 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using ClickLib;
+using ClickLib.Clicks;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
+using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using Dalamud.Plugin.Services;
+using Dalamud.Utility.Signatures;
 using ECommons.Automation.LegacyTaskManager;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -30,7 +34,12 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("FastObjectInteractTitle", "FastObjectInteractDescription", ModuleCategories.界面优化)]
 public unsafe partial class FastObjectInteract : DailyModuleBase
 {
-    private const string ENPCTiltleText = "[{0}] {1}";
+    private delegate nint AgentWorldTravelReceiveEventDelegate(
+        AgentWorldTravel* agent, nint a2, nint a3, nint a4, long eventCase);
+
+    [Signature("40 55 53 56 57 41 54 41 56 41 57 48 8D AC 24 ?? ?? ?? ?? B8",
+               DetourName = nameof(AgentWorldTravelReceiveEventDetour))]
+    private static Hook<AgentWorldTravelReceiveEventDelegate>? AgentWorldTravelReceiveEventHook;
 
     private static readonly Dictionary<ObjectKind, string> ObjectKindLoc = new()
     {
@@ -49,6 +58,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         { ObjectKind.Ornament, "时尚配饰 (不建议)" },
     };
 
+    private const string ENPCTiltleText = "[{0}] {1}";
     private static Dictionary<uint, string>? ENpcTitles;
     private static HashSet<uint>? ImportantENPC;
 
@@ -57,18 +67,24 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     private static string BlacklistKeyInput = string.Empty;
     private static float WindowWidth;
 
-    private static readonly List<ObjectWaitSelected> tempObjects = new(596);
-    private static TargetSystem* targetSystem;
-    private static readonly Dictionary<nint, ObjectWaitSelected> ObjectsWaitSelected = [];
+    private static readonly List<ObjectToSelect> tempObjects = new(596);
+    private static TargetSystem* TargetSystem;
+    private static readonly Dictionary<nint, ObjectToSelect> ObjectsToSelect = [];
 
     private static string AethernetShardName = string.Empty;
     private static bool IsInInstancedArea;
     private static int InstancedAreaAmount = 3;
 
+    private static HashSet<uint> WorldTravelValidZones = [132, 129, 130];
+    private static Dictionary<uint, string> DCWorlds = [];
+    private static uint WorldToTravel;
+
     public override void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        Service.Hook.InitializeFromAttributes(this);
 
+        TargetSystem = FFXIVClientStructs.FFXIV.Client.Game.Control.TargetSystem.Instance();
+        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         ModuleConfig = LoadConfig<Config>() ?? new();
 
         ENpcTitles ??= LuminaCache.Get<ENpcResident>()
@@ -82,8 +98,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
         AethernetShardName = LuminaCache.GetRow<EObjName>(2000151).Singular.RawString;
 
-        targetSystem = TargetSystem.Instance();
-
         Overlay ??= new Overlay(this, $"Daily Routines {Service.Lang.GetText("FastObjectInteractTitle")}");
         Overlay.Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize |
                         ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoCollapse;
@@ -92,16 +106,30 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         else Overlay.Flags &= ~ImGuiWindowFlags.NoMove;
 
         Service.ClientState.TerritoryChanged += OnZoneChanged;
+        Service.ClientState.Login += OnLogin;
         Service.FrameworkManager.Register(OnUpdate);
 
         OnZoneChanged(1);
+        OnLogin();
     }
 
-    private static void OnZoneChanged(ushort zone)
+    private static void OnLogin()
     {
-        if (zone == 0 || zone == Service.ClientState.TerritoryType) return;
+        var agent = AgentLobby.Instance();
+        if (agent == null) return;
 
-        InstancedAreaAmount = 3;
+        var homeWorld = agent->LobbyData.HomeWorldId;
+        if (homeWorld <= 0) return;
+
+        var dataCenter = LuminaCache.GetRow<World>(homeWorld).DataCenter.Row;
+        if (dataCenter <= 0) return;
+
+        DCWorlds.Clear();
+        DCWorlds = LuminaCache.Get<World>()
+                              .Where(x => x.DataCenter.Row == dataCenter && !string.IsNullOrWhiteSpace(x.Name.RawString) &&
+                                          !string.IsNullOrWhiteSpace(x.InternalName.RawString) &&
+                                          IsChineseString(x.Name.RawString))
+                              .ToDictionary(x => x.RowId, x => x.Name.RawString);
     }
 
     public override void ConfigUI()
@@ -236,106 +264,50 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     public override void OverlayUI()
     {
         PresetFont.Axis14.Push();
-        var colors = ImGui.GetStyle().Colors;
 
-        var aetheryteInstance = (GameObject*)nint.Zero;
-        var aetheryteInstanceState = false;
+        ObjectToSelect? instanceChangeObject = null;
+        ObjectToSelect? worldTravelObject = null;
 
         ImGui.BeginGroup();
-        foreach (var kvp in ObjectsWaitSelected)
+        foreach (var objectToSelect in ObjectsToSelect.Values)
         {
-            if (kvp.Value.GameObject == nint.Zero) continue;
+            if (objectToSelect.GameObject == nint.Zero) continue;
 
-            var interactState = CanInteract(kvp.Value.Kind, kvp.Value.Distance);
-            aetheryteInstanceState = interactState;
-            if (IsInInstancedArea && kvp.Value.Kind == ObjectKind.Aetheryte)
+            if (IsInInstancedArea && objectToSelect.Kind == ObjectKind.Aetheryte)
             {
-                var gameObj = (GameObject*)kvp.Value.GameObject;
+                var gameObj = (GameObject*)objectToSelect.GameObject;
                 if (Marshal.PtrToStringUTF8((nint)gameObj->Name) != AethernetShardName)
-                    aetheryteInstance = gameObj;
+                    instanceChangeObject = objectToSelect;
+            }
+
+            if (WorldTravelValidZones.Contains(Service.ClientState.TerritoryType) &&
+                objectToSelect.Kind == ObjectKind.Aetheryte)
+            {
+                var gameObj = (GameObject*)objectToSelect.GameObject;
+                if (Marshal.PtrToStringUTF8((nint)gameObj->Name) != AethernetShardName)
+                    worldTravelObject = objectToSelect;
             }
 
             if (ModuleConfig.AllowClickToTarget)
             {
-                if (!interactState)
-                {
-                    ImGui.PushStyleVar(ImGuiStyleVar.Alpha, 0.5f);
-                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, colors[(int)ImGuiCol.HeaderActive]);
-                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.HeaderHovered]);
-                }
-
-                ButtonText(kvp.Key.ToString(), kvp.Value.Name);
-
-                if (!interactState)
-                {
-                    ImGui.PopStyleColor(2);
-                    ImGui.PopStyleVar();
-                }
-
-                if (ImGui.BeginPopupContextItem($"{kvp.Value.Name}"))
-                {
-                    if (ImGui.MenuItem(Service.Lang.GetText("FastObjectInteract-AddToBlacklist")))
-                    {
-                        if (!ModuleConfig.BlacklistKeys.Add(AddToBlacklistNameRegex().Replace(kvp.Value.Name, "").Trim()))
-                            return;
-
-                        SaveConfig(ModuleConfig);
-                    }
-
-                    ImGui.EndPopup();
-                }
-
-                if (ImGui.IsItemClicked(ImGuiMouseButton.Left) && interactState)
-                {
-                    if (interactState) InteractWithObject((GameObject*)kvp.Value.GameObject, kvp.Value.Kind);
-                }
-                else if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
-                    TargetSystem.Instance()->Target = (GameObject*)kvp.Value.GameObject;
+                if (objectToSelect.ButtonToTarget())
+                    SaveConfig(ModuleConfig);
             }
             else
             {
-                ImGui.BeginDisabled(!interactState);
-                if (ButtonText(kvp.Key.ToString(), kvp.Value.Name) && interactState)
-                    InteractWithObject((GameObject*)kvp.Value.GameObject, kvp.Value.Kind);
-
-                ImGui.EndDisabled();
-
-                if (ImGui.BeginPopupContextItem($"{kvp.Value.Name}"))
-                {
-                    if (ImGui.MenuItem(Service.Lang.GetText("FastObjectInteract-AddToBlacklist")))
-                    {
-                        if (!ModuleConfig.BlacklistKeys.Add(FastObjectInteractTitleRegex().Replace(kvp.Value.Name, "")
-                                                                .Trim()))
-                            return;
-
-                        SaveConfig(ModuleConfig);
-                    }
-
-                    ImGui.EndPopup();
-                }
+                if (objectToSelect.ButtonNoTarget())
+                    SaveConfig(ModuleConfig);
             }
         }
 
         ImGui.EndGroup();
 
         ImGui.SameLine();
-        if (aetheryteInstance != null)
-        {
-            ImGui.BeginGroup();
-            var instance = UIState.Instance()->AreaInstance;
-            for (var i = 1; i < InstancedAreaAmount + 1; i++)
-            {
-                if (i == instance.Instance) continue;
-                ImGui.BeginDisabled(!aetheryteInstanceState);
-                if (ButtonText(Service.Lang.GetText("FastObjectInteract-InstanceAreaChange", i),
-                               Service.Lang.GetText("FastObjectInteract-InstanceAreaChange", i)) && aetheryteInstanceState)
-                    ChangeInstanceZone(aetheryteInstance, i);
+        if (instanceChangeObject != null)
+            InstanceZoneChangeWidget(instanceChangeObject);
 
-                ImGui.EndDisabled();
-            }
-
-            ImGui.EndGroup();
-        }
+        if (worldTravelObject != null)
+            WorldChangeWidget(worldTravelObject);
 
         WindowWidth = Math.Max(ModuleConfig.MinButtonWidth, ImGui.GetItemRectSize().X);
 
@@ -351,7 +323,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
             var localPlayer = Service.ClientState.LocalPlayer;
             if (localPlayer == null)
             {
-                ObjectsWaitSelected.Clear();
+                ObjectsToSelect.Clear();
                 WindowWidth = 0f;
                 Overlay.IsOpen = false;
                 return;
@@ -381,21 +353,21 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                 var gameObj = (GameObject*)obj.Address;
                 if (ModuleConfig.OnlyDisplayInViewRange)
                 {
-                    if (!targetSystem->IsObjectInViewRange(gameObj))
+                    if (!TargetSystem->IsObjectInViewRange(gameObj))
                         continue;
                 }
 
                 var objDistance = Vector3.Distance(localPlayer.Position, obj.Position);
-                if (objDistance > 15 || localPlayer.Position.Y - gameObj->Position.Y > 4) continue;
+                if (objDistance > 30 || localPlayer.Position.Y - gameObj->Position.Y > 4) continue;
 
                 if (tempObjects.Count > ModuleConfig.MaxDisplayAmount) break;
-                tempObjects.Add(new ObjectWaitSelected((nint)gameObj, objName, objKind, objDistance));
+                tempObjects.Add(new ObjectToSelect((nint)gameObj, objName, objKind, objDistance));
             }
 
             tempObjects.Sort((a, b) => a.Distance.CompareTo(b.Distance));
 
-            ObjectsWaitSelected.Clear();
-            foreach (var tempObj in tempObjects) ObjectsWaitSelected.Add(tempObj.GameObject, tempObj);
+            ObjectsToSelect.Clear();
+            foreach (var tempObj in tempObjects) ObjectsToSelect.Add(tempObj.GameObject, tempObj);
 
             if (Overlay == null) return;
             if (!IsWindowShouldBeOpen())
@@ -408,58 +380,157 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         }, FrameworkManager.CancelSource.Token);
     }
 
-    private static void InteractWithObject(GameObject* obj, ObjectKind kind)
+    private static void OnZoneChanged(ushort zone)
     {
-        TargetSystem.Instance()->Target = obj;
-        TargetSystem.Instance()->InteractWithObject(obj);
-        if (kind is ObjectKind.EventObj) TargetSystem.Instance()->OpenObjectInteraction(obj);
+        if (zone == 0 || zone == Service.ClientState.TerritoryType) return;
+
+        InstancedAreaAmount = 3;
     }
 
-    private void ChangeInstanceZone(GameObject* obj, int zone)
+    private static nint AgentWorldTravelReceiveEventDetour(
+        AgentWorldTravel* agent, nint a2, nint a3, nint a4, long eventCase)
     {
-        TaskManager.Enqueue(() =>
+        if (WorldToTravel == 0)
         {
-            TargetSystem.Instance()->Target = obj;
-            TargetSystem.Instance()->InteractWithObject(obj);
-        });
+            AgentWorldTravelReceiveEventHook.Disable();
+            return AgentWorldTravelReceiveEventHook.Original(agent, a2, a3, a4, eventCase);
+        }
 
-        TaskManager.Enqueue(() =>
+        agent->WorldToTravel = WorldToTravel;
+        return AgentWorldTravelReceiveEventHook.Original(agent, a2, a3, a4, eventCase);
+    }
+
+    private void InstanceZoneChangeWidget(ObjectToSelect objectToSelect)
+    {
+        var gameObject = (GameObject*)objectToSelect.GameObject;
+        var instance = UIState.Instance()->AreaInstance;
+
+        ImGui.BeginGroup();
+        for (var i = 1; i < InstancedAreaAmount + 1; i++)
         {
-            if (!TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) ||
-                !IsAddonAndNodesReady(addon)) return false;
+            if (i == instance.Instance) continue;
 
-            return ClickHelper.SelectString("切换副本区");
-        });
+            ImGui.BeginDisabled(!objectToSelect.IsReacheable());
+            if (ButtonCenterText($"InstanceChangeWidget_{i}",
+                                 Service.Lang.GetText("FastObjectInteract-InstanceAreaChange", i)))
+                ChangeInstanceZone(gameObject, i);
 
-        TaskManager.Enqueue(() =>
+            ImGui.EndDisabled();
+        }
+
+        ImGui.EndGroup();
+
+        return;
+
+        void ChangeInstanceZone(GameObject* obj, int zone)
         {
-            if (!TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) ||
-                !IsAddonAndNodesReady(addon)) return false;
+            TaskManager.Abort();
 
-            if (!MemoryHelper.ReadSeStringNullTerminated((nint)addon->AtkValues[2].String).TextValue
-                             .Contains("为了缓解服务器压力")) return false;
+            TaskManager.Enqueue(() => InteractWithObject(obj, ObjectKind.Aetheryte));
 
-            InstancedAreaAmount = ((AddonSelectString*)addon)->PopupMenu.PopupMenu.EntryCount - 2;
-            return Click.TrySendClick($"select_string{zone + 1}");
-        });
+            TaskManager.Enqueue(() =>
+            {
+                if (!TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) ||
+                    !IsAddonAndNodesReady(addon)) return false;
+
+                return ClickHelper.SelectString("切换副本区");
+            });
+
+            TaskManager.Enqueue(() =>
+            {
+                if (!TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) ||
+                    !IsAddonAndNodesReady(addon)) return false;
+
+                if (!MemoryHelper.ReadSeStringNullTerminated((nint)addon->AtkValues[2].String).TextValue
+                                 .Contains("为了缓解服务器压力")) return false;
+
+                InstancedAreaAmount = ((AddonSelectString*)addon)->PopupMenu.PopupMenu.EntryCount - 2;
+                return Click.TrySendClick($"select_string{zone + 1}");
+            });
+        }
+    }
+
+    private void WorldChangeWidget(ObjectToSelect _)
+    {
+        var lobbyData = AgentLobby.Instance()->LobbyData;
+        ImGui.BeginGroup();
+        foreach (var worldPair in DCWorlds)
+        {
+            if (worldPair.Key == lobbyData.CurrentWorldId) continue;
+
+            if (ButtonCenterText($"WorldTravelWidget_{worldPair.Key}", worldPair.Value))
+                WorldTravel(worldPair.Key);
+        }
+
+        ImGui.EndGroup();
+        return;
+
+        void WorldTravel(uint worldID)
+        {
+            TaskManager.Abort();
+
+            TaskManager.Enqueue(() => WorldToTravel = worldID);
+            TaskManager.Enqueue(AgentWorldTravelReceiveEventHook.Enable);
+
+            TaskManager.Enqueue(() =>
+            {
+                if (!EzThrottler.Throttle("FastObjectInteract-WorldTravelAgentShow", 100)) return false;
+
+                AgentWorldTravel.Instance()->AgentInterface.Show();
+                return AgentWorldTravel.Instance()->AgentInterface.IsAgentActive();
+            });
+
+            TaskManager.Enqueue(() =>
+            {
+                if (!EzThrottler.Throttle("FastObjectInteract-WorldTravelSelectWorld", 100)) return false;
+
+                var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("WorldTravelSelect");
+
+                AddonHelper.Callback(addon, true, 2);
+                return TryGetAddonByName<AtkUnitBase>("SelectYesno", out var _);
+            });
+
+            TaskManager.Enqueue(() =>
+            {
+                if (!TryGetAddonByName<AtkUnitBase>("SelectYesno", out var addon) || !IsAddonAndNodesReady(addon))
+                    return false;
+
+                ClickSelectYesNo.Using((nint)addon).Yes();
+                addon->Close(true);
+                return true;
+            });
+
+            TaskManager.Enqueue(() =>
+            {
+                AgentWorldTravelReceiveEventHook.Disable();
+                WorldToTravel = 0;
+            });
+
+            TaskManager.Enqueue(() =>
+            {
+                Service.Framework.RunOnTick(() =>
+                {
+                    if (!TryGetAddonByName<AtkUnitBase>("SelectYesno", out var addon) ||
+                        !IsAddonAndNodesReady(addon)) return;
+
+                    addon->Close(true);
+                }, TimeSpan.FromMilliseconds(100));
+            });
+        }
+    }
+
+    private static void InteractWithObject(GameObject* obj, ObjectKind kind)
+    {
+        FFXIVClientStructs.FFXIV.Client.Game.Control.TargetSystem.Instance()->Target = obj;
+        FFXIVClientStructs.FFXIV.Client.Game.Control.TargetSystem.Instance()->InteractWithObject(obj);
+        if (kind is ObjectKind.EventObj)
+            FFXIVClientStructs.FFXIV.Client.Game.Control.TargetSystem.Instance()->OpenObjectInteraction(obj);
     }
 
     private static bool IsWindowShouldBeOpen()
-        => ObjectsWaitSelected.Count != 0 && (!ModuleConfig.WindowInvisibleWhenInteract || !IsOccupied());
+        => ObjectsToSelect.Count != 0 && (!ModuleConfig.WindowInvisibleWhenInteract || !IsOccupied());
 
-    private static bool CanInteract(ObjectKind kind, float distance)
-    {
-        return kind switch
-        {
-            ObjectKind.EventObj => distance < 4.7999999,
-            ObjectKind.EventNpc => distance < 6.9999999,
-            ObjectKind.Aetheryte => distance < 11.0,
-            ObjectKind.GatheringPoint => distance < 3.0,
-            _ => distance < 6.0,
-        };
-    }
-
-    public static bool ButtonText(string id, string text)
+    public static bool ButtonCenterText(string id, string text)
     {
         ImGui.PushID(id);
         ImGui.SetWindowFontScale(ModuleConfig.FontScale);
@@ -483,11 +554,13 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     public override void Uninit()
     {
+        Service.ClientState.Login -= OnLogin;
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
-        ObjectsWaitSelected.Clear();
+        ObjectsToSelect.Clear();
 
         base.Uninit();
     }
+
 
     [GeneratedRegex("\\[.*?\\]")]
     private static partial Regex AddToBlacklistNameRegex();
@@ -495,9 +568,87 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     [GeneratedRegex("\\[.*?\\]")]
     private static partial Regex FastObjectInteractTitleRegex();
 
-    private sealed record ObjectWaitSelected(nint GameObject, string Name, ObjectKind Kind, float Distance)
+    [StructLayout(LayoutKind.Explicit)]
+    private struct AgentWorldTravel
     {
-        public bool Equals(ObjectWaitSelected? other)
+        [FieldOffset(0)]
+        public AgentInterface AgentInterface;
+
+        [FieldOffset(76)]
+        public uint WorldToTravel;
+
+        public static AgentWorldTravel* Instance() =>
+            (AgentWorldTravel*)AgentModule.Instance()->GetAgentByInternalId(AgentId.WorldTravel);
+    }
+
+    private sealed record ObjectToSelect(nint GameObject, string Name, ObjectKind Kind, float Distance)
+    {
+        public bool ButtonToTarget()
+        {
+            var colors = ImGui.GetStyle().Colors;
+
+            if (!IsReacheable())
+            {
+                ImGui.PushStyleVar(ImGuiStyleVar.Alpha, 0.5f);
+                ImGui.PushStyleColor(ImGuiCol.ButtonActive, colors[(int)ImGuiCol.HeaderActive]);
+                ImGui.PushStyleColor(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.HeaderHovered]);
+            }
+
+            ButtonCenterText(GameObject.ToString(), Name);
+
+            if (!IsReacheable())
+            {
+                ImGui.PopStyleColor(2);
+                ImGui.PopStyleVar();
+            }
+
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Left) && IsReacheable())
+                InteractWithObject((GameObject*)GameObject, Kind);
+            else if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
+                FFXIVClientStructs.FFXIV.Client.Game.Control.TargetSystem.Instance()->Target = (GameObject*)GameObject;
+
+            return AddToBlacklist();
+        }
+
+        public bool ButtonNoTarget()
+        {
+            ImGui.BeginDisabled(!IsReacheable());
+            if (ButtonCenterText(GameObject.ToString(), Name))
+                InteractWithObject((GameObject*)GameObject, Kind);
+
+            ImGui.EndDisabled();
+
+            return AddToBlacklist();
+        }
+
+        private bool AddToBlacklist()
+        {
+            var state = false;
+            if (ImGui.BeginPopupContextItem($"{GameObject}_{Name}"))
+            {
+                if (ImGui.MenuItem(Service.Lang.GetText("FastObjectInteract-AddToBlacklist")))
+                {
+                    if (ModuleConfig.BlacklistKeys.Add(FastObjectInteractTitleRegex().Replace(Name, "").Trim()))
+                        state = true;
+                }
+
+                ImGui.EndPopup();
+            }
+
+            return state;
+        }
+
+        public bool IsReacheable() =>
+            Kind switch
+            {
+                ObjectKind.EventObj => Distance < 4.7999999,
+                ObjectKind.EventNpc => Distance < 6.9999999,
+                ObjectKind.Aetheryte => Distance < 11.0,
+                ObjectKind.GatheringPoint => Distance < 3.0,
+                _ => Distance < 6.0,
+            };
+
+        public bool Equals(ObjectToSelect? other)
         {
             if (other is null || GetType() != other.GetType())
                 return false;
