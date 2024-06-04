@@ -92,6 +92,11 @@ public enum ExecuteCommandFlag
     ClearFieldMarkers = 313,
 
     /// <summary>
+    /// 请求跨界传送数据
+    /// </summary>
+    RequestWorldTravel = 316,
+
+    /// <summary>
     /// 放置场地标点
     /// <para><c>param1</c>: 标点索引</para>
     /// <para><c>param2</c>: 坐标 X * 1000</para>
