@@ -269,6 +269,151 @@ public static class Widgets
         return selectState;
     }
 
+    public static bool ZoneSelectCombo(ref HashSet<uint> selected, ref string zoneSearchInput)
+    {
+        var selectState = false;
+        if (ImGui.BeginCombo("###ZoneSelectCombo", $"当前已选中 {selected.Count} 个区域", ImGuiComboFlags.HeightLarge))
+            ImGui.EndCombo();
+
+        if (ImGui.IsItemClicked())
+            ImGui.OpenPopup("###ZoneSelectPopup");
+
+        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(450f, 400f));
+        if (ImGui.BeginPopup("###ZoneSelectPopup"))
+        {
+            ImGui.SetNextItemWidth(-1f);
+            ImGui.InputTextWithHint
+                ("###ZoneSearchInput", Service.Lang.GetText("PleaseSearch"), ref zoneSearchInput, 32);
+
+            ImGui.Separator();
+
+            var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
+            if (ImGui.BeginTable("###ZoneSelectTable", 2, ImGuiTableFlags.Borders, tableSize))
+            {
+                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
+                ImGui.TableSetupColumn("PlaceName");
+
+                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+                ImGui.TableNextColumn();
+                ImGui.Text("");
+                ImGui.TableNextColumn();
+                ImGui.Text("区域名");
+
+                var selectedCopy = selected;
+                var data = PresetData.Zones.OrderByDescending(x => selectedCopy.Contains(x.Key));
+                foreach (var zonePair in data)
+                {
+                    var placeName = zonePair.Value.PlaceName.Value.Name.RawString;
+                    if (!string.IsNullOrWhiteSpace(zoneSearchInput) &&
+                        !placeName.Contains(zoneSearchInput, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    ImGui.PushID($"{placeName}_{zonePair.Key}");
+                    ImGui.TableNextRow();
+
+                    ImGui.TableNextColumn();
+                    ImGui.BeginDisabled();
+                    var state = selected.Contains(zonePair.Key);
+                    ImGui.Checkbox("", ref state);
+                    ImGui.EndDisabled();
+
+                    ImGui.TableNextColumn();
+                    if (ImGui.Selectable($"{placeName} ({zonePair.Key})", state,
+                                         ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups))
+                    {
+                        if (!selected.Remove(zonePair.Key)) selected.Add(zonePair.Key);
+                        selectState = true;
+                    }
+
+                    ImGui.PopID();
+                }
+
+                ImGui.EndTable();
+            }
+
+            ImGui.EndPopup();
+        }
+
+        return selectState;
+    }
+
+    public static bool JobSelectCombo(ref HashSet<uint> selected, ref string jobSearchInput)
+    {
+        var selectState = false;
+        if (ImGui.BeginCombo("###JobSelectCombo", $"当前已选中 {selected.Count} 个职业", ImGuiComboFlags.HeightLarge))
+            ImGui.EndCombo();
+
+        if (ImGui.IsItemClicked())
+            ImGui.OpenPopup("###JobSelectPopup");
+
+        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(450f, 400f));
+        if (ImGui.BeginPopup("###JobSelectPopup"))
+        {
+            ImGui.SetNextItemWidth(-1f);
+            ImGui.InputTextWithHint
+                ("###JobSearchInput", Service.Lang.GetText("PleaseSearch"), ref jobSearchInput, 32);
+
+            ImGui.Separator();
+
+            var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
+            if (ImGui.BeginTable("###JobSelectTable", 2, ImGuiTableFlags.Borders, tableSize))
+            {
+                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
+                ImGui.TableSetupColumn("Job", ImGuiTableColumnFlags.WidthStretch);
+
+                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+                ImGui.TableNextColumn();
+                ImGui.Text("");
+                ImGui.TableNextColumn();
+                ImGui.Text("职业");
+
+                var selectedCopy = selected;
+                var data = LuminaCache.Get<ClassJob>().OrderByDescending(x => selectedCopy.Contains(x.RowId));
+                foreach (var job in data)
+                {
+                    var jobName = job.RowId == 0 ? "全部职业" : job.Name.RawString;
+                    if (string.IsNullOrWhiteSpace(jobName)) continue;
+                    var jobIcon = ImageHelper.GetIcon(62100 + (job.RowId == 0 ? 44 : job.RowId));
+
+                    if (!string.IsNullOrWhiteSpace(jobSearchInput) &&
+                        !jobName.Contains(jobSearchInput, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    ImGui.PushID($"{jobName}_{job.RowId}");
+                    ImGui.TableNextRow();
+
+                    ImGui.TableNextColumn();
+                    ImGui.BeginDisabled();
+                    var state = job.RowId == 0 ? selected.Count == 0 : selected.Contains(job.RowId);
+                    ImGui.Checkbox("", ref state);
+                    ImGui.EndDisabled();
+
+                    ImGui.TableNextColumn();
+                    if (ImGuiOm.SelectableImageWithText(jobIcon.ImGuiHandle, ImGuiHelpers.ScaledVector2(20f), jobName, state, 
+                                                        ImGuiSelectableFlags.DontClosePopups))
+                    {
+                        if (job.RowId == 0)
+                        {
+                            selected.Clear();
+                            selectState = true;
+                        }
+                        else
+                        {
+                            if (!selected.Remove(job.RowId)) selected.Add(job.RowId);
+                            selectState = true;
+                        }
+                    }
+
+                    ImGui.PopID();
+                }
+
+                ImGui.EndTable();
+            }
+
+            ImGui.EndPopup();
+        }
+
+        return selectState;
+    }
+
     public static bool ActionSelectCombo(ref Action? selectedAction, ref string actionSearchInput)
     {
         var selectState = false;
