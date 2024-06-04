@@ -11,6 +11,9 @@ using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
+using Dalamud;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
@@ -107,6 +110,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
         Service.ClientState.TerritoryChanged += OnZoneChanged;
         Service.ClientState.Login += OnLogin;
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreDraw, "WorldTravelFinderReady", OnAddonWorldTravel);
         Service.FrameworkManager.Register(OnUpdate);
 
         OnZoneChanged(1);
@@ -382,9 +386,25 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     private static void OnZoneChanged(ushort zone)
     {
+        WorldToTravel = 0;
+        AgentWorldTravelReceiveEventHook.Disable();
+
         if (zone == 0 || zone == Service.ClientState.TerritoryType) return;
 
         InstancedAreaAmount = 3;
+    }
+
+    private static void OnAddonWorldTravel(AddonEvent type, AddonArgs args)
+    {
+        if (WorldToTravel == 0) return;
+
+        var addon = (AtkUnitBase*)args.Addon;
+        if (addon == null) return;
+
+        if (TryGetAddonByName<AtkUnitBase>("SelectYesno", out var addon0) && IsAddonAndNodesReady(addon0))
+            addon0->Close(true);
+
+        addon->GetTextNodeById(31)->SetText(LuminaCache.GetRow<World>(WorldToTravel).Name.RawString);
     }
 
     private static nint AgentWorldTravelReceiveEventDetour(
@@ -469,6 +489,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         {
             TaskManager.Abort();
 
+            TaskManager.Enqueue(() => Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.RequestWorldTravel));
             TaskManager.Enqueue(() => WorldToTravel = worldID);
             TaskManager.Enqueue(AgentWorldTravelReceiveEventHook.Enable);
 
@@ -500,22 +521,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                 return true;
             });
 
-            TaskManager.Enqueue(() =>
-            {
-                AgentWorldTravelReceiveEventHook.Disable();
-                WorldToTravel = 0;
-            });
-
-            TaskManager.Enqueue(() =>
-            {
-                Service.Framework.RunOnTick(() =>
-                {
-                    if (!TryGetAddonByName<AtkUnitBase>("SelectYesno", out var addon) ||
-                        !IsAddonAndNodesReady(addon)) return;
-
-                    addon->Close(true);
-                }, TimeSpan.FromMilliseconds(100));
-            });
+            TaskManager.Enqueue(AgentWorldTravelReceiveEventHook.Disable);
         }
     }
 
@@ -556,6 +562,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     {
         Service.ClientState.Login -= OnLogin;
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
+        Service.AddonLifecycle.UnregisterListener(OnAddonWorldTravel);
         ObjectsToSelect.Clear();
 
         base.Uninit();
