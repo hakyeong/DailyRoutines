@@ -23,17 +23,19 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoReplaceLocationActionTitle", "AutoReplaceLocationActionDescription", ModuleCategories.技能)]
 public class AutoReplaceLocationAction : DailyModuleBase
 {
+    // 返回值为 GameObject*, 无对象则为 0
+    private delegate nint ParseActionCommandArgDelegate(nint a1, nint arg, bool a3, bool a4);
     [Signature("E8 ?? ?? ?? ?? 4C 8B F8 49 B8", DetourName = nameof(ParseActionCommandArgDetour))]
     private static Hook<ParseActionCommandArgDelegate>? ParseActionCommandArgHook;
 
     private static Config ModuleConfig = null!;
+    private static EzThrottler<string> Throttler = new();
 
     private static uint CurrentMapID;
     private static readonly Dictionary<MapMarker, Vector2> ZoneMapMarkers = [];
     private static bool IsNeedToModify;
     private static Vector3? ModifiedLocation;
 
-    private static ContentFinderCondition? SelectedContent;
     private static string ContentSearchInput = string.Empty;
 
     public override void Init()
@@ -240,6 +242,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
         ulong targetID, Vector3 location, uint a4)
     {
         if (!result || ModifiedLocation == null) return;
+        if (!Throttler.Throttle($"{actionType}_{actionID}")) return;
 
         if (ModuleConfig.SendMessage)
             NotifyHelper.Chat(Service.Lang.GetText("AutoReplaceLocationAction-RedirectMessage", ModifiedLocation));
@@ -279,7 +282,4 @@ public class AutoReplaceLocationAction : DailyModuleBase
         public bool EnableCenterArgument = true;
         public bool SendMessage = true;
     }
-
-    // 返回值为 GameObject*, 无对象则为 0
-    private delegate nint ParseActionCommandArgDelegate(nint a1, nint arg, bool a3, bool a4);
 }
