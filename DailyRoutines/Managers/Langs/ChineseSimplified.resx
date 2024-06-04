@@ -1960,4 +1960,13 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoLeveQuests-NoLevesHelp" xml:space="preserve">
     <value>当前区域无可用理符任务</value>
   </data>
+  <data name="InstantReturn-AddCommand" xml:space="preserve">
+      <value>添加 /pdr {0} 指令</value>
+  </data>
+  <data name="InstantReturn-CommandHelp" xml:space="preserve">
+      <value>即刻返回</value>
+  </data>
+  <data name="InstantReturn-HookOrigin" xml:space="preserve">
+      <value>替换游戏原生的返回技能</value>
+  </data>
 </root>
