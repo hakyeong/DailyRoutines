@@ -27,7 +27,6 @@ public class Service
         Click.Initialize();
         AddonHelper.Init();
         FieldMarkerHelper.Init();
-        PresetData.Init();
         PresetFont.Init();
 
         foreach (var property in typeof(Service).GetProperties(BindingFlags.Static | BindingFlags.Public)
