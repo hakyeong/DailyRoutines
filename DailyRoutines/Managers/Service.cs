@@ -27,7 +27,6 @@ public class Service
         Click.Initialize();
         AddonHelper.Init();
         FieldMarkerHelper.Init();
-        PresetFont.Init();
 
         foreach (var property in typeof(Service).GetProperties(BindingFlags.Static | BindingFlags.Public)
                                                 .Where(p => typeof(IDailyManager).IsAssignableFrom(p.PropertyType)))
