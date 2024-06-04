@@ -362,7 +362,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                 }
 
                 var objDistance = Vector3.Distance(localPlayer.Position, obj.Position);
-                if (objDistance > 30 || localPlayer.Position.Y - gameObj->Position.Y > 4) continue;
+                if (objDistance > 20 || localPlayer.Position.Y - gameObj->Position.Y > 4) continue;
 
                 if (tempObjects.Count > ModuleConfig.MaxDisplayAmount) break;
                 tempObjects.Add(new ObjectToSelect((nint)gameObj, objName, objKind, objDistance));
