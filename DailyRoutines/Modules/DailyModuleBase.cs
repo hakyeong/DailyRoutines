@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
@@ -273,6 +275,7 @@ public abstract class DailyModuleBase
         }
     }
 
+
     protected static void ExportToClipboard<T>(T config) where T : class
     {
         try
@@ -340,28 +343,30 @@ public abstract class DailyModuleBase
         TaskManager = null;
 
         var derivedInstance = GetType();
-        // 字段
-        foreach (var field in derivedInstance.GetFields(BindingFlags.Instance | BindingFlags.NonPublic |
-                                                        BindingFlags.Public | BindingFlags.Static))
-            if (field.FieldType.IsGenericType && field.FieldType.GetGenericTypeDefinition() == typeof(Hook<>))
+        var fields = derivedInstance.GetFields(BindingFlags.Instance | BindingFlags.NonPublic |
+                                               BindingFlags.Public | BindingFlags.Static)
+                                    .Where(f => f.FieldType.IsGenericType && f.FieldType.GetGenericTypeDefinition() == typeof(Hook<>))
+                                    .ToList();
+
+        var frameworkMethods = derivedInstance.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
+                                     .Where(m => m.ReturnType == typeof(void) &&
+                                                 m.GetParameters().Length == 1 &&
+                                                 m.GetParameters()[0].ParameterType == typeof(IFramework))
+                                     .ToList();
+
+        Parallel.ForEach(fields, field =>
+        {
+            var hookInstance = field.GetValue(this);
+            if (hookInstance != null)
             {
-                var hookInstance = field.GetValue(this);
+                var disposeMethod = hookInstance.GetType().GetMethod("Dispose");
+                disposeMethod?.Invoke(hookInstance, null);
 
-                if (hookInstance != null)
-                {
-                    var disposeMethod = hookInstance.GetType().GetMethod("Dispose");
-                    disposeMethod?.Invoke(hookInstance, null);
-
-                    field.SetValue(this, null);
-                }
+                field.SetValue(this, null);
             }
+        });
 
-        // 函数
-        foreach (var method in derivedInstance.GetMethods(BindingFlags.NonPublic | BindingFlags.Public |
-                                                          BindingFlags.Instance))
-            if (method.ReturnType == typeof(void) &&
-                method.GetParameters().Length == 1 &&
-                method.GetParameters()[0].ParameterType == typeof(IFramework))
-                Service.FrameworkManager.Unregister(method);
+        foreach (var method in frameworkMethods)
+            Service.FrameworkManager.Unregister(method);
     }
 }
