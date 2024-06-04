@@ -1961,12 +1961,48 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>当前区域无可用理符任务</value>
   </data>
   <data name="InstantReturn-AddCommand" xml:space="preserve">
-      <value>添加 /pdr {0} 指令</value>
+    <value>添加 /pdr {0} 指令</value>
   </data>
   <data name="InstantReturn-CommandHelp" xml:space="preserve">
-      <value>即刻返回</value>
+    <value>即刻返回</value>
   </data>
   <data name="InstantReturn-HookOrigin" xml:space="preserve">
-      <value>替换游戏原生的返回技能</value>
+    <value>替换游戏原生的返回技能</value>
+  </data>
+  <data name="AutoCheckFoodUsageDescription" xml:space="preserve">
+    <value>启用并配置完成后, 自动检查自身食物使用状态, 并在剩余时间低于阈值时自动补充使用特定食物</value>
+  </data>
+  <data name="AutoCheckFoodUsageTitle" xml:space="preserve">
+    <value>自动检查自身食物状态</value>
+  </data>
+  <data name="AutoCheckFoodUsage-AddNewPreset" xml:space="preserve">
+    <value>新增配置</value>
+  </data>
+  <data name="AutoCheckFoodUsage-ChangeTo" xml:space="preserve">
+    <value>切换为</value>
+  </data>
+  <data name="AutoCheckFoodUsage-Checkpoint" xml:space="preserve">
+    <value>检查时机</value>
+  </data>
+  <data name="AutoCheckFoodUsage-JobRestrictions" xml:space="preserve">
+    <value>职业限制</value>
+  </data>
+  <data name="AutoCheckFoodUsage-NoticeMessage" xml:space="preserve">
+    <value>自动食用了 {0} ({1})</value>
+  </data>
+  <data name="AutoCheckFoodUsage-RefreshThreshold" xml:space="preserve">
+    <value>刷新阈值 (秒)</value>
+  </data>
+  <data name="AutoCheckFoodUsage-RefreshThresholdHelp" xml:space="preserve">
+    <value>当无 进食 状态或其剩余时间低于刷新阈值时, 则自动食用一次食物</value>
+  </data>
+  <data name="AutoCheckFoodUsage-SendNotice" xml:space="preserve">
+    <value>发送提示信息</value>
+  </data>
+  <data name="AutoCheckFoodUsage-ZoneRestrictions" xml:space="preserve">
+    <value>区域限制</value>
+  </data>
+  <data name="Food" xml:space="preserve">
+    <value>食物</value>
   </data>
 </root>
