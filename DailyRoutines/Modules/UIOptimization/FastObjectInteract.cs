@@ -350,8 +350,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
         foreach (var obj in Service.ObjectTable.ToArray())
         {
-            if (!ObjectsThrottler.Throttle(obj.Address)) continue;
-
             if (!obj.IsTargetable || obj.IsDead) continue;
 
             var objName = obj.Name.TextValue;
