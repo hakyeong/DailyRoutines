@@ -14,6 +14,7 @@ using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using ECommons.Automation.LegacyTaskManager;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -230,6 +231,8 @@ public class AutoCheckFoodUsage : DailyModuleBase
 
     private unsafe bool? EnqueueFoodRefresh(int zone = -1)
     {
+        if (EzThrottler.Throttle("AutoCheckFoodUsage_EnqueueFoodRefresh", 1000)) return false;
+
         var actionManager = ActionManager.Instance();
         if (Flags.BetweenAreas || Service.ClientState.LocalPlayer == null ||
                (TryGetAddonByName<AtkUnitBase>("FadeMiddle", out var addon) && addon->IsVisible) ||
@@ -266,6 +269,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
 
         var fianlPreset = existedStatus ?? validPresets.FirstOrDefault();
         var result = TakeFood(fianlPreset);
+
         if (ModuleConfig.SendNotice && result)
             NotifyHelper.Chat(Service.Lang.GetText("AutoCheckFoodUsage-NoticeMessage", LuminaCache.GetRow<Item>(fianlPreset.ItemID).Name.RawString, fianlPreset.IsHQ ? "HQ" : "NQ"));
 
