@@ -161,12 +161,6 @@
   <data name="AutoCancelCastTitle" xml:space="preserve">
     <value>自动中断咏唱</value>
   </data>
-  <data name="AutoConfirmDesynthesizeDialogDescription" xml:space="preserve">
-    <value>道具分解界面出现后, 自动确认</value>
-  </data>
-  <data name="AutoConfirmDesynthesizeDialogTitle" xml:space="preserve">
-    <value>自动确认道具分解</value>
-  </data>
   <data name="AutoConstantlyInspectDescription" xml:space="preserve">
     <value>道具鉴定结果界面出现后, 自动点击继续鉴定按钮</value>
   </data>
@@ -201,7 +195,8 @@
     <value>跳过 HQ 物品</value>
   </data>
   <data name="AutoDesynthesizeItemsDescription" xml:space="preserve">
-    <value>打开道具分解列表, 并点击开始后, 自动分解所有道具</value>
+    <value>道具分解界面出现后, 自动点击确认
+打开道具分解列表, 并点击开始后, 自动分解所有道具</value>
   </data>
   <data name="AutoDesynthesizeItemsTitle" xml:space="preserve">
     <value>自动道具分解</value>

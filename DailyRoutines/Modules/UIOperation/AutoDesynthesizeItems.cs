@@ -1,4 +1,5 @@
 using System.Numerics;
+using ClickLib.Clicks;
 using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
@@ -7,13 +8,13 @@ using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
 using Dalamud.Memory;
 using ECommons.Automation.LegacyTaskManager;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[PrecedingModule([typeof(AutoConfirmDesynthesizeDialog)])]
 [ModuleDescription("AutoDesynthesizeItemsTitle", "AutoDesynthesizeItemsDescription", ModuleCategories.界面操作)]
 public unsafe class AutoDesynthesizeItems : DailyModuleBase
 {
@@ -27,6 +28,7 @@ public unsafe class AutoDesynthesizeItems : DailyModuleBase
         AddConfig("SkipWhenHQ", ConfigSkipWhenHQ);
         ConfigSkipWhenHQ = GetConfig<bool>("SkipWhenHQ");
 
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PreDraw, "SalvageDialog", OnAddon);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SalvageItemSelector", OnAddonList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "SalvageItemSelector", OnAddonList);
     }
@@ -62,6 +64,16 @@ public unsafe class AutoDesynthesizeItems : DailyModuleBase
             AddonEvent.PreFinalize => false,
             _ => Overlay.IsOpen,
         };
+    }
+
+    private static void OnAddon(AddonEvent type, AddonArgs args)
+    {
+        var addon = (AddonSalvageDialog*)args.Addon;
+        if (addon == null) return;
+
+        var handler = new ClickSalvageDialog();
+        handler.CheckBox();
+        handler.Desynthesize();
     }
 
     private bool? StartDesynthesize()
@@ -103,6 +115,7 @@ public unsafe class AutoDesynthesizeItems : DailyModuleBase
     public override void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonList);
+        Service.AddonLifecycle.UnregisterListener(OnAddon);
 
         base.Uninit();
     }
