@@ -39,10 +39,10 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 {
     private delegate nint AgentWorldTravelReceiveEventDelegate(
         AgentWorldTravel* agent, nint a2, nint a3, nint a4, long eventCase);
-
     [Signature("40 55 53 56 57 41 54 41 56 41 57 48 8D AC 24 ?? ?? ?? ?? B8",
                DetourName = nameof(AgentWorldTravelReceiveEventDetour))]
     private static Hook<AgentWorldTravelReceiveEventDelegate>? AgentWorldTravelReceiveEventHook;
+
 
     private static readonly Dictionary<ObjectKind, string> ObjectKindLoc = new()
     {
@@ -66,6 +66,8 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     private static HashSet<uint>? ImportantENPC;
 
     private static Config ModuleConfig = null!;
+    private static EzThrottler<string> MonitorThrottler = new();
+    private static EzThrottler<nint> ObjectsThrottler = new();
 
     private static string BlacklistKeyInput = string.Empty;
     private static float WindowWidth;
@@ -81,15 +83,23 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     private static HashSet<uint> WorldTravelValidZones = [132, 129, 130];
     private static Dictionary<uint, string> DCWorlds = [];
     private static uint WorldToTravel;
-    private static bool IsOnWorldTravelling = false;
+    private static bool IsOnWorldTravelling;
 
     public override void Init()
     {
+        ModuleConfig = LoadConfig<Config>() ?? new()
+        {
+            SelectedKinds =
+            [
+                ObjectKind.EventNpc, ObjectKind.EventObj, ObjectKind.Treasure, ObjectKind.Aetheryte,
+                ObjectKind.GatheringPoint,
+            ],
+        };
+
         Service.Hook.InitializeFromAttributes(this);
 
         TargetSystem = FFXIVClientStructs.FFXIV.Client.Game.Control.TargetSystem.Instance();
         TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
-        ModuleConfig = LoadConfig<Config>() ?? new();
 
         ENpcTitles ??= LuminaCache.Get<ENpcResident>()
                                   .Where(x => x.Unknown10 && !string.IsNullOrWhiteSpace(x.Title.RawString))
@@ -185,16 +195,18 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         ImGui.SameLine();
         ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
         if (ImGui.BeginCombo("###ObjectKindsSelection",
-                             Service.Lang.GetText("FastObjectInteract-SelectedObjectKindsAmount",
-                                                  ModuleConfig.SelectedKinds.Count), ImGuiComboFlags.HeightLarge))
+                             Service.Lang.GetText("FastObjectInteract-SelectedObjectKindsAmount", ModuleConfig.SelectedKinds.Count),
+                             ImGuiComboFlags.HeightLarge))
         {
-            foreach (var kind in ObjectKindLoc)
+            foreach (var kind in Enum.GetValues<ObjectKind>())
             {
-                var state = ModuleConfig.SelectedKinds.Contains(kind.Key);
-                if (ImGui.Checkbox(kind.Value, ref state))
+                if (!ObjectKindLoc.TryGetValue(kind, out var loc)) continue;
+
+                var state = ModuleConfig.SelectedKinds.Contains(kind);
+                if (ImGui.Checkbox(loc, ref state))
                 {
-                    if (!ModuleConfig.SelectedKinds.Remove(kind.Key))
-                        ModuleConfig.SelectedKinds.Add(kind.Key);
+                    if (!ModuleConfig.SelectedKinds.Remove(kind))
+                        ModuleConfig.SelectedKinds.Add(kind);
 
                     SaveConfig(ModuleConfig);
                 }
@@ -321,69 +333,68 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     private void OnUpdate(IFramework framework)
     {
-        if (!EzThrottler.Throttle("FastSelectObjects", 250)) return;
+        if (!MonitorThrottler.Throttle("Monitor", 250)) return;
 
-        Service.Framework.Run(() =>
+        var localPlayer = Service.ClientState.LocalPlayer;
+        if (localPlayer == null)
         {
-            var localPlayer = Service.ClientState.LocalPlayer;
-            if (localPlayer == null)
-            {
-                ObjectsToSelect.Clear();
-                WindowWidth = 0f;
-                Overlay.IsOpen = false;
-                return;
-            }
-
-            tempObjects.Clear();
-            IsInInstancedArea = UIState.Instance()->AreaInstance.IsInstancedArea();
-            IsOnWorldTravelling = localPlayer.OnlineStatus.Id == 25;
-
-            foreach (var obj in Service.ObjectTable)
-            {
-                if (!obj.IsTargetable || obj.IsDead) continue;
-
-                var objName = obj.Name.TextValue;
-                if (ModuleConfig.BlacklistKeys.Contains(objName)) continue;
-
-                var objKind = obj.ObjectKind;
-                if (!ModuleConfig.SelectedKinds.Contains(objKind)) continue;
-
-                var dataID = obj.DataId;
-                if (objKind == ObjectKind.EventNpc && !ImportantENPC.Contains(dataID))
-                {
-                    if (!ImportantENPC.Contains(dataID)) continue;
-                    if (ENpcTitles.TryGetValue(dataID, out var ENPCTitle))
-                        objName = string.Format(ENPCTiltleText, ENPCTitle, obj.Name);
-                }
-
-                var gameObj = (GameObject*)obj.Address;
-                if (ModuleConfig.OnlyDisplayInViewRange)
-                {
-                    if (!TargetSystem->IsObjectInViewRange(gameObj))
-                        continue;
-                }
-
-                var objDistance = Vector3.Distance(localPlayer.Position, obj.Position);
-                if (objDistance > 20 || localPlayer.Position.Y - gameObj->Position.Y > 4) continue;
-
-                if (tempObjects.Count > ModuleConfig.MaxDisplayAmount) break;
-                tempObjects.Add(new ObjectToSelect((nint)gameObj, objName, objKind, objDistance));
-            }
-
-            tempObjects.Sort((a, b) => a.Distance.CompareTo(b.Distance));
-
             ObjectsToSelect.Clear();
-            foreach (var tempObj in tempObjects) ObjectsToSelect.Add(tempObj.GameObject, tempObj);
+            WindowWidth = 0f;
+            Overlay.IsOpen = false;
+            return;
+        }
 
-            if (Overlay == null) return;
-            if (!IsWindowShouldBeOpen())
+        tempObjects.Clear();
+        IsInInstancedArea = UIState.Instance()->AreaInstance.IsInstancedArea();
+        IsOnWorldTravelling = localPlayer.OnlineStatus.Id == 25;
+
+        foreach (var obj in Service.ObjectTable.ToArray())
+        {
+            if (!ObjectsThrottler.Throttle(obj.Address)) continue;
+
+            if (!obj.IsTargetable || obj.IsDead) continue;
+
+            var objName = obj.Name.TextValue;
+            if (ModuleConfig.BlacklistKeys.Contains(objName)) continue;
+
+            var objKind = obj.ObjectKind;
+            if (!ModuleConfig.SelectedKinds.Contains(objKind)) continue;
+
+            var dataID = obj.DataId;
+            if (objKind == ObjectKind.EventNpc && !ImportantENPC.Contains(dataID))
             {
-                Overlay.IsOpen = false;
-                WindowWidth = 0f;
+                if (!ImportantENPC.Contains(dataID)) continue;
+                if (ENpcTitles.TryGetValue(dataID, out var ENPCTitle))
+                    objName = string.Format(ENPCTiltleText, ENPCTitle, obj.Name);
             }
-            else
-                Overlay.IsOpen = true;
-        }, FrameworkManager.CancelSource.Token);
+
+            var gameObj = (GameObject*)obj.Address;
+            if (ModuleConfig.OnlyDisplayInViewRange)
+            {
+                if (!TargetSystem->IsObjectInViewRange(gameObj))
+                    continue;
+            }
+
+            var objDistance = Vector3.Distance(localPlayer.Position, obj.Position);
+            if (objDistance > 20 || localPlayer.Position.Y - gameObj->Position.Y > 4) continue;
+
+            if (tempObjects.Count > ModuleConfig.MaxDisplayAmount) break;
+            tempObjects.Add(new ObjectToSelect((nint)gameObj, objName, objKind, objDistance));
+        }
+
+        tempObjects.Sort((a, b) => a.Distance.CompareTo(b.Distance));
+
+        ObjectsToSelect.Clear();
+        foreach (var tempObj in tempObjects) ObjectsToSelect.Add(tempObj.GameObject, tempObj);
+
+        if (Overlay == null) return;
+        if (!IsWindowShouldBeOpen())
+        {
+            Overlay.IsOpen = false;
+            WindowWidth = 0f;
+        }
+        else
+            Overlay.IsOpen = true;
     }
 
     private static void OnZoneChanged(ushort zone)
@@ -562,12 +573,12 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     public override void Uninit()
     {
+        base.Uninit();
+
         Service.ClientState.Login -= OnLogin;
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
         Service.AddonLifecycle.UnregisterListener(OnAddonWorldTravel);
         ObjectsToSelect.Clear();
-
-        base.Uninit();
     }
 
 
@@ -670,12 +681,8 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     private class Config : ModuleConfiguration
     {
-        public readonly HashSet<string> BlacklistKeys = [];
-
-        public readonly HashSet<ObjectKind> SelectedKinds =
-        [
-            ObjectKind.EventNpc, ObjectKind.EventObj, ObjectKind.Treasure, ObjectKind.Aetheryte, ObjectKind.GatheringPoint,
-        ];
+        public HashSet<string> BlacklistKeys = [];
+        public HashSet<ObjectKind> SelectedKinds = [];
 
         public bool AllowClickToTarget;
         public float FontScale = 1f;
