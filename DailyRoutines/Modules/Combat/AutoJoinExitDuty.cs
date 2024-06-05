@@ -62,6 +62,21 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
         TaskManager.Enqueue(SelectDuty);
         TaskManager.Enqueue(CommenceDuty);
         TaskManager.Enqueue(ExitDuty);
+        TaskManager.Enqueue(OpenContentsFinder);
+        TaskManager.Enqueue(ResetContentFinder);
+        TaskManager.Enqueue(CancelSelectedContents);
+    }
+
+    private static bool? ResetContentFinder()
+    {
+        if (!EzThrottler.Throttle("AutoJoinExitDuty-ResetContentFinder", 100)) return false;
+        var instance = FFXIVClientStructs.FFXIV.Client.Game.UI.ContentsFinder.Instance();
+        if ( instance == null) return false;
+        
+        instance->IsExplorerMode = false;
+        instance->IsUnrestrictedParty = false;
+
+        return true;
     }
 
     private bool? CheckAndSwitchJob()
