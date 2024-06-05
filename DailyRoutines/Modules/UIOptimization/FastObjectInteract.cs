@@ -81,6 +81,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     private static HashSet<uint> WorldTravelValidZones = [132, 129, 130];
     private static Dictionary<uint, string> DCWorlds = [];
     private static uint WorldToTravel;
+    private static bool IsOnWorldTravelling = false;
 
     public override void Init()
     {
@@ -284,7 +285,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                     instanceChangeObject = objectToSelect;
             }
 
-            if (WorldTravelValidZones.Contains(Service.ClientState.TerritoryType) &&
+            if (!IsOnWorldTravelling && WorldTravelValidZones.Contains(Service.ClientState.TerritoryType) &&
                 objectToSelect.Kind == ObjectKind.Aetheryte)
             {
                 var gameObj = (GameObject*)objectToSelect.GameObject;
@@ -335,6 +336,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
             tempObjects.Clear();
             IsInInstancedArea = UIState.Instance()->AreaInstance.IsInstancedArea();
+            IsOnWorldTravelling = localPlayer.OnlineStatus.Id == 25;
 
             foreach (var obj in Service.ObjectTable)
             {
