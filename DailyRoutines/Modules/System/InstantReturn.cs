@@ -11,11 +11,11 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("InstantReturnTitle", "InstantReturnDescription", ModuleCategories.系统)]
 public class InstantReturn : DailyModuleBase
 {
+    private delegate byte ReturnDelegate(nint a1);
+
     [Signature("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 48 8B 3D ?? ?? ?? ?? 48 8B D9 48 8D 0D",
                DetourName = nameof(ReturnDetour))]
     private static Hook<ReturnDelegate>? ReturnHook;
-
-    private delegate byte ReturnDelegate(nint a1);
 
     private const string Command = "instantreturn";
     private static bool IsAddCommand;
@@ -28,7 +28,7 @@ public class InstantReturn : DailyModuleBase
 
         AddConfig(nameof(HookOrigin), true);
         HookOrigin = GetConfig<bool>(nameof(HookOrigin));
-    
+
         Service.Hook.InitializeFromAttributes(this);
         ReturnHook?.Enable();
 
@@ -43,12 +43,8 @@ public class InstantReturn : DailyModuleBase
 
     public override void ConfigUI()
     {
-        if (ImGui.Checkbox(
-                $"{Service.Lang.GetText("InstantReturn-HookOrigin")}",
-                ref HookOrigin))
-        {
+        if (ImGui.Checkbox($"{Service.Lang.GetText("InstantReturn-HookOrigin")}", ref HookOrigin))
             UpdateConfig(nameof(HookOrigin), HookOrigin);
-        }
 
         if (ImGui.Checkbox(
                 $"{Service.Lang.GetText("InstantReturn-AddCommand", Command)}: {Service.Lang.GetText("InstantReturn-CommandHelp")}",
@@ -63,13 +59,11 @@ public class InstantReturn : DailyModuleBase
                 });
             }
             else
-            {
                 Service.CommandManager.RemoveSubCommand(Command);
-            }
         }
     }
 
-    private void OnCommand(string command, string arguments)
+    private static void OnCommand(string command, string arguments)
     {
         if (Service.ClientState.IsPvPExcludingDen) return;
         Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.InstantReturn);
@@ -90,6 +84,7 @@ public class InstantReturn : DailyModuleBase
     {
         ReturnHook?.Dispose();
         Service.CommandManager.RemoveSubCommand(Command);
+
         base.Uninit();
     }
 }
