@@ -2000,4 +2000,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Food" xml:space="preserve">
     <value>食物</value>
   </data>
+  <data name="Settings-ModuleConfiguration" xml:space="preserve">
+    <value>模块配置</value>
+  </data>
+  <data name="Settings-ResetModule" xml:space="preserve">
+    <value>重置模块</value>
+  </data>
 </root>

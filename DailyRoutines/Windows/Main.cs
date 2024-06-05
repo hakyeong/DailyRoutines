@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Numerics;
@@ -19,6 +20,7 @@ using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Dalamud.Utility;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using ImGuiNET;
 using Newtonsoft.Json;
 
@@ -34,6 +36,7 @@ public class Main : Window, IDisposable
         public string           Description     { get; set; } = null!;
         public string?          Author          { get; set; }
         public bool             WithConfigUI    { get; set; }
+        public bool             WithConfig      { get; set; }
         public ModuleCategories Category        { get; set; }
     }
 
@@ -54,41 +57,7 @@ public class Main : Window, IDisposable
                 "Daily Routines - 主界面 (本插件不對國際服提供支持 / This Plugin ONLY Provides Help For CN Client)###DailyRoutines-Main";
         }
 
-        var allModules = Assembly.GetExecutingAssembly().GetTypes()
-                                 .Where(t => typeof(DailyModuleBase).IsAssignableFrom(t) &&
-                                             t is { IsClass: true, IsAbstract: false })
-                                 .Select(type => new ModuleInfo
-                                 {
-                                     Module = type,
-                                     PrecedingModule = type.GetCustomAttribute<PrecedingModuleAttribute>()?.Modules
-                                                           .Select(t => t.Name + "Title")
-                                                           .Select(title => Service.Lang.GetText(title))
-                                                           .ToArray(),
-                                     Title = Service.Lang.GetText(
-                                         type.GetCustomAttribute<ModuleDescriptionAttribute>()?.TitleKey ??
-                                         "DevModuleTitle"),
-                                     Description = Service.Lang.GetText(
-                                         type.GetCustomAttribute<ModuleDescriptionAttribute>()?.DescriptionKey ??
-                                         "DevModuleDescription"),
-                                     Category = type.GetCustomAttribute<ModuleDescriptionAttribute>()?.Category ??
-                                                ModuleCategories.一般,
-                                     Author = ((DailyModuleBase)Activator.CreateInstance(type)!).Author,
-                                     WithConfigUI = type
-                                                    .GetMethods(BindingFlags.Instance | BindingFlags.Public |
-                                                                BindingFlags.DeclaredOnly)
-                                                    .Any(m => m.Name == "ConfigUI" &&
-                                                              m.DeclaringType != typeof(DailyModuleBase)),
-                                 })
-                                 .ToList();
-
-        Modules.AddRange(allModules);
-        allModules.GroupBy(m => m.Category).ToList().ForEach(group =>
-        {
-            categorizedModules[group.Key] =
-                [.. group.OrderBy(m => m.Title)];
-        });
-        ModulesFavorite.AddRange(allModules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
-
+        RefreshModuleInfo();
         MainSettings.Init();
     }
 
@@ -301,12 +270,14 @@ public class Main : Window, IDisposable
 
             ImGui.SetWindowFontScale(0.9f);
             ImGui.Text(Service.Lang.GetText("Settings-ModuleInfoDisplayShort", moduleInfo.Category, moduleInfo.Author ?? "AtmoOmen"));
-
             ImGui.SetWindowFontScale(1f);
-            ImGui.Separator();
 
+            ImGui.Separator();
+            ImGuiHelpers.ScaledDummy(1f);
+
+            ImGui.SetWindowFontScale(0.9f);
             var isFavorite = Service.Config.ModuleFavorites.Contains(moduleInfo.Module.Name);
-            if (ImGui.Checkbox(Service.Lang.GetText("Favorite"), ref isFavorite))
+            if (ImGui.Selectable($"    {Service.Lang.GetText("Favorite")}", isFavorite, ImGuiSelectableFlags.DontClosePopups))
             {
                 if (!Service.Config.ModuleFavorites.Remove(moduleInfo.Module.Name))
                     Service.Config.ModuleFavorites.Add(moduleInfo.Module.Name);
@@ -315,9 +286,77 @@ public class Main : Window, IDisposable
                 ModulesFavorite.AddRange(Modules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
             }
 
+            ImGui.Separator();
+
+            if (ImGuiOm.Selectable($"    {Service.Lang.GetText("Settings-ResetModule")}"))
+            {
+                Task.Run(() =>
+                {
+                    if (!Service.Config.ModuleEnabled.TryGetValue(moduleInfo.Module.Name, out var isModuleEnabled))
+                        return;
+
+                    var module = Service.ModuleManager.Modules[moduleInfo.Module];
+                    if (isModuleEnabled) Service.ModuleManager.Unload(module);
+
+                    if (moduleInfo.WithConfig)
+                        File.Delete(Path.Join(Service.PluginInterface.ConfigDirectory.FullName, $"{moduleInfo.Module.Name}.json"));
+
+                    if (isModuleEnabled) Service.ModuleManager.Load(module);
+
+                    NotifyHelper.NotificationSuccess($"重置 {moduleInfo.Title} 模块完成");
+                });
+            }
+
+            if (moduleInfo.WithConfig)
+            {
+                ImGui.Separator();
+                if (ImGuiOm.Selectable($"    {Service.Lang.GetText("Settings-ModuleConfiguration")}"))
+                    OpenFolder(Path.Join(Service.PluginInterface.ConfigDirectory.FullName, $"{moduleInfo.Module.Name}.json"));
+            }
+            ImGui.SetWindowFontScale(1f);
+
             PresetFont.Axis14.Pop();
             ImGui.EndPopup();
         }
+    }
+
+    private static void RefreshModuleInfo()
+    {
+        var allModules = Assembly.GetExecutingAssembly().GetTypes()
+                                 .Where(t => typeof(DailyModuleBase).IsAssignableFrom(t) &&
+                                             t is { IsClass: true, IsAbstract: false })
+                                 .Select(type => new ModuleInfo
+                                 {
+                                     Module = type,
+                                     PrecedingModule = type.GetCustomAttribute<PrecedingModuleAttribute>()?.Modules
+                                                           .Select(t => t.Name + "Title")
+                                                           .Select(title => Service.Lang.GetText(title))
+                                                           .ToArray(),
+                                     Title = Service.Lang.GetText(
+                                         type.GetCustomAttribute<ModuleDescriptionAttribute>()?.TitleKey ??
+                                         "DevModuleTitle"),
+                                     Description = Service.Lang.GetText(
+                                         type.GetCustomAttribute<ModuleDescriptionAttribute>()?.DescriptionKey ??
+                                         "DevModuleDescription"),
+                                     Category = type.GetCustomAttribute<ModuleDescriptionAttribute>()?.Category ??
+                                                ModuleCategories.一般,
+                                     Author = ((DailyModuleBase)Activator.CreateInstance(type)!).Author,
+                                     WithConfigUI = type
+                                                    .GetMethods(BindingFlags.Instance | BindingFlags.Public |
+                                                                BindingFlags.DeclaredOnly)
+                                                    .Any(m => m.Name == "ConfigUI" &&
+                                                              m.DeclaringType != typeof(DailyModuleBase)),
+                                     WithConfig = File.Exists(Path.Join(Service.PluginInterface.ConfigDirectory.FullName, $"{type.Name}.json")),
+                                 })
+                                 .ToList();
+
+        Modules.AddRange(allModules);
+        allModules.GroupBy(m => m.Category).ToList().ForEach(group =>
+        {
+            categorizedModules[group.Key] =
+                [.. group.OrderBy(m => m.Title)];
+        });
+        ModulesFavorite.AddRange(allModules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
     }
 
     public void Dispose()
