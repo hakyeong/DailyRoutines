@@ -61,6 +61,7 @@ public class Service
 
         LuminaCache.ClearCache();
         Config.Uninit();
+        TaskHelper.DisposeAll();
     }
 
     #region DalamudServices

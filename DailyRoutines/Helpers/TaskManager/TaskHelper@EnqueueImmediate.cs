@@ -1,8 +1,8 @@
 using System;
 
-namespace CurrencyTrackerRE.Managers;
+namespace DailyRoutines.Helpers;
 
-public partial class TaskManager
+public partial class TaskHelper
 {
     public void EnqueueImmediate(Func<bool?> task, string? name = null)
     {
