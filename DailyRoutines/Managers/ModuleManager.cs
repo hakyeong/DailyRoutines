@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using DailyRoutines.Modules;
-using FFXIVClientStructs.FFXIV.Client.Game.Event;
 
 namespace DailyRoutines.Managers;
 

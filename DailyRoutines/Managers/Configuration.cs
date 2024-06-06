@@ -16,7 +16,7 @@ public class Configuration : IPluginConfiguration
     public bool                     IsHideOutdatedEvent         { get; set; } = true;
     public bool                     AllowAnonymousUpload        { get; set; } = true;
     public Dictionary<string, bool> ModuleEnabled               { get; set; } = [];
-    public HashSet<string>            ModuleFavorites             { get; set; } = [];
+    public HashSet<string>          ModuleFavorites             { get; set; } = [];
 
     [NonSerialized]
     private DalamudPluginInterface? pluginInterface;
