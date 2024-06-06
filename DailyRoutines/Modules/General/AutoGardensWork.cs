@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ClickLib;
 using DailyRoutines.Helpers;
+using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
@@ -11,7 +12,6 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
@@ -71,13 +71,13 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         Service.Hook.InitializeFromAttributes(this);
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "HousingGardening", OnAddon);
     }
 
     public override void ConfigUI()
     {
-        ImGui.BeginDisabled(TaskManager.IsBusy);
+        ImGui.BeginDisabled(TaskHelper.IsBusy);
         ImGui.BeginGroup();
 
         // 自动种植
@@ -211,7 +211,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("Stop"), groupSize with { X = 80f * ImGuiHelpers.GlobalScale }))
-            TaskManager.Abort();
+            TaskHelper.Abort();
     }
 
     private void OnAddon(AddonEvent type, AddonArgs args)
@@ -221,22 +221,22 @@ public unsafe class AutoGardensWork : DailyModuleBase
         if (inventoryManager->GetInventoryItemCount(SelectedSeed) == 0 ||
             inventoryManager->GetInventoryItemCount(SelectedSoil) == 0) return;
 
-        TaskManager.EnqueueImmediate(() => AgentHelper.SendEvent(AgentId.HousingPlant, 0, 2, 0U, 0, 0, 1U));
+        TaskHelper.EnqueueImmediate(() => AgentHelper.SendEvent(AgentId.HousingPlant, 0, 2, 0U, 0, 0, 1U));
 
-        TaskManager.DelayNextImmediate(10);
-        TaskManager.EnqueueImmediate(() => FillContextMenu(Soils[SelectedSoil].Name.ExtractText()));
+        TaskHelper.DelayNextImmediate(10);
+        TaskHelper.EnqueueImmediate(() => FillContextMenu(Soils[SelectedSoil].Name.ExtractText()));
 
-        TaskManager.DelayNextImmediate(10);
-        TaskManager.EnqueueImmediate(() => AgentHelper.SendEvent(AgentId.HousingPlant, 0, 2, 1U, 0, 0, 1U));
+        TaskHelper.DelayNextImmediate(10);
+        TaskHelper.EnqueueImmediate(() => AgentHelper.SendEvent(AgentId.HousingPlant, 0, 2, 1U, 0, 0, 1U));
 
-        TaskManager.DelayNextImmediate(10);
-        TaskManager.EnqueueImmediate(() => FillContextMenu(Seeds[SelectedSeed].Name.ExtractText()));
+        TaskHelper.DelayNextImmediate(10);
+        TaskHelper.EnqueueImmediate(() => FillContextMenu(Seeds[SelectedSeed].Name.ExtractText()));
 
-        TaskManager.DelayNextImmediate(10);
-        TaskManager.EnqueueImmediate(() => AgentHelper.SendEvent(AgentId.HousingPlant, 0, 0, 0, 0, 0, 0));
+        TaskHelper.DelayNextImmediate(10);
+        TaskHelper.EnqueueImmediate(() => AgentHelper.SendEvent(AgentId.HousingPlant, 0, 0, 0, 0, 0, 0));
 
-        TaskManager.DelayNextImmediate(10);
-        TaskManager.EnqueueImmediate(() => Click.TrySendClick("select_yes"));
+        TaskHelper.DelayNextImmediate(10);
+        TaskHelper.EnqueueImmediate(() => Click.TrySendClick("select_yes"));
     }
 
     private void StartGather()
@@ -252,8 +252,8 @@ public unsafe class AutoGardensWork : DailyModuleBase
             var objDistance = GetGameDistanceFromObject(localPlayer, gameObj);
             if (objDistance > 2.5) continue;
 
-            TaskManager.Enqueue(() => InteractWithGarden(gameObj));
-            TaskManager.Enqueue(() => ClickEntryByText("收获"));
+            TaskHelper.Enqueue(() => InteractWithGarden(gameObj));
+            TaskHelper.Enqueue(() => ClickEntryByText("收获"));
         }
     }
 
@@ -270,8 +270,8 @@ public unsafe class AutoGardensWork : DailyModuleBase
             var objDistance = GetGameDistanceFromObject(localPlayer, gameObj);
             if (objDistance > 2.5) continue;
 
-            TaskManager.Enqueue(() => InteractWithGarden(gameObj));
-            TaskManager.Enqueue(() => ClickEntryByText("护理"));
+            TaskHelper.Enqueue(() => InteractWithGarden(gameObj));
+            TaskHelper.Enqueue(() => ClickEntryByText("护理"));
         }
     }
 
@@ -288,9 +288,9 @@ public unsafe class AutoGardensWork : DailyModuleBase
             var objDistance = GetGameDistanceFromObject(localPlayer, gameObj);
             if (objDistance > 2.5) continue;
 
-            TaskManager.Enqueue(() => InteractWithGarden(gameObj));
-            TaskManager.Enqueue(() => ClickEntryByText("播种"));
-            TaskManager.DelayNext(250);
+            TaskHelper.Enqueue(() => InteractWithGarden(gameObj));
+            TaskHelper.Enqueue(() => ClickEntryByText("播种"));
+            TaskHelper.DelayNext(250);
         }
     }
 
@@ -307,11 +307,11 @@ public unsafe class AutoGardensWork : DailyModuleBase
             var objDistance = GetGameDistanceFromObject(localPlayer, gameObj);
             if (objDistance > 2.5) continue;
 
-            TaskManager.Enqueue(() => InteractWithGarden(gameObj));
-            TaskManager.Enqueue(() => ClickEntryByText("施肥"));
-            TaskManager.Enqueue(CheckFertilizerState);
-            TaskManager.Enqueue(ClickFertilizer);
-            TaskManager.Enqueue(() => !Service.Condition[ConditionFlag.OccupiedInQuestEvent]);
+            TaskHelper.Enqueue(() => InteractWithGarden(gameObj));
+            TaskHelper.Enqueue(() => ClickEntryByText("施肥"));
+            TaskHelper.Enqueue(CheckFertilizerState);
+            TaskHelper.Enqueue(ClickFertilizer);
+            TaskHelper.Enqueue(() => !Service.Condition[ConditionFlag.OccupiedInQuestEvent]);
         }
     }
 
@@ -346,7 +346,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         if (SelectedFertilizer == 0)
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
             return true;
         }
 
@@ -388,8 +388,8 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         agent->OpenForItemSlot((InventoryType)foundType, (int)foundSlot, agentInventory->AddonId);
 
-        TaskManager.InsertDelayNext(20);
-        TaskManager.Insert(() => ClickContextMenuByText("施肥"));
+        TaskHelper.InsertDelayNext(20);
+        TaskHelper.Insert(() => ClickContextMenuByText("施肥"));
 
         return true;
     }
@@ -435,13 +435,13 @@ public unsafe class AutoGardensWork : DailyModuleBase
             }
         }
 
-        TaskManager.Abort();
+        TaskHelper.Abort();
         return true;
     }
 
     private static bool? InteractWithGarden(GameObject* gameObj)
     {
-        if (IsOccupied()) return false;
+        if (Flags.OccupiedInEvent) return false;
 
         var targetSystem = TargetSystem.Instance();
         targetSystem->Target = gameObj;

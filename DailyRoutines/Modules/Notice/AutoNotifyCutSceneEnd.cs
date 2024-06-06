@@ -7,7 +7,7 @@ using DailyRoutines.Notifications;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Plugin.Services;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using ImGuiNET;
@@ -65,7 +65,7 @@ public class AutoNotifyCutSceneEnd : DailyModuleBase
     private static unsafe void OnUpdate(IFramework framework)
     {
         if (!IsSomeoneInCutscene) return;
-        if (!EzThrottler.Throttle("AutoNotifyCutSceneEnd")) return;
+        if (!Throttler.Throttle("AutoNotifyCutSceneEnd")) return;
 
         var isSBInCutScene = Service.PartyList.Any(member => member.GameObject != null &&
                                                              ((Character*)member.GameObject.Address)->CharacterData

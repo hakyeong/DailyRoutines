@@ -76,7 +76,7 @@ internal class vnavmeshIPC : DailyIPCBase
         }
         catch (Exception ex)
         {
-            ex.Log();
+            NotifyHelper.Error("", ex);
         }
     }
 
@@ -90,7 +90,7 @@ internal class vnavmeshIPC : DailyIPCBase
         }
         catch (Exception ex)
         {
-            ex.Log();
+            NotifyHelper.Error("", ex);
         }
 
         return default;
@@ -106,7 +106,7 @@ internal class vnavmeshIPC : DailyIPCBase
             }
             catch (Exception ex)
             {
-                ex.Log();
+                NotifyHelper.Error("", ex);
             }
         }
     }
@@ -121,7 +121,7 @@ internal class vnavmeshIPC : DailyIPCBase
         }
         catch (Exception ex)
         {
-            ex.Log();
+            NotifyHelper.Error("", ex);
         }
     }
 
@@ -135,19 +135,15 @@ internal class vnavmeshIPC : DailyIPCBase
         }
         catch (Exception ex)
         {
-            ex.Log();
+            NotifyHelper.Error("", ex);
         }
     }
 
-    internal bool NavIsReady()
-    {
-        return Execute(() => _navIsReady!.InvokeFunc());
-    }
+    internal bool NavIsReady() 
+        => Execute(() => _navIsReady!.InvokeFunc());
 
-    internal float NavBuildProgress()
-    {
-        return Execute(() => _navBuildProgress!.InvokeFunc());
-    }
+    internal float NavBuildProgress() 
+        => Execute(() => _navBuildProgress!.InvokeFunc());
 
     internal void NavReload()
     {
@@ -159,15 +155,10 @@ internal class vnavmeshIPC : DailyIPCBase
         Execute(() => _navRebuild!.InvokeFunc());
     }
 
-    internal Task<List<Vector3>>? NavPathfind(Vector3 from, Vector3 to, bool fly = false)
-    {
-        return Execute(() => _navPathfind!.InvokeFunc(from, to, fly));
-    }
+    internal Task<List<Vector3>>? NavPathfind(Vector3 from, Vector3 to, bool fly = false) 
+        => Execute(() => _navPathfind!.InvokeFunc(from, to, fly));
 
-    internal bool NavIsAutoLoad()
-    {
-        return Execute(() => _navIsAutoLoad!.InvokeFunc());
-    }
+    internal bool NavIsAutoLoad() => Execute(() => _navIsAutoLoad!.InvokeFunc());
 
     internal void NavSetAutoLoad(bool value)
     {
@@ -179,10 +170,7 @@ internal class vnavmeshIPC : DailyIPCBase
         return Execute(() => _queryMeshNearestPoint!.InvokeFunc(pos, halfExtentXZ, halfExtentY));
     }
 
-    internal Vector3? QueryMeshPointOnFloor(Vector3 pos, float halfExtentXZ)
-    {
-        return Execute(() => _queryMeshPointOnFloor!.InvokeFunc(pos, halfExtentXZ));
-    }
+    internal Vector3? QueryMeshPointOnFloor(Vector3 pos, float halfExtentXZ) => Execute(() => _queryMeshPointOnFloor!.InvokeFunc(pos, halfExtentXZ));
 
     internal void PathMoveTo(List<Vector3> waypoints, bool fly)
     {
@@ -194,40 +182,25 @@ internal class vnavmeshIPC : DailyIPCBase
         Execute(_pathStop!.InvokeAction);
     }
 
-    internal bool PathIsRunning()
-    {
-        return Execute(() => _pathIsRunning!.InvokeFunc());
-    }
+    internal bool PathIsRunning() => Execute(() => _pathIsRunning!.InvokeFunc());
 
-    internal int PathNumWaypoints()
-    {
-        return Execute(() => _pathNumWaypoints!.InvokeFunc());
-    }
+    internal int PathNumWaypoints() => Execute(() => _pathNumWaypoints!.InvokeFunc());
 
-    internal bool PathGetMovementAllowed()
-    {
-        return Execute(() => _pathGetMovementAllowed!.InvokeFunc());
-    }
+    internal bool PathGetMovementAllowed() => Execute(() => _pathGetMovementAllowed!.InvokeFunc());
 
     internal void PathSetMovementAllowed(bool value)
     {
         Execute(_pathSetMovementAllowed!.InvokeAction, value);
     }
 
-    internal bool PathGetAlignCamera()
-    {
-        return Execute(() => _pathGetAlignCamera!.InvokeFunc());
-    }
+    internal bool PathGetAlignCamera() => Execute(() => _pathGetAlignCamera!.InvokeFunc());
 
     internal void PathSetAlignCamera(bool value)
     {
         Execute(_pathSetAlignCamera!.InvokeAction, value);
     }
 
-    internal float PathGetTolerance()
-    {
-        return Execute(() => _pathGetTolerance!.InvokeFunc());
-    }
+    internal float PathGetTolerance() => Execute(() => _pathGetTolerance!.InvokeFunc());
 
     internal void PathSetTolerance(float tolerance)
     {
@@ -239,11 +212,8 @@ internal class vnavmeshIPC : DailyIPCBase
         Execute(() => _pathfindAndMoveTo!.InvokeFunc(pos, fly));
     }
 
-    internal bool PathfindInProgress()
-    {
-        return Execute(() => _pathfindInProgress!.InvokeFunc());
-    }
-    
+    internal bool PathfindInProgress() => Execute(() => _pathfindInProgress!.InvokeFunc());
+
     internal void CancelAllQueries()
     {
         Execute(_pathfindCancelAll!.InvokeAction);

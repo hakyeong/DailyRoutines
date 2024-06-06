@@ -9,8 +9,7 @@ using Dalamud.Game.Command;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
-using ECommons.Automation.LegacyTaskManager;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -61,7 +60,7 @@ public unsafe class AutoDiscard : DailyModuleBase
 
         _ItemNames = ItemNames.Take(10).ToDictionary(x => x.Key, x => x.Value);
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
         if (ModuleConfig.EnableCommand)
         {
@@ -173,9 +172,9 @@ public unsafe class AutoDiscard : DailyModuleBase
             if (!TrySearchItemInInventory(item, out var foundItem) || foundItem.Count <= 0) continue;
             foreach (var fItem in foundItem)
             {
-                TaskManager.Enqueue(() => OpenInventoryItemContext(fItem));
-                TaskManager.Enqueue(() => ClickContextMenu(group.Behaviour));
-                TaskManager.DelayNext(500);
+                TaskHelper.Enqueue(() => OpenInventoryItemContext(fItem));
+                TaskHelper.Enqueue(() => ClickContextMenu(group.Behaviour));
+                TaskHelper.DelayNext(500);
             }
         }
     }
@@ -204,7 +203,7 @@ public unsafe class AutoDiscard : DailyModuleBase
 
     private static bool OpenInventoryItemContext(InventoryItem item)
     {
-        if (!EzThrottler.Throttle("AutoDiscard", 100)) return false;
+        if (!Throttler.Throttle("AutoDiscard", 100)) return false;
         var agent = AgentInventoryContext.Instance();
         if (agent == null) return false;
 
@@ -214,7 +213,7 @@ public unsafe class AutoDiscard : DailyModuleBase
 
     private bool? ClickContextMenu(DiscardBehaviour behaviour)
     {
-        if (!EzThrottler.Throttle("AutoDiscard", 100)) return false;
+        if (!Throttler.Throttle("AutoDiscard", 100)) return false;
         if (ContextMenu == null || !IsAddonAndNodesReady(ContextMenu)) return false;
 
         switch (behaviour)
@@ -226,8 +225,8 @@ public unsafe class AutoDiscard : DailyModuleBase
                     break;
                 }
 
-                TaskManager.DelayNextImmediate(20);
-                TaskManager.EnqueueImmediate(ConfirmDiscard);
+                TaskHelper.DelayNextImmediate(20);
+                TaskHelper.EnqueueImmediate(ConfirmDiscard);
                 break;
             case DiscardBehaviour.Sell:
                 if ((TryGetAddonByName<AtkUnitBase>("RetainerGrid0", out var addonRetainerGrid) &&
@@ -241,7 +240,7 @@ public unsafe class AutoDiscard : DailyModuleBase
                         Service.Chat.Print(
                             new SeStringBuilder().Append(DRPrefix).AddUiForeground(" 未找到可用的出售页面", 17).Build());
 
-                        TaskManager.Abort();
+                        TaskHelper.Abort();
                     }
 
                     break;
@@ -256,7 +255,7 @@ public unsafe class AutoDiscard : DailyModuleBase
                         Service.Chat.Print(
                             new SeStringBuilder().Append(DRPrefix).AddUiForeground(" 未找到可用的出售页面", 17).Build());
 
-                        TaskManager.Abort();
+                        TaskHelper.Abort();
                     }
 
                     break;
@@ -266,7 +265,7 @@ public unsafe class AutoDiscard : DailyModuleBase
                 Service.Chat.Print(
                     new SeStringBuilder().Append(DRPrefix).AddUiForeground(" 未找到可用的出售页面", 17).Build());
 
-                TaskManager.Abort();
+                TaskHelper.Abort();
                 break;
         }
 
@@ -275,7 +274,7 @@ public unsafe class AutoDiscard : DailyModuleBase
 
     private static bool? ConfirmDiscard()
     {
-        if (!EzThrottler.Throttle("AutoDiscard", 100)) return false;
+        if (!Throttler.Throttle("AutoDiscard", 100)) return false;
         if (SelectYesno == null || !IsAddonAndNodesReady(SelectYesno)) return false;
 
         var handler = new ClickSelectYesNo();
@@ -590,7 +589,7 @@ public unsafe class AutoDiscard : DailyModuleBase
         var group = ModuleConfig.DiscardGroups[index];
 
         ImGui.PushID(index);
-        ImGui.BeginDisabled(TaskManager.IsBusy);
+        ImGui.BeginDisabled(TaskHelper.IsBusy);
         if (ImGuiOm.ButtonIcon($"Run_{index}", FontAwesomeIcon.Play, Service.Lang.GetText("Run")))
             EnqueueDiscardGroup(group);
 
@@ -598,9 +597,9 @@ public unsafe class AutoDiscard : DailyModuleBase
 
         ImGui.SameLine();
         if (ImGuiOm.ButtonIcon($"Stop_{index}", FontAwesomeIcon.Stop, Service.Lang.GetText("Stop")))
-            TaskManager.Abort();
+            TaskHelper.Abort();
 
-        ImGui.BeginDisabled(TaskManager.IsBusy);
+        ImGui.BeginDisabled(TaskHelper.IsBusy);
         ImGui.SameLine();
         if (ImGuiOm.ButtonIcon($"Copy_{index}", FontAwesomeIcon.Copy, Service.Lang.GetText("Copy")))
         {

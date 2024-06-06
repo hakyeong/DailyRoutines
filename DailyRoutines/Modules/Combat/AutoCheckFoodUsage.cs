@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Security.Policy;
-using System.Threading.Tasks;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -13,8 +11,7 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation.LegacyTaskManager;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -45,7 +42,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
         foreach (var checkPoint in Enum.GetValues<FoodCheckpoint>())
             ModuleConfig.EnabledCheckpoints.TryAdd(checkPoint, false);
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
 
         Service.Hook.InitializeFromAttributes(this);
         CountdownInitHook?.Enable();
@@ -231,7 +228,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
 
     private unsafe bool? EnqueueFoodRefresh(int zone = -1)
     {
-        if (EzThrottler.Throttle("AutoCheckFoodUsage_EnqueueFoodRefresh", 1000)) return false;
+        if (Throttler.Throttle("AutoCheckFoodUsage_EnqueueFoodRefresh", 1000)) return false;
 
         var actionManager = ActionManager.Instance();
         if (Flags.BetweenAreas || Service.ClientState.LocalPlayer == null ||
@@ -254,7 +251,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
 
         if (validPresets.Count == 0)
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
             return true;
         }
         TryGetWellFedParam(out var itemFood, out var remainingTime);
@@ -263,7 +260,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
         if (existedStatus != null)
             if (remainingTime > TimeSpan.FromSeconds(ModuleConfig.RefreshThreshold))
             {
-                TaskManager.Abort();
+                TaskHelper.Abort();
                 return true;
             }
 
@@ -305,7 +302,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
         var original = CountdownInitHook.Original(a1, a2);
 
         if (ModuleConfig.EnabledCheckpoints[FoodCheckpoint.倒计时开始时])
-            TaskManager.Enqueue(() => EnqueueFoodRefresh());
+            TaskHelper.Enqueue(() => EnqueueFoodRefresh());
 
         return original;
     }
@@ -314,7 +311,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
     {
         if (!ModuleConfig.EnabledCheckpoints[FoodCheckpoint.区域切换时]) return;
 
-        TaskManager.Enqueue(() => EnqueueFoodRefresh(zone));
+        TaskHelper.Enqueue(() => EnqueueFoodRefresh(zone));
     }
 
     public override void Uninit()

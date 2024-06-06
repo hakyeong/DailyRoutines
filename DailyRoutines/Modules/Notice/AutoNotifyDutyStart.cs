@@ -1,5 +1,6 @@
-﻿using DailyRoutines.Managers;
+using DailyRoutines.Managers;
 using DailyRoutines.Notifications;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
@@ -23,9 +24,9 @@ public class AutoNotifyDutyStart : DailyModuleBase
             UpdateConfig("OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
     }
 
-    private static void OnDutyStart(object? sender, ushort e)
+    private static unsafe void OnDutyStart(object? sender, ushort e)
     {
-        if (!ConfigOnlyNotifyWhenBackground || (ConfigOnlyNotifyWhenBackground && !IsGameForeground()))
+        if (!ConfigOnlyNotifyWhenBackground || (ConfigOnlyNotifyWhenBackground && !Framework.Instance()->WindowInactive))
             WinToast.Notify("", Service.Lang.GetText("AutoNotifyDutyStart-NotificationMessage"));
     }
 

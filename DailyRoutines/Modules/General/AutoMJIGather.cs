@@ -17,8 +17,7 @@ using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation.LegacyTaskManager;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.MJI;
@@ -58,7 +57,7 @@ public class AutoMJIGather : DailyModuleBase
         Service.Hook.InitializeFromAttributes(this);
         IsPlayerOnDivingHook.Enable();
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 15000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 15000, ShowDebug = false };
 
         Service.Chat.ChatMessage += OnChatMessage;
 
@@ -125,7 +124,7 @@ public class AutoMJIGather : DailyModuleBase
                                         {
                                             if (ImGui.Button(Service.Lang.GetText("Start")))
                                             {
-                                                TaskManager.Enqueue(SwitchToGatherMode);
+                                                TaskHelper.Enqueue(SwitchToGatherMode);
                                                 QueuedGatheringList = ModuleConfig.IslandGatherPoints
                                                     .Where(group => group.Enabled)
                                                     .SelectMany(group => group.Points ?? Enumerable.Empty<Vector3>())
@@ -144,7 +143,7 @@ public class AutoMJIGather : DailyModuleBase
                                         }, [
                                             new(IsOnDataCollecting,
                                                 Service.Lang.GetText("AutoMJIGather-DisableHelp-DataCollecting")),
-                                            new(TaskManager.IsBusy,
+                                            new(TaskHelper.IsBusy,
                                                 Service.Lang.GetText("AutoMJIGather-DisableHelp-Gathering")),
                                             new(Flags.IsOnMount,
                                                 Service.Lang.GetText("AutoMJIGather-DisableHelp-Mouting")),
@@ -155,7 +154,7 @@ public class AutoMJIGather : DailyModuleBase
                                                                     {
                                                                         if (ImGui.Button(Service.Lang.GetText("Stop")))
                                                                         {
-                                                                            TaskManager.Abort();
+                                                                            TaskHelper.Abort();
                                                                             IsOnDiving = false;
                                                                             IsPlayerOnDivingHook.Disable();
                                                                         }
@@ -304,7 +303,7 @@ public class AutoMJIGather : DailyModuleBase
                                             }
                                             else
                                             {
-                                                TaskManager.Abort();
+                                                TaskHelper.Abort();
                                                 IsOnDiving = false;
                                                 IsPlayerOnDivingHook.Disable();
                                                 SaveConfig(ModuleConfig);
@@ -326,9 +325,9 @@ public class AutoMJIGather : DailyModuleBase
     {
         if (Flags.IsOnMount || Flags.OccupiedInEvent) return false;
 
-        TaskManager.Enqueue(SwitchToGatherMode);
-        TaskManager.Enqueue(() => { IsOnDiving = nodes[CurrentGatherIndex].Y < 0; });
-        TaskManager.Enqueue(() =>
+        TaskHelper.Enqueue(SwitchToGatherMode);
+        TaskHelper.Enqueue(() => { IsOnDiving = nodes[CurrentGatherIndex].Y < 0; });
+        TaskHelper.Enqueue(() =>
         {
             var node = nodes[CurrentGatherIndex];
             return node.Y switch
@@ -341,20 +340,20 @@ public class AutoMJIGather : DailyModuleBase
             };
         });
 
-        TaskManager.DelayNext(100);
-        TaskManager.Enqueue(() => InteractWithNearestObject(nodes[CurrentGatherIndex]));
+        TaskHelper.DelayNext(100);
+        TaskHelper.Enqueue(() => InteractWithNearestObject(nodes[CurrentGatherIndex]));
 
-        TaskManager.DelayNext(100);
-        TaskManager.Enqueue(() => Gather(QueuedGatheringList));
+        TaskHelper.DelayNext(100);
+        TaskHelper.Enqueue(() => Gather(QueuedGatheringList));
 
-        TaskManager.DelayNext(100);
+        TaskHelper.DelayNext(100);
         if (CurrentGatherIndex + 1 >= nodes.Count)
         {
-            TaskManager.Abort();
-            TaskManager.Enqueue(() => CurrentGatherIndex = 0);
-            TaskManager.Enqueue(() => Gather(QueuedGatheringList));
+            TaskHelper.Abort();
+            TaskHelper.Enqueue(() => CurrentGatherIndex = 0);
+            TaskHelper.Enqueue(() => Gather(QueuedGatheringList));
         }
-        else TaskManager.Enqueue(() => CurrentGatherIndex++);
+        else TaskHelper.Enqueue(() => CurrentGatherIndex++);
 
         return true;
     }
@@ -365,8 +364,8 @@ public class AutoMJIGather : DailyModuleBase
         {
             var index = i;
             var node = nodes[i];
-            TaskManager.Enqueue(() => { IsOnDiving = node.Y < 0; });
-            TaskManager.Enqueue(() =>
+            TaskHelper.Enqueue(() => { IsOnDiving = node.Y < 0; });
+            TaskHelper.Enqueue(() =>
             {
                 return node.Y switch
                 {
@@ -378,7 +377,7 @@ public class AutoMJIGather : DailyModuleBase
                 };
             });
 
-            TaskManager.Enqueue(() =>
+            TaskHelper.Enqueue(() =>
             {
                 foreach (var obj in Service.ObjectTable)
                 {
@@ -403,20 +402,20 @@ public class AutoMJIGather : DailyModuleBase
                 }
             });
 
-            TaskManager.Enqueue(() => { NotifyHelper.NotificationInfo($"({index + 1}/{nodes.Count}) 扫描 {node} 周围环境中"); });
-            TaskManager.DelayNext(1000);
+            TaskHelper.Enqueue(() => { NotifyHelper.NotificationInfo($"({index + 1}/{nodes.Count}) 扫描 {node} 周围环境中"); });
+            TaskHelper.DelayNext(1000);
         }
 
-        TaskManager.Enqueue(() =>
+        TaskHelper.Enqueue(() =>
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
             IsOnDiving = false;
             IsPlayerOnDivingHook.Disable();
             SaveConfig(ModuleConfig);
             IsOnDataCollecting = false;
         });
 
-        TaskManager.Enqueue(() => Service.UseActionManager.UseAction(ActionType.GeneralAction, 27));
+        TaskHelper.Enqueue(() => Service.UseActionManager.UseAction(ActionType.GeneralAction, 27));
     }
 
     #endregion
@@ -431,7 +430,7 @@ public class AutoMJIGather : DailyModuleBase
         if (addon == null)
         {
             NotifyHelper.NotificationError(Service.Lang.GetText("AutoMJIGather-HUDNoFound"));
-            TaskManager.Abort();
+            TaskHelper.Abort();
             return true;
         }
 
@@ -445,7 +444,7 @@ public class AutoMJIGather : DailyModuleBase
         if (IsOnGathering()) return false;
         if (Service.ClientState.TerritoryType != 1055)
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
 
             NotifyHelper.NotificationError(Service.Lang.GetText("AutoMJIGather-NotInIslandMessage"));
             WinToast.Notify("", Service.Lang.GetText("AutoMJIGather-NotInIslandMessage"), ToolTipIcon.Warning);
@@ -468,7 +467,7 @@ public class AutoMJIGather : DailyModuleBase
         if (IsOnGathering()) return false;
         if (Service.ClientState.TerritoryType != 1055)
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
 
             NotifyHelper.NotificationError(Service.Lang.GetText("AutoMJIGather-NotInIslandMessage"));
             WinToast.Notify("", Service.Lang.GetText("AutoMJIGather-NotInIslandMessage"), ToolTipIcon.Warning);
@@ -486,9 +485,9 @@ public class AutoMJIGather : DailyModuleBase
 
     private unsafe bool? InteractWithNearestObject(Vector3 node)
     {
-        if (!EzThrottler.Throttle("AutoMJIGather-InteractWithNearestObject")) return false;
+        if (!Throttler.Throttle("AutoMJIGather-InteractWithNearestObject")) return false;
 
-        if (IsOccupied()) return false;
+        if (Flags.OccupiedInEvent) return false;
 
         var nearObjects = Service.ObjectTable
                                  .Where(x => x.ObjectKind is ObjectKind.CardStand &&
@@ -560,11 +559,11 @@ public class AutoMJIGather : DailyModuleBase
         XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
         if (!ModuleConfig.StopWhenReachingCap) return;
-        if (!TaskManager.IsBusy || (ushort)type != 2108) return;
+        if (!TaskHelper.IsBusy || (ushort)type != 2108) return;
 
         if (message.TextValue.Contains("持有数量已达到上限"))
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
             IsPlayerOnDivingHook.Disable();
 
             NotifyHelper.Warning(Service.Lang.GetText("AutoMJIGather-ReachCapsMessage"));

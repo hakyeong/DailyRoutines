@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using ECommons.Automation.LegacyTaskManager;
-using ECommons.GameFunctions;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
@@ -36,7 +36,7 @@ public class AutoTankStance : DailyModuleBase
         AddConfig("OnlyAutoStanceWhenOneTank", true);
         ConfigOnlyAutoStanceWhenOneTank = GetConfig<bool>("OnlyAutoStanceWhenOneTank");
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
 
         ContentsWithOneTank ??= PresetData.Contents
                                           .Where(x => (uint)x.Value.ContentMemberType.Value.TanksPerParty == 1)
@@ -62,16 +62,16 @@ public class AutoTankStance : DailyModuleBase
         if ((ConfigOnlyAutoStanceWhenOneTank && ContentsWithOneTank.Contains(zone)) ||
             (!ConfigOnlyAutoStanceWhenOneTank && PresetData.Contents.ContainsKey(zone)))
         {
-            TaskManager.Abort();
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(CheckCurrentJob);
+            TaskHelper.Abort();
+            TaskHelper.DelayNext(100);
+            TaskHelper.Enqueue(CheckCurrentJob);
         }
     }
 
     private void OnDutyRecommenced(object? sender, ushort e)
     {
-        TaskManager.Abort();
-        TaskManager.Enqueue(CheckCurrentJob);
+        TaskHelper.Abort();
+        TaskHelper.Enqueue(CheckCurrentJob);
     }
 
     private static unsafe bool? CheckCurrentJob()
@@ -84,9 +84,9 @@ public class AutoTankStance : DailyModuleBase
         var job = player.ClassJob.Id;
         if (!TankStanceActions.TryGetValue(job, out var actionID)) return true;
 
-        if (IsOccupied()) return false;
+        if (Flags.OccupiedInEvent) return false;
 
-        var battlePlayer = player.BattleChara();
+        var battlePlayer = (BattleChara*)player.Address;
         foreach (var status in TankStanceStatuses)
             if (battlePlayer->GetStatusManager->HasStatus(status))
                 return true;

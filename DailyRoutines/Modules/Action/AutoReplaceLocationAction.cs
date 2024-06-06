@@ -11,8 +11,6 @@ using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
-using ECommons.MathHelpers;
-using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using ImGuiNET;
@@ -29,7 +27,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
     private static Hook<ParseActionCommandArgDelegate>? ParseActionCommandArgHook;
 
     private static Config ModuleConfig = null!;
-    private static EzThrottler<string> Throttler = new();
+    private static Throttler<string> Throttler = new();
 
     private static uint CurrentMapID;
     private static readonly Dictionary<MapMarker, Vector2> ZoneMapMarkers = [];
@@ -129,7 +127,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
 
     private static void OnUpdate(IFramework framework)
     {
-        if (!EzThrottler.Throttle("AutoReplaceLocationAction", 1000)) return;
+        if (!Throttler.Throttle("AutoReplaceLocationAction", 1000)) return;
         if (!Flags.BoundByDuty) return;
 
         if (CurrentMapID == Service.ClientState.MapId) return;

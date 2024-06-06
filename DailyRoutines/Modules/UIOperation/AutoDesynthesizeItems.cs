@@ -1,13 +1,13 @@
 using System.Numerics;
 using ClickLib.Clicks;
 using DailyRoutines.Helpers;
+using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
 using Dalamud.Memory;
-using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -22,7 +22,7 @@ public unsafe class AutoDesynthesizeItems : DailyModuleBase
 
     public override void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
         Overlay ??= new Overlay(this);
 
         AddConfig("SkipWhenHQ", ConfigSkipWhenHQ);
@@ -45,7 +45,7 @@ public unsafe class AutoDesynthesizeItems : DailyModuleBase
 
         ImGui.Separator();
 
-        ImGui.BeginDisabled(TaskManager.IsBusy);
+        ImGui.BeginDisabled(TaskHelper.IsBusy);
         if (ImGui.Checkbox(Service.Lang.GetText("AutoDesynthesizeItems-SkipHQ"), ref ConfigSkipWhenHQ))
             UpdateConfig("SkipWhenHQ", ConfigSkipWhenHQ);
 
@@ -53,7 +53,7 @@ public unsafe class AutoDesynthesizeItems : DailyModuleBase
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskHelper.Abort();
     }
 
     private void OnAddonList(AddonEvent type, AddonArgs args)
@@ -78,14 +78,14 @@ public unsafe class AutoDesynthesizeItems : DailyModuleBase
 
     private bool? StartDesynthesize()
     {
-        if (IsOccupied()) return false;
+        if (Flags.OccupiedInEvent) return false;
         if (TryGetAddonByName<AtkUnitBase>("SalvageItemSelector", out var addon) &&
             IsAddonAndNodesReady(addon))
         {
             var itemAmount = addon->AtkValues[9].Int;
             if (itemAmount == 0)
             {
-                TaskManager.Abort();
+                TaskHelper.Abort();
                 return true;
             }
 
@@ -103,8 +103,8 @@ public unsafe class AutoDesynthesizeItems : DailyModuleBase
 
                 AgentHelper.SendEvent(agent, 0, 12, i);
 
-                TaskManager.DelayNext(1500);
-                TaskManager.Enqueue(StartDesynthesize);
+                TaskHelper.DelayNext(1500);
+                TaskHelper.Enqueue(StartDesynthesize);
                 return true;
             }
         }

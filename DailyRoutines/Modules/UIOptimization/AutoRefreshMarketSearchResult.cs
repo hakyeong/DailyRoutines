@@ -1,8 +1,8 @@
+using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
 using Dalamud;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 
@@ -44,14 +44,14 @@ public unsafe class AutoRefreshMarketSearchResult : DailyModuleBase
             Service.Log.Error("Failed to read original instruction");
         }
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
 
     private long HandlePricesDetour(void* unk1, void* unk2, void* unk3, void* unk4, void* unk5, void* unk6, void* unk7)
     {
         var result = HandlePricesHook.Original.Invoke(unk1, unk2, unk3, unk4, unk5, unk6, unk7);
         if (result != 1)
-            TaskManager.Enqueue(RefreshPrices);
+            TaskHelper.Enqueue(RefreshPrices);
 
         return result;
     }

@@ -25,7 +25,7 @@ using Dalamud.Memory;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using Dalamud.Utility.Signatures;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -35,7 +35,6 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using Microsoft.Extensions.Caching.Memory;
-using TaskManager = ECommons.Automation.LegacyTaskManager.TaskManager;
 
 namespace DailyRoutines.Modules;
 
@@ -98,7 +97,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         MarketboardHistoryHook?.Enable();
         InfoProxyItemSearchAddPageHook?.Enable();
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
         Overlay ??= new Overlay(this);
 
         // 出售品列表
@@ -350,7 +349,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         if (ImGui.Button(Service.Lang.GetText("Start"))) EnqueueRetainersDispatch();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskHelper.Abort();
 
         ImGui.SameLine();
         PreviewImageWithHelpText(Service.Lang.GetText("AutoRetainersDispatch-WhatIsTheList"),
@@ -763,7 +762,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
         ImGui.Dummy(new(200f * ImGuiHelpers.GlobalScale, 0f));
 
-        ImGui.BeginDisabled(TaskManager.IsBusy || activeAddon != RetainerList);
+        ImGui.BeginDisabled(TaskHelper.IsBusy || activeAddon != RetainerList);
 
         if (ImGui.CollapsingHeader(Service.Lang.GetText("AutoRetainerRefreshTitle")))
         {
@@ -772,7 +771,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
             ImGui.SameLine();
             if (ImGui.Button($"{Service.Lang.GetText("Stop")}###Refresh"))
-                TaskManager.Abort();
+                TaskHelper.Abort();
         }
 
         if (ImGui.CollapsingHeader(Service.Lang.GetText("AutoWithdrawRetainersGilsTitle")))
@@ -782,7 +781,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
             ImGui.SameLine();
             if (ImGui.Button($"{Service.Lang.GetText("Stop")}###WithDraw"))
-                TaskManager.Abort();
+                TaskHelper.Abort();
         }
 
         if (ImGui.CollapsingHeader(Service.Lang.GetText("AutoShareRetainersGilsEvenlyTitle")))
@@ -792,7 +791,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
             ImGui.SameLine();
             if (ImGui.Button($"{Service.Lang.GetText("Stop")}###Share"))
-                TaskManager.Abort();
+                TaskHelper.Abort();
 
             if (ImGui.RadioButton(Service.Lang.GetText("AutoShareRetainersGilsEvenly-Method1"),
                                   ref ModuleConfig.AdjustMethod, 0))
@@ -814,7 +813,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
             ImGui.SameLine();
             if (ImGui.Button($"{Service.Lang.GetText("Stop")}###Entrust"))
-                TaskManager.Abort();
+                TaskHelper.Abort();
         }
 
         ImGui.EndDisabled();
@@ -829,12 +828,12 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
             ImGui.Separator();
 
-            ImGui.BeginDisabled(TaskManager.IsBusy);
+            ImGui.BeginDisabled(TaskHelper.IsBusy);
             if (ImGui.Button(Service.Lang.GetText("Start"))) EnqueueRetainersPriceAdjust();
             ImGui.EndDisabled();
 
             ImGui.SameLine();
-            if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
+            if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskHelper.Abort();
             ImGui.PopID();
             ImGui.EndDisabled();
 
@@ -845,12 +844,12 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
             ImGui.Separator();
 
-            ImGui.BeginDisabled(TaskManager.IsBusy);
+            ImGui.BeginDisabled(TaskHelper.IsBusy);
             if (ImGui.Button(Service.Lang.GetText("Start"))) EnqueueItemsPriceAdjust();
             ImGui.EndDisabled();
 
             ImGui.SameLine();
-            if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
+            if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskHelper.Abort();
             ImGui.PopID();
             ImGui.EndDisabled();
 
@@ -901,8 +900,8 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
         if (!TryScanSelectStringText(SelectString, "结束", out var index))
         {
-            TaskManager.Abort();
-            TaskManager.Enqueue(ReturnToRetainerList);
+            TaskHelper.Abort();
+            TaskHelper.Enqueue(ReturnToRetainerList);
             return true;
         }
 
@@ -919,8 +918,8 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                                      out var returnIndex) ||
             !TryScanSelectStringText(SelectString, "出售", out var index))
         {
-            TaskManager.Abort();
-            if (returnIndex != -1) TaskManager.Enqueue(() => Click.TrySendClick($"select_string{returnIndex + 1}"));
+            TaskHelper.Abort();
+            if (returnIndex != -1) TaskHelper.Enqueue(() => Click.TrySendClick($"select_string{returnIndex + 1}"));
 
             return true;
         }
@@ -935,7 +934,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
         CurrentItemIndex = index;
         AgentHelper.SendEvent(AgentId.Retainer, 3, 0, index, 1);
-        TaskManager.EnqueueImmediate(ClickAdjustPrice);
+        TaskHelper.EnqueueImmediate(ClickAdjustPrice);
 
         return true;
     }
@@ -947,7 +946,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         if (!ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(6948).Text.RawString)) return false;
 
         ResetCurrentItemStats(false);
-        TaskManager.EnqueueImmediate(ObtainItemData);
+        TaskHelper.EnqueueImmediate(ObtainItemData);
         return true;
     }
 
@@ -1145,7 +1144,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                     if (CurrentItemIndex != -1)
                     {
                         var copyIndex = CurrentItemIndex;
-                        TaskManager.EnqueueImmediate(() =>
+                        TaskHelper.EnqueueImmediate(() =>
                         {
                             if (RetainerSellList == null || !IsAddonAndNodesReady(RetainerSellList)) return false;
 
@@ -1154,19 +1153,19 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                                    IsAddonAndNodesReady(cm);
                         });
 
-                        TaskManager.DelayNextImmediate(50);
-                        TaskManager.EnqueueImmediate(
+                        TaskHelper.DelayNextImmediate(50);
+                        TaskHelper.EnqueueImmediate(
                             () => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(958).Text.RawString));
                     }
 
-                    TaskManager.EnqueueImmediate(() => OperateAndReturn(false));
+                    TaskHelper.EnqueueImmediate(() => OperateAndReturn(false));
                     break;
                 case AbortBehavior.收回至背包:
                     CloseAddon();
                     if (CurrentItemIndex != -1)
                     {
                         var copyIndex = CurrentItemIndex;
-                        TaskManager.EnqueueImmediate(() =>
+                        TaskHelper.EnqueueImmediate(() =>
                         {
                             if (RetainerSellList == null || !IsAddonAndNodesReady(RetainerSellList)) return false;
 
@@ -1175,19 +1174,19 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                                    IsAddonAndNodesReady(cm);
                         });
 
-                        TaskManager.DelayNextImmediate(50);
-                        TaskManager.EnqueueImmediate(
+                        TaskHelper.DelayNextImmediate(50);
+                        TaskHelper.EnqueueImmediate(
                             () => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(976).Text.RawString));
                     }
 
-                    TaskManager.EnqueueImmediate(() => OperateAndReturn(false));
+                    TaskHelper.EnqueueImmediate(() => OperateAndReturn(false));
                     break;
                 case AbortBehavior.出售至系统商店:
                     CloseAddon();
                     if (CurrentItemIndex != -1)
                     {
                         var copyIndex = CurrentItemIndex;
-                        TaskManager.EnqueueImmediate(() =>
+                        TaskHelper.EnqueueImmediate(() =>
                         {
                             if (RetainerSellList == null || !IsAddonAndNodesReady(RetainerSellList)) return false;
 
@@ -1196,32 +1195,32 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                                    IsAddonAndNodesReady(cm);
                         });
 
-                        TaskManager.EnqueueImmediate(
+                        TaskHelper.EnqueueImmediate(
                             () => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(976).Text.RawString));
 
-                        TaskManager.DelayNextImmediate(500);
+                        TaskHelper.DelayNextImmediate(500);
                     }
 
-                    TaskManager.EnqueueImmediate(() =>
+                    TaskHelper.EnqueueImmediate(() =>
                     {
                         if (!TrySearchItemInInventory(CurrentItem.ItemID, CurrentItem.IsHQ, out var foundItem) ||
                             foundItem.Count <= 0)
                         {
-                            TaskManager.EnqueueImmediate(() => OperateAndReturn(false));
+                            TaskHelper.EnqueueImmediate(() => OperateAndReturn(false));
                             return true;
                         }
 
-                        TaskManager.EnqueueImmediate(() =>
+                        TaskHelper.EnqueueImmediate(() =>
                         {
                             OpenInventoryItemContext(foundItem[0]);
                             return TryGetAddonByName<AtkUnitBase>("ContextMenu", out var cm) &&
                                    IsAddonAndNodesReady(cm);
                         });
 
-                        TaskManager.EnqueueImmediate(
+                        TaskHelper.EnqueueImmediate(
                             () => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(5480).Text.RawString));
 
-                        TaskManager.EnqueueImmediate(() => OperateAndReturn(false));
+                        TaskHelper.EnqueueImmediate(() => OperateAndReturn(false));
 
                         return true;
                     });
@@ -1282,11 +1281,11 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             if (retainerState - serverTime <= 0)
             {
                 var index = i;
-                TaskManager.Enqueue(() => ClickSpecificRetainer(index));
-                TaskManager.Enqueue(ClickRetainerFinishedVenture);
-                TaskManager.Enqueue(() => Click.TrySendClick("retainer_venture_result_reassign"));
-                TaskManager.Enqueue(() => Click.TrySendClick("retainer_venture_ask_assign"));
-                TaskManager.Enqueue(ReturnToRetainerList);
+                TaskHelper.Enqueue(() => ClickSpecificRetainer(index));
+                TaskHelper.Enqueue(ClickRetainerFinishedVenture);
+                TaskHelper.Enqueue(() => Click.TrySendClick("retainer_venture_result_reassign"));
+                TaskHelper.Enqueue(() => Click.TrySendClick("retainer_venture_ask_assign"));
+                TaskHelper.Enqueue(ReturnToRetainerList);
                 break;
             }
         }
@@ -1302,29 +1301,29 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             var marketItemCount = retainerManager->GetRetainerBySortedIndex((uint)i)->MarkerItemCount;
             if (marketItemCount <= 0) continue;
 
-            TaskManager.Enqueue(() => ClickSpecificRetainer(index));
-            TaskManager.Enqueue(ClickToEnterSellList);
-            TaskManager.Enqueue(() =>
+            TaskHelper.Enqueue(() => ClickSpecificRetainer(index));
+            TaskHelper.Enqueue(ClickToEnterSellList);
+            TaskHelper.Enqueue(() =>
             {
                 if (RetainerSellList == null) return false;
 
                 for (var i1 = 0; i1 < marketItemCount; i1++)
                 {
                     var index1 = i1;
-                    TaskManager.Insert(() => ClickItemInSellList(index1));
-                    if (ModuleConfig.OperationDelay > 0) TaskManager.InsertDelayNext(ModuleConfig.OperationDelay);
+                    TaskHelper.Insert(() => ClickItemInSellList(index1));
+                    if (ModuleConfig.OperationDelay > 0) TaskHelper.InsertDelayNext(ModuleConfig.OperationDelay);
                 }
 
                 return true;
             });
 
-            TaskManager.Enqueue(() =>
+            TaskHelper.Enqueue(() =>
             {
                 RetainerSellList->FireCloseCallback();
                 RetainerSellList->Close(true);
             });
 
-            TaskManager.Enqueue(ReturnToRetainerList);
+            TaskHelper.Enqueue(ReturnToRetainerList);
         }
     }
 
@@ -1335,15 +1334,15 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
         if (marketItemCount == 0)
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
             return;
         }
 
         for (var i = 0; i < marketItemCount; i++)
         {
             var index = i;
-            TaskManager.Enqueue(() => ClickItemInSellList(index));
-            if (ModuleConfig.OperationDelay > 0) TaskManager.DelayNext(ModuleConfig.OperationDelay);
+            TaskHelper.Enqueue(() => ClickItemInSellList(index));
+            if (ModuleConfig.OperationDelay > 0) TaskHelper.DelayNext(ModuleConfig.OperationDelay);
         }
     }
 
@@ -1355,12 +1354,12 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         for (var i = 0; i < retainerManager->GetRetainerCount(); i++)
         {
             var index = i;
-            TaskManager.Enqueue(() => RetainerList != null && IsAddonAndNodesReady(RetainerList));
-            TaskManager.Enqueue(() => ClickSpecificRetainer(index));
-            TaskManager.Enqueue(() => ClickHelper.SelectString(LuminaCache.GetRow<Addon>(2378).Text.RawString));
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(ExitRetainerInventory);
-            TaskManager.Enqueue(() => ClickHelper.SelectString(LuminaCache.GetRow<Addon>(2383).Text.RawString));
+            TaskHelper.Enqueue(() => RetainerList != null && IsAddonAndNodesReady(RetainerList));
+            TaskHelper.Enqueue(() => ClickSpecificRetainer(index));
+            TaskHelper.Enqueue(() => ClickHelper.SelectString(LuminaCache.GetRow<Addon>(2378).Text.RawString));
+            TaskHelper.DelayNext(100);
+            TaskHelper.Enqueue(ExitRetainerInventory);
+            TaskHelper.Enqueue(() => ClickHelper.SelectString(LuminaCache.GetRow<Addon>(2383).Text.RawString));
         }
     }
 
@@ -1381,12 +1380,12 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             if (retainerManager->GetRetainerBySortedIndex((uint)i)->Gil == 0) continue;
 
             var index = i;
-            TaskManager.Enqueue(() => ClickSpecificRetainer(index));
+            TaskHelper.Enqueue(() => ClickSpecificRetainer(index));
 
-            TaskManager.Enqueue(() => ClickHelper.SelectString(LuminaCache.GetRow<Addon>(2379).Text.RawString));
+            TaskHelper.Enqueue(() => ClickHelper.SelectString(LuminaCache.GetRow<Addon>(2379).Text.RawString));
 
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(() =>
+            TaskHelper.DelayNext(100);
+            TaskHelper.Enqueue(() =>
             {
                 if (Bank == null || !IsAddonAndNodesReady(Bank)) return false;
 
@@ -1405,8 +1404,8 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 return true;
             });
 
-            TaskManager.Enqueue(ReturnToRetainerList);
-            TaskManager.DelayNext(100);
+            TaskHelper.Enqueue(ReturnToRetainerList);
+            TaskHelper.DelayNext(100);
         }
     }
 
@@ -1431,7 +1430,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 for (var i = 0; i < retainerCount; i++)
                 {
                     EnqueueRetainersGilShareMethodFirst(i, avgAmount);
-                    TaskManager.DelayNext(100);
+                    TaskHelper.DelayNext(100);
                 }
 
                 break;
@@ -1439,13 +1438,13 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 for (var i = 0; i < retainerCount; i++)
                 {
                     EnqueueRetainersGilShareMethodSecond(i);
-                    TaskManager.DelayNext(100);
+                    TaskHelper.DelayNext(100);
                 }
 
                 for (var i = 0; i < retainerCount; i++)
                 {
                     EnqueueRetainersGilShareMethodFirst(i, avgAmount);
-                    TaskManager.DelayNext(100);
+                    TaskHelper.DelayNext(100);
                 }
 
                 break;
@@ -1455,12 +1454,12 @@ public unsafe class AutoRetainerWork : DailyModuleBase
     private void EnqueueRetainersGilShareMethodFirst(int index, uint avgAmount)
     {
         // 点击指定雇员
-        TaskManager.Enqueue(() => ClickSpecificRetainer(index));
+        TaskHelper.Enqueue(() => ClickSpecificRetainer(index));
         // 点击金币管理
-        TaskManager.Enqueue(() => ClickHelper.SelectString(LuminaCache.GetRow<Addon>(2379).Text.RawString));
+        TaskHelper.Enqueue(() => ClickHelper.SelectString(LuminaCache.GetRow<Addon>(2379).Text.RawString));
         // 重新分配金币
-        TaskManager.DelayNext(100);
-        TaskManager.Enqueue(() =>
+        TaskHelper.DelayNext(100);
+        TaskHelper.Enqueue(() =>
         {
             if (Bank == null || !IsAddonAndNodesReady(Bank)) return false;
 
@@ -1491,18 +1490,18 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         });
 
         // 回到雇员列表
-        TaskManager.Enqueue(ReturnToRetainerList);
+        TaskHelper.Enqueue(ReturnToRetainerList);
     }
 
     private void EnqueueRetainersGilShareMethodSecond(int index)
     {
         // 点击指定雇员
-        TaskManager.Enqueue(() => ClickSpecificRetainer(index));
+        TaskHelper.Enqueue(() => ClickSpecificRetainer(index));
         // 点击金币管理
-        TaskManager.Enqueue(() => ClickHelper.SelectString(LuminaCache.GetRow<Addon>(2379).Text.RawString));
+        TaskHelper.Enqueue(() => ClickHelper.SelectString(LuminaCache.GetRow<Addon>(2379).Text.RawString));
         // 取出所有金币
-        TaskManager.DelayNext(100);
-        TaskManager.Enqueue(() =>
+        TaskHelper.DelayNext(100);
+        TaskHelper.Enqueue(() =>
         {
             if (Bank == null || !IsAddonAndNodesReady(Bank)) return false;
 
@@ -1522,7 +1521,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         });
 
         // 回到雇员列表
-        TaskManager.Enqueue(ReturnToRetainerList);
+        TaskHelper.Enqueue(ReturnToRetainerList);
     }
 
     private void EnqueueRetainersEntrustDups()
@@ -1533,12 +1532,12 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         for (var i = 0; i < retainerManager->GetRetainerCount(); i++)
         {
             var index = i;
-            TaskManager.Enqueue(() => RetainerList != null && IsAddonAndNodesReady(RetainerList));
-            TaskManager.Enqueue(() => ClickSpecificRetainer(index));
-            TaskManager.Enqueue(() => ClickHelper.SelectString(LuminaCache.GetRow<Addon>(2378).Text.RawString));
-            TaskManager.Enqueue(() =>
+            TaskHelper.Enqueue(() => RetainerList != null && IsAddonAndNodesReady(RetainerList));
+            TaskHelper.Enqueue(() => ClickSpecificRetainer(index));
+            TaskHelper.Enqueue(() => ClickHelper.SelectString(LuminaCache.GetRow<Addon>(2378).Text.RawString));
+            TaskHelper.Enqueue(() =>
             {
-                if (!EzThrottler.Throttle("AutoRetainerEntrustDups", 100)) return false;
+                if (!Throttler.Throttle("AutoRetainerEntrustDups", 100)) return false;
                 var agent = AgentModule.Instance()->GetAgentByInternalId(AgentId.Retainer);
                 if (agent == null || !agent->IsAgentActive()) return false;
 
@@ -1549,9 +1548,9 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 return true;
             });
 
-            TaskManager.DelayNext(500);
-            TaskManager.Enqueue(ExitRetainerInventory);
-            TaskManager.Enqueue(() => ClickHelper.SelectString(LuminaCache.GetRow<Addon>(2383).Text.RawString));
+            TaskHelper.DelayNext(500);
+            TaskHelper.Enqueue(ExitRetainerInventory);
+            TaskHelper.Enqueue(() => ClickHelper.SelectString(LuminaCache.GetRow<Addon>(2383).Text.RawString));
         }
     }
 
@@ -1566,11 +1565,11 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         for (var i = 0; i < entryCount - 1; i++)
         {
             var tempI = i;
-            TaskManager.Enqueue(() => Click.TrySendClick($"select_string{tempI + 1}"));
-            TaskManager.DelayNext(20);
-            TaskManager.Enqueue(() => Click.TrySendClick("select_yes"));
+            TaskHelper.Enqueue(() => Click.TrySendClick($"select_string{tempI + 1}"));
+            TaskHelper.DelayNext(20);
+            TaskHelper.Enqueue(() => Click.TrySendClick("select_yes"));
 
-            TaskManager.DelayNext(100);
+            TaskHelper.DelayNext(100);
         }
     }
 
@@ -1609,7 +1608,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             Service.Chat.PrintError(Service.Lang.GetText("AutoRetainerPriceAdjust-FailObtainItemInfo"),
                                     "Daily Routines");
 
-            TaskManager.Abort();
+            TaskHelper.Abort();
             return true;
         }
 
@@ -1618,7 +1617,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         CurrentItem.IsHQ = itemNameText.Contains(''); // HQ 符号
         InfoItemSearch->SearchItemId = CurrentItem.ItemID;
 
-        TaskManager.EnqueueImmediate(ObtainMarketData);
+        TaskHelper.EnqueueImmediate(ObtainMarketData);
         return true;
     }
 
@@ -1626,19 +1625,19 @@ public unsafe class AutoRetainerWork : DailyModuleBase
     private bool? ObtainMarketData()
     {
         InfoItemSearch->ClearData();
-        if (!EzThrottler.Throttle("AutoRetainerPriceAdjust-ObtainMarketData")) return false;
+        if (!Throttler.Throttle("AutoRetainerPriceAdjust-ObtainMarketData")) return false;
         if (InfoItemSearch->SearchItemId == 0)
         {
             Service.Chat.PrintError(Service.Lang.GetText("AutoRetainerPriceAdjust-FailObtainItemInfo"),
                                     "Daily Routines");
 
-            TaskManager.Abort();
+            TaskHelper.Abort();
             return true;
         }
 
         if (TryGetPriceCache(CurrentItem.ItemID, CurrentItem.IsHQ, out _))
         {
-            TaskManager.EnqueueImmediate(FillPrice);
+            TaskHelper.EnqueueImmediate(FillPrice);
             return true;
         }
 
@@ -1648,8 +1647,8 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             return false;
         }
 
-        TaskManager.DelayNextImmediate(1000);
-        TaskManager.EnqueueImmediate(ParseMarketData);
+        TaskHelper.DelayNextImmediate(1000);
+        TaskHelper.EnqueueImmediate(ParseMarketData);
         return true;
     }
 
@@ -1662,7 +1661,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             // 历史结果为空
             if (ItemHistoryList.Count <= 0)
             {
-                TaskManager.EnqueueImmediate(FillPrice);
+                TaskHelper.EnqueueImmediate(FillPrice);
                 return true;
             }
 
@@ -1676,7 +1675,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             if (maxHQPrice != 0)
                 SetPriceCache(CurrentItem.ItemID, true, maxHQPrice);
 
-            TaskManager.EnqueueImmediate(FillPrice);
+            TaskHelper.EnqueueImmediate(FillPrice);
             return true;
         }
 
@@ -1704,7 +1703,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         if (minHQPrice > 0)
             SetPriceCache(CurrentItem.ItemID, true, minHQPrice);
 
-        TaskManager.EnqueueImmediate(FillPrice);
+        TaskHelper.EnqueueImmediate(FillPrice);
         return true;
     }
 
@@ -1785,7 +1784,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
     private static bool OpenInventoryItemContext(InventoryItem item)
     {
-        if (!EzThrottler.Throttle("AutoDiscard", 100)) return false;
+        if (!Throttler.Throttle("AutoDiscard", 100)) return false;
         var agent = AgentInventoryContext.Instance();
         if (agent == null) return false;
 
@@ -1881,9 +1880,9 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 Service.AddonLifecycle.RegisterListener(AddonEvent.PostUpdate, "RetainerList", OnRetainerList);
                 break;
             case AddonEvent.PostUpdate:
-                if (EzThrottler.Throttle("AutoRetainerCollect-AFK", 5000))
+                if (Throttler.Throttle("AutoRetainerCollect-AFK", 5000))
                 {
-                    if (InterruptByConflictKey() || TaskManager.IsBusy ||
+                    if (InterruptByConflictKey() || TaskHelper.IsBusy ||
                         !IsAddonAndNodesReady((AtkUnitBase*)args.Addon)) return;
 
                     Service.Framework.RunOnTick(EnqueueRetainersCollect, TimeSpan.FromSeconds(1));
@@ -1914,26 +1913,26 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         {
             case AddonEvent.PostSetup:
                 if (InterruptByConflictKey()) return;
-                if (TaskManager.IsBusy) return;
+                if (TaskHelper.IsBusy) return;
 
                 ResetCurrentItemStats(true);
-                TaskManager.Enqueue(ObtainItemData);
+                TaskHelper.Enqueue(ObtainItemData);
                 break;
         }
     }
 
     private void OnEntrustDupsAddons(AddonEvent type, AddonArgs args)
     {
-        if (!TaskManager.IsBusy) return;
+        if (!TaskHelper.IsBusy) return;
         switch (args.AddonName)
         {
             case "RetainerItemTransferList":
                 AddonHelper.Callback((AtkUnitBase*)args.Addon, true, 1);
                 break;
             case "RetainerItemTransferProgress":
-                TaskManager.EnqueueImmediate(() =>
+                TaskHelper.EnqueueImmediate(() =>
                 {
-                    if (!EzThrottler.Throttle("AutoRetainerEntrustDups", 100)) return false;
+                    if (!Throttler.Throttle("AutoRetainerEntrustDups", 100)) return false;
                     if (!TryGetAddonByName<AtkUnitBase>("RetainerItemTransferProgress", out var addon) ||
                         !IsAddonAndNodesReady(addon)) return false;
 

@@ -11,7 +11,6 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility;
-using ECommons.Automation.LegacyTaskManager;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
@@ -43,7 +42,7 @@ public class AutoShowDutyGuide : DailyModuleBase
 
         NoviceIcon ??= ImageHelper.GetIcon(61523);
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
 
         Overlay ??= new Overlay(this);
         Overlay.Flags &= ~ImGuiWindowFlags.NoTitleBar;
@@ -151,8 +150,8 @@ public class AutoShowDutyGuide : DailyModuleBase
 
         if (HintsContent.TryGetValue(territory, out var func))
         {
-            TaskManager.DelayNext(500);
-            TaskManager.Enqueue(func);
+            TaskHelper.DelayNext(500);
+            TaskHelper.Enqueue(func);
         }
 
         Task.Run(async () => await GetDutyGuide(content.RowId));

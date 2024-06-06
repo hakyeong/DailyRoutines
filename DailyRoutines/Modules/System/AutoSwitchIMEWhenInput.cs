@@ -10,8 +10,6 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
-using ECommons.Interop;
-using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -51,7 +49,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
 
     public override void ConfigUI()
     {
-        if (EzThrottler.Throttle("AutoSwitchIMEWhenInput-RefreshIME", 1000)) RefreshIME();
+        if (Throttler.Throttle("AutoSwitchIMEWhenInput-RefreshIME", 1000)) RefreshIME();
 
         ImGui.Spacing();
 
@@ -141,7 +139,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
     private static SavedIME? GetCurrentIME()
     {
         SavedIME? result = null;
-        if (!WindowFunctions.TryFindGameWindow(out var gameHandle))
+        if (!TryFindGameWindow(out var gameHandle))
         {
             NotifyHelper.NotificationError($"{Service.Lang.GetText("AutoSwitchIMEWhenInput-FailFindGameWindow")}, {Service.Lang.GetText("AutoSwitchIMEWhenInput-FailObtainIME")}");
             return result;
@@ -171,7 +169,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
 
     private static void SwitchIME(SavedIME ime)
     {
-        if (!WindowFunctions.TryFindGameWindow(out var gameHandle))
+        if (!TryFindGameWindow(out var gameHandle))
         {
             NotifyHelper.NotificationError($"{Service.Lang.GetText("AutoSwitchIMEWhenInput-FailFindGameWindow")}, {Service.Lang.GetText("AutoSwitchIMEWhenInput-FailSwitchIME")}");
             return;
@@ -202,7 +200,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
     private static void RefreshIME()
     {
         InstalledIME.Clear();
-        if (!WindowFunctions.TryFindGameWindow(out var gameHandle))
+        if (!TryFindGameWindow(out var gameHandle))
             NotifyHelper.NotificationError($"{Service.Lang.GetText("AutoSwitchIMEWhenInput-FailFindGameWindow")}, {Service.Lang.GetText("AutoSwitchIMEWhenInput-FailRefreshIME")}");
 
         var hIMC = ImmGetContext(gameHandle);

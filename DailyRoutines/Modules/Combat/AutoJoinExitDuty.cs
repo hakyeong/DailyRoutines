@@ -5,13 +5,12 @@ using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation;
-using ECommons.Throttlers;
+
+
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using TaskManager = ECommons.Automation.LegacyTaskManager.TaskManager;
 
 namespace DailyRoutines.Modules;
 
@@ -27,7 +26,7 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
     {
         Service.Hook.InitializeFromAttributes(this);
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
         Service.CommandManager.AddSubCommand("joinexitduty",
                                              new CommandInfo(OnCommand)
                                              {
@@ -50,26 +49,26 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
             return;
         }
 
-        TaskManager.Abort();
+        TaskHelper.Abort();
         EnqueueARound();
     }
 
     private void EnqueueARound()
     {
-        TaskManager.Enqueue(CheckAndSwitchJob);
-        TaskManager.Enqueue(OpenContentsFinder);
-        TaskManager.Enqueue(CancelSelectedContents);
-        TaskManager.Enqueue(SelectDuty);
-        TaskManager.Enqueue(CommenceDuty);
-        TaskManager.Enqueue(ExitDuty);
-        TaskManager.Enqueue(OpenContentsFinder);
-        TaskManager.Enqueue(ResetContentFinder);
-        TaskManager.Enqueue(CancelSelectedContents);
+        TaskHelper.Enqueue(CheckAndSwitchJob);
+        TaskHelper.Enqueue(OpenContentsFinder);
+        TaskHelper.Enqueue(CancelSelectedContents);
+        TaskHelper.Enqueue(SelectDuty);
+        TaskHelper.Enqueue(CommenceDuty);
+        TaskHelper.Enqueue(ExitDuty);
+        TaskHelper.Enqueue(OpenContentsFinder);
+        TaskHelper.Enqueue(ResetContentFinder);
+        TaskHelper.Enqueue(CancelSelectedContents);
     }
 
     private static bool? ResetContentFinder()
     {
-        if (!EzThrottler.Throttle("AutoJoinExitDuty-ResetContentFinder", 100)) return false;
+        if (!Throttler.Throttle("AutoJoinExitDuty-ResetContentFinder", 100)) return false;
         var instance = FFXIVClientStructs.FFXIV.Client.Game.UI.ContentsFinder.Instance();
         if ( instance == null) return false;
         
@@ -84,7 +83,7 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
         var localPlayer = Service.ClientState.LocalPlayer;
         if (localPlayer == null)
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
             return true;
         }
 
@@ -100,7 +99,7 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
                 if (gearset->ID != i) continue;
                 if (gearset->ClassJob > 18)
                 {
-                    Chat.Instance.SendMessage($"/gearset change {gearset->ID + 1}");
+                    ChatHelper.Instance.SendMessage($"/gearset change {gearset->ID + 1}");
                     return true;
                 }
             }
@@ -131,7 +130,7 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
 
     private static bool? SelectDuty()
     {
-        if (!EzThrottler.Throttle("AutoJoinExitDuty-SelectDuty", 100)) return false;
+        if (!Throttler.Throttle("AutoJoinExitDuty-SelectDuty", 100)) return false;
         if (ContentsFinder == null || !IsAddonAndNodesReady(ContentsFinder)) return false;
 
         var agent = AgentModule.Instance()->GetAgentContentsFinder();
@@ -171,7 +170,7 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
     {
         if (Service.ModuleManager.IsModuleEnabled(typeof(AutoCommenceDuty)))
         {
-            TaskManager.InsertDelayNext(500);
+            TaskHelper.InsertDelayNext(500);
             return true;
         }
 

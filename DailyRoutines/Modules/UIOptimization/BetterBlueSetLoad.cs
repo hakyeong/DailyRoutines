@@ -4,7 +4,7 @@ using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -51,7 +51,7 @@ public unsafe class BetterBlueSetLoad : DailyModuleBase
             var node = addon->GetNodeById(i);
             if (node == null) continue;
 
-            if (EzThrottler.Throttle($"BetterBlueSetLoad-{i}"))
+            if (Throttler.Throttle($"BetterBlueSetLoad-{i}"))
             {
                 var position = new Vector2(node->ScreenX + (node->Width / 2), node->ScreenY - 4f);
                 ImGui.SetNextWindowPos(position);

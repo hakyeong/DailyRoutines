@@ -4,7 +4,6 @@ using DailyRoutines.Managers;
 using Dalamud;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -39,7 +38,7 @@ public class AutoCutSceneSkip : DailyModuleBase
         AddConfig(nameof(ProhibitSkippingUnseenCutscene), false);
         ProhibitSkippingUnseenCutscene = GetConfig<bool>(nameof(ProhibitSkippingUnseenCutscene));
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
 
     public override void ConfigUI()
@@ -70,7 +69,7 @@ public class AutoCutSceneSkip : DailyModuleBase
             CutsceneHandleInputHook.Original(a1);
             SafeMemory.WriteBytes(ConditionAddress, [0x75]);
 
-            TaskManager.Enqueue(() =>
+            TaskHelper.Enqueue(() =>
             {
                 if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonAndNodesReady(addon))
                 {
@@ -80,7 +79,7 @@ public class AutoCutSceneSkip : DailyModuleBase
                         var state = Click.TrySendClick("select_string1");
                         if (state)
                         {
-                            TaskManager.Abort();
+                            TaskHelper.Abort();
                             return true;
                         }
 

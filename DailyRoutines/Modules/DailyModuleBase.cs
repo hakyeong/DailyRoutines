@@ -12,7 +12,6 @@ using DailyRoutines.Windows;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
-using ECommons.Automation.LegacyTaskManager;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -23,7 +22,7 @@ public abstract class DailyModuleBase
 {
     public         bool         Initialized { get; internal set; }
     public virtual string?      Author      { get; set; }
-    protected      TaskManager? TaskManager { get; set; }
+    protected      TaskHelper?  TaskHelper  { get; set; }
     protected      Overlay?     Overlay     { get; set; }
 
     protected string ModuleConfigFile =>
@@ -318,7 +317,7 @@ public abstract class DailyModuleBase
     {
         if (Service.KeyState[Service.Config.ConflictKey])
         {
-            TaskManager?.Abort();
+            TaskHelper?.Abort();
             NotifyHelper.NotificationSuccess(Service.Lang.GetText("ConflictKey-InterruptMessage"));
             return true;
         }
@@ -331,8 +330,8 @@ public abstract class DailyModuleBase
         Service.WindowManager.RemoveWindows(Overlay);
         Overlay = null;
 
-        TaskManager?.Abort();
-        TaskManager = null;
+        TaskHelper?.Abort();
+        TaskHelper = null;
 
         var derivedInstance = GetType();
         var fields = derivedInstance.GetFields(BindingFlags.Instance | BindingFlags.NonPublic |

@@ -4,8 +4,7 @@ using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
-using ECommons.Automation.LegacyTaskManager;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -32,7 +31,7 @@ public unsafe class AutoMount : DailyModuleBase
         if (ModuleConfig.SelectedMount != 0)
             SelectedMount = LuminaCache.GetRow<Mount>(ModuleConfig.SelectedMount);
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = false };
 
         Service.Condition.ConditionChange += OnConditionChanged;
         Service.ClientState.TerritoryChanged += OnZoneChanged;
@@ -79,8 +78,8 @@ public unsafe class AutoMount : DailyModuleBase
     {
         if (!ModuleConfig.MountWhenZoneChange) return;
 
-        TaskManager.Abort();
-        TaskManager.Enqueue(UseMountBetweenMap);
+        TaskHelper.Abort();
+        TaskHelper.Enqueue(UseMountBetweenMap);
     }
 
     private void OnConditionChanged(ConditionFlag flag, bool value)
@@ -91,29 +90,29 @@ public unsafe class AutoMount : DailyModuleBase
             case ConditionFlag.InCombat when !value && ModuleConfig.MountWhenCombatEnd && !Service.ClientState.IsPvP &&
                                              (FateManager.Instance()->CurrentFate == null ||
                                               FateManager.Instance()->CurrentFate->Progress == 100):
-                TaskManager.Abort();
+                TaskHelper.Abort();
 
-                TaskManager.DelayNext(500);
-                TaskManager.Enqueue(UseMountInMap);
+                TaskHelper.DelayNext(500);
+                TaskHelper.Enqueue(UseMountInMap);
                 break;
         }
     }
 
     private bool? UseMountInMap()
     {
-        if (!EzThrottler.Throttle("AutoMount")) return false;
+        if (!Throttler.Throttle("AutoMount")) return false;
         if (AgentMap.Instance()->IsPlayerMoving == 1) return true;
         if (Flags.IsCasting || Flags.IsOnMount) return true;
         if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 9) != 0) return false;
 
-        TaskManager.DelayNext(100);
-        TaskManager.Enqueue(UseMount);
+        TaskHelper.DelayNext(100);
+        TaskHelper.Enqueue(UseMount);
         return true;
     }
 
     private bool? UseMountBetweenMap()
     {
-        if (!EzThrottler.Throttle("AutoMount")) return false;
+        if (!Throttler.Throttle("AutoMount")) return false;
         if (Service.Condition[ConditionFlag.BetweenAreas]) return false;
         if (NowLoading->IsVisible) return false;
 
@@ -123,8 +122,8 @@ public unsafe class AutoMount : DailyModuleBase
 
         if (Service.ClientState.LocalPlayer.IsTargetable)
         {
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(UseMount);
+            TaskHelper.DelayNext(100);
+            TaskHelper.Enqueue(UseMount);
             return true;
         }
 

@@ -15,9 +15,6 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
-using ECommons.Automation;
-using ECommons.Automation.LegacyTaskManager;
-using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Client.UI.Shell;
@@ -86,7 +83,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
         Overlay.Flags &= ~ImGuiWindowFlags.AlwaysAutoResize;
         Overlay.Flags &= ~ImGuiWindowFlags.NoScrollbar;
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
 
     public override void ConfigUI()
@@ -233,7 +230,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
         ImGui.SameLine();
         if (ImGuiOm.ButtonIcon("OpenIconBrowser", FontAwesomeIcon.Search,
                                Service.Lang.GetText("QuickChatPanel-OpenIconBrowser")))
-            Chat.Instance.SendMessage("/xldata icon");
+            ChatHelper.Instance.SendMessage("/xldata icon");
 
         ImGui.Spacing();
 
@@ -311,7 +308,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
                                           $"{Service.Lang.GetText("QuickChatPanel-LastUpdateTime")}:");
 
                         ImGui.SameLine();
-                        var i1 = i;
                         ImGui.Text($"{ModuleConfig.SavedMacros.Find(x => x.Equals(currentSavedMacro))?.LastUpdateTime}");
 
                         ImGui.Separator();
@@ -396,7 +392,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
                         if (ImGui.IsItemClicked(ImGuiMouseButton.Left)) ImGui.SetClipboardText(message);
 
-                        if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) Chat.Instance.SendMessage(message);
+                        if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) ChatHelper.Instance.SendMessage(message);
 
                         ImGuiOm.TooltipHover(Service.Lang.GetText("QuickChatPanel-SendMessageHelp"));
 
@@ -526,7 +522,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                         UIModule.PlayChatSoundEffect(seNote.Key);
 
                     if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
-                        Chat.Instance.SendMessage($"<se.{seNote.Key}><se.{seNote.Key}>");
+                        ChatHelper.Instance.SendMessage($"<se.{seNote.Key}><se.{seNote.Key}>");
 
                     ImGuiOm.TooltipHover(Service.Lang.GetText("QuickChatPanel-SystemSoundHelp"));
                 }
@@ -654,7 +650,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
     private void OnAddon(AddonEvent type, AddonArgs? args)
     {
-        if (!EzThrottler.Throttle("QuickChatPanel-UIAdjust")) return;
+        if (!Throttler.Throttle("QuickChatPanel-UIAdjust")) return;
         switch (type)
         {
             case AddonEvent.PostSetup:
@@ -775,10 +771,10 @@ public unsafe class QuickChatPanel : DailyModuleBase
         (ModuleConfig.SavedMacros[index1], ModuleConfig.SavedMacros[index2]) =
             (ModuleConfig.SavedMacros[index2], ModuleConfig.SavedMacros[index1]);
 
-        TaskManager.Abort();
+        TaskHelper.Abort();
 
-        TaskManager.DelayNext(500);
-        TaskManager.Enqueue(() => { SaveConfig(ModuleConfig); });
+        TaskHelper.DelayNext(500);
+        TaskHelper.Enqueue(() => { SaveConfig(ModuleConfig); });
     }
 
     private void SwapMessages(int index1, int index2)
@@ -786,10 +782,10 @@ public unsafe class QuickChatPanel : DailyModuleBase
         (ModuleConfig.SavedMessages[index1], ModuleConfig.SavedMessages[index2]) =
             (ModuleConfig.SavedMessages[index2], ModuleConfig.SavedMessages[index1]);
 
-        TaskManager.Abort();
+        TaskHelper.Abort();
 
-        TaskManager.DelayNext(500);
-        TaskManager.Enqueue(() => { SaveConfig(ModuleConfig); });
+        TaskHelper.DelayNext(500);
+        TaskHelper.Enqueue(() => { SaveConfig(ModuleConfig); });
     }
 
     public override void Uninit()

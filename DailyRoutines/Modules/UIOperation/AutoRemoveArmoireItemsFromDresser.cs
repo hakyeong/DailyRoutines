@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
-using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -26,12 +25,12 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
                                              .Select(x => x.Item.Row)
                                              .ToHashSet();
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
 
     public override void ConfigUI()
     {
-        ImGui.BeginDisabled(TaskManager.IsBusy);
+        ImGui.BeginDisabled(TaskHelper.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("Start")))
         {
             if (AddonMiragePrismPrismBox == null) return;
@@ -44,8 +43,8 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
                 if (ArmoireAvailableItems.Contains(itemID))
                 {
                     var index = i;
-                    TaskManager.Enqueue(() => instance->RestorePrismBoxItem(index));
-                    TaskManager.DelayNext(100);
+                    TaskHelper.Enqueue(() => instance->RestorePrismBoxItem(index));
+                    TaskHelper.DelayNext(100);
                 }
             }
         }
@@ -53,6 +52,6 @@ public unsafe class AutoRemoveArmoireItemsFromDresser : DailyModuleBase
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskHelper.Abort();
     }
 }

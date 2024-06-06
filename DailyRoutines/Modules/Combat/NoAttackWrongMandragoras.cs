@@ -7,7 +7,7 @@ using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
-using ECommons.Throttlers;
+
 using Lumina.Excel.GeneratedSheets;
 using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
@@ -59,7 +59,7 @@ public unsafe class NoAttackWrongMandragoras : DailyModuleBase
         var isTargetable = IsTargetableHook.Original(potentialTarget);
         if (!ValidZones.Contains(Service.ClientState.TerritoryType) || Mandragoras == null) return isTargetable;
 
-        if (EzThrottler.Throttle("NoAttackWrongMandragoras-Update", 100))
+        if (Throttler.Throttle("NoAttackWrongMandragoras-Update", 100))
         {
             ValidBattleNPCs.Clear();
             foreach (var obj in Service.ObjectTable)

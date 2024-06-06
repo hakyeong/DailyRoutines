@@ -14,8 +14,8 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation;
-using ECommons.Throttlers;
+
+
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -202,7 +202,7 @@ public unsafe class AutoNotifySPPlayers : DailyModuleBase
         var original = IsTargetableHook.Original(potentialTarget);
 
         var targetAddress = (nint)potentialTarget;
-        if (EzThrottler.Throttle($"AutoNotifySPPlayers-{targetAddress}", 3000))
+        if (Throttler.Throttle($"AutoNotifySPPlayers-{targetAddress}", 3000))
         {
             var currentTime = Environment.TickCount64;
             NoticeTimeInfo.TryAdd(targetAddress, currentTime);
@@ -268,7 +268,7 @@ public unsafe class AutoNotifySPPlayers : DailyModuleBase
                 Service.Chat.Print(message);
                 WinToast.Notify(message, message);
 
-                if (!string.IsNullOrWhiteSpace(config.Command)) Chat.Instance.SendMessage(config.Command);
+                if (!string.IsNullOrWhiteSpace(config.Command)) ChatHelper.Instance.SendMessage(config.Command);
             }
         }
     }

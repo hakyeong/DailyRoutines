@@ -69,7 +69,7 @@ public class PresetData
 
     private static readonly Lazy<Dictionary<uint, ContentFinderCondition>> contents =
         new(() => LuminaCache.Get<ContentFinderCondition>()
-                             .Where(x => !x.Name.ToString().IsNullOrEmpty())
+                             .Where(x => !string.IsNullOrWhiteSpace(x.Name.RawString))
                              .DistinctBy(x => x.TerritoryType.Row)
                              .OrderBy(x => x.ContentType.Row)
                              .ThenBy(x => x.ClassJobLevelRequired)

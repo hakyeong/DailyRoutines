@@ -11,7 +11,6 @@ using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using Dalamud.Memory;
-using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -37,7 +36,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
     {
         ModuleConfig = LoadConfig<Config>() ?? new();
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
         Service.DutyState.DutyCompleted += OnDutyComplete;
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "VoteMvp", OnAddonList);
@@ -179,12 +178,12 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
         if (InterruptByConflictKey()) return;
         if (ModuleConfig.BlacklistContents.FirstOrDefault(x => x.TerritoryID == dutyZoneID) is not null) return;
 
-        TaskManager.Enqueue(OpenCommendWindow);
+        TaskHelper.Enqueue(OpenCommendWindow);
     }
 
     private static bool? OpenCommendWindow()
     {
-        if (IsOccupied()) return false;
+        if (Flags.OccupiedInEvent) return false;
 
         var notification = (AtkUnitBase*)Service.Gui.GetAddonByName("_Notification");
         var notificationMvp = (AtkUnitBase*)Service.Gui.GetAddonByName("_NotificationIcMvp");
@@ -197,7 +196,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
 
     private void ProcessCommendation(string addonName, int voteOffset, int nameOffset, int callbackIndex)
     {
-        TaskManager.Abort();
+        TaskHelper.Abort();
 
         var localPlayer = Service.ClientState.LocalPlayer;
         var localPlayerInfo = new PlayerInfo(localPlayer.Name.ExtractText(), localPlayer.HomeWorld.GameData.RowId)

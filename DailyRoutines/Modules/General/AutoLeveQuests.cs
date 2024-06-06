@@ -13,8 +13,7 @@ using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation.LegacyTaskManager;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Application.Network.WorkDefinitions;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
@@ -53,7 +52,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
     {
         Service.Hook.InitializeFromAttributes(this);
         Service.ClientState.TerritoryChanged += OnZoneChanged;
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
 
         RandomRotation = new Random().Next(0, 360);
     }
@@ -102,7 +101,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
                                         }
                                     },
                                     [
-                                        new(TaskManager.IsBusy,
+                                        new(TaskHelper.IsBusy,
                                             Service.Lang.GetText("AutoLeveQuests-DisableHelp-Delivering")),
                                     ],
                                     Service.Lang.GetText("DisableZoneHeader"));
@@ -133,7 +132,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
                                                        : $"{Marshal.PtrToStringUTF8((nint)LeveReceiver->Name)} ({LeveReceiver->DataID})");
                                     },
                                     [
-                                        new(TaskManager.IsBusy,
+                                        new(TaskHelper.IsBusy,
                                             Service.Lang.GetText("AutoLeveQuests-DisableHelp-Delivering")),
                                     ],
                                     Service.Lang.GetText("DisableZoneHeader"));
@@ -156,20 +155,20 @@ public unsafe class AutoLeveQuests : DailyModuleBase
             new(LeveReceiver == null, Service.Lang.GetText("AutoLeveQuests-DisableHelp-NullReceiver")),
             new(LeveMete == LeveReceiver, Service.Lang.GetText("AutoLeveQuests-DisableHelp-SameNPC")),
             new(SelectedLeve == null, Service.Lang.GetText("AutoLeveQuests-DisableHelp-NullLeve")),
-            new(TaskManager.IsBusy, Service.Lang.GetText("AutoLeveQuests-DisableHelp-Delivering")),
+            new(TaskHelper.IsBusy, Service.Lang.GetText("AutoLeveQuests-DisableHelp-Delivering")),
         ], Service.Lang.GetText("DisableZoneHeader"));
 
         ImGui.SameLine();
         if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Pause, Service.Lang.GetText("Stop"),
                                                ImGuiHelpers.ScaledVector2(167f, 45f)))
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
             Service.AddonLifecycle.UnregisterListener(AlwaysYes);
             GameObjectRotateHook?.Disable();
             Service.ExecuteCommandManager.Unregister(OnPreExecuteCommand);
         }
 
-        if (EzThrottler.Throttle("AutoLeveQuests-GetLeveAllowancesDisplay", 1000))
+        if (Throttler.Throttle("AutoLeveQuests-GetLeveAllowancesDisplay", 1000))
             LeveAllowancesDisplay = *(byte*)Service.SigScanner.GetStaticAddressFromSig("88 05 ?? ?? ?? ?? 0F B7 41 06");
 
         var text = Service.Lang.GetText("AutoLeveQuests-CurrentLeveAllowances", LeveAllowancesDisplay);
@@ -187,7 +186,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
     {
         if (SelectedLeve == null || LeveAllowances <= 0)
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
             Service.AddonLifecycle.UnregisterListener(AlwaysYes);
             GameObjectRotateHook?.Disable();
             Service.ExecuteCommandManager.Unregister(OnPreExecuteCommand);
@@ -197,17 +196,17 @@ public unsafe class AutoLeveQuests : DailyModuleBase
         }
 
         // 与理符发行人交互
-        TaskManager.Enqueue(InteractWithMete);
+        TaskHelper.Enqueue(InteractWithMete);
         // 点击对应理符类别
-        TaskManager.Enqueue(ClickLeveGenre);
+        TaskHelper.Enqueue(ClickLeveGenre);
         // 接取对应理符任务
-        TaskManager.Enqueue(AcceptLeveQuest);
+        TaskHelper.Enqueue(AcceptLeveQuest);
         // 退出理符任务界面
-        TaskManager.Enqueue(ExitLeveInterface);
+        TaskHelper.Enqueue(ExitLeveInterface);
         // 与理符委托人交互
-        TaskManager.Enqueue(InteractWithReceiver);
+        TaskHelper.Enqueue(InteractWithReceiver);
         // 检查是否有多个理符待提交
-        TaskManager.Enqueue(CheckIfMultipleLevesToSubmit);
+        TaskHelper.Enqueue(CheckIfMultipleLevesToSubmit);
     }
 
     private static bool? InteractWithMete()
@@ -220,7 +219,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
             return false;
         }
 
-        if (IsOccupied()) return false;
+        if (Flags.OccupiedInEvent) return false;
         TargetSystem.Instance()->Target = LeveMete;
         TargetSystem.Instance()->InteractWithObject(LeveMete);
         return true;
@@ -265,7 +264,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
 
     private static bool? InteractWithReceiver()
     {
-        if (IsOccupied()) return false;
+        if (Flags.OccupiedInEvent) return false;
         TargetSystem.Instance()->Target = LeveReceiver;
         TargetSystem.Instance()->InteractWithObject(LeveReceiver);
         return true;
@@ -321,7 +320,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
     private void OnPreExecuteCommand
         (ref bool isPrevented, ref int command, ref int param1, ref int param2, ref int param3, ref int param4)
     {
-        if (command != 3 || !TaskManager.IsBusy) return;
+        if (command != 3 || !TaskHelper.IsBusy) return;
 
         param1 = int.MinValue / 4;
     }
@@ -344,7 +343,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
 
     private void AlwaysYes(AddonEvent type, AddonArgs args)
     {
-        if (!TaskManager.IsBusy) return;
+        if (!TaskHelper.IsBusy) return;
         Click.SendClick("select_yes");
     }
 

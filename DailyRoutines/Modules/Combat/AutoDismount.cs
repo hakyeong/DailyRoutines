@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 
@@ -32,7 +32,7 @@ public unsafe class AutoDismount : DailyModuleBase
             PresetData.PlayerActions.Where(x => x.Value.CanTargetSelf || x.Value.TargetArea).Select(x => x.Key)
                       .ToHashSet();
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
 
         Service.Condition.ConditionChange += OnConditionChanged;
         if (Service.Condition[ConditionFlag.Mounted] || Service.Condition[ConditionFlag.Mounted2])
@@ -54,11 +54,11 @@ public unsafe class AutoDismount : DailyModuleBase
         ActionManager* actionManager, uint actionType, uint actionId, ulong actionTarget, uint a5, uint a6, uint a7,
         void* a8)
     {
-        TaskManager.Abort();
+        TaskHelper.Abort();
         if (IsNeedToDismount(actionType, actionId, actionTarget))
         {
             useActionSelfHook.Original(actionManager, 5, 9, 0);
-            TaskManager.Enqueue(
+            TaskHelper.Enqueue(
                 () => ActionManager.Instance()->UseAction((ActionType)actionType, actionId, actionTarget, a5, a6, a7,
                                                           a8));
         }

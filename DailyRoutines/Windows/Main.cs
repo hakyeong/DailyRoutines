@@ -311,7 +311,8 @@ public class Main : Window, IDisposable
             {
                 ImGui.Separator();
                 if (ImGuiOm.Selectable($"    {Service.Lang.GetText("Settings-ModuleConfiguration")}"))
-                    OpenFolder(Path.Join(Service.PluginInterface.ConfigDirectory.FullName, $"{moduleInfo.Module.Name}.json"));
+                    OpenFileOrFolder
+                        (Path.Join(Service.PluginInterface.ConfigDirectory.FullName, $"{moduleInfo.Module.Name}.json"));
             }
             ImGui.SetWindowFontScale(1f);
 
@@ -479,7 +480,7 @@ public class MainSettings
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("OpenFolder")))
-            OpenFolder(Service.PluginInterface.ConfigDirectory.FullName);
+            OpenFileOrFolder(Service.PluginInterface.ConfigDirectory.FullName);
 
         ImGuiOm.TooltipHover(Service.Lang.GetText("ModulesConfigHelp"));
 

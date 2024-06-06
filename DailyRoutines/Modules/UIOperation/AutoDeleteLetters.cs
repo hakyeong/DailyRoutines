@@ -6,7 +6,6 @@ using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
-using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -17,7 +16,7 @@ public unsafe class AutoDeleteLetters : DailyModuleBase
 {
     public override void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         Overlay ??= new Overlay(this);
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", AlwaysYes);
@@ -36,12 +35,12 @@ public unsafe class AutoDeleteLetters : DailyModuleBase
         ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("AutoDeleteLettersTitle"));
 
         ImGui.Separator();
-        ImGui.BeginDisabled(TaskManager.IsBusy);
-        if (ImGui.Button(Service.Lang.GetText("Start"))) TaskManager.Enqueue(RightClickLetter);
+        ImGui.BeginDisabled(TaskHelper.IsBusy);
+        if (ImGui.Button(Service.Lang.GetText("Start"))) TaskHelper.Enqueue(RightClickLetter);
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskHelper.Abort();
     }
 
     private void OnAddonLetterList(AddonEvent type, AddonArgs _)
@@ -61,7 +60,7 @@ public unsafe class AutoDeleteLetters : DailyModuleBase
             if (!int.TryParse(addon->GetTextNodeById(23)->NodeText.ExtractText().Split('/')[0],
                               out var currentLetters) || currentLetters == 0)
             {
-                TaskManager.Abort();
+                TaskHelper.Abort();
                 return true;
             }
 
@@ -69,8 +68,8 @@ public unsafe class AutoDeleteLetters : DailyModuleBase
 
             AddonHelper.Callback(addon, true, 0, pnrLetters ? 0 : 1, 0, 1); // 第二个 0 是索引
 
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(ClickDeleteEntry);
+            TaskHelper.DelayNext(100);
+            TaskHelper.Enqueue(ClickDeleteEntry);
             return true;
         }
 
@@ -85,8 +84,8 @@ public unsafe class AutoDeleteLetters : DailyModuleBase
 
             AddonHelper.Callback(addon, true, 0, index, 0, 0, 0);
 
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(RightClickLetter);
+            TaskHelper.DelayNext(100);
+            TaskHelper.Enqueue(RightClickLetter);
             return true;
         }
 
@@ -95,7 +94,7 @@ public unsafe class AutoDeleteLetters : DailyModuleBase
 
     private void AlwaysYes(AddonEvent type, AddonArgs args)
     {
-        if (!TaskManager.IsBusy) return;
+        if (!TaskHelper.IsBusy) return;
         Click.SendClick("select_yes");
     }
 

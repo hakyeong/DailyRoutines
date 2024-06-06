@@ -6,7 +6,7 @@ using DailyRoutines.IPC;
 using DailyRoutines.Modules;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using ECommons.Throttlers;
+
 
 namespace DailyRoutines.Managers;
 
@@ -43,7 +43,7 @@ public class IPCManager : IDailyManager
 
     private void OnUpdate(IFramework _)
     {
-        if (!EzThrottler.Throttle("IPCManager_MonitorPlugins", 5000)) return;
+        if (!Throttler.Throttle("IPCManager_MonitorPlugins", 5000)) return;
 
         if (!LastInstalledPluginStates.SequenceEqual(Service.PluginInterface.InstalledPlugins))
         {

@@ -1,8 +1,8 @@
+using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.JobGauge.Types;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Client.Game;
-using TaskManager = ECommons.Automation.LegacyTaskManager.TaskManager;
 
 namespace DailyRoutines.Modules;
 
@@ -11,7 +11,7 @@ public unsafe class AutoDance : DailyModuleBase
 {
     public override void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
 
         Service.UseActionManager.Register(OnPostUseAction);
     }
@@ -22,8 +22,8 @@ public unsafe class AutoDance : DailyModuleBase
         var gauge = Service.JobGauges.Get<DNCGauge>();
         if (result && actionType is ActionType.Action && actionID is 15997 or 15998 && !gauge.IsDancing)
         {
-            TaskManager.Enqueue(() => gauge.IsDancing);
-            TaskManager.Enqueue(actionID == 15997 ? DanceStandardStep : DanceTechnicalStep);
+            TaskHelper.Enqueue(() => gauge.IsDancing);
+            TaskHelper.Enqueue(actionID == 15997 ? DanceStandardStep : DanceTechnicalStep);
         }
     }
 
@@ -33,11 +33,11 @@ public unsafe class AutoDance : DailyModuleBase
 
     private bool? DanceStep(bool isTechnicalStep)
     {
-        if (!EzThrottler.Throttle("AutoDance", 200)) return false;
+        if (!Throttler.Throttle("AutoDance", 200)) return false;
         var gauge = Service.JobGauges.Get<DNCGauge>();
         if (!gauge.IsDancing)
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
             return true;
         }
 
@@ -46,7 +46,7 @@ public unsafe class AutoDance : DailyModuleBase
         {
             if (ActionManager.Instance()->UseAction(ActionType.Action, nextStep))
             {
-                TaskManager.Enqueue(() => DanceStep(isTechnicalStep));
+                TaskHelper.Enqueue(() => DanceStep(isTechnicalStep));
                 return true;
             }
         }

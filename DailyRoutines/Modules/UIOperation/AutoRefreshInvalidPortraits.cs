@@ -5,7 +5,6 @@ using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
-using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -20,7 +19,7 @@ public unsafe class AutoRefreshInvalidPortraits : DailyModuleBase
 {
     public override void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
         Overlay ??= new Overlay(this);
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "BannerEditor", OnAddonEditor);
@@ -39,18 +38,18 @@ public unsafe class AutoRefreshInvalidPortraits : DailyModuleBase
         ImGui.AlignTextToFramePadding();
         ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("AutoRefreshInvalidPortraitsTitle"));
 
-        ImGui.BeginDisabled(TaskManager.IsBusy);
+        ImGui.BeginDisabled(TaskHelper.IsBusy);
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("Start"))) EnqueueARound();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskHelper.Abort();
     }
 
     private void OnAddonEditor(AddonEvent type, AddonArgs args)
     {
-        if (!TaskManager.IsBusy) return;
+        if (!TaskHelper.IsBusy) return;
 
         var addon = (AddonBannerEditor*)args.Addon;
         if (addon == null) return;
@@ -77,10 +76,10 @@ public unsafe class AutoRefreshInvalidPortraits : DailyModuleBase
             if (!entry.Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists)) break;
 
             var il = i;
-            TaskManager.Enqueue(() => ClickBannerListEntry(il));
-            TaskManager.DelayNext(20);
-            TaskManager.Enqueue(() => AgentHelper.SendEvent(AgentId.BannerList, 6, 0, 0, 0U, 0, 0));
-            TaskManager.DelayNext(100);
+            TaskHelper.Enqueue(() => ClickBannerListEntry(il));
+            TaskHelper.DelayNext(20);
+            TaskHelper.Enqueue(() => AgentHelper.SendEvent(AgentId.BannerList, 6, 0, 0, 0U, 0, 0));
+            TaskHelper.DelayNext(100);
         }
     }
 

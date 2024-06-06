@@ -4,7 +4,6 @@ using System.IO;
 using System.Windows.Forms;
 using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
-using ECommons.Automation.LegacyTaskManager;
 
 namespace DailyRoutines.Notifications;
 
@@ -17,14 +16,14 @@ public class WinToast : DailyNotificationBase
         public ToolTipIcon Icon { get; set; } = icon;
     }
 
-    private static TaskManager? TaskManager;
+    private static TaskHelper? TaskHelper;
 
     private static NotifyIcon? icon;
     private static readonly Queue<ToastMessage> messagesQueue = new();
 
     public override void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
     }
 
     public static void Notify(string title, string content, ToolTipIcon toolTipIcon = ToolTipIcon.Info)
@@ -32,8 +31,8 @@ public class WinToast : DailyNotificationBase
         if (icon == null || icon.Visible == false) CreateIcon();
         messagesQueue.Enqueue(new ToastMessage(title, content, toolTipIcon));
 
-        TaskManager.DelayNext(200);
-        TaskManager.Enqueue(TryDequeueMessages);
+        TaskHelper.DelayNext(200);
+        TaskHelper.Enqueue(TryDequeueMessages);
     }
 
     private static void TryDequeueMessages()
@@ -46,15 +45,15 @@ public class WinToast : DailyNotificationBase
             case 1:
                 ShowBalloonTip(messagesQueue.Dequeue());
 
-                TaskManager.DelayNext(6000);
-                TaskManager.Enqueue(TryDequeueMessages);
+                TaskHelper.DelayNext(6000);
+                TaskHelper.Enqueue(TryDequeueMessages);
                 break;
             case >= 2:
                 ShowBalloonTip(new ToastMessage("", Service.Lang.GetText("NotificationManager-ReceiveMultipleMessages", messagesQueue.Count)));
                 messagesQueue.Clear();
 
-                TaskManager.DelayNext(6000);
-                TaskManager.Enqueue(TryDequeueMessages);
+                TaskHelper.DelayNext(6000);
+                TaskHelper.Enqueue(TryDequeueMessages);
                 break;
         }
     }
@@ -90,6 +89,6 @@ public class WinToast : DailyNotificationBase
     public override void Uninit()
     {
         DestroyIcon();
-        TaskManager?.Abort();
+        TaskHelper?.Abort();
     }
 }

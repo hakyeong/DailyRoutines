@@ -11,7 +11,6 @@ using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
-using Dalamud;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Hooking;
@@ -20,8 +19,7 @@ using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation.LegacyTaskManager;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -66,8 +64,8 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     private static HashSet<uint>? ImportantENPC;
 
     private static Config ModuleConfig = null!;
-    private static EzThrottler<string> MonitorThrottler = new();
-    private static EzThrottler<nint> ObjectsThrottler = new();
+    private static Throttler<string> MonitorThrottler = new();
+    private static Throttler<nint> ObjectsThrottler = new();
 
     private static string BlacklistKeyInput = string.Empty;
     private static float WindowWidth;
@@ -99,7 +97,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         Service.Hook.InitializeFromAttributes(this);
 
         TargetSystem = FFXIVClientStructs.FFXIV.Client.Game.Control.TargetSystem.Instance();
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
 
         ENpcTitles ??= LuminaCache.Get<ENpcResident>()
                                   .Where(x => x.Unknown10 && !string.IsNullOrWhiteSpace(x.Title.RawString))
@@ -455,11 +453,11 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
         void ChangeInstanceZone(GameObject* obj, int zone)
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
 
-            TaskManager.Enqueue(() => InteractWithObject(obj, ObjectKind.Aetheryte));
+            TaskHelper.Enqueue(() => InteractWithObject(obj, ObjectKind.Aetheryte));
 
-            TaskManager.Enqueue(() =>
+            TaskHelper.Enqueue(() =>
             {
                 if (!TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) ||
                     !IsAddonAndNodesReady(addon)) return false;
@@ -467,7 +465,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                 return ClickHelper.SelectString("切换副本区");
             });
 
-            TaskManager.Enqueue(() =>
+            TaskHelper.Enqueue(() =>
             {
                 if (!TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) ||
                     !IsAddonAndNodesReady(addon)) return false;
@@ -498,23 +496,23 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
         void WorldTravel(uint worldID)
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
 
-            TaskManager.Enqueue(() => Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.RequestWorldTravel));
-            TaskManager.Enqueue(() => WorldToTravel = worldID);
-            TaskManager.Enqueue(AgentWorldTravelReceiveEventHook.Enable);
+            TaskHelper.Enqueue(() => Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.RequestWorldTravel));
+            TaskHelper.Enqueue(() => WorldToTravel = worldID);
+            TaskHelper.Enqueue(AgentWorldTravelReceiveEventHook.Enable);
 
-            TaskManager.Enqueue(() =>
+            TaskHelper.Enqueue(() =>
             {
-                if (!EzThrottler.Throttle("FastObjectInteract-WorldTravelAgentShow", 100)) return false;
+                if (!Throttler.Throttle("FastObjectInteract-WorldTravelAgentShow", 100)) return false;
 
                 AgentWorldTravel.Instance()->AgentInterface.Show();
                 return AgentWorldTravel.Instance()->AgentInterface.IsAgentActive();
             });
 
-            TaskManager.Enqueue(() =>
+            TaskHelper.Enqueue(() =>
             {
-                if (!EzThrottler.Throttle("FastObjectInteract-WorldTravelSelectWorld", 100)) return false;
+                if (!Throttler.Throttle("FastObjectInteract-WorldTravelSelectWorld", 100)) return false;
 
                 var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("WorldTravelSelect");
 
@@ -522,7 +520,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                 return TryGetAddonByName<AtkUnitBase>("SelectYesno", out var _);
             });
 
-            TaskManager.Enqueue(() =>
+            TaskHelper.Enqueue(() =>
             {
                 if (!TryGetAddonByName<AtkUnitBase>("SelectYesno", out var addon) || !IsAddonAndNodesReady(addon))
                     return false;
@@ -532,7 +530,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                 return true;
             });
 
-            TaskManager.Enqueue(AgentWorldTravelReceiveEventHook.Disable);
+            TaskHelper.Enqueue(AgentWorldTravelReceiveEventHook.Disable);
         }
     }
 
@@ -545,7 +543,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     }
 
     private static bool IsWindowShouldBeOpen()
-        => ObjectsToSelect.Count != 0 && (!ModuleConfig.WindowInvisibleWhenInteract || !IsOccupied());
+        => ObjectsToSelect.Count != 0 && (!ModuleConfig.WindowInvisibleWhenInteract || !Flags.OccupiedInEvent);
 
     public static bool ButtonCenterText(string id, string text)
     {
@@ -578,10 +576,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         Service.AddonLifecycle.UnregisterListener(OnAddonWorldTravel);
         ObjectsToSelect.Clear();
     }
-
-
-    [GeneratedRegex("\\[.*?\\]")]
-    private static partial Regex AddToBlacklistNameRegex();
 
     [GeneratedRegex("\\[.*?\\]")]
     private static partial Regex FastObjectInteractTitleRegex();

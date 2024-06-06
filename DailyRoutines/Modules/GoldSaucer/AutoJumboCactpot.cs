@@ -6,14 +6,13 @@ using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Utility;
-using ECommons.Automation.LegacyTaskManager;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoJumboCactpotTitle", "AutoJumboCactpotDescription", ModuleCategories.½ðµú)]
+[ModuleDescription("AutoJumboCactpotTitle", "AutoJumboCactpotDescription", ModuleCategories.é‡‘ç¢Ÿ)]
 public class AutoJumboCactpot : DailyModuleBase
 {
     private static readonly Dictionary<Mode, string> NumberModeLoc = new()
@@ -34,7 +33,7 @@ public class AutoJumboCactpot : DailyModuleBase
         AddConfig("FixedNumber", 1);
         FixedNumber = GetConfig<int>("FixedNumber");
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "LotteryWeeklyInput", OnAddon);
     }
@@ -70,12 +69,12 @@ public class AutoJumboCactpot : DailyModuleBase
 
     private unsafe void OnAddon(AddonEvent type, AddonArgs args)
     {
-        TaskManager.Abort();
+        TaskHelper.Abort();
 
-        TaskManager.DelayNext(100);
-        TaskManager.Enqueue(() =>
+        TaskHelper.DelayNext(100);
+        TaskHelper.Enqueue(() =>
         {
-            if (!EzThrottler.Throttle("AutoJumboCactpot", 50)) return false;
+            if (!Throttler.Throttle("AutoJumboCactpot", 50)) return false;
             var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("LotteryWeeklyInput");
             if (!IsAddonAndNodesReady(addon)) return false;
 
@@ -91,17 +90,17 @@ public class AutoJumboCactpot : DailyModuleBase
             return true;
         });
 
-        TaskManager.DelayNext(100);
-        TaskManager.Enqueue(() =>
+        TaskHelper.DelayNext(100);
+        TaskHelper.Enqueue(() =>
         {
-            if (!EzThrottler.Throttle("AutoJumboCactpot", 50)) return false;
+            if (!Throttler.Throttle("AutoJumboCactpot", 50)) return false;
             return Click.TrySendClick("select_yes");
         });
 
-        TaskManager.DelayNext(100);
-        TaskManager.Enqueue(() =>
+        TaskHelper.DelayNext(100);
+        TaskHelper.Enqueue(() =>
         {
-            if (!EzThrottler.Throttle("AutoJumboCactpot", 50)) return false;
+            if (!Throttler.Throttle("AutoJumboCactpot", 50)) return false;
             return Click.TrySendClick("select_yes");
         });
     }

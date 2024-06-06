@@ -9,7 +9,6 @@ using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
-using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -80,7 +79,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
         AddConfig("SearchWikiByGlamour", true);
         SearchWikiByGlamour = GetConfig<bool>("SearchWikiByGlamour");
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
 
         Service.ContextMenu.OnMenuOpened += OnMenuOpened;
         Service.Gui.HoveredItemChanged += OnHoveredItemChanged;
@@ -159,7 +158,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
                 switch (args.AddonName)
                 {
                     case "CharacterInspect":
-                        TaskManager.Enqueue(() =>
+                        TaskHelper.Enqueue(() =>
                         {
                             if (_CharacterInspectItems.Count != 0) return;
                             var container = InventoryManager.Instance()->GetInventoryContainer(InventoryType.Examine);
@@ -182,7 +181,7 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
                 switch (args.AddonName)
                 {
                     case "CharacterInspect":
-                        TaskManager.Enqueue(() =>
+                        TaskHelper.Enqueue(() =>
                         {
                             _IsOnItemHover = false;
                             _LastHoveredItemID = 0;
@@ -360,10 +359,9 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
         if (args.AddonName == "MiragePrismPrismBoxCrystallize" &&
             TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && IsAddonAndNodesReady(addon))
         {
-            if (TryScanContextMenuText(addon, "投影到当前装备上", out var index))
-                Util.OpenLink(string.Format(CollectorUrl, _LastPrismBoxItem.Name));
-            else
-                Util.OpenLink(string.Format(CollectorUrl, _LastItem.Name));
+            Util.OpenLink(TryScanContextMenuText(addon, "投影到当前装备上", out var index)
+                              ? string.Format(CollectorUrl, _LastPrismBoxItem.Name)
+                              : string.Format(CollectorUrl, _LastItem.Name));
 
             return;
         }

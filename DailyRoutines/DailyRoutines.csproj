@@ -65,7 +65,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\ClickLib\ClickLib\ClickLib.csproj" />
-        <ProjectReference Include="..\ECommons\ECommons\ECommons.csproj" />
         <ProjectReference Include="..\OmenTools\OmenTools.csproj" />
     </ItemGroup>
 
@@ -97,6 +96,14 @@
         <Reference Include="Lumina.Excel">
             <HintPath>$(DalamudLibPath)Lumina.Excel.dll</HintPath>
             <Private>false</Private>
+        </Reference>
+        <Reference Include="PInvoke.User32">
+            <HintPath>$(DalamudLibPath)PInvoke.User32.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="PInvoke.Windows.Core">
+            <HintPath>$(DalamudLibPath)PInvoke.Windows.Core.dll</HintPath>
+            <Private>False</Private>
         </Reference>
     </ItemGroup>
 

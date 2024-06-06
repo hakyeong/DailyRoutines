@@ -1,14 +1,14 @@
-global using static ECommons.GenericHelpers;
 global using static DailyRoutines.Infos.Widgets;
 global using static OmenTools.Helpers.HelpersOm;
+global using static DailyRoutines.Helpers.AddonHelper;
+global using static DailyRoutines.Infos.Extensions;
+global using static DailyRoutines.Helpers.ThrottlerHelper;
 global using OmenTools.ImGuiOm;
 global using OmenTools.Helpers;
 using System;
 using DailyRoutines.Managers;
 using Dalamud.Plugin;
-using ECommons;
 using System.Reflection;
-using Module = ECommons.Module;
 
 namespace DailyRoutines;
 
@@ -29,7 +29,6 @@ public sealed class Plugin : IDalamudPlugin
 
         Version ??= Assembly.GetExecutingAssembly().GetName().Version;
 
-        ECommonsMain.Init(pluginInterface, this, Module.DalamudReflector);
         Service.Init(pluginInterface);
     }
 
@@ -37,7 +36,6 @@ public sealed class Plugin : IDalamudPlugin
     {
         if (IsDev) return;
 
-        ECommonsMain.Dispose();
         Service.Uninit();
     }
 }

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Numerics;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.IPC;
 using DailyRoutines.Managers;
@@ -13,8 +14,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation.LegacyTaskManager;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -89,7 +89,7 @@ public unsafe class BetterFollow : DailyModuleBase
 
         #endregion
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
 
         Service.Hook.InitializeFromAttributes(this);
         FollowDataHook?.Enable();
@@ -303,7 +303,7 @@ public unsafe class BetterFollow : DailyModuleBase
         if (ModuleConfig.MoveType == MoveTypeList.System) _FollowStatus = *(int*)_d1 == 4;
 
         // 如果已经进入飞行状态就别跳了
-        if (Service.Condition[ConditionFlag.InFlight]) TaskManager.Abort();
+        if (Service.Condition[ConditionFlag.InFlight]) TaskHelper.Abort();
 
         // 处理上坐骑和起飞逻辑
         if (_FollowStatus && followObject != null &&
@@ -323,9 +323,9 @@ public unsafe class BetterFollow : DailyModuleBase
             if (ModuleConfig.FlyingWhenFollowFlying && ((CharacterFlying*)followObject.Address)->IsFlying != 0 &&
                 !Service.Condition[ConditionFlag.InFlight] && Service.Condition[ConditionFlag.Mounted])
             {
-                TaskManager.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.GeneralAction, 2));
-                TaskManager.DelayNext(50);
-                TaskManager.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.GeneralAction, 2));
+                TaskHelper.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.GeneralAction, 2));
+                TaskHelper.DelayNext(50);
+                TaskHelper.Enqueue(() => ActionManager.Instance()->UseAction(ActionType.GeneralAction, 2));
                 return;
             }
 
@@ -343,7 +343,7 @@ public unsafe class BetterFollow : DailyModuleBase
         }
 
         /*-------------------------------不需要实时处理的模块-------------------------------*/
-        if (!EzThrottler.Throttle("BetterFollow", (int)ModuleConfig.Delay * 1000)) return;
+        if (!Throttler.Throttle("BetterFollow", (int)ModuleConfig.Delay * 1000)) return;
         if (_FollowStatus && followObject != null &&
             followObject.ObjectKind == ObjectKind.Player)
         {
@@ -504,8 +504,8 @@ public unsafe class BetterFollow : DailyModuleBase
         if (ModuleConfig.MoveType == MoveTypeList.Navmesh)
         {
             //停止系统跟随
-            TaskManager.DelayNext(100);
-            TaskManager.Enqueue(() =>
+            TaskHelper.DelayNext(100);
+            TaskHelper.Enqueue(() =>
             {
                 SafeMemory.Write(_a1 + 1189, 0);
                 SafeMemory.Write(_a1 + 1369, 0);

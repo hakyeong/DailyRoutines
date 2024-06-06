@@ -1,9 +1,10 @@
 using ClickLib;
+using DailyRoutines.Helpers;
+using DailyRoutines.Infos;
 using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -16,7 +17,7 @@ public class AutoBasketBall : DailyModuleBase
 {
     public override void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "BasketBall", OnAddonSetup);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "BasketBall", OnAddonSetup);
@@ -35,10 +36,10 @@ public class AutoBasketBall : DailyModuleBase
             case AddonEvent.PostDraw:
                 if (InterruptByConflictKey()) return;
 
-                if (TryGetAddonByName<AtkUnitBase>("BasketBall", out var addon) && IsAddonReady(addon))
+                if (TryGetAddonByName<AtkUnitBase>("BasketBall", out var addon) && IsAddonAndNodesReady(addon))
                 {
                     if (TryGetAddonByName<AddonSelectString>("SelectString", out var addonSelectString) &&
-                        IsAddonReady(&addonSelectString->AtkUnitBase))
+                        IsAddonAndNodesReady(&addonSelectString->AtkUnitBase))
                     {
                         Click.TrySendClick("select_string1");
                         return;
@@ -57,7 +58,7 @@ public class AutoBasketBall : DailyModuleBase
             case AddonEvent.PreFinalize:
                 if (InterruptByConflictKey()) return;
 
-                TaskManager.Enqueue(StartAnotherRound);
+                TaskHelper.Enqueue(StartAnotherRound);
                 break;
         }
     }
@@ -66,7 +67,7 @@ public class AutoBasketBall : DailyModuleBase
     {
         if (InterruptByConflictKey()) return true;
 
-        if (IsOccupied()) return false;
+        if (Flags.OccupiedInEvent) return false;
         var machineTarget = Service.Target.PreviousTarget;
         var machine = machineTarget.Name.ExtractText().Contains("怪物投篮") ? (GameObject*)machineTarget.Address : null;
 

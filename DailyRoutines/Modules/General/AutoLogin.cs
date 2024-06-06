@@ -9,8 +9,7 @@ using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
-using ECommons.Automation.LegacyTaskManager;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -53,7 +52,7 @@ public class AutoLogin : DailyModuleBase
                                           IsChineseString(x.Name.RawString))
                               .ToDictionary(x => x.RowId, x => x);
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = false };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "_TitleMenu", OnTitleMenu);
     }
 
@@ -207,7 +206,7 @@ public class AutoLogin : DailyModuleBase
 
         if (InterruptByConflictKey()) return;
 
-        TaskManager.Enqueue(SelectStartGame);
+        TaskHelper.Enqueue(SelectStartGame);
     }
 
     private unsafe bool? SelectStartGame()
@@ -215,14 +214,14 @@ public class AutoLogin : DailyModuleBase
         if (InterruptByConflictKey()) return true;
 
         AgentHelper.SendEvent(AgentId.Lobby, 0, 1);
-        TaskManager.Enqueue(() => SelectCharacter());
+        TaskHelper.Enqueue(() => SelectCharacter());
         return true;
     }
 
     private unsafe bool? SelectCharacter(int infoIndex = 0)
     {
         if (InterruptByConflictKey()) return true;
-        if (!EzThrottler.Throttle("AutoLogin", 100)) return false;
+        if (!Throttler.Throttle("AutoLogin", 100)) return false;
 
         if (Service.Gui.GetAddonByName("_TitleMenu") != nint.Zero) return false;
         var agent = AgentLobby.Instance();
@@ -239,18 +238,18 @@ public class AutoLogin : DailyModuleBase
             AddonHelper.Callback(addon, true, 18, 0, requestedLoginInfo.CharaIndex);
             AddonHelper.Callback(addon, true, 6, requestedLoginInfo.CharaIndex);
 
-            TaskManager.Enqueue(() => Click.TrySendClick("select_yes"));
-            TaskManager.Enqueue(() => HasLoginOnce = true);
+            TaskHelper.Enqueue(() => Click.TrySendClick("select_yes"));
+            TaskHelper.Enqueue(() => HasLoginOnce = true);
             return true;
         }
 
-        TaskManager.Enqueue(SelectWorld);
+        TaskHelper.Enqueue(SelectWorld);
         return true;
     }
 
     private unsafe bool? SelectWorld()
     {
-        if (!EzThrottler.Throttle("AutoLogin", 100)) return false;
+        if (!Throttler.Throttle("AutoLogin", 100)) return false;
         if (InterruptByConflictKey()) return true;
 
         var agent = AgentLobby.Instance();
@@ -269,15 +268,15 @@ public class AutoLogin : DailyModuleBase
                 {
                     AddonHelper.Callback(addon, true, 10, 0, i);
 
-                    TaskManager.DelayNext(200);
-                    TaskManager.Enqueue(() => SelectCharacter(infoIndex));
+                    TaskHelper.DelayNext(200);
+                    TaskHelper.Enqueue(() => SelectCharacter(infoIndex));
 
                     return true;
                 }
             }
         }
 
-        TaskManager.Abort();
+        TaskHelper.Abort();
         return false;
     }
 
@@ -296,10 +295,10 @@ public class AutoLogin : DailyModuleBase
         if (index1 < 0 || index1 > LoginInfos.Count || index2 < 0 || index2 > LoginInfos.Count) return;
         (LoginInfos[index1], LoginInfos[index2]) = (LoginInfos[index2], LoginInfos[index1]);
 
-        TaskManager.Abort();
+        TaskHelper.Abort();
 
-        TaskManager.DelayNext(500);
-        TaskManager.Enqueue(() => { UpdateConfig("LoginInfos", LoginInfos); });
+        TaskHelper.DelayNext(500);
+        TaskHelper.Enqueue(() => { UpdateConfig("LoginInfos", LoginInfos); });
     }
 
     public override void Uninit()
