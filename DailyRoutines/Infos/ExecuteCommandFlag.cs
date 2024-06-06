@@ -126,6 +126,12 @@ public enum ExecuteCommandFlag
     ResetStrkingDummy = 319,
 
     /// <summary>
+    /// 请求指定物品栏数据
+    /// <para><c>param1</c>: (int)InventoryType</para>
+    /// </summary>
+    RequestInventory = 405,
+
+    /// <summary>
     /// 请求收藏柜的数据
     /// </summary>
     RequestCabinet = 424,
@@ -281,6 +287,15 @@ public enum ExecuteCommandFlag
     /// 请求剧情辅助器数据
     /// </summary>
     RequestDutySupport = 2653,
+
+    /// <summary>
+    /// 分解指定的物品
+    /// <para><c>param1</c>: 未知, 固定为 3735552</para>
+    /// <para><c>param2</c>: 未知, 可能为位置信息</para>
+    /// <para><c>param3</c>: 未知, 可能为位置信息</para>
+    /// <para><c>param4</c>: 物品 ID</para>
+    /// </summary>
+    Desynthesize = 2800,
 
     /// <summary>
     /// 请求无人岛工房排班数据
