@@ -8,9 +8,13 @@ using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
+using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
+using static System.ComponentModel.Design.ObjectSelectorEditor;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using Action = Lumina.Excel.GeneratedSheets.Action;
 
 namespace DailyRoutines.Infos;
@@ -567,6 +571,83 @@ public static class Widgets
 
         return selectState;
     }
+
+    public static bool MultiSelectCombo<T>(Dictionary<uint, T> sourceData, ref HashSet<uint> selectedItems, ref string searchInput,
+                                       (string Header, ImGuiTableColumnFlags Flags, float Weight)[] headerFuncs, 
+                                       Func<T, System.Action>[] displayFuncs) where T : ExcelRow
+    {
+        var selectState = false;
+        if (ImGui.BeginCombo("###SelectCombo", $"当前已选中 {selectedItems.Count} 项", ImGuiComboFlags.HeightLarge))
+            ImGui.EndCombo();
+
+        if (ImGui.IsItemClicked())
+            ImGui.OpenPopup("###SelectPopup");
+
+        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(450f, 400f));
+        if (ImGui.BeginPopup("###SelectPopup"))
+        {
+            ImGui.SetNextItemWidth(-1f);
+            ImGui.InputTextWithHint("###SearchInput", Service.Lang.GetText("PleaseSearch"), ref searchInput, 32);
+
+            ImGui.Separator();
+
+            var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
+            if (ImGui.BeginTable("###SelectTable", headerFuncs.Length + 1, ImGuiTableFlags.Borders, tableSize))
+            {
+                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
+                foreach (var header in headerFuncs)
+                {
+                    ImGui.TableSetupColumn(header.Header, ImGuiTableColumnFlags.WidthStretch);
+                }
+
+                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+                ImGui.TableNextColumn();
+                ImGui.Text("");
+
+                foreach (var header in headerFuncs)
+                {
+                    ImGui.TableNextColumn();
+                    ImGui.Text(header.Header);
+                }
+
+                var searchInputCopy = searchInput;
+                var selectedItemsCopy = selectedItems;
+                var data = sourceData.OrderByDescending(x => selectedItemsCopy.Contains(x.Key));
+                foreach (var (rowId, item) in data)
+                {
+                    if (!string.IsNullOrWhiteSpace(searchInput) && 
+                        !displayFuncs.Any(func => func(item).ToString().Contains(searchInputCopy, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    var isSelected = selectedItems.Contains(rowId);
+                    if (ImGui.Checkbox("##" + rowId, ref isSelected))
+                    {
+                        if (isSelected)
+                            selectedItems.Add(rowId);
+                        else
+                            selectedItems.Remove(rowId);
+
+                        selectState = true;
+                    }
+
+                    foreach (var display in displayFuncs)
+                    {
+                        ImGui.TableNextColumn();
+                        display(item).Invoke();
+                    }
+                }
+
+                ImGui.EndTable();
+            }
+
+            ImGui.EndPopup();
+        }
+
+        return selectState;
+    }
+
 
     public static void ConflictKeyText()
     {
