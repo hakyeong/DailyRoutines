@@ -110,6 +110,72 @@ public partial class TaskHelper : IDisposable
 
     public void Step() => Tick(null);
 
+    public bool AddQueue(uint weight)
+    {
+        var queue = Queues.FirstOrDefault(q => q.Weight == weight);
+        if (queue != null) return false;
+
+        Queues.Add(new TaskHelperQueue(weight));
+        return true;
+    }
+
+    public bool RemoveQueue(uint weight)
+    {
+        var queue = Queues.FirstOrDefault(q => q.Weight == weight);
+        if (queue != null)
+        {
+            Queues.Remove(queue);
+            return true;
+        }
+
+        return false;
+    }
+
+    public bool RemoveAllTasks(uint weight)
+    {
+        var queue = Queues.FirstOrDefault(q => q.Weight == weight);
+        if (queue != null)
+        {
+            queue.Tasks.Clear();
+            return true;
+        }
+        return false;
+    }
+
+    public bool RemoveFirstTask(uint weight)
+    {
+        var queue = Queues.FirstOrDefault(q => q.Weight == weight);
+        if (queue is { Tasks.Count: > 0 })
+        {
+            queue.Tasks.RemoveAt(0);
+            return true;
+        }
+        return false;
+    }
+
+    public bool RemoveLastTask(uint weight)
+    {
+        var queue = Queues.FirstOrDefault(q => q.Weight == weight);
+        if (queue is { Tasks.Count: > 0 })
+        {
+            queue.Tasks.RemoveAt(queue.Tasks.Count - 1);
+            return true;
+        }
+        return false;
+    }
+
+    public bool RemoveFirstNTasks(uint weight, int count)
+    {
+        var queue = Queues.FirstOrDefault(q => q.Weight == weight);
+        if (queue is { Tasks.Count: > 0 })
+        {
+            var actualCountToRemove = Math.Min(count, queue.Tasks.Count);
+            queue.Tasks.RemoveRange(0, actualCountToRemove);
+            return true;
+        }
+        return false;
+    }
+
     public void Abort()
     {
         foreach (var queue in Queues)
