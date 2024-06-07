@@ -59,6 +59,9 @@ public static class Extensions
         return (BitmapFontIcon)job.RowId + 127;
     }
 
+    public static string ExtractPlaceName(this TerritoryType row) 
+        => row.PlaceName.Value.Name.RawString;
+
     public static Vector2 ToVector2(this Vector3 vector3) 
         => new(vector3.X, vector3.Z);
 
