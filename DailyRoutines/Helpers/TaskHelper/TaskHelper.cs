@@ -21,8 +21,6 @@ public partial class TaskHelper : IDisposable
     private TaskHelperTask?            CurrentTask { get; set; }
     public  string                     CurrentTaskName => CurrentTask?.Name;
     private SortedSet<TaskHelperQueue> Queues { get; set; } = [new(1), new(0)];
-    private List<TaskHelperTask>       Tasks { get; set; } = [];
-    private List<TaskHelperTask>       ImmediateTasks { get; set; } = [];
     public  List<string>               TaskStack => Queues.SelectMany(q => q.Tasks.Select(t => t.Name)).ToList();
     public  int                        NumQueuedTasks => Queues.Sum(q => q.Tasks.Count) + (CurrentTask == null ? 0 : 1);
     public  bool                       IsBusy => CurrentTask != null || Queues.Any(q => q.Tasks.Count > 0);
