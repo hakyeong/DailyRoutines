@@ -2006,4 +2006,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Settings-ResetModule" xml:space="preserve">
     <value>重置模块</value>
   </data>
+  <data name="AutoSubmarineCollect-AddCommand" xml:space="preserve">
+    <value>添加 /pdr {0} 命令</value>
+  </data>
+  <data name="AutoSubmarineCollect-AddCommandHelp" xml:space="preserve">
+    <value>传送至部队工房并尝试收取潜水艇</value>
+  </data>
 </root>
