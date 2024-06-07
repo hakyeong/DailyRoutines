@@ -10,18 +10,18 @@ namespace DailyRoutines.Infos;
 
 public class PresetData
 {
-    public static  Dictionary<uint, Action>                 PlayerActions => playerActions.Value;
-    public static  Dictionary<uint, Status>                 Statuses      => statuses.Value;
-    public static  Dictionary<uint, ContentFinderCondition> Contents      => contents.Value;
-    public static  Dictionary<uint, Item>                   Gears         => gears.Value;
-    public static  Dictionary<uint, Item>                   Dyes          => dyes.Value;
-    public static  Dictionary<uint, World>                  CNWorlds      => cnWorlds.Value;
-    public static  Dictionary<uint, TerritoryType>          Zones         => zones.Value;
-    public static  Dictionary<uint, Mount>                  Mounts        => mounts.Value;
-    public static  Dictionary<uint, Item>                   Food          => food.Value;
-    private static Dictionary<uint, Item>                   Seeds         => seeds.Value;
-    private static Dictionary<uint, Item>                   Soils         => soils.Value;
-    private static Dictionary<uint, Item>                   Fertilizers   => fertilizers.Value;
+    public static Dictionary<uint, Action>                 PlayerActions => playerActions.Value;
+    public static Dictionary<uint, Status>                 Statuses      => statuses.Value;
+    public static Dictionary<uint, ContentFinderCondition> Contents      => contents.Value;
+    public static Dictionary<uint, Item>                   Gears         => gears.Value;
+    public static Dictionary<uint, Item>                   Dyes          => dyes.Value;
+    public static Dictionary<uint, World>                  CNWorlds      => cnWorlds.Value;
+    public static Dictionary<uint, TerritoryType>          Zones         => zones.Value;
+    public static Dictionary<uint, Mount>                  Mounts        => mounts.Value;
+    public static Dictionary<uint, Item>                   Food          => food.Value;
+    public static Dictionary<uint, Item>                   Seeds         => seeds.Value;
+    public static Dictionary<uint, Item>                   Soils         => soils.Value;
+    public static Dictionary<uint, Item>                   Fertilizers   => fertilizers.Value;
 
     public static bool TryGetPlayerActions(uint rowID, out Action action)
         => PlayerActions.TryGetValue(rowID, out action);
