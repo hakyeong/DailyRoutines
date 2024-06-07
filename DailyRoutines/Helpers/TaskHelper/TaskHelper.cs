@@ -18,49 +18,40 @@ public partial class TaskHelper : IDisposable
         Instances.Add(this);
     }
 
-    private TaskHelperTask?      CurrentTask { get; set; }
-    public  string               CurrentTaskName => CurrentTask?.Name;
-    private List<TaskHelperTask> Tasks { get; set; } = [];
-    private List<TaskHelperTask> ImmediateTasks { get; set; } = [];
-    public  List<string>         TaskStack => ImmediateTasks.Select(x => x.Name).Union(Tasks.Select(x => x.Name)).ToList();
-    public  int                  NumQueuedTasks => Tasks.Count + ImmediateTasks.Count + (CurrentTask == null ? 0 : 1);
-    public  bool                 IsBusy => CurrentTask != null || Tasks.Count > 0 || ImmediateTasks.Count > 0;
-    public  int                  MaxTasks { get; private set; }
-    public  bool                 AbortOnTimeout { get; set; } = false;
-    public  long                 AbortAt { get; private set; }
-    public  bool                 ShowDebug { get; set; }
-    public  int                  TimeLimitMS { get; set; } = 10000;
-    public  bool                 TimeoutSilently { get; set; } = false;
-    private Action<string>       LogTimeout => TimeoutSilently ? NotifyHelper.Verbose : NotifyHelper.Error;
+    private TaskHelperTask?            CurrentTask { get; set; }
+    public  string                     CurrentTaskName => CurrentTask?.Name;
+    private SortedSet<TaskHelperQueue> Queues { get; set; } = [new(1), new(0)];
+    private List<TaskHelperTask>       Tasks { get; set; } = [];
+    private List<TaskHelperTask>       ImmediateTasks { get; set; } = [];
+    public  List<string>               TaskStack => Queues.SelectMany(q => q.Tasks.Select(t => t.Name)).ToList();
+    public  int                        NumQueuedTasks => Queues.Sum(q => q.Tasks.Count) + (CurrentTask == null ? 0 : 1);
+    public  bool                       IsBusy => CurrentTask != null || Queues.Any(q => q.Tasks.Count > 0);
+    public  int                        MaxTasks { get; private set; }
+    public  bool                       AbortOnTimeout { get; set; } = false;
+    public  long                       AbortAt { get; private set; }
+    public  bool                       ShowDebug { get; set; }
+    public  int                        TimeLimitMS { get; set; } = 10000;
+    public  bool                       TimeoutSilently { get; set; } = false;
+    private Action<string>             LogTimeout => TimeoutSilently ? NotifyHelper.Verbose : NotifyHelper.Warning;
 
     private void Tick(object? _)
     {
         if (CurrentTask == null)
         {
-            if (ImmediateTasks.TryDequeue(out var immediateTask))
+            foreach (var queue in Queues)
             {
-                CurrentTask = immediateTask;
-                if (ShowDebug)
+                if (queue.Tasks.TryDequeue(out var task))
                 {
-                    NotifyHelper.Debug(
-                        $"Starting to execute immediate task: {CurrentTask.Name ?? CurrentTask.Action.GetMethodInfo().Name}");
-                }
+                    CurrentTask = task;
+                    if (ShowDebug)
+                        NotifyHelper.Debug($"开始执行任务: {CurrentTask.Name ?? CurrentTask.Action.GetMethodInfo().Name}");
 
-                AbortAt = Environment.TickCount64 + CurrentTask.TimeLimitMS;
-            }
-            else if (Tasks.TryDequeue(out var task))
-            {
-                CurrentTask = task;
-                if (ShowDebug)
-                {
-                    NotifyHelper.Debug(
-                        $"Starting to execute task: {CurrentTask.Name ?? CurrentTask.Action.GetMethodInfo().Name}");
+                    AbortAt = Environment.TickCount64 + CurrentTask.TimeLimitMS;
+                    break;
                 }
-
-                AbortAt = Environment.TickCount64 + CurrentTask.TimeLimitMS;
             }
-            else
-                MaxTasks = 0;
+
+            if (CurrentTask == null) MaxTasks = 0;
         }
         else
         {
@@ -70,36 +61,30 @@ public partial class TaskHelper : IDisposable
                 switch (result)
                 {
                     case true:
-                    {
                         if (ShowDebug)
-                        {
-                            NotifyHelper.Debug(
-                                $"Task {CurrentTask.Name ?? CurrentTask.Action.GetMethodInfo().Name} completed successfully");
-                        }
+                            NotifyHelper.Debug($"已完成任务: {CurrentTask.Name ?? CurrentTask.Action.GetMethodInfo().Name}");
 
                         CurrentTask = null;
                         break;
-                    }
+
                     case false:
-                    {
                         if (Environment.TickCount64 > AbortAt)
                         {
                             if (CurrentTask.AbortOnTimeout)
                             {
-                                LogTimeout($"Clearing {Tasks.Count} remaining tasks because of timeout");
-                                Tasks.Clear();
-                                ImmediateTasks.Clear();
+                                LogTimeout("已清理所有剩余任务 (原因: 等待超时)");
+                                foreach (var queue in Queues)
+                                    queue.Tasks.Clear();
                             }
 
                             throw new TimeoutException(
-                                $"Task {CurrentTask.Name ?? CurrentTask.Action.GetMethodInfo().Name} took too long to execute");
+                                $"任务 {CurrentTask.Name ?? CurrentTask.Action.GetMethodInfo().Name} 执行时间过长");
                         }
-
                         break;
-                    }
+
                     default:
                         NotifyHelper.Warning(
-                            $"Clearing {Tasks.Count} remaining tasks because there was a signal from task {CurrentTask.Name ?? CurrentTask.Action.GetMethodInfo().Name} to abort");
+                            $"正在清理所有剩余任务 (原因: 任务 {CurrentTask.Name ?? CurrentTask.Action.GetMethodInfo().Name} 要求终止)");
 
                         Abort();
                         break;
@@ -112,7 +97,7 @@ public partial class TaskHelper : IDisposable
             }
             catch (Exception e)
             {
-                NotifyHelper.Error("Errors in dequeueing tasks", e);
+                NotifyHelper.Error("执行任务过程中出现错误", e);
                 CurrentTask = null;
             }
         }
@@ -129,8 +114,9 @@ public partial class TaskHelper : IDisposable
 
     public void Abort()
     {
-        Tasks.Clear();
-        ImmediateTasks.Clear();
+        foreach (var queue in Queues)
+            queue.Tasks.Clear();
+
         CurrentTask = null;
     }
 
@@ -143,14 +129,14 @@ public partial class TaskHelper : IDisposable
     public static void DisposeAll()
     {
         var i = 0;
-        foreach (var manager in Instances)
+        foreach (var instance in Instances)
         {
-            Service.Framework.Update -= manager.Tick;
+            Service.Framework.Update -= instance.Tick;
             i++;
         }
 
         if (i > 0)
-            NotifyHelper.Debug($"Auto-disposing {i} task managers");
+            NotifyHelper.Debug($"已自动清理了 {i} 个队列管理器");
 
         Instances.Clear();
     }
