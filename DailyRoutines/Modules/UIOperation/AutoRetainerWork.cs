@@ -934,7 +934,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
         CurrentItemIndex = index;
         AgentHelper.SendEvent(AgentId.Retainer, 3, 0, index, 1);
-        TaskHelper.EnqueueImmediate(ClickAdjustPrice);
+        TaskHelper.Enqueue(ClickAdjustPrice, null, 1);
 
         return true;
     }
@@ -946,7 +946,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         if (!ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(6948).Text.RawString)) return false;
 
         ResetCurrentItemStats(false);
-        TaskHelper.EnqueueImmediate(ObtainItemData);
+        TaskHelper.Enqueue(ObtainItemData, null, 1);
         return true;
     }
 
@@ -1144,86 +1144,84 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                     if (CurrentItemIndex != -1)
                     {
                         var copyIndex = CurrentItemIndex;
-                        TaskHelper.EnqueueImmediate(() =>
+                        TaskHelper.Enqueue(() =>
                         {
                             if (RetainerSellList == null || !IsAddonAndNodesReady(RetainerSellList)) return false;
 
-                            AddonHelper.Callback(RetainerSellList, true, 0, copyIndex, 1);
+                            Callback(RetainerSellList, true, 0, copyIndex, 1);
                             return TryGetAddonByName<AtkUnitBase>("ContextMenu", out var cm) &&
                                    IsAddonAndNodesReady(cm);
-                        });
+                        }, null, 1);
 
-                        TaskHelper.DelayNextImmediate(50);
-                        TaskHelper.EnqueueImmediate(
-                            () => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(958).Text.RawString));
+                        TaskHelper.DelayNext(50, false, 1);
+                        TaskHelper.Enqueue(
+                            () => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(958).Text.RawString), null, 1);
                     }
 
-                    TaskHelper.EnqueueImmediate(() => OperateAndReturn(false));
+                    TaskHelper.Enqueue(() => OperateAndReturn(false), null, 1);
                     break;
                 case AbortBehavior.收回至背包:
                     CloseAddon();
                     if (CurrentItemIndex != -1)
                     {
                         var copyIndex = CurrentItemIndex;
-                        TaskHelper.EnqueueImmediate(() =>
+                        TaskHelper.Enqueue(() =>
                         {
                             if (RetainerSellList == null || !IsAddonAndNodesReady(RetainerSellList)) return false;
 
-                            AddonHelper.Callback(RetainerSellList, true, 0, copyIndex, 1);
+                            Callback(RetainerSellList, true, 0, copyIndex, 1);
                             return TryGetAddonByName<AtkUnitBase>("ContextMenu", out var cm) &&
                                    IsAddonAndNodesReady(cm);
-                        });
+                        }, null, 1);
 
-                        TaskHelper.DelayNextImmediate(50);
-                        TaskHelper.EnqueueImmediate(
-                            () => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(976).Text.RawString));
+                        TaskHelper.DelayNext(50, false, 1);
+                        TaskHelper.Enqueue(
+                            () => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(976).Text.RawString), null, 1);
                     }
 
-                    TaskHelper.EnqueueImmediate(() => OperateAndReturn(false));
+                    TaskHelper.Enqueue(() => OperateAndReturn(false), null, 1);
                     break;
                 case AbortBehavior.出售至系统商店:
                     CloseAddon();
                     if (CurrentItemIndex != -1)
                     {
                         var copyIndex = CurrentItemIndex;
-                        TaskHelper.EnqueueImmediate(() =>
+                        TaskHelper.Enqueue(() =>
                         {
                             if (RetainerSellList == null || !IsAddonAndNodesReady(RetainerSellList)) return false;
 
-                            AddonHelper.Callback(RetainerSellList, true, 0, copyIndex, 1);
+                            Callback(RetainerSellList, true, 0, copyIndex, 1);
                             return TryGetAddonByName<AtkUnitBase>("ContextMenu", out var cm) &&
                                    IsAddonAndNodesReady(cm);
-                        });
+                        }, null, 1);
 
-                        TaskHelper.EnqueueImmediate(
-                            () => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(976).Text.RawString));
-
-                        TaskHelper.DelayNextImmediate(500);
+                        TaskHelper.Enqueue(() => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(976).Text.RawString), null, 1);
+                        TaskHelper.DelayNext(500, false, 1);
                     }
 
-                    TaskHelper.EnqueueImmediate(() =>
+                    TaskHelper.Enqueue(() =>
                     {
                         if (!TrySearchItemInInventory(CurrentItem.ItemID, CurrentItem.IsHQ, out var foundItem) ||
                             foundItem.Count <= 0)
                         {
-                            TaskHelper.EnqueueImmediate(() => OperateAndReturn(false));
+                            TaskHelper.Enqueue(() => OperateAndReturn(false), null, 2);
                             return true;
                         }
 
-                        TaskHelper.EnqueueImmediate(() =>
+                        TaskHelper.Enqueue(() =>
                         {
                             OpenInventoryItemContext(foundItem[0]);
                             return TryGetAddonByName<AtkUnitBase>("ContextMenu", out var cm) &&
                                    IsAddonAndNodesReady(cm);
-                        });
+                        }, null, 2);
 
-                        TaskHelper.EnqueueImmediate(
-                            () => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(5480).Text.RawString));
+                        TaskHelper.Enqueue(
+                            () => ClickHelper.ContextMenu(LuminaCache.GetRow<Addon>(5480).Text.RawString), null, 2);
 
-                        TaskHelper.EnqueueImmediate(() => OperateAndReturn(false));
+                        TaskHelper.Enqueue(() => OperateAndReturn(false), null, 2);
 
                         return true;
-                    });
+                    }, null, 1);
 
                     break;
             }
@@ -1617,7 +1615,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         CurrentItem.IsHQ = itemNameText.Contains(''); // HQ 符号
         InfoItemSearch->SearchItemId = CurrentItem.ItemID;
 
-        TaskHelper.EnqueueImmediate(ObtainMarketData);
+        TaskHelper.Enqueue(ObtainMarketData, null, 1);
         return true;
     }
 
@@ -1628,8 +1626,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         if (!Throttler.Throttle("AutoRetainerPriceAdjust-ObtainMarketData")) return false;
         if (InfoItemSearch->SearchItemId == 0)
         {
-            Service.Chat.PrintError(Service.Lang.GetText("AutoRetainerPriceAdjust-FailObtainItemInfo"),
-                                    "Daily Routines");
+            NotifyHelper.ChatError(Service.Lang.GetText("AutoRetainerPriceAdjust-FailObtainItemInfo"));
 
             TaskHelper.Abort();
             return true;
@@ -1637,7 +1634,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
         if (TryGetPriceCache(CurrentItem.ItemID, CurrentItem.IsHQ, out _))
         {
-            TaskHelper.EnqueueImmediate(FillPrice);
+            TaskHelper.Enqueue(FillPrice, null, 1);
             return true;
         }
 
@@ -1647,8 +1644,8 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             return false;
         }
 
-        TaskHelper.DelayNextImmediate(1000);
-        TaskHelper.EnqueueImmediate(ParseMarketData);
+        TaskHelper.DelayNext(1000, false, 1);
+        TaskHelper.Enqueue(ParseMarketData, null, 1);
         return true;
     }
 
@@ -1661,7 +1658,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             // 历史结果为空
             if (ItemHistoryList.Count <= 0)
             {
-                TaskHelper.EnqueueImmediate(FillPrice);
+                TaskHelper.Enqueue(FillPrice, null, 1);
                 return true;
             }
 
@@ -1675,7 +1672,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             if (maxHQPrice != 0)
                 SetPriceCache(CurrentItem.ItemID, true, maxHQPrice);
 
-            TaskHelper.EnqueueImmediate(FillPrice);
+            TaskHelper.Enqueue(FillPrice, null, 1);
             return true;
         }
 
@@ -1703,7 +1700,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         if (minHQPrice > 0)
             SetPriceCache(CurrentItem.ItemID, true, minHQPrice);
 
-        TaskHelper.EnqueueImmediate(FillPrice);
+        TaskHelper.Enqueue(FillPrice, null, 1);
         return true;
     }
 
@@ -1927,10 +1924,10 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         switch (args.AddonName)
         {
             case "RetainerItemTransferList":
-                AddonHelper.Callback((AtkUnitBase*)args.Addon, true, 1);
+                Callback((AtkUnitBase*)args.Addon, true, 1);
                 break;
             case "RetainerItemTransferProgress":
-                TaskHelper.EnqueueImmediate(() =>
+                TaskHelper.Enqueue(() =>
                 {
                     if (!Throttler.Throttle("AutoRetainerEntrustDups", 100)) return false;
                     if (!TryGetAddonByName<AtkUnitBase>("RetainerItemTransferProgress", out var addon) ||
@@ -1943,13 +1940,13 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
                     if (progressText.Contains(LuminaCache.GetRow<Addon>(13528).Text.RawString))
                     {
-                        AddonHelper.Callback(addon, true, -2);
+                        Callback(addon, true, -2);
                         addon->Close(true);
                         return true;
                     }
 
                     return false;
-                });
+                }, null, 1);
 
                 break;
         }

@@ -9,7 +9,6 @@ using Dalamud.Game.Command;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
-
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -225,8 +224,8 @@ public unsafe class AutoDiscard : DailyModuleBase
                     break;
                 }
 
-                TaskHelper.DelayNextImmediate(20);
-                TaskHelper.EnqueueImmediate(ConfirmDiscard);
+                TaskHelper.DelayNext(20, false, 1);
+                TaskHelper.Enqueue(ConfirmDiscard, "确认丢弃", 1);
                 break;
             case DiscardBehaviour.Sell:
                 if ((TryGetAddonByName<AtkUnitBase>("RetainerGrid0", out var addonRetainerGrid) &&
