@@ -17,6 +17,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
+using Action = Lumina.Excel.GeneratedSheets.Action;
 
 namespace DailyRoutines.Modules;
 
@@ -204,11 +205,15 @@ public class AutoCheckFoodUsage : DailyModuleBase
                 ImGui.TableNextColumn();
                 var zones = preset.Zones;
                 ImGui.SetNextItemWidth(-1f);
-                if (ZoneSelectCombo(ref zones, ref ZoneSearch))
+                ImGui.PushID("ZonesSelectCombo");
+                if (MultiSelectCombo(PresetData.Zones, ref zones, ref ZoneSearch, 
+                                     [new("区域", ImGuiTableColumnFlags.None, 30)], 
+                                     [x => () => ImGui.Text(x.PlaceName.Value.Name.RawString)]))
                 {
                     preset.Zones = zones;
                     SaveConfig(ModuleConfig);
                 }
+                ImGui.PopID();
 
                 ImGui.TableNextColumn();
                 var jobs = preset.ClassJobs;
