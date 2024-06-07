@@ -2012,4 +2012,19 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoSubmarineCollect-AddCommandHelp" xml:space="preserve">
     <value>传送至部队工房并尝试收取潜水艇</value>
   </data>
+  <data name="AutoGardensWork-ConfirmRename" xml:space="preserve">
+    <value>确认重命名</value>
+  </data>
+  <data name="AutoGardensWork-GardenNotFound" xml:space="preserve">
+    <value>没有找到目标园圃</value>
+  </data>
+  <data name="AutoGardensWork-ObtainGardensAround" xml:space="preserve">
+    <value>获取周围园圃</value>
+  </data>
+  <data name="Rename" xml:space="preserve">
+    <value>重命名</value>
+  </data>
+  <data name="ToTarget" xml:space="preserve">
+    <value>选中</value>
+  </data>
 </root>
