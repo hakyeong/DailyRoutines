@@ -10,15 +10,18 @@ namespace DailyRoutines.Infos;
 
 public class PresetData
 {
-    public static Dictionary<uint, Action>                 PlayerActions => playerActions.Value;
-    public static Dictionary<uint, Status>                 Statuses      => statuses.Value;
-    public static Dictionary<uint, ContentFinderCondition> Contents      => contents.Value;
-    public static Dictionary<uint, Item>                   Gears         => gears.Value;
-    public static Dictionary<uint, Item>                   Dyes          => dyes.Value;
-    public static Dictionary<uint, World>                  CNWorlds      => cnWorlds.Value;
-    public static Dictionary<uint, TerritoryType>          Zones         => zones.Value;
-    public static Dictionary<uint, Mount>                  Mounts        => mounts.Value;
-    public static Dictionary<uint, Item>                   Food          => food.Value;
+    public static  Dictionary<uint, Action>                 PlayerActions => playerActions.Value;
+    public static  Dictionary<uint, Status>                 Statuses      => statuses.Value;
+    public static  Dictionary<uint, ContentFinderCondition> Contents      => contents.Value;
+    public static  Dictionary<uint, Item>                   Gears         => gears.Value;
+    public static  Dictionary<uint, Item>                   Dyes          => dyes.Value;
+    public static  Dictionary<uint, World>                  CNWorlds      => cnWorlds.Value;
+    public static  Dictionary<uint, TerritoryType>          Zones         => zones.Value;
+    public static  Dictionary<uint, Mount>                  Mounts        => mounts.Value;
+    public static  Dictionary<uint, Item>                   Food          => food.Value;
+    private static Dictionary<uint, Item>                   Seeds         => seeds.Value;
+    private static Dictionary<uint, Item>                   Soils         => soils.Value;
+    private static Dictionary<uint, Item>                   Fertilizers   => fertilizers.Value;
 
     public static bool TryGetPlayerActions(uint rowID, out Action action)
         => PlayerActions.TryGetValue(rowID, out action);
@@ -48,6 +51,22 @@ public class PresetData
         => Food.TryGetValue(rowID, out foodItem);
 
     #region Lazy
+
+    private static readonly Lazy<Dictionary<uint, Item>> seeds =
+        new(() => LuminaCache.Get<Item>()
+                             .Where(x => x.FilterGroup == 20)
+                             .ToDictionary(x => x.RowId, x => x));
+
+    private static readonly Lazy<Dictionary<uint, Item>> soils =
+        new(() => LuminaCache.Get<Item>()
+                             .Where(x => x.FilterGroup == 21)
+                             .ToDictionary(x => x.RowId, x => x));
+
+    private static readonly Lazy<Dictionary<uint, Item>> fertilizers =
+        new(() => LuminaCache.Get<Item>()
+                             .Where(x => x.FilterGroup == 22)
+                             .ToDictionary(x => x.RowId, x => x));
+
     private static readonly Lazy<Dictionary<uint, Action>> playerActions =
         new(() => LuminaCache.Get<Action>()
                              .Where(x => x.ClassJob.Value != null && x.Range != -1 && x.Icon != 0 &&
