@@ -483,18 +483,16 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
     private static bool? ClickEntryByText(string text)
     {
-        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonAndNodesReady(addon))
-        {
-            if (!TryScanSelectStringText(addon, text, out var index))
-            {
-                TryScanSelectStringText(addon, "取消", out index);
-                return Click.TrySendClick($"select_string{index + 1}");
-            }
+        if (!TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) || !IsAddonAndNodesReady(addon))
+            return false;
 
-            if (Click.TrySendClick($"select_string{index + 1}")) return true;
+        if (!TryScanSelectStringText(addon, text, out var index))
+        {
+            TryScanSelectStringText(addon, "取消", out index);
+            return Click.TrySendClick($"select_string{index + 1}");
         }
 
-        return false;
+        return Click.TrySendClick($"select_string{index + 1}");
     }
 
     public override void Uninit()
