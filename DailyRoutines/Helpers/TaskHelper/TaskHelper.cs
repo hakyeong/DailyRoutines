@@ -18,19 +18,19 @@ public partial class TaskHelper : IDisposable
         Instances.Add(this);
     }
 
-    private TaskHelperTask?            CurrentTask { get; set; }
+    private TaskHelperTask?            CurrentTask     { get; set; }
     public  string                     CurrentTaskName => CurrentTask?.Name;
-    private SortedSet<TaskHelperQueue> Queues { get; set; } = [new(1), new(0)];
-    public  List<string>               TaskStack => Queues.SelectMany(q => q.Tasks.Select(t => t.Name)).ToList();
-    public  int                        NumQueuedTasks => Queues.Sum(q => q.Tasks.Count) + (CurrentTask == null ? 0 : 1);
-    public  bool                       IsBusy => CurrentTask != null || Queues.Any(q => q.Tasks.Count > 0);
-    public  int                        MaxTasks { get; private set; }
-    public  bool                       AbortOnTimeout { get; set; } = false;
-    public  long                       AbortAt { get; private set; }
-    public  bool                       ShowDebug { get; set; }
-    public  int                        TimeLimitMS { get; set; } = 10000;
+    private SortedSet<TaskHelperQueue> Queues          { get; set; } = [new(1), new(0)];
+    public  List<string>               TaskStack       => Queues.SelectMany(q => q.Tasks.Select(t => t.Name)).ToList();
+    public  int                        NumQueuedTasks  => Queues.Sum(q => q.Tasks.Count) + (CurrentTask == null ? 0 : 1);
+    public  bool                       IsBusy          => CurrentTask != null || Queues.Any(q => q.Tasks.Count > 0);
+    public  int                        MaxTasks        { get; private set; }
+    public  bool                       AbortOnTimeout  { get; set; } = false;
+    public  long                       AbortAt         { get; private set; }
+    public  bool                       ShowDebug       { get; set; } = false;
+    public  int                        TimeLimitMS     { get; set; } = 10000;
     public  bool                       TimeoutSilently { get; set; } = false;
-    private Action<string>             LogTimeout => TimeoutSilently ? NotifyHelper.Verbose : NotifyHelper.Warning;
+    private Action<string>             LogTimeout      => TimeoutSilently ? NotifyHelper.Verbose : NotifyHelper.Warning;
 
     private void Tick(object? _)
     {
