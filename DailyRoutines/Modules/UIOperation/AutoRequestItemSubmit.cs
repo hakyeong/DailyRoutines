@@ -4,7 +4,6 @@ using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -27,7 +26,7 @@ public class AutoRequestItemSubmit : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Request", OnAddonRequest);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Request", OnAddonRequest);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "Request", OnAddonRequest);
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
 
     public override void ConfigUI()
@@ -62,7 +61,7 @@ public class AutoRequestItemSubmit : DailyModuleBase
     private void AbortActions()
     {
         SlotsFilled.Clear();
-        TaskManager?.Abort();
+        TaskHelper?.Abort();
         Service.AddonLifecycle.UnregisterListener(OnAddonSelectYesno);
     }
 
@@ -90,14 +89,14 @@ public class AutoRequestItemSubmit : DailyModuleBase
                 if (SlotsFilled.Contains(addon->EntryCount)) ClickHandOver();
                 if (SlotsFilled.Contains(i)) return;
                 var index = i;
-                TaskManager.DelayNext($"AutoRequestItemSubmit{index}", 10);
-                TaskManager.Enqueue(() => TryClickItem(addon, index));
+                TaskHelper.DelayNext($"AutoRequestItemSubmit{index}", 10);
+                TaskHelper.Enqueue(() => TryClickItem(addon, index));
             }
         }
         else
         {
             SlotsFilled.Clear();
-            TaskManager.Abort();
+            TaskHelper.Abort();
         }
     }
 

@@ -10,8 +10,6 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
-using ECommons.Interop;
-using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -51,7 +49,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
 
     public override void ConfigUI()
     {
-        if (EzThrottler.Throttle("AutoSwitchIMEWhenInput-RefreshIME", 1000)) RefreshIME();
+        if (Throttler.Throttle("AutoSwitchIMEWhenInput-RefreshIME", 1000)) RefreshIME();
 
         ImGui.Spacing();
 
@@ -61,7 +59,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
         var tableSize = ((ImGui.GetContentRegionAvail() / 2) - ImGuiHelpers.ScaledVector2(20f)) with { Y = 0 };
         if (ImGui.BeginTable("IMESelectTable", 4, ImGuiTableFlags.Borders, tableSize))
         {
-            ImGui.TableSetupColumn("单选框", ImGuiTableColumnFlags.WidthFixed, Styles.RadioButtionSize.X);
+            ImGui.TableSetupColumn("单选框", ImGuiTableColumnFlags.WidthFixed, 20f * ImGuiHelpers.GlobalScale);
             ImGui.TableSetupColumn("布局", ImGuiTableColumnFlags.None, 40);
             ImGui.TableSetupColumn("模式", ImGuiTableColumnFlags.None, 20);
             ImGui.TableSetupColumn("句式", ImGuiTableColumnFlags.None, 20);
@@ -86,12 +84,14 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
                 ImGui.TableNextRow();
 
                 ImGui.TableNextColumn();
-                if (ImGui.RadioButton($"{ime.Name}-{ime.Mode}-{ime.Sentence}", ime.Equals(ModuleConfig.SavedIME)))
+                ImGui.PushItemWidth(20f * ImGuiHelpers.GlobalScale);
+                if (ImGui.RadioButton($"##{ime.Name}-{ime.Mode}-{ime.Sentence}", ime.Equals(ModuleConfig.SavedIME)))
                 {
                     ModuleConfig.SavedIME = ime;
                     SaveConfig(ModuleConfig);
                     SwitchIME(ime);
                 }
+                ImGui.PopItemWidth();
 
                 ImGui.TableNextColumn();
                 ImGui.Text($"{ime.Name}");
@@ -141,7 +141,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
     private static SavedIME? GetCurrentIME()
     {
         SavedIME? result = null;
-        if (!WindowFunctions.TryFindGameWindow(out var gameHandle))
+        if (!TryFindGameWindow(out var gameHandle))
         {
             NotifyHelper.NotificationError($"{Service.Lang.GetText("AutoSwitchIMEWhenInput-FailFindGameWindow")}, {Service.Lang.GetText("AutoSwitchIMEWhenInput-FailObtainIME")}");
             return result;
@@ -171,7 +171,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
 
     private static void SwitchIME(SavedIME ime)
     {
-        if (!WindowFunctions.TryFindGameWindow(out var gameHandle))
+        if (!TryFindGameWindow(out var gameHandle))
         {
             NotifyHelper.NotificationError($"{Service.Lang.GetText("AutoSwitchIMEWhenInput-FailFindGameWindow")}, {Service.Lang.GetText("AutoSwitchIMEWhenInput-FailSwitchIME")}");
             return;
@@ -202,7 +202,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
     private static void RefreshIME()
     {
         InstalledIME.Clear();
-        if (!WindowFunctions.TryFindGameWindow(out var gameHandle))
+        if (!TryFindGameWindow(out var gameHandle))
             NotifyHelper.NotificationError($"{Service.Lang.GetText("AutoSwitchIMEWhenInput-FailFindGameWindow")}, {Service.Lang.GetText("AutoSwitchIMEWhenInput-FailRefreshIME")}");
 
         var hIMC = ImmGetContext(gameHandle);

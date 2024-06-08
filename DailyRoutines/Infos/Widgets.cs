@@ -8,9 +8,14 @@ using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
+using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
+using static System.ComponentModel.Design.ObjectSelectorEditor;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using static FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentHousingPlant;
 using Action = Lumina.Excel.GeneratedSheets.Action;
 
 namespace DailyRoutines.Infos;
@@ -21,25 +26,8 @@ public static class Widgets
     public static SeString DRPrefix => drPrefix.Value;
     public static SeString DailyRoutinesPrefix => dailyRoutinesPrefix.Value;
 
-    private static readonly Lazy<SeString> rPrefix = new(() =>
-                                                             new SeStringBuilder()
-                                                                 .AddUiForeground(
-                                                                     SeIconChar.BoxedLetterR.ToIconString(), 34)
-                                                                 .AddUiForegroundOff().Build());
-
-    private static readonly Lazy<SeString> drPrefix = new(() =>
-                                                              new SeStringBuilder()
-                                                                  .AddUiForeground(
-                                                                      SeIconChar.BoxedLetterD.ToIconString(), 34)
-                                                                  .AddUiForeground(
-                                                                      SeIconChar.BoxedLetterR.ToIconString(), 34)
-                                                                  .AddUiForegroundOff().Build());
-
-    private static readonly Lazy<SeString> dailyRoutinesPrefix = new(() =>
-                                                                         new SeStringBuilder()
-                                                                             .AddUiForeground("[Daily Routines]", 34)
-                                                                             .AddUiForegroundOff().Build());
-
+    private static Vector2 CheckboxSize = ImGuiHelpers.ScaledVector2(20f);
+    
     public static void PreviewImageWithHelpText(
         string helpText, string imageUrl, Vector2 imageSize = default,
         FontAwesomeIcon imageIcon = FontAwesomeIcon.InfoCircle)
@@ -204,7 +192,7 @@ public static class Widgets
             var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
             if (ImGui.BeginTable("###ContentSelectTable", 5, ImGuiTableFlags.Borders, tableSize))
             {
-                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
+                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
                 ImGui.TableSetupColumn("Icon", ImGuiTableColumnFlags.WidthFixed, 20f * ImGuiHelpers.GlobalScale);
                 ImGui.TableSetupColumn("Level", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("123").X);
                 ImGui.TableSetupColumn("DutyName", ImGuiTableColumnFlags.WidthStretch, 40);
@@ -238,6 +226,7 @@ public static class Widgets
                     ImGui.TableNextColumn();
                     var state = selected.Contains(contentPair.Key);
                     ImGui.Checkbox("", ref state);
+                    CheckboxSize = ImGui.GetItemRectSize();
 
                     ImGui.TableNextColumn();
                     ImGui.Image(ImageHelper.GetIcon(contentPair.Value.ContentType.Value.Icon).ImGuiHandle,
@@ -290,7 +279,7 @@ public static class Widgets
             var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
             if (ImGui.BeginTable("###ZoneSelectTable", 2, ImGuiTableFlags.Borders, tableSize))
             {
-                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
+                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
                 ImGui.TableSetupColumn("PlaceName");
 
                 ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
@@ -314,6 +303,7 @@ public static class Widgets
                     ImGui.BeginDisabled();
                     var state = selected.Contains(zonePair.Key);
                     ImGui.Checkbox("", ref state);
+                    CheckboxSize = ImGui.GetItemRectSize();
                     ImGui.EndDisabled();
 
                     ImGui.TableNextColumn();
@@ -357,7 +347,7 @@ public static class Widgets
             var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
             if (ImGui.BeginTable("###JobSelectTable", 2, ImGuiTableFlags.Borders, tableSize))
             {
-                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
+                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
                 ImGui.TableSetupColumn("Job", ImGuiTableColumnFlags.WidthStretch);
 
                 ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
@@ -384,6 +374,7 @@ public static class Widgets
                     ImGui.BeginDisabled();
                     var state = job.RowId == 0 ? selected.Count == 0 : selected.Contains(job.RowId);
                     ImGui.Checkbox("", ref state);
+                    CheckboxSize = ImGui.GetItemRectSize();
                     ImGui.EndDisabled();
 
                     ImGui.TableNextColumn();
@@ -568,8 +559,178 @@ public static class Widgets
         return selectState;
     }
 
+    public static bool MultiSelectCombo<T>(Dictionary<uint, T> sourceData, ref HashSet<uint> selectedItems, ref string searchInput,
+                                       (string Header, ImGuiTableColumnFlags Flags, float Weight)[] headerFuncs, 
+                                       Func<T, System.Action>[] displayFuncs, bool disableCheckbox = false) where T : ExcelRow
+    {
+        var selectState = false;
+        if (ImGui.BeginCombo("###SelectCombo", $"当前已选中 {selectedItems.Count} 项", ImGuiComboFlags.HeightLarge))
+            ImGui.EndCombo();
+
+        if (ImGui.IsItemClicked())
+            ImGui.OpenPopup("###SelectPopup");
+
+        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(450f, 400f));
+        if (ImGui.BeginPopup("###SelectPopup"))
+        {
+            ImGui.SetNextItemWidth(-1f);
+            ImGui.InputTextWithHint("###SearchInput", Service.Lang.GetText("PleaseSearch"), ref searchInput, 32);
+
+            ImGui.Separator();
+
+            var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
+            if (ImGui.BeginTable("###SelectTable", headerFuncs.Length + 1, ImGuiTableFlags.Borders, tableSize))
+            {
+                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
+                foreach (var header in headerFuncs)
+                    ImGui.TableSetupColumn(header.Header, header.Flags, header.Weight);
+
+                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+                ImGui.TableNextColumn();
+                ImGui.Text("");
+
+                foreach (var header in headerFuncs)
+                {
+                    ImGui.TableNextColumn();
+                    ImGui.Text(header.Header);
+                }
+
+                var searchInputCopy = searchInput;
+                var selectedItemsCopy = selectedItems;
+                var data = sourceData.OrderByDescending(x => selectedItemsCopy.Contains(x.Key));
+                foreach (var (rowId, item) in data)
+                {
+                    if (!string.IsNullOrWhiteSpace(searchInput) && 
+                        !displayFuncs.Any(func => func(item).ToString().Contains(searchInputCopy, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    var isSelected = selectedItems.Contains(rowId);
+                    ImGui.BeginDisabled(disableCheckbox);
+                    if (ImGui.Checkbox("##" + rowId, ref isSelected))
+                    {
+                        if (!selectedItems.Remove(rowId))
+                            selectedItems.Add(rowId);
+
+                        selectState = true;
+                    }
+                    CheckboxSize = ImGui.GetItemRectSize();
+                    ImGui.EndDisabled();
+
+                    foreach (var display in displayFuncs)
+                    {
+                        ImGui.TableNextColumn();
+                        display(item).Invoke();
+                    }
+                }
+
+                ImGui.EndTable();
+            }
+
+            ImGui.EndPopup();
+        }
+
+        return selectState;
+    }
+
+    public static bool SingleSelectCombo<T>(Dictionary<uint, T> sourceData, ref uint selectedItem, ref string searchInput, Func<T, string> previewFunc,
+                                       (string Header, ImGuiTableColumnFlags Flags, float Weight)[] headerFuncs,
+                                       Func<T, System.Action>[] displayFuncs, bool disableCheckbox = false) where T : ExcelRow
+    {
+        var selectState = false;
+        var comboLabel = selectedItem != 0 ? previewFunc(sourceData[selectedItem]) : "请选择...";
+        if (ImGui.BeginCombo("###SelectCombo", comboLabel, ImGuiComboFlags.HeightLarge))
+            ImGui.EndCombo();
+
+        if (ImGui.IsItemClicked())
+            ImGui.OpenPopup("###SelectPopup");
+
+        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(450f, 400f));
+        if (ImGui.BeginPopup("###SelectPopup"))
+        {
+            ImGui.SetNextItemWidth(-1f);
+            ImGui.InputTextWithHint("###SearchInput", Service.Lang.GetText("PleaseSearch"), ref searchInput, 32);
+
+            ImGui.Separator();
+
+            var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
+            if (ImGui.BeginTable("###SelectTable", headerFuncs.Length + 1, ImGuiTableFlags.Borders, tableSize))
+            {
+                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
+                foreach (var header in headerFuncs)
+                    ImGui.TableSetupColumn(header.Header, header.Flags, header.Weight);
+
+                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+                foreach (var header in headerFuncs)
+                {
+                    ImGui.TableNextColumn();
+                    ImGui.Text(header.Header);
+                }
+
+                var searchInputCopy = searchInput;
+                var selectedItemCopy = selectedItem;
+                var data = sourceData.OrderByDescending(x => x.Key == selectedItemCopy);
+                foreach (var (rowId, item) in data)
+                {
+                    if (!string.IsNullOrWhiteSpace(searchInput) &&
+                        !displayFuncs.Any(func => func(item).ToString().Contains(searchInputCopy, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    var isSelected = selectedItem == rowId;
+                    ImGui.BeginDisabled(disableCheckbox);
+                    if (ImGui.Checkbox("##" + rowId, ref isSelected))
+                    {
+                        selectedItem = rowId;
+                        selectState = true;
+                    }
+                    CheckboxSize = ImGui.GetItemRectSize();
+                    ImGui.EndDisabled();
+
+                    foreach (var display in displayFuncs)
+                    {
+                        ImGui.TableNextColumn();
+                        display(item).Invoke();
+                    }
+                }
+
+                ImGui.EndTable();
+            }
+
+            ImGui.EndPopup();
+        }
+
+        return selectState;
+    }
+
+
     public static void ConflictKeyText()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
     }
+
+    #region Lazy
+
+    private static readonly Lazy<SeString> rPrefix = new(() =>
+                                                             new SeStringBuilder()
+                                                                 .AddUiForeground(
+                                                                     SeIconChar.BoxedLetterR.ToIconString(), 34)
+                                                                 .AddUiForegroundOff().Build());
+
+    private static readonly Lazy<SeString> drPrefix = new(() =>
+                                                              new SeStringBuilder()
+                                                                  .AddUiForeground(
+                                                                      SeIconChar.BoxedLetterD.ToIconString(), 34)
+                                                                  .AddUiForeground(
+                                                                      SeIconChar.BoxedLetterR.ToIconString(), 34)
+                                                                  .AddUiForegroundOff().Build());
+
+    private static readonly Lazy<SeString> dailyRoutinesPrefix = new(() =>
+                                                                         new SeStringBuilder()
+                                                                             .AddUiForeground("[Daily Routines]", 34)
+                                                                             .AddUiForegroundOff().Build());
+
+    #endregion
 }

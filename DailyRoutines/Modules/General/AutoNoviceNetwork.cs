@@ -1,17 +1,15 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Timers;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Interface.Colors;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation;
-using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using ImGuiNET;
-using TaskManager = ECommons.Automation.LegacyTaskManager.TaskManager;
 
 namespace DailyRoutines.Modules;
 
@@ -66,22 +64,22 @@ public unsafe class AutoNoviceNetwork : DailyModuleBase
         AfkTimer.AutoReset = true;
         AfkTimer.Enabled = true;
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
 
     public override void ConfigUI()
     {
-        ImGui.BeginDisabled(TaskManager.IsBusy);
+        ImGui.BeginDisabled(TaskHelper.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("Start")))
         {
             TryTimes = 0;
-            TaskManager.Enqueue(EnqueueARound);
+            TaskHelper.Enqueue(EnqueueARound);
         }
         ImGui.EndDisabled();
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("Stop")))
-            TaskManager.Abort();
+            TaskHelper.Abort();
 
         ImGui.SameLine();
         ImGui.TextWrapped($"{Service.Lang.GetText("AutoNoviceNetwork-AttemptedTimes")}:");
@@ -100,7 +98,7 @@ public unsafe class AutoNoviceNetwork : DailyModuleBase
         ImGui.SameLine();
         ImGui.Text($"{Service.Lang.GetText("AutoNoviceNetwork-JoinState")}:");
 
-        if (EzThrottler.Throttle("AutoNoviceNetwork", 1000))
+        if (Throttler.Throttle("AutoNoviceNetwork", 1000))
             IsInNoviceNetworkDisplay = IsInNoviceNetwork;
 
         ImGui.SameLine();
@@ -112,22 +110,22 @@ public unsafe class AutoNoviceNetwork : DailyModuleBase
 
     private void EnqueueARound()
     {
-        TaskManager.Enqueue(() =>
+        TaskHelper.Enqueue(() =>
         {
             if (!IsNoviceNetworkFlagSet(PlayerState.Instance(), 8U))
-                Chat.Instance.ExecuteCommand("/beginnerchannel on");
+                ChatHelper.Instance.ExecuteCommand("/beginnerchannel on");
         });
 
-        TaskManager.Enqueue(TryJoin);
+        TaskHelper.Enqueue(TryJoin);
 
-        TaskManager.DelayNext(250);
-        TaskManager.Enqueue(() => TryTimes++);
+        TaskHelper.DelayNext(250);
+        TaskHelper.Enqueue(() => TryTimes++);
 
-        TaskManager.Enqueue(() =>
+        TaskHelper.Enqueue(() =>
         {
             if (IsInNoviceNetwork)
             {
-                TaskManager.Abort();
+                TaskHelper.Abort();
                 return;
             }
 
@@ -142,7 +140,7 @@ public unsafe class AutoNoviceNetwork : DailyModuleBase
 
     private void OnAfkStateCheck(object? sender, ElapsedEventArgs e)
     {
-        if (!IsTryJoinWhenInactive || IsInNoviceNetwork || TaskManager.IsBusy) return;
+        if (!IsTryJoinWhenInactive || IsInNoviceNetwork || TaskHelper.IsBusy) return;
         if (Flags.BoundByDuty || Flags.OccupiedInEvent) return;
 
         var idleTime = GetIdleTime();

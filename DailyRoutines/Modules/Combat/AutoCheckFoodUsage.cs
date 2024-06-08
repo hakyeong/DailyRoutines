@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Security.Policy;
-using System.Threading.Tasks;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -13,13 +11,13 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation.LegacyTaskManager;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
+using Action = Lumina.Excel.GeneratedSheets.Action;
 
 namespace DailyRoutines.Modules;
 
@@ -36,8 +34,9 @@ public class AutoCheckFoodUsage : DailyModuleBase
     private static uint SelectedItem;
     private static string SelectItemSearch = string.Empty;
     private static bool SelectItemIsHQ = true;
-
     private static string ZoneSearch = string.Empty;
+
+    private static Vector2 CheckboxSize = ImGuiHelpers.ScaledVector2(20f);
 
     public override void Init()
     {
@@ -45,7 +44,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
         foreach (var checkPoint in Enum.GetValues<FoodCheckpoint>())
             ModuleConfig.EnabledCheckpoints.TryAdd(checkPoint, false);
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
 
         Service.Hook.InitializeFromAttributes(this);
         CountdownInitHook?.Enable();
@@ -92,7 +91,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
         var tableSize = (ImGui.GetContentRegionAvail() - ImGuiHelpers.ScaledVector2(100f)) with { Y = 0 };
         if (ImGui.BeginTable("FoodPreset", 4, ImGuiTableFlags.Borders, tableSize))
         {
-            ImGui.TableSetupColumn("添加", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
+            ImGui.TableSetupColumn("添加", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
             ImGui.TableSetupColumn("名称", ImGuiTableColumnFlags.None, 30);
             ImGui.TableSetupColumn("地区", ImGuiTableColumnFlags.None, 30);
             ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None, 30);
@@ -115,34 +114,19 @@ public class AutoCheckFoodUsage : DailyModuleBase
 
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
-                if (ImGui.BeginCombo("###FoodSelectCombo", SelectedItem == 0 ? "" : LuminaCache.GetRow<Item>(SelectedItem).Name.RawString,
-                                     ImGuiComboFlags.HeightLarge))
-                {
-                    ImGui.SetNextItemWidth(-1f);
-                    ImGui.InputText("###ItemSearch", ref SelectItemSearch, 128);
-                    ImGui.Separator();
-
-                    foreach (var (rowID, item) in PresetData.Food)
+                SingleSelectCombo(PresetData.Food, ref SelectedItem, ref SelectItemSearch, x => $"{x.Name.RawString} ({x.RowId})",
+                    [new("物品", ImGuiTableColumnFlags.WidthStretch, 0)],
+                    [x => () =>
                     {
-                        var itemName = item.Name.RawString;
-
-                        if (!string.IsNullOrWhiteSpace(SelectItemSearch) &&
-                            !itemName.Contains(SelectItemSearch, StringComparison.OrdinalIgnoreCase)) continue;
-
-                        var itemAction = item.ItemAction.Value;
-                        if (itemAction?.Data == null) continue;
-
-                        var itemFood = LuminaCache.GetRow<ItemFood>(itemAction.Data[1]);
-                        if (itemFood == null) continue;
-
-                        var icon = ImageHelper.GetIcon(item.Icon, SelectItemIsHQ ? ITextureProvider.IconFlags.ItemHighQuality : ITextureProvider.IconFlags.None);
+                        var icon = ImageHelper.GetIcon(x.Icon, SelectItemIsHQ ? ITextureProvider.IconFlags.ItemHighQuality : ITextureProvider.IconFlags.None);
 
                         if (ImGuiOm.SelectableImageWithText(icon.ImGuiHandle, ImGuiHelpers.ScaledVector2(20f),
-                                                            item.Name.RawString, rowID == SelectedItem))
-                            SelectedItem = rowID;
-                    }
-                    ImGui.EndCombo();
-                }
+                                                            x.Name, x.RowId == SelectedItem,
+                                                            ImGuiSelectableFlags.DontClosePopups))
+                        {
+                            SelectedItem = SelectedItem == x.RowId ? 0 : x.RowId;
+                        }
+                    }], true);
 
                 ImGui.SameLine();
                 ImGui.Checkbox("HQ", ref SelectItemIsHQ);
@@ -184,6 +168,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
                     preset.Enabled = isEnabled;
                     SaveConfig(ModuleConfig);
                 }
+                CheckboxSize = ImGui.GetItemRectSize();
 
                 ImGui.TableNextColumn();
                 ImGui.Selectable($"{LuminaCache.GetRow<Item>(preset.ItemID).Name.RawString} {(preset.IsHQ ? "(HQ)" : "")}");
@@ -207,11 +192,24 @@ public class AutoCheckFoodUsage : DailyModuleBase
                 ImGui.TableNextColumn();
                 var zones = preset.Zones;
                 ImGui.SetNextItemWidth(-1f);
-                if (ZoneSelectCombo(ref zones, ref ZoneSearch))
+                ImGui.PushID("ZonesSelectCombo");
+                if (MultiSelectCombo(PresetData.Zones, ref zones, ref ZoneSearch, 
+                                     [new("区域", ImGuiTableColumnFlags.WidthStretch, 0)], 
+                                     [x => () =>
+                                     {
+                                         if (ImGui.Selectable(x.ExtractPlaceName(), zones.Contains(x.RowId), 
+                                                              ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups))
+                                         {
+                                             if (!zones.Remove(x.RowId))
+                                                 zones.Add(x.RowId);
+                                             SaveConfig(ModuleConfig);
+                                         }
+                                     }], true))
                 {
                     preset.Zones = zones;
                     SaveConfig(ModuleConfig);
                 }
+                ImGui.PopID();
 
                 ImGui.TableNextColumn();
                 var jobs = preset.ClassJobs;
@@ -231,7 +229,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
 
     private unsafe bool? EnqueueFoodRefresh(int zone = -1)
     {
-        if (EzThrottler.Throttle("AutoCheckFoodUsage_EnqueueFoodRefresh", 1000)) return false;
+        if (Throttler.Throttle("AutoCheckFoodUsage_EnqueueFoodRefresh", 1000)) return false;
 
         var actionManager = ActionManager.Instance();
         if (Flags.BetweenAreas || Service.ClientState.LocalPlayer == null ||
@@ -254,7 +252,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
 
         if (validPresets.Count == 0)
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
             return true;
         }
         TryGetWellFedParam(out var itemFood, out var remainingTime);
@@ -263,7 +261,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
         if (existedStatus != null)
             if (remainingTime > TimeSpan.FromSeconds(ModuleConfig.RefreshThreshold))
             {
-                TaskManager.Abort();
+                TaskHelper.Abort();
                 return true;
             }
 
@@ -305,7 +303,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
         var original = CountdownInitHook.Original(a1, a2);
 
         if (ModuleConfig.EnabledCheckpoints[FoodCheckpoint.倒计时开始时])
-            TaskManager.Enqueue(() => EnqueueFoodRefresh());
+            TaskHelper.Enqueue(() => EnqueueFoodRefresh());
 
         return original;
     }
@@ -314,7 +312,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
     {
         if (!ModuleConfig.EnabledCheckpoints[FoodCheckpoint.区域切换时]) return;
 
-        TaskManager.Enqueue(() => EnqueueFoodRefresh(zone));
+        TaskHelper.Enqueue(() => EnqueueFoodRefresh(zone));
     }
 
     public override void Uninit()

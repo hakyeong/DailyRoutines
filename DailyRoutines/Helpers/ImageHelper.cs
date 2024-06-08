@@ -114,7 +114,7 @@ public class ImageHelper
                         }
                         catch (Exception ex)
                         {
-                            ex.Log();
+                            NotifyHelper.Error("", ex);
                         }
 
                     imagePair.Value.Image = texture;

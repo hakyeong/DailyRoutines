@@ -1,9 +1,10 @@
 using System;
 using System.Runtime.InteropServices;
+using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace DailyRoutines.Modules;
@@ -17,7 +18,7 @@ public unsafe class AutoNumericInputMax : DailyModuleBase
         "40 53 48 83 EC ?? 0F B6 81 ?? ?? ?? ?? 48 8B D9 48 83 C1 ?? A8 ?? 74 ?? 48 83 79 ?? ?? 74 ?? A8 ?? 75 ?? 48 83 79 ?? ?? 75 ?? E8 ?? ?? ?? ?? EB ?? E8 ?? ?? ?? ?? 80 BB ?? ?? ?? ?? ?? 74 ?? 48 83 BB", DetourName = nameof(UldUpdateDetour))]
     private readonly Hook<UldUpdateDelegate>? UldUpdateHook;
 
-    private static EzThrottler<nint> Throttler = new();
+    private static Throttler<nint> Throttler = new();
 
     private static long _LastInterruptTime;
 

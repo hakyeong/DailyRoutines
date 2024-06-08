@@ -9,7 +9,6 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
-using ECommons.Interop;
 using ImGuiNET;
 using Task = System.Threading.Tasks.Task;
 
@@ -122,7 +121,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
         {
             while (true)
             {
-                if ((ModuleConfig.DisableInCutscene && Flags.WatchingCutscene) || !WindowFunctions.ApplicationIsActivated())
+                if ((ModuleConfig.DisableInCutscene && Flags.WatchingCutscene) || !ApplicationIsActivated())
                 {
                     await Task.Delay(100, token);
                     continue;
@@ -162,7 +161,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
                     continue;
                 }
 
-                if ((ModuleConfig.DisableInCutscene && Flags.WatchingCutscene) || !WindowFunctions.ApplicationIsActivated())
+                if ((ModuleConfig.DisableInCutscene && Flags.WatchingCutscene) || !ApplicationIsActivated())
                 {
                     if (!haveRestored)
                     {

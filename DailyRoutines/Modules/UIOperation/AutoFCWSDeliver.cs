@@ -8,7 +8,6 @@ using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
-using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -22,7 +21,7 @@ public unsafe class AutoFCWSDeliver : DailyModuleBase
 
     public override void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         Overlay ??= new Overlay(this);
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", OnAddonYesno);
@@ -35,7 +34,7 @@ public unsafe class AutoFCWSDeliver : DailyModuleBase
         if (SubmarinePartsMenu == null)
         {
             Overlay.IsOpen = false;
-            TaskManager.Abort();
+            TaskHelper.Abort();
             return;
         }
 
@@ -48,7 +47,7 @@ public unsafe class AutoFCWSDeliver : DailyModuleBase
         ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("AutoFCWSDeliverTitle"));
 
         ImGui.SameLine();
-        ImGui.BeginDisabled(TaskManager.IsBusy);
+        ImGui.BeginDisabled(TaskHelper.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("Start")))
             EnqueueSubmit();
 
@@ -56,13 +55,13 @@ public unsafe class AutoFCWSDeliver : DailyModuleBase
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("Stop")))
-            TaskManager.Abort();
+            TaskHelper.Abort();
     }
 
     private void EnqueueSubmit()
     {
         if (SubmarinePartsMenu == null || !IsAddonAndNodesReady(SubmarinePartsMenu)) return;
-        TaskManager.Abort();
+        TaskHelper.Abort();
 
         var itemAmount = SubmarinePartsMenu->AtkValues[11].UInt;
         if (itemAmount <= 0) return;
@@ -78,17 +77,17 @@ public unsafe class AutoFCWSDeliver : DailyModuleBase
 
             isSomeTasksEnqueued = true;
             var nodeIndex = i;
-            TaskManager.Enqueue(() =>
+            TaskHelper.Enqueue(() =>
             {
                 if (SubmarinePartsMenu == null || !IsAddonAndNodesReady(SubmarinePartsMenu)) return false;
                 AddonHelper.Callback(SubmarinePartsMenu, true, 0, nodeIndex, 3U);
                 return true;
             });
 
-            TaskManager.DelayNext(500);
+            TaskHelper.DelayNext(500);
         }
 
-        if (isSomeTasksEnqueued) TaskManager.Enqueue(EnqueueSubmit);
+        if (isSomeTasksEnqueued) TaskHelper.Enqueue(EnqueueSubmit);
     }
 
     private void OnAddonMenu(AddonEvent type, AddonArgs args)

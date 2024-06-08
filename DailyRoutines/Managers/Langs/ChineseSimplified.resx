@@ -1622,7 +1622,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value> 已成功重定向地面技能至: {0}</value>
   </data>
   <data name="AutoReplaceLocationAction-AdjustDistance" xml:space="preserve">
-    <value>重定向阈值距离</value>
+    <value>重定向距离阈值</value>
   </data>
   <data name="AutoReplaceLocationAction-SendMessage" xml:space="preserve">
     <value>发送重定向成功消息</value>
@@ -1997,10 +1997,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoCheckFoodUsage-ZoneRestrictions" xml:space="preserve">
     <value>区域限制</value>
   </data>
-  <data name="PartyFinderFilter-Title" xml:space="preserve">
+  <data name="PartyFinderFilterTitle" xml:space="preserve">
     <value>招募过滤</value>
   </data>
-  <data name="PartyFinderFilter-Description" xml:space="preserve">
+  <data name="PartyFinderFilterDescription" xml:space="preserve">
     <value>过滤招募人或描述匹配正则的招募及重复招募</value>
   </data>
   <data name="PartyFinderFilter-Description2" xml:space="preserve">
@@ -2023,5 +2023,44 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="Settings-ResetModule" xml:space="preserve">
     <value>重置模块</value>
+  </data>
+  <data name="AutoSubmarineCollect-AddCommand" xml:space="preserve">
+    <value>添加 /pdr {0} 命令</value>
+  </data>
+  <data name="AutoSubmarineCollect-AddCommandHelp" xml:space="preserve">
+    <value>传送至部队工房并尝试收取潜水艇</value>
+  </data>
+  <data name="AutoGardensWork-ConfirmRename" xml:space="preserve">
+    <value>确认重命名</value>
+  </data>
+  <data name="AutoGardensWork-GardenNotFound" xml:space="preserve">
+    <value>没有找到目标园圃</value>
+  </data>
+  <data name="AutoGardensWork-ObtainGardensAround" xml:space="preserve">
+    <value>获取周围园圃</value>
+  </data>
+  <data name="Rename" xml:space="preserve">
+    <value>重命名</value>
+  </data>
+  <data name="ToTarget" xml:space="preserve">
+    <value>选中</value>
+  </data>
+  <data name="AutoRequestAllFCBagsDescription" xml:space="preserve">
+    <value>启用后, 打开部队储物柜界面后自动请求所有页面数据, 且页面切换不再需要加载</value>
+  </data>
+  <data name="AutoRequestAllFCBagsTitle" xml:space="preserve">
+    <value>自动请求部队储物柜数据</value>
+  </data>
+  <data name="Clear" xml:space="preserve">
+    <value>清除</value>
+  </data>
+  <data name="Settings-DisableAllPModules" xml:space="preserve">
+    <value>批量禁用前置模块</value>
+  </data>
+  <data name="Settings-EnableAllPModules" xml:space="preserve">
+    <value>批量启用前置模块</value>
+  </data>
+  <data name="AutoReplaceLocationAction-AdjustDistanceHelp" xml:space="preserve">
+    <value>手动放置位置距中心点超出此距离时将不会尝试重定向</value>
   </data>
 </root>

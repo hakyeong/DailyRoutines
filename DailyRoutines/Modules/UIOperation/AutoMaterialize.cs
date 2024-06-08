@@ -1,5 +1,6 @@
 using System.Numerics;
 using DailyRoutines.Helpers;
+using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
@@ -7,8 +8,7 @@ using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Colors;
 using Dalamud.Memory;
-using ECommons.Automation.LegacyTaskManager;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -20,7 +20,7 @@ public class AutoMaterialize : DailyModuleBase
 {
     public override void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         Overlay ??= new Overlay(this);
         Overlay.Flags |= ImGuiWindowFlags.NoMove;
 
@@ -41,12 +41,12 @@ public class AutoMaterialize : DailyModuleBase
         ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("AutoMaterializeTitle"));
 
         ImGui.SameLine();
-        ImGui.BeginDisabled(TaskManager.IsBusy);
-        if (ImGui.Button(Service.Lang.GetText("Start"))) TaskManager.Enqueue(StartARound);
+        ImGui.BeginDisabled(TaskHelper.IsBusy);
+        if (ImGui.Button(Service.Lang.GetText("Start"))) TaskHelper.Enqueue(StartARound);
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskHelper.Abort();
     }
 
     private void OnAddon(AddonEvent type, AddonArgs args)
@@ -69,27 +69,27 @@ public class AutoMaterialize : DailyModuleBase
 
     private unsafe bool? StartARound()
     {
-        if (!EzThrottler.Throttle("AutoMaterialize")) return false;
+        if (!Throttler.Throttle("AutoMaterialize")) return false;
         if (Service.Condition[ConditionFlag.Mounted])
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
             return true;
         }
 
-        if (IsOccupied()) return false;
+        if (Flags.OccupiedInEvent) return false;
         if (!TryGetAddonByName<AtkUnitBase>("Materialize", out var addon) || !IsAddonAndNodesReady(addon)) return false;
 
         var firstItemData = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[3].String);
         if (string.IsNullOrEmpty(firstItemData))
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
             return true;
         }
 
         var parts = firstItemData.Split(',');
         if (parts.Length == 0)
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
             return true;
         }
 
@@ -100,12 +100,12 @@ public class AutoMaterialize : DailyModuleBase
                 if (agent == null) return false;
                 AgentHelper.SendEvent(agent, 0, 2, 0);
 
-                TaskManager.DelayNext(1500);
-                TaskManager.Enqueue(StartARound);
+                TaskHelper.DelayNext(1500);
+                TaskHelper.Enqueue(StartARound);
                 return true;
             }
 
-        TaskManager.Abort();
+        TaskHelper.Abort();
         return true;
     }
 

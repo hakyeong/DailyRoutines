@@ -11,12 +11,12 @@ using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
 namespace DailyRoutines.Helpers;
 
-public static unsafe class AddonHelper
+public unsafe class AddonHelper
 {
     public record PartInfo(ushort U, ushort V, ushort Width, ushort Height);
 
-    public delegate byte FireCallbackDelegate(AtkUnitBase* Base, int valueCount, AtkValue* values, byte updateState);
-    public static FireCallbackDelegate? FireCallback;
+    private delegate byte FireCallbackDelegate(AtkUnitBase* Base, int valueCount, AtkValue* values, byte updateState);
+    private static FireCallbackDelegate? FireCallback;
 
     public delegate int GetAtkValueIntDelegate(nint address);
     public static GetAtkValueIntDelegate? GetAtkValueInt;
@@ -51,6 +51,36 @@ public static unsafe class AddonHelper
 
         SetComponentButtonChecked ??= Marshal.GetDelegateForFunctionPointer<SetComponentButtonCheckedDelegate>
             (Service.SigScanner.ScanText("E8 ?? ?? ?? ?? 0F B7 DD"));
+    }
+
+    public static bool IsScreenReady()
+    {
+        if (TryGetAddonByName<AtkUnitBase>("NowLoading", out var addon0) && addon0->IsVisible) return false;
+        if (TryGetAddonByName<AtkUnitBase>("FadeMiddle", out var addon1) && addon1->IsVisible) return false;
+        if (TryGetAddonByName<AtkUnitBase>("FadeBack", out var addon2) && addon2->IsVisible) return false;
+
+        return true;
+    }
+
+    public static bool TryGetAddonByName<T>(string addonName, out T* addonPtr) where T : unmanaged
+    {
+        var a = Service.Gui.GetAddonByName(addonName);
+        if (a == nint.Zero)
+        {
+            addonPtr = null;
+            return false;
+        }
+
+        addonPtr = (T*)a;
+        return true;
+    }
+
+    public static T* GetAddonByName<T>(string addonName) where T : unmanaged
+    {
+        var a = Service.Gui.GetAddonByName(addonName);
+        if (a == nint.Zero) return null;
+
+        return (T*)a;
     }
 
     #region Callback
@@ -138,7 +168,7 @@ public static unsafe class AddonHelper
         }
         catch (Exception e)
         {
-            e.Log();
+            NotifyHelper.Error("", e);
         }
 
         return atkValueList.Join("\n");
@@ -433,5 +463,5 @@ public static unsafe class AddonHelper
         FreeTextNode(node);
     }
     #endregion
-
+    
 }

@@ -5,8 +5,7 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
-using ECommons.Automation.LegacyTaskManager;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -22,7 +21,7 @@ public unsafe class AutoCheckItemLevel : DailyModuleBase
 
     public override void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 20000, ShowDebug = false };
 
         Service.ClientState.TerritoryChanged += OnZoneChanged;
     }
@@ -38,8 +37,8 @@ public unsafe class AutoCheckItemLevel : DailyModuleBase
 
     private void CheckMembersItemLevel()
     {
-        TaskManager.Enqueue(() => TryGetAddonByName<AtkUnitBase>("NowLoading", out var addon) && !addon->IsVisible);
-        TaskManager.Enqueue(() =>
+        TaskHelper.Enqueue(() => TryGetAddonByName<AtkUnitBase>("NowLoading", out var addon) && !addon->IsVisible);
+        TaskHelper.Enqueue(() =>
         {
             var content = PresetData.Contents[Service.ClientState.TerritoryType];
             var ssb = new SeStringBuilder();
@@ -49,26 +48,26 @@ public unsafe class AutoCheckItemLevel : DailyModuleBase
             Service.Chat.Print(ssb.Build());
         });
 
-        TaskManager.Enqueue(() =>
+        TaskHelper.Enqueue(() =>
         {
             foreach (var member in Service.PartyList)
             {
                 if (member.ObjectId == Service.ClientState.LocalPlayer.ObjectId) continue;
 
-                TaskManager.Enqueue(() =>
+                TaskHelper.Enqueue(() =>
                 {
-                    if (!EzThrottler.Throttle("AutoCheckItemLevel-WaitExamineUI", 1000)) return false;
+                    if (!Throttler.Throttle("AutoCheckItemLevel-WaitExamineUI", 1000)) return false;
                     AgentInspect.Instance()->ExamineCharacter(member.ObjectId);
                     return Service.Gui.GetAddonByName("CharacterInspect") != nint.Zero;
                 });
 
-                TaskManager.Enqueue(() =>
+                TaskHelper.Enqueue(() =>
                 {
-                    if (!EzThrottler.Throttle("AutoCheckItemLevel-CheckCharacterIL", 1000)) return false;
+                    if (!Throttler.Throttle("AutoCheckItemLevel-CheckCharacterIL", 1000)) return false;
                     if (InterruptByConflictKey()) return true;
                     if (!Flags.BoundByDuty)
                     {
-                        TaskManager.Abort();
+                        TaskHelper.Abort();
                         return true;
                     }
 

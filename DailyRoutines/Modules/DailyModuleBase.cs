@@ -12,7 +12,6 @@ using DailyRoutines.Windows;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
-using ECommons.Automation.LegacyTaskManager;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -23,7 +22,7 @@ public abstract class DailyModuleBase
 {
     public         bool         Initialized { get; internal set; }
     public virtual string?      Author      { get; set; }
-    protected      TaskManager? TaskManager { get; set; }
+    protected      TaskHelper?  TaskHelper  { get; set; }
     protected      Overlay?     Overlay     { get; set; }
 
     protected string ModuleConfigFile =>
@@ -53,10 +52,8 @@ public abstract class DailyModuleBase
     {
         try
         {
-            var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, key + ".json");
-            if (!File.Exists(configFile)) return default;
-            var jsonString = File.ReadAllText(configFile);
+            if (!File.Exists(ModuleConfigFile)) return default;
+            var jsonString = File.ReadAllText(ModuleConfigFile);
             return JsonConvert.DeserializeObject<T>(jsonString);
         }
         catch (Exception ex)
@@ -74,10 +71,8 @@ public abstract class DailyModuleBase
 
         try
         {
-            var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, key + ".json");
-            if (!File.Exists(configFile)) return default;
-            var jsonString = File.ReadAllText(configFile);
+            if (!File.Exists(ModuleConfigFile)) return default;
+            var jsonString = File.ReadAllText(ModuleConfigFile);
             return JsonConvert.DeserializeObject(jsonString, T);
         }
         catch (Exception ex)
@@ -92,11 +87,9 @@ public abstract class DailyModuleBase
     {
         try
         {
-            var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, GetType().Name + ".json");
             var jsonString = JsonConvert.SerializeObject(config, Formatting.Indented);
 
-            File.WriteAllText(configFile, jsonString);
+            File.WriteAllText(ModuleConfigFile, jsonString);
         }
         catch (Exception ex)
         {
@@ -117,10 +110,8 @@ public abstract class DailyModuleBase
                 return;
             }
 
-            var configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
-            var configFile = Path.Combine(configDirectory, GetType().Name + ".json");
             var jsonString = JsonConvert.SerializeObject(config, Formatting.Indented);
-            File.WriteAllText(configFile, jsonString);
+            File.WriteAllText(ModuleConfigFile, jsonString);
         }
         catch (Exception ex)
         {
@@ -326,7 +317,7 @@ public abstract class DailyModuleBase
     {
         if (Service.KeyState[Service.Config.ConflictKey])
         {
-            TaskManager?.Abort();
+            TaskHelper?.Abort();
             NotifyHelper.NotificationSuccess(Service.Lang.GetText("ConflictKey-InterruptMessage"));
             return true;
         }
@@ -339,8 +330,8 @@ public abstract class DailyModuleBase
         Service.WindowManager.RemoveWindows(Overlay);
         Overlay = null;
 
-        TaskManager?.Abort();
-        TaskManager = null;
+        TaskHelper?.Abort();
+        TaskHelper = null;
 
         var derivedInstance = GetType();
         var fields = derivedInstance.GetFields(BindingFlags.Instance | BindingFlags.NonPublic |

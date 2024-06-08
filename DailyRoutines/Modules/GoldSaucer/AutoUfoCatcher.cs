@@ -1,9 +1,10 @@
 using ClickLib;
+using DailyRoutines.Helpers;
+using DailyRoutines.Infos;
 using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -16,7 +17,7 @@ public class AutoUfoCatcher : DailyModuleBase
 {
     public override void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "UfoCatcher", OnAddonSetup);
     }
 
@@ -25,46 +26,42 @@ public class AutoUfoCatcher : DailyModuleBase
     private void OnAddonSetup(AddonEvent type, AddonArgs args)
     {
         if (InterruptByConflictKey()) return;
-        TaskManager.Enqueue(WaitSelectStringAddon);
-        TaskManager.Enqueue(ClickGameButton);
+        TaskHelper.Enqueue(WaitSelectStringAddon);
+        TaskHelper.Enqueue(ClickGameButton);
     }
 
     private unsafe bool? WaitSelectStringAddon()
     {
         if (InterruptByConflictKey()) return true;
-        if (TryGetAddonByName<AddonSelectString>("SelectString", out var addon) && IsAddonReady(&addon->AtkUnitBase))
-            return Click.TrySendClick("select_string1");
-
-        return false;
+        return TryGetAddonByName<AddonSelectString>("SelectString", out var addon) &&
+               IsAddonAndNodesReady(&addon->AtkUnitBase) && Click.TrySendClick("select_string1");
     }
 
     private unsafe bool? ClickGameButton()
     {
         if (InterruptByConflictKey()) return true;
 
-        if (TryGetAddonByName<AtkUnitBase>("UfoCatcher", out var addon) && IsAddonReady(addon))
-        {
-            var button = addon->GetButtonNodeById(2);
-            if (button == null || !button->IsEnabled) return false;
+        if (!TryGetAddonByName<AtkUnitBase>("UfoCatcher", out var addon) || !IsAddonAndNodesReady(addon))
+            return false;
 
-            addon->IsVisible = false;
+        var button = addon->GetButtonNodeById(2);
+        if (button == null || !button->IsEnabled) return false;
 
-            ClickUfoCatcher.Using((nint)addon).BigBall();
+        addon->IsVisible = false;
 
-            // 只是纯粹因为游玩动画太长了而已
-            TaskManager.DelayNext(5000);
-            TaskManager.Enqueue(StartAnotherRound);
-            return true;
-        }
+        ClickUfoCatcher.Using((nint)addon).BigBall();
 
-        return false;
+        // 只是纯粹因为游玩动画太长了而已
+        TaskHelper.DelayNext(5000);
+        TaskHelper.Enqueue(StartAnotherRound);
+        return true;
     }
 
     private unsafe bool? StartAnotherRound()
     {
         if (InterruptByConflictKey()) return true;
 
-        if (IsOccupied()) return false;
+        if (Flags.OccupiedInEvent) return false;
         var machineTarget = Service.Target.PreviousTarget;
         var machine = machineTarget.Name.ExtractText().Contains("莫古抓球机") ? (GameObject*)machineTarget.Address : null;
 

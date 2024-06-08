@@ -1,17 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using ClickLib;
 using DailyRoutines.Helpers;
+using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
@@ -19,6 +21,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
+using Action = System.Action;
 using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 
 namespace DailyRoutines.Modules;
@@ -26,9 +29,10 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoGardensWorkTitle", "AutoGardensWorkDescription", ModuleCategories.一般)]
 public unsafe class AutoGardensWork : DailyModuleBase
 {
-    private static Dictionary<uint, Item> Seeds = [];
-    private static Dictionary<uint, Item> Soils = [];
-    private static Dictionary<uint, Item> Fertilizers = [];
+    private delegate GameObject* GetGameObjectFromObjectIDDelegate(ulong objectID);
+
+    [Signature("E8 ?? ?? ?? ?? 44 0F B6 C3 48 8B D0")]
+    private static GetGameObjectFromObjectIDDelegate? GetGameObjectFromObjectID;
 
     private static readonly InventoryType[] InventoryTypes =
     [
@@ -36,48 +40,24 @@ public unsafe class AutoGardensWork : DailyModuleBase
         InventoryType.Inventory4,
     ];
 
-    private static uint SelectedSeed;
-    private static uint SelectedSoil;
-    private static uint SelectedFertilizer;
+    private static Config ModuleConfig = null!;
 
-    private static uint[] Gardens = [];
-    private static string searchFilterSeed = string.Empty;
-
-    [Signature("E8 ?? ?? ?? ?? 44 0F B6 C3 48 8B D0")]
-    private readonly delegate* unmanaged<ulong, GameObject*> GetGameObjectFromObjectID;
+    private static string GardenRenameInput = string.Empty;
+    private static string SearchFilterSeed = string.Empty;
 
     public override void Init()
     {
-        var sheet = LuminaCache.Get<Item>();
-        Seeds = sheet
-                .Where(x => x.FilterGroup == 20)
-                .ToDictionary(x => x.RowId, x => x);
-
-        Soils = sheet
-                .Where(x => x.FilterGroup == 21)
-                .ToDictionary(x => x.RowId, x => x);
-
-        Fertilizers = sheet
-                      .Where(x => x.FilterGroup == 22)
-                      .ToDictionary(x => x.RowId, x => x);
-
-        AddConfig("SelectedSeed", SelectedSeed);
-        AddConfig("SelectedSoil", SelectedSoil);
-        AddConfig("SelectedFertilizer", SelectedFertilizer);
-
-        SelectedSeed = GetConfig<uint>("SelectedSeed");
-        SelectedSoil = GetConfig<uint>("SelectedSoil");
-        SelectedFertilizer = GetConfig<uint>("SelectedFertilizer");
-
+        ModuleConfig = LoadConfig<Config>() ?? new();
         Service.Hook.InitializeFromAttributes(this);
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, ShowDebug = false };
 
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "HousingGardening", OnAddon);
     }
 
     public override void ConfigUI()
     {
-        ImGui.BeginDisabled(TaskManager.IsBusy);
+        ImGui.BeginGroup();
+        ImGui.BeginDisabled(TaskHelper.IsBusy);
         ImGui.BeginGroup();
 
         // 自动种植
@@ -95,26 +75,26 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
-        if (ImGui.BeginCombo("###Seeds", SelectedSeed == 0 ? string.Empty : Seeds[SelectedSeed].Name.ExtractText(),
+        if (ImGui.BeginCombo("###Seeds",
+                             ModuleConfig.SelectedSeed == 0
+                                 ? string.Empty
+                                 : PresetData.Seeds[ModuleConfig.SelectedSeed].Name.RawString,
                              ImGuiComboFlags.HeightLarge))
         {
             ImGui.InputTextWithHint("###SearchSeedInput", Service.Lang.GetText("PleaseSearch"),
-                                    ref searchFilterSeed, 100);
+                                    ref SearchFilterSeed, 100);
 
-            foreach (var item in Seeds)
+            foreach (var item in PresetData.Seeds)
             {
                 var itemName = item.Value.Name.ExtractText();
-                if (!string.IsNullOrWhiteSpace(searchFilterSeed) &&
-                    !itemName.Contains(searchFilterSeed, StringComparison.OrdinalIgnoreCase)) continue;
+                if (!string.IsNullOrWhiteSpace(SearchFilterSeed) &&
+                    !itemName.Contains(SearchFilterSeed, StringComparison.OrdinalIgnoreCase)) continue;
 
-                if (ImGui.Selectable($"{itemName}", SelectedSeed == item.Key))
+                if (ImGui.Selectable($"{itemName}", ModuleConfig.SelectedSeed == item.Key))
                 {
-                    SelectedSeed = item.Key;
-                    UpdateConfig("SelectedSeed", SelectedSeed);
+                    ModuleConfig.SelectedSeed = item.Key;
+                    SaveConfig(ModuleConfig);
                 }
-
-                if (ImGui.IsWindowAppearing() && SelectedSeed == item.Key)
-                    ImGui.SetScrollHereY();
             }
 
             ImGui.EndCombo();
@@ -125,20 +105,18 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
-        if (ImGui.BeginCombo("###Soils", SelectedSoil == 0 ? string.Empty : Soils[SelectedSoil].Name.ExtractText(),
+        if (ImGui.BeginCombo("###Soils",
+                             ModuleConfig.SelectedSoil == 0
+                                 ? string.Empty
+                                 : PresetData.Soils[ModuleConfig.SelectedSoil].Name.RawString,
                              ImGuiComboFlags.HeightLarge))
         {
-            foreach (var item in Soils)
-            {
-                if (ImGui.Selectable($"{item.Value.Name.ExtractText()}", SelectedSoil == item.Key))
+            foreach (var item in PresetData.Soils)
+                if (ImGui.Selectable($"{item.Value.Name.ExtractText()}", ModuleConfig.SelectedSoil == item.Key))
                 {
-                    SelectedSoil = item.Key;
-                    UpdateConfig("SelectedSoil", SelectedSoil);
+                    ModuleConfig.SelectedSoil = item.Key;
+                    SaveConfig(ModuleConfig);
                 }
-
-                if (ImGui.IsWindowAppearing() && SelectedSoil == item.Key)
-                    ImGui.SetScrollHereY();
-            }
 
             ImGui.EndCombo();
         }
@@ -171,21 +149,17 @@ public unsafe class AutoGardensWork : DailyModuleBase
         ImGui.SameLine();
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
         if (ImGui.BeginCombo("###Fertilizer",
-                             SelectedFertilizer == 0
+                             ModuleConfig.SelectedFertilizer == 0
                                  ? string.Empty
-                                 : Fertilizers[SelectedFertilizer].Name.ExtractText(), ImGuiComboFlags.HeightLarge))
+                                 : PresetData.Fertilizers[ModuleConfig.SelectedFertilizer].Name.RawString,
+                             ImGuiComboFlags.HeightLarge))
         {
-            foreach (var item in Fertilizers)
-            {
-                if (ImGui.Selectable($"{item.Value.Name.ExtractText()}", SelectedFertilizer == item.Key))
+            foreach (var item in PresetData.Fertilizers)
+                if (ImGui.Selectable($"{item.Value.Name.ExtractText()}", ModuleConfig.SelectedFertilizer == item.Key))
                 {
-                    SelectedFertilizer = item.Key;
-                    UpdateConfig("SelectedFertilizer", SelectedFertilizer);
+                    ModuleConfig.SelectedFertilizer = item.Key;
+                    SaveConfig(ModuleConfig);
                 }
-
-                if (ImGui.IsWindowAppearing() && SelectedFertilizer == item.Key)
-                    ImGui.SetScrollHereY();
-            }
 
             ImGui.EndCombo();
         }
@@ -211,115 +185,171 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("Stop"), groupSize with { X = 80f * ImGuiHelpers.GlobalScale }))
-            TaskManager.Abort();
+            TaskHelper.Abort();
+
+        ImGui.SameLine();
+        if (ImGui.Button(Service.Lang.GetText("AutoGardensWork-ObtainGardensAround"),
+                         groupSize with { X = 80f * ImGuiHelpers.GlobalScale }))
+            ObtainGardensAround();
+
+        ImGui.EndGroup();
+
+        var tableSize = ImGui.GetItemRectSize() with { Y = 0 };
+
+        ImGui.Spacing();
+
+        if (ImGui.BeginTable("GardensTable", 4, ImGuiTableFlags.Borders, tableSize))
+        {
+            ImGui.TableSetupColumn("名称", ImGuiTableColumnFlags.None, 20);
+            ImGui.TableSetupColumn("ObjectID", ImGuiTableColumnFlags.None, 20);
+            ImGui.TableSetupColumn("地点", ImGuiTableColumnFlags.None, 15);
+            ImGui.TableSetupColumn("操作", ImGuiTableColumnFlags.None, 10);
+
+            ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+            ImGui.TableNextColumn();
+            ImGui.Text(Service.Lang.GetText("Name"));
+
+            ImGui.TableNextColumn();
+            ImGui.Text("ObjectID");
+
+            ImGui.TableNextColumn();
+            ImGui.Text(Service.Lang.GetText("Zone"));
+
+            foreach (var garden in ModuleConfig.Gardens.ToList())
+            {
+                ImGui.PushID($"{garden.ObjectID}");
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.Selectable(garden.Name);
+
+                if (ImGui.BeginPopupContextItem())
+                {
+                    if (ImGui.IsWindowAppearing())
+                        GardenRenameInput = garden.Name;
+
+                    ImGui.BeginGroup();
+                    ImGui.AlignTextToFramePadding();
+                    ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Rename")}:");
+
+                    ImGui.SameLine();
+                    ImGui.InputText("###GardenRenameInput", ref GardenRenameInput, 128);
+                    ImGui.EndGroup();
+
+                    var buttonSize = ImGui.GetItemRectSize() with { Y = 24f * ImGuiHelpers.GlobalScale };
+
+                    ImGui.Spacing();
+                    if (ImGui.Button(Service.Lang.GetText("AutoGardensWork-ConfirmRename"), buttonSize))
+                    {
+                        garden.Name = GardenRenameInput;
+
+                        ModuleConfig.Gardens = [.. ModuleConfig.Gardens.OrderBy(x => x.Name)];
+                        SaveConfig(ModuleConfig);
+                    }
+
+                    ImGui.EndPopup();
+                }
+
+                ImGui.TableNextColumn();
+                ImGui.Text(garden.ObjectID.ToString());
+
+                ImGui.TableNextColumn();
+                ImGui.Text(LuminaCache.GetRow<TerritoryType>(garden.ZoneID).ExtractPlaceName());
+
+                ImGui.TableNextColumn();
+                if (ImGuiOm.ButtonIcon("Target", FontAwesomeIcon.MousePointer, Service.Lang.GetText("ToTarget")))
+                {
+                    var gameObj = GetGameObjectFromObjectID(garden.ObjectID);
+                    if (gameObj == null)
+                        NotifyHelper.NotificationError(Service.Lang.GetText("AutoGardensWork-GardenNotFound"));
+                    else
+                        TargetSystem.Instance()->Target = gameObj;
+                }
+
+                ImGui.SameLine();
+                if (ImGuiOm.ButtonIcon("Delete", FontAwesomeIcon.TrashAlt, Service.Lang.GetText("Delete")))
+                {
+                    ModuleConfig.Gardens.Remove(garden);
+                    SaveConfig(ModuleConfig);
+                }
+
+                ImGui.PopID();
+            }
+
+            ImGui.EndTable();
+        }
     }
 
     private void OnAddon(AddonEvent type, AddonArgs args)
     {
-        if (SelectedSeed == 0 || SelectedSoil == 0) return;
+        if (ModuleConfig.SelectedSeed == 0 || ModuleConfig.SelectedSoil == 0) return;
         var inventoryManager = InventoryManager.Instance();
-        if (inventoryManager->GetInventoryItemCount(SelectedSeed) == 0 ||
-            inventoryManager->GetInventoryItemCount(SelectedSoil) == 0) return;
+        if (inventoryManager->GetInventoryItemCount(ModuleConfig.SelectedSeed) == 0 ||
+            inventoryManager->GetInventoryItemCount(ModuleConfig.SelectedSoil) == 0) return;
 
-        TaskManager.EnqueueImmediate(() => AgentHelper.SendEvent(AgentId.HousingPlant, 0, 2, 0U, 0, 0, 1U));
+        TaskHelper.Enqueue(() => AgentHelper.SendEvent(AgentId.HousingPlant, 0, 2, 0U, 0, 0, 1U), null, 2);
 
-        TaskManager.DelayNextImmediate(10);
-        TaskManager.EnqueueImmediate(() => FillContextMenu(Soils[SelectedSoil].Name.ExtractText()));
+        TaskHelper.DelayNext(10, false, 2);
+        TaskHelper.Enqueue(() => FillContextMenu(PresetData.Soils[ModuleConfig.SelectedSoil].Name.RawString), null, 2);
 
-        TaskManager.DelayNextImmediate(10);
-        TaskManager.EnqueueImmediate(() => AgentHelper.SendEvent(AgentId.HousingPlant, 0, 2, 1U, 0, 0, 1U));
+        TaskHelper.DelayNext(10, false, 2);
+        TaskHelper.Enqueue(() => AgentHelper.SendEvent(AgentId.HousingPlant, 0, 2, 1U, 0, 0, 1U), null, 2);
 
-        TaskManager.DelayNextImmediate(10);
-        TaskManager.EnqueueImmediate(() => FillContextMenu(Seeds[SelectedSeed].Name.ExtractText()));
+        TaskHelper.DelayNext(10, false, 2);
+        TaskHelper.Enqueue(() => FillContextMenu(PresetData.Seeds[ModuleConfig.SelectedSeed].Name.RawString), null, 2);
 
-        TaskManager.DelayNextImmediate(10);
-        TaskManager.EnqueueImmediate(() => AgentHelper.SendEvent(AgentId.HousingPlant, 0, 0, 0, 0, 0, 0));
+        TaskHelper.DelayNext(10, false, 2);
+        TaskHelper.Enqueue(() => AgentHelper.SendEvent(AgentId.HousingPlant, 0, 0, 0, 0, 0, 0), null, 2);
 
-        TaskManager.DelayNextImmediate(10);
-        TaskManager.EnqueueImmediate(() => Click.TrySendClick("select_yes"));
+        TaskHelper.DelayNext(10, false, 2);
+        TaskHelper.Enqueue(() => Click.TrySendClick("select_yes"), null, 2);
     }
 
-    private void StartGather()
+    private void StartAction(string action, Action extraAction = null)
     {
-        ObtainGardensAround();
-
         var localPlayer = (GameObject*)Service.ClientState.LocalPlayer.Address;
         if (localPlayer == null) return;
 
-        foreach (var objID in Gardens)
+        foreach (var garden in ModuleConfig.Gardens.Where(x => x.ZoneID == Service.ClientState.TerritoryType))
         {
-            var gameObj = GetGameObjectFromObjectID(objID);
-            var objDistance = GetGameDistanceFromObject(localPlayer, gameObj);
-            if (objDistance > 2.5) continue;
+            var gameObj = GetGameObjectFromObjectID(garden.ObjectID);
+            var objDistance = Vector3.Distance(localPlayer->Position, gameObj->Position);
+            if (objDistance > 5) continue;
 
-            TaskManager.Enqueue(() => InteractWithGarden(gameObj));
-            TaskManager.Enqueue(() => ClickEntryByText("收获"));
+            TaskHelper.Enqueue(() => InteractWithGarden(gameObj));
+            TaskHelper.Enqueue(() => ClickEntryByText(action));
+
+            extraAction?.Invoke();
         }
     }
 
-    private void StartTend()
-    {
-        ObtainGardensAround();
+    private void StartGather() => StartAction("收获");
 
-        var localPlayer = (GameObject*)Service.ClientState.LocalPlayer.Address;
-        if (localPlayer == null) return;
+    private void StartTend() => StartAction("护理");
 
-        foreach (var objID in Gardens)
-        {
-            var gameObj = GetGameObjectFromObjectID(objID);
-            var objDistance = GetGameDistanceFromObject(localPlayer, gameObj);
-            if (objDistance > 2.5) continue;
-
-            TaskManager.Enqueue(() => InteractWithGarden(gameObj));
-            TaskManager.Enqueue(() => ClickEntryByText("护理"));
-        }
-    }
-
-    private void StartPlant()
-    {
-        ObtainGardensAround();
-
-        var localPlayer = (GameObject*)Service.ClientState.LocalPlayer.Address;
-        if (localPlayer == null) return;
-
-        foreach (var objID in Gardens)
-        {
-            var gameObj = GetGameObjectFromObjectID(objID);
-            var objDistance = GetGameDistanceFromObject(localPlayer, gameObj);
-            if (objDistance > 2.5) continue;
-
-            TaskManager.Enqueue(() => InteractWithGarden(gameObj));
-            TaskManager.Enqueue(() => ClickEntryByText("播种"));
-            TaskManager.DelayNext(250);
-        }
-    }
+    private void StartPlant() =>
+        StartAction(LuminaCache.GetRow<Addon>(6410).Text.RawString, () => TaskHelper.DelayNext(250));
 
     private void StartFertilize()
-    {
-        ObtainGardensAround();
-
-        var localPlayer = (GameObject*)Service.ClientState.LocalPlayer.Address;
-        if (localPlayer == null) return;
-
-        foreach (var objID in Gardens)
+        => StartAction(LuminaCache.GetRow<Addon>(6423).Text.RawString, () =>
         {
-            var gameObj = GetGameObjectFromObjectID(objID);
-            var objDistance = GetGameDistanceFromObject(localPlayer, gameObj);
-            if (objDistance > 2.5) continue;
+            TaskHelper.Enqueue(CheckFertilizerState);
+            TaskHelper.Enqueue(ClickFertilizer);
+            TaskHelper.Enqueue(() => !Service.Condition[ConditionFlag.OccupiedInQuestEvent]);
+        });
 
-            TaskManager.Enqueue(() => InteractWithGarden(gameObj));
-            TaskManager.Enqueue(() => ClickEntryByText("施肥"));
-            TaskManager.Enqueue(CheckFertilizerState);
-            TaskManager.Enqueue(ClickFertilizer);
-            TaskManager.Enqueue(() => !Service.Condition[ConditionFlag.OccupiedInQuestEvent]);
-        }
-    }
 
     private static void ObtainGardensAround()
     {
-        Gardens = Service.ObjectTable.Where(x => x is { ObjectKind: ObjectKind.EventObj, DataId: 2003757 })
-                         .Select(x => x.ObjectId)
-                         .ToArray();
+        foreach (var gameObj in Service.ObjectTable.Where(x => x is { ObjectKind: ObjectKind.EventObj, DataId: 2003757 }))
+        {
+            if (Vector3.Distance(gameObj.Position, Service.ClientState.LocalPlayer.Position) > 20) continue;
+
+            var objectID = gameObj.ObjectId;
+            var zoneID = Service.ClientState.TerritoryType;
+            var zoneName = LuminaCache.GetRow<TerritoryType>(zoneID).ExtractPlaceName();
+            var garden = new GameGarden($"{zoneName}_{objectID}", objectID, zoneID);
+            if (!ModuleConfig.Gardens.Contains(garden)) ModuleConfig.Gardens.Add(garden);
+        }
     }
 
     private static bool? CheckFertilizerState()
@@ -344,9 +374,9 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         if (!Service.Condition[ConditionFlag.OccupiedInQuestEvent]) return true;
 
-        if (SelectedFertilizer == 0)
+        if (ModuleConfig.SelectedFertilizer == 0)
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
             return true;
         }
 
@@ -359,7 +389,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         InventoryType? foundType = null;
         foreach (var type in InventoryTypes)
-            if (inventoryManager->GetItemCountInContainer(SelectedFertilizer, type) != 0)
+            if (inventoryManager->GetItemCountInContainer(ModuleConfig.SelectedFertilizer, type) != 0)
             {
                 foundType = type;
                 break;
@@ -374,7 +404,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
         for (var i = 0; i < container->Size; i++)
         {
             var slot = container->GetInventorySlot(i);
-            if (slot->ItemID == SelectedFertilizer)
+            if (slot->ItemID == ModuleConfig.SelectedFertilizer)
             {
                 foundSlot = i;
                 break;
@@ -388,8 +418,8 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         agent->OpenForItemSlot((InventoryType)foundType, (int)foundSlot, agentInventory->AddonId);
 
-        TaskManager.InsertDelayNext(20);
-        TaskManager.Insert(() => ClickContextMenuByText("施肥"));
+        TaskHelper.InsertDelayNext(20);
+        TaskHelper.Insert(() => ClickContextMenuByText("施肥"));
 
         return true;
     }
@@ -407,7 +437,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
                 return true;
             }
 
-            AddonHelper.Callback(addon, true, 0, index, 0U, 0, 0);
+            Callback(addon, true, 0, index, 0U, 0, 0);
         }
 
         return false;
@@ -430,18 +460,18 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
             if (itemName == itemNameToSelect)
             {
-                AddonHelper.Callback(addon, true, 0, i, iconID, 0U, 0);
+                Callback(addon, true, 0, i, iconID, 0U, 0);
                 return true;
             }
         }
 
-        TaskManager.Abort();
+        TaskHelper.Abort();
         return true;
     }
 
     private static bool? InteractWithGarden(GameObject* gameObj)
     {
-        if (IsOccupied()) return false;
+        if (Flags.OccupiedInEvent) return false;
 
         var targetSystem = TargetSystem.Instance();
         targetSystem->Target = gameObj;
@@ -453,19 +483,16 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
     private static bool? ClickEntryByText(string text)
     {
-        if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonAndNodesReady(addon))
-        {
-            var content = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[2].String);
-            if (!TryScanSelectStringText(addon, text, out var index))
-            {
-                TryScanSelectStringText(addon, "取消", out index);
-                return Click.TrySendClick($"select_string{index + 1}");
-            }
+        if (!TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) || !IsAddonAndNodesReady(addon))
+            return false;
 
-            if (Click.TrySendClick($"select_string{index + 1}")) return true;
+        if (!TryScanSelectStringText(addon, text, out var index))
+        {
+            TryScanSelectStringText(addon, "取消", out index);
+            return Click.TrySendClick($"select_string{index + 1}");
         }
 
-        return false;
+        return Click.TrySendClick($"select_string{index + 1}");
     }
 
     public override void Uninit()
@@ -473,5 +500,48 @@ public unsafe class AutoGardensWork : DailyModuleBase
         Service.AddonLifecycle.UnregisterListener(OnAddon);
 
         base.Uninit();
+    }
+
+    private class GameGarden : IEquatable<GameGarden>
+    {
+        public string Name     { get; set; } = string.Empty;
+        public ulong  ObjectID { get; set; }
+        public ushort ZoneID   { get; set; }
+
+        public GameGarden() { }
+
+        public GameGarden(string name, ulong objectID, ushort zoneID)
+        {
+            Name = name;
+            ObjectID = objectID;
+            ZoneID = zoneID;
+        }
+
+        public bool Equals(GameGarden? other)
+        {
+            if (other is null) return false;
+            if (ReferenceEquals(this, other)) return true;
+
+            return ObjectID == other.ObjectID && ZoneID == other.ZoneID;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is null) return false;
+            if (ReferenceEquals(this, obj)) return true;
+
+            return obj.GetType() == GetType() && Equals((GameGarden)obj);
+        }
+
+        public override int GetHashCode() => HashCode.Combine(ObjectID, ZoneID);
+    }
+
+    private class Config : ModuleConfiguration
+    {
+        public List<GameGarden> Gardens = [];
+
+        public uint SelectedSeed;
+        public uint SelectedSoil;
+        public uint SelectedFertilizer;
     }
 }

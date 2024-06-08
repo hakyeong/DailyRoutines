@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
 using DailyRoutines.Notifications;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using PayloadType = Lumina.Text.Payloads.PayloadType;
@@ -40,10 +41,11 @@ public class AutoNotifyCountdown : DailyModuleBase
             UpdateConfig("OnlyNotifyWhenBackground", ConfigOnlyNotifyWhenBackground);
     }
 
-    private static void OnChatMessage(
+    private static unsafe void OnChatMessage(
         XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
-        if (ConfigOnlyNotifyWhenBackground && IsGameForeground()) return;
+        if (ConfigOnlyNotifyWhenBackground && !Framework.Instance()->WindowInactive) return;
+
         var uintType = (uint)type;
         if (uintType != 185) return;
 

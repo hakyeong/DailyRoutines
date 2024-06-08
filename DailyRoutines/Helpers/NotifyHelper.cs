@@ -81,6 +81,10 @@ public static class NotifyHelper
     public static void Chat(SeString message) =>
         Service.Chat.Print(new SeStringBuilder().Append(DRPrefix).Append(" ").Append(message).Build());
 
+    public static void Verbose(string message) => Service.Log.Verbose(message);
+
+    public static void Verbose(string message, Exception ex) => Service.Log.Verbose(ex, message);
+
     public static void Debug(string message) => Service.Log.Debug(message);
 
     public static void Debug(string message, Exception ex) => Service.Log.Debug(ex, message);

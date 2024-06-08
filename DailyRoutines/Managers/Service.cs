@@ -2,7 +2,6 @@ using System.Linq;
 using System.Reflection;
 using ClickLib;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.IoC;
@@ -62,6 +61,7 @@ public class Service
 
         LuminaCache.ClearCache();
         Config.Uninit();
+        TaskHelper.DisposeAll();
     }
 
     #region DalamudServices

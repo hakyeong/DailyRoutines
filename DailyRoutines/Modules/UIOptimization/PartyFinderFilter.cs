@@ -1,15 +1,16 @@
-using DailyRoutines.Helpers;
-using DailyRoutines.Managers;
-using Dalamud.Game.Gui.PartyFinder.Types;
-using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using DailyRoutines.Helpers;
+using DailyRoutines.Managers;
+using Dalamud.Game.Gui.PartyFinder.Types;
+using Dalamud.Interface;
+using ImGuiNET;
 
-namespace DailyRoutines.Modules.UIOptimization;
-[ModuleDescription("PartyFinderFilter-Title", "PartyFinderFilter-Description",
-                   ModuleCategories.界面优化)]
+namespace DailyRoutines.Modules;
+
+[ModuleDescription("PartyFinderFilterTitle", "PartyFinderFilterDescription", ModuleCategories.界面优化)]
 public class PartyFinderFilter : DailyModuleBase
 {
     private int _batchIndex;
@@ -41,15 +42,12 @@ public class PartyFinderFilter : DailyModuleBase
     {
         var index = 0;
         ImGui.Text(Service.Lang.GetText("PartyFinderFilter-Description2"));
-        if (ImGuiOm.ButtonIcon("##add", Dalamud.Interface.FontAwesomeIcon.Plus))
-        {
+        if (ImGuiOm.ButtonIcon("##add", FontAwesomeIcon.Plus))
             _blackList.Add(string.Empty);
-        }
+
         ImGui.SameLine();
         if (ImGui.Checkbox(Service.Lang.GetText("PartyFinderFilter-WhileList"), ref _isWhiteList))
-        {
             UpdateConfig("Reverse", _isWhiteList);
-        }
 
         foreach (var str in _blackList.ToList())
         {
@@ -71,10 +69,9 @@ public class PartyFinderFilter : DailyModuleBase
             }
 
             ImGui.SameLine();
-            if (ImGuiOm.ButtonIcon($"##delete{index}", Dalamud.Interface.FontAwesomeIcon.Trash))
-            {
+            if (ImGuiOm.ButtonIcon($"##delete{index}", FontAwesomeIcon.Trash))
                 _blackList.RemoveAt(index);
-            }
+
             index++;
         }
     }
@@ -93,11 +90,8 @@ public class PartyFinderFilter : DailyModuleBase
     private bool Verify(PartyFinderListing listing)
     {
         var description = listing.Description.ToString();
-        if (_descriptionSet.Contains(description))
-        {
+        if (!_descriptionSet.Add(description))
             return false;
-        }
-        _descriptionSet.Add(description);
 
         var name = listing.Name.ToString();
         var result = true;
@@ -107,9 +101,9 @@ public class PartyFinderFilter : DailyModuleBase
         }
         catch (Exception e)
         {
-            Service.Log.Error(GetType().Name + "cause error when filting\n" + e.ToString());
+            Service.Log.Error(GetType().Name + "cause error when filting\n" + e);
         }
+
         return result;
     }
 }
-

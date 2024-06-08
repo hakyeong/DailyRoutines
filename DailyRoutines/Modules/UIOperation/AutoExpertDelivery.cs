@@ -11,7 +11,7 @@ using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
 using Dalamud.Plugin.Services;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -85,7 +85,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
     private static void OnUpdate(IFramework framework)
     {
-        if (!EzThrottler.Throttle("AutoExpertDelivery", 100)) return;
+        if (!Throttler.Throttle("AutoExpertDelivery", 100)) return;
         _LastUpdate = framework.LastUpdate;
 
         // 点击确认提交页面

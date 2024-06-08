@@ -19,6 +19,9 @@ public class PresetData
     public static Dictionary<uint, TerritoryType>          Zones         => zones.Value;
     public static Dictionary<uint, Mount>                  Mounts        => mounts.Value;
     public static Dictionary<uint, Item>                   Food          => food.Value;
+    public static Dictionary<uint, Item>                   Seeds         => seeds.Value;
+    public static Dictionary<uint, Item>                   Soils         => soils.Value;
+    public static Dictionary<uint, Item>                   Fertilizers   => fertilizers.Value;
 
     public static bool TryGetPlayerActions(uint rowID, out Action action)
         => PlayerActions.TryGetValue(rowID, out action);
@@ -48,6 +51,22 @@ public class PresetData
         => Food.TryGetValue(rowID, out foodItem);
 
     #region Lazy
+
+    private static readonly Lazy<Dictionary<uint, Item>> seeds =
+        new(() => LuminaCache.Get<Item>()
+                             .Where(x => x.FilterGroup == 20)
+                             .ToDictionary(x => x.RowId, x => x));
+
+    private static readonly Lazy<Dictionary<uint, Item>> soils =
+        new(() => LuminaCache.Get<Item>()
+                             .Where(x => x.FilterGroup == 21)
+                             .ToDictionary(x => x.RowId, x => x));
+
+    private static readonly Lazy<Dictionary<uint, Item>> fertilizers =
+        new(() => LuminaCache.Get<Item>()
+                             .Where(x => x.FilterGroup == 22)
+                             .ToDictionary(x => x.RowId, x => x));
+
     private static readonly Lazy<Dictionary<uint, Action>> playerActions =
         new(() => LuminaCache.Get<Action>()
                              .Where(x => x.ClassJob.Value != null && x.Range != -1 && x.Icon != 0 &&
@@ -69,7 +88,7 @@ public class PresetData
 
     private static readonly Lazy<Dictionary<uint, ContentFinderCondition>> contents =
         new(() => LuminaCache.Get<ContentFinderCondition>()
-                             .Where(x => !x.Name.ToString().IsNullOrEmpty())
+                             .Where(x => !string.IsNullOrWhiteSpace(x.Name.RawString))
                              .DistinctBy(x => x.TerritoryType.Row)
                              .OrderBy(x => x.ContentType.Row)
                              .ThenBy(x => x.ClassJobLevelRequired)

@@ -7,19 +7,18 @@ using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Colors;
-using ECommons.Automation.LegacyTaskManager;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoSellCardsConfirmTitle", "AutoSellCardsConfirmDescription", ModuleCategories.½ðµú)]
+[ModuleDescription("AutoSellCardsConfirmTitle", "AutoSellCardsConfirmDescription", ModuleCategories.é‡‘ç¢Ÿ)]
 public class AutoSellCardsConfirm : DailyModuleBase
 {
     public override void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
         Overlay ??= new Overlay(this);
         Overlay.Flags |= ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoBackground;
 
@@ -41,12 +40,12 @@ public class AutoSellCardsConfirm : DailyModuleBase
         ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("AutoSellCardsConfirmTitle"));
 
         ImGui.SameLine();
-        ImGui.BeginDisabled(TaskManager.IsBusy);
+        ImGui.BeginDisabled(TaskHelper.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("Start"))) StartHandOver();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskHelper.Abort();
     }
 
     private unsafe void OnAddon(AddonEvent type, AddonArgs args)
@@ -69,18 +68,18 @@ public class AutoSellCardsConfirm : DailyModuleBase
                 break;
             case AddonEvent.PreFinalize:
                 Overlay.IsOpen = false;
-                TaskManager?.Abort();
+                TaskHelper?.Abort();
                 break;
         }
     }
 
     private unsafe bool? StartHandOver()
     {
-        if (!EzThrottler.Throttle("AutoSellCardsConfirm")) return false;
+        if (!Throttler.Throttle("AutoSellCardsConfirm")) return false;
 
         if (Service.Gui.GetAddonByName("ShopCardDialog") != nint.Zero)
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
             return true;
         }
 
@@ -90,7 +89,7 @@ public class AutoSellCardsConfirm : DailyModuleBase
         var cardsAmount = addon->AtkValues[1].Int;
         if (cardsAmount is 0)
         {
-            TaskManager?.Abort();
+            TaskHelper?.Abort();
             return true;
         }
 
@@ -103,13 +102,13 @@ public class AutoSellCardsConfirm : DailyModuleBase
 
             Service.Chat.Print(message);
 
-            TaskManager?.Abort();
+            TaskHelper?.Abort();
             return true;
         }
 
-        TaskManager.Enqueue(() => AddonHelper.Callback(addon, true, 0, 0, 0));
-        TaskManager.DelayNext(100);
-        TaskManager.Enqueue(StartHandOver);
+        TaskHelper.Enqueue(() => AddonHelper.Callback(addon, true, 0, 0, 0));
+        TaskHelper.DelayNext(100);
+        TaskHelper.Enqueue(StartHandOver);
 
         return true;
     }

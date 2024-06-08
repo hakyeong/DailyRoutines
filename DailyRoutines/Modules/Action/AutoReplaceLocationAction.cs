@@ -11,8 +11,6 @@ using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
-using ECommons.MathHelpers;
-using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using ImGuiNET;
@@ -29,7 +27,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
     private static Hook<ParseActionCommandArgDelegate>? ParseActionCommandArgHook;
 
     private static Config ModuleConfig = null!;
-    private static EzThrottler<string> Throttler = new();
+    private static Throttler<string> Throttler = new();
 
     private static uint CurrentMapID;
     private static readonly Dictionary<MapMarker, Vector2> ZoneMapMarkers = [];
@@ -37,6 +35,8 @@ public class AutoReplaceLocationAction : DailyModuleBase
     private static Vector3? ModifiedLocation;
 
     private static string ContentSearchInput = string.Empty;
+
+    private static Vector2 CheckboxSize = ImGuiHelpers.ScaledVector2(20f);
 
     public override void Init()
     {
@@ -56,33 +56,38 @@ public class AutoReplaceLocationAction : DailyModuleBase
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("WorkTheory")}:");
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoReplaceLocationAction-TheoryHelp"), 30f);
 
-        ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
-        ImGui.InputFloat(Service.Lang.GetText("AutoReplaceLocationAction-AdjustDistance"), ref ModuleConfig.AdjustDistance,
-                         0, 0, "%.1f");
-
-        if (ImGui.IsItemDeactivatedAfterEdit())
-            SaveConfig(ModuleConfig);
+        ImGui.Spacing();
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoReplaceLocationAction-SendMessage"), ref ModuleConfig.SendMessage))
             SaveConfig(ModuleConfig);
 
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoReplaceLocationAction-EnableCenterArg"),
-                           ref ModuleConfig.EnableCenterArgument))
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoReplaceLocationAction-EnableCenterArg"), ref ModuleConfig.EnableCenterArgument))
             SaveConfig(ModuleConfig);
 
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoReplaceLocationAction-EnableCenterArgHelp"));
 
         ImGui.AlignTextToFramePadding();
-        ImGui.Text($"{Service.Lang.GetText("AutoReplaceLocationAction-BlacklistContents")}:");
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoReplaceLocationAction-AdjustDistance")}:");
+
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
+        ImGui.InputFloat("###AdjustDistanceInput", ref ModuleConfig.AdjustDistance, 0, 0, "%.1f");
+        if (ImGui.IsItemDeactivatedAfterEdit())
+            SaveConfig(ModuleConfig);
+
+        ImGuiOm.HelpMarker(Service.Lang.GetText("AutoReplaceLocationAction-AdjustDistanceHelp"));
+
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoReplaceLocationAction-BlacklistContents")}:");
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
         if (ContentSelectCombo(ref ModuleConfig.BlacklistContent, ref ContentSearchInput)) SaveConfig(ModuleConfig);
 
         var tableSize = new Vector2(ImGui.GetContentRegionAvail().X / 3, 0);
-        if (ImGui.BeginTable("ActionEnableTable", 2, ImGuiTableFlags.Borders, tableSize))
+        if (ImGui.BeginTable("ActionEnableTable", 2, ImGuiTableFlags.BordersInner, tableSize))
         {
-            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
+            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
             ImGui.TableSetupColumn("名称");
 
             foreach (var actionPair in ModuleConfig.EnabledActions)
@@ -98,6 +103,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
                     ModuleConfig.EnabledActions[actionPair.Key] = state;
                     SaveConfig(ModuleConfig);
                 }
+                CheckboxSize = ImGui.GetItemRectSize();
 
                 ImGui.TableNextColumn();
                 ImGuiOm.TextImage(action.Name.RawString, ImageHelper.GetIcon(action.Icon).ImGuiHandle,
@@ -129,7 +135,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
 
     private static void OnUpdate(IFramework framework)
     {
-        if (!EzThrottler.Throttle("AutoReplaceLocationAction", 1000)) return;
+        if (!Throttler.Throttle("AutoReplaceLocationAction", 1000)) return;
         if (!Flags.BoundByDuty) return;
 
         if (CurrentMapID == Service.ClientState.MapId) return;

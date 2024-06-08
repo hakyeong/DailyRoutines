@@ -3,7 +3,7 @@ using System.Globalization;
 using DailyRoutines.Managers;
 using DailyRoutines.Notifications;
 using Dalamud.Plugin.Services;
-using ECommons.Throttlers;
+
 using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
 
@@ -59,7 +59,7 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
 
     private static void OnFrameworkLeve(IFramework _)
     {
-        if (!EzThrottler.Throttle("AutoNotifyLeveUpdate", 5000)) return;
+        if (!Throttler.Throttle("AutoNotifyLeveUpdate", 5000)) return;
         if (Service.ClientState.LocalPlayer == null || !Service.ClientState.IsLoggedIn)
             return;
 

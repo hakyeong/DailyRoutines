@@ -1,63 +1,95 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
-using System.Text.RegularExpressions;
 using ClickLib;
 using DailyRoutines.Helpers;
+using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.Command;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Colors;
 using Dalamud.Memory;
-using ECommons.Automation.LegacyTaskManager;
-using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Control;
+using FFXIVClientStructs.FFXIV.Client.Game.Housing;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
+using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 
 namespace DailyRoutines.Modules;
 
 [PrecedingModule([typeof(AutoCutSceneSkip)])]
 [ModuleDescription("AutoSubmarineCollectTitle", "AutoSubmarineCollectDescription", ModuleCategories.界面操作)]
-public unsafe partial class AutoSubmarineCollect : DailyModuleBase
+public unsafe class AutoSubmarineCollect : DailyModuleBase
 {
-    private static TaskManager? RepairTaskManager;
+    private static Throttler<string> Throttler = new();
+    private static TaskHelper? RepairTaskHelper;
+    private static Config ModuleConfig = null!;
 
-    private static readonly HashSet<uint> CompanyWorkshopZones = [423, 424, 425, 653, 984];
-    private static string RequisiteMaterialsName = string.Empty;
-    private static int? RequisiteMaterials;
     private static AtkUnitBase* SelectString => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
-
     private static AtkUnitBase* SelectYesno => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectYesno");
-
     // 航行结果
     private static AtkUnitBase* AirShipExplorationResult =>
         (AtkUnitBase*)Service.Gui.GetAddonByName("AirShipExplorationResult");
-
     // 出发详情
     private static AtkUnitBase* AirShipExplorationDetail =>
         (AtkUnitBase*)Service.Gui.GetAddonByName("AirShipExplorationDetail");
-
     private static AtkUnitBase* CompanyCraftSupply => (AtkUnitBase*)Service.Gui.GetAddonByName("CompanyCraftSupply");
+
+    private static Lazy<string> RequisiteMaterialsName => new(() => LuminaCache.GetRow<Item>(10373).Name.RawString);
+    private static uint WorkshopTerritory => Service.AetheryteList.FirstOrDefault(x => x.AetheryteId == 96).TerritoryId;
+
+    private const string Command = "submarine";
+    private static readonly HashSet<uint> CompanyWorkshopZones = [423, 424, 425, 653, 984];
+    private static int? RequisiteMaterials;
 
     public override void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
-        RepairTaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
+        ModuleConfig = LoadConfig<Config>() ?? new();
+
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
+        RepairTaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
         Overlay ??= new Overlay(this);
         Overlay.Flags |= ImGuiWindowFlags.NoMove;
-
-        RequisiteMaterialsName = LuminaCache.GetRow<Item>(10373).Name.RawString;
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", AlwaysYes);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "AirShipExplorationResult", OnExplorationResult);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "SelectString", OnAddonSelectString);
         Service.LogMessageManager.Register(OnLogMessages);
+
+        if (ModuleConfig.AddCommand)
+            Service.CommandManager.AddSubCommand(Command, new CommandInfo(OnCommand)
+            {
+                HelpMessage = Service.Lang.GetText("AutoSubmarineCollect-AddCommandHelp"),
+            });
+    }
+
+    public override void ConfigUI()
+    {
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoSubmarineCollect-AddCommand", Command), ref ModuleConfig.AddCommand))
+        {
+            SaveConfig(ModuleConfig);
+
+            if (ModuleConfig.AddCommand)
+                Service.CommandManager.AddSubCommand(Command, new CommandInfo(OnCommand)
+                {
+                    HelpMessage = Service.Lang.GetText("AutoSubmarineCollect-AddCommandHelp"),
+                });
+            else
+                Service.CommandManager.RemoveSubCommand(Command);
+        }
+
+        ImGuiOm.HelpMarker(Service.Lang.GetText("AutoSubmarineCollect-AddCommandHelp"));
     }
 
     public override void OverlayUI()
@@ -76,27 +108,160 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
         ImGui.SameLine();
 
-        ImGui.BeginDisabled(TaskManager.IsBusy);
+        ImGui.BeginDisabled(TaskHelper.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("Start"))) GetSubmarineInfos();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskManager.Abort();
+        if (ImGui.Button(Service.Lang.GetText("Stop"))) TaskHelper.Abort();
 
         RequisiteMaterials ??= InventoryManager.Instance()->GetInventoryItemCount(10373);
 
         ImGui.SameLine();
-        ImGui.Text($"{RequisiteMaterialsName}:");
+        ImGui.Text($"{RequisiteMaterialsName.Value}:");
 
         ImGui.SameLine();
         ImGui.TextColored(RequisiteMaterials < 20 ? ImGuiColors.DPSRed : ImGuiColors.HealerGreen,
                           RequisiteMaterials.ToString());
 
-        if (EzThrottler.Throttle("AutoSubmarineCollectOverlay-RequestItemAmount", 1000))
+        if (Throttler.Throttle("AutoSubmarineCollectOverlay-RequestItemAmount", 1000))
         {
             var inventoryManager = InventoryManager.Instance();
             RequisiteMaterials = inventoryManager->GetInventoryItemCount(10373);
         }
+    }
+
+    private void OnCommand(string command, string arguments) => EnqueueTeleportTasks();
+
+    private void EnqueueTeleportTasks()
+    {
+        TaskHelper.Abort();
+        if (WorkshopTerritory == 0) return;
+
+        var housingManager = HousingManager.Instance();
+        var currentZone = Service.ClientState.TerritoryType;
+
+        // 就在工房内
+        if (CompanyWorkshopZones.Contains(currentZone))
+        {
+            TaskHelper.Enqueue(TeleportToPanel);
+            TaskHelper.Enqueue(GetSubmarineInfos);
+            return;
+        }
+
+        // 不在房区且不在室内
+        if (currentZone != WorkshopTerritory && !housingManager->IsInside())
+        {
+            TaskHelper.Enqueue(TeleportToHouseZone);
+            TaskHelper.Enqueue(TeleportToHouseEntry);
+            TaskHelper.Enqueue(TeleportToRoomSelect);
+            TaskHelper.Enqueue(TeleportToPanel);
+            TaskHelper.Enqueue(GetSubmarineInfos);
+            return;
+        }
+
+        // 正在房区但不在室内
+        if (currentZone == WorkshopTerritory && !housingManager->IsInside())
+        {
+            TaskHelper.Enqueue(TeleportToHouseEntry);
+            TaskHelper.Enqueue(TeleportToRoomSelect);
+            TaskHelper.Enqueue(TeleportToPanel);
+            TaskHelper.Enqueue(GetSubmarineInfos);
+            return;
+        }
+
+        // 正在室内
+        if (housingManager->IsInside())
+        {
+            TaskHelper.Enqueue(TeleportToRoomSelect);
+            TaskHelper.Enqueue(TeleportToPanel);
+            TaskHelper.Enqueue(GetSubmarineInfos);
+        }
+    }
+
+    private static bool? TeleportToHouseZone()
+    {
+        if (!Throttler.Throttle("TeleportToHouseZone")) return false;
+        if (WorkshopTerritory == 0) return false;
+
+        return Telepo.Instance()->Teleport(96, 0);
+    }
+
+    private bool? TeleportToHouseEntry()
+    {
+        if (!Throttler.Throttle("TeleportToHouseEntry")) return false;
+        if (Flags.BetweenAreas) return false;
+        if (Service.ClientState.TerritoryType != WorkshopTerritory) return false;
+
+        if (Flags.IsOnMount)
+        {
+            Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.Dismount, 1);
+            return false;
+        }
+
+        GameObject* Target = null;
+        foreach (var target in Service.ObjectTable)
+        {
+            if (target.ObjectKind != ObjectKind.EventObj ||
+                target.Name.TextValue != LuminaCache.GetRow<EObjName>(2002737).Singular.RawString)
+                continue;
+
+            Target = (GameObject*)target.Address;
+            Teleport(target.Position with { Y = target.Position.Y - 1 });
+            break;
+        }
+
+        if (Target == null) return false;
+        TargetSystem.Instance()->InteractWithObject(Target);
+
+        TaskHelper.InsertDelayNext("WaitEnteringHouse", 500, false, 1);
+        return true;
+    }
+
+    private static bool? TeleportToRoomSelect()
+    {
+        if (!Throttler.Throttle("TeleportToRoomSelect")) return false;
+        if (!HousingManager.Instance()->IsInside()) return false;
+
+        GameObject* Target = null;
+        foreach (var target in Service.ObjectTable)
+        {
+            if (target.ObjectKind != ObjectKind.EventObj ||
+                target.Name.TextValue != LuminaCache.GetRow<EObjName>(2004353).Singular.RawString)
+                continue;
+
+            Target = (GameObject*)target.Address;
+            Teleport(target.Position with { Y = target.Position.Y - 1 });
+            break;
+        }
+
+        if (Target == null) return false;
+
+        TargetSystem.Instance()->InteractWithObject(Target);
+        return ClickHelper.SelectString("移动到部队工房");
+    }
+
+    private static bool? TeleportToPanel()
+    {
+        if (!Throttler.Throttle("TeleportToPanel")) return false;
+        if (Flags.BetweenAreas) return false;
+
+        GameObject* Target = null;
+        foreach (var target in Service.ObjectTable)
+        {
+            if (target.ObjectKind != ObjectKind.EventObj ||
+                target.Name.TextValue != LuminaCache.GetRow<EObjName>(2005274).Singular.RawString)
+                continue;
+
+            Target = (GameObject*)target.Address;
+            Teleport(target.Position with { Y = target.Position.Y - 1 });
+            break;
+        }
+
+        if (Target == null) return false;
+
+        TargetSystem.Instance()->InteractWithObject(Target);
+        return ClickHelper.SelectString("管理潜水艇");
     }
 
     private bool? GetSubmarineInfos()
@@ -117,7 +282,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
             Service.Chat.Print(message);
 
-            TaskManager.Abort();
+            TaskHelper.Abort();
             return true;
         }
 
@@ -130,7 +295,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
             Service.Chat.Print(message);
 
-            TaskManager.Abort();
+            TaskHelper.Abort();
             return true;
         }
 
@@ -139,13 +304,13 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         if (SelectString == null || !IsAddonAndNodesReady(SelectString)) return false;
         if (!ClickHelper.SelectString("探索完成"))
         {
-            TaskManager.Abort();
+            TaskHelper.Abort();
             return true;
         }
 
-        TaskManager.Abort();
-        TaskManager.DelayNext(2000);
-        TaskManager.Enqueue(CommenceSubmarineVoyage);
+        TaskHelper.Abort();
+        TaskHelper.DelayNext(2000);
+        TaskHelper.Enqueue(CommenceSubmarineVoyage);
 
         return true;
     }
@@ -154,12 +319,12 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
     {
         if (AirShipExplorationDetail == null || !IsAddonAndNodesReady(AirShipExplorationDetail)) return false;
 
-        AddonHelper.Callback(AirShipExplorationDetail, true, 0);
+        Callback(AirShipExplorationDetail, true, 0);
         AirShipExplorationDetail->Close(true);
 
-        TaskManager.Abort();
-        TaskManager.DelayNext(3000);
-        TaskManager.Enqueue(GetSubmarineInfos);
+        TaskHelper.Abort();
+        TaskHelper.DelayNext(3000);
+        TaskHelper.Enqueue(GetSubmarineInfos);
 
         return false;
     }
@@ -180,10 +345,10 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
         if (CompanyCraftSupply != null && IsAddonAndNodesReady(CompanyCraftSupply))
         {
-            RepairTaskManager.Enqueue(RepairSubmarines);
-            RepairTaskManager.DelayNext(20);
-            RepairTaskManager.Enqueue(() => AddonHelper.Callback(CompanyCraftSupply, true, 5));
-            RepairTaskManager.Enqueue(ClickPreviousVoyageLog);
+            RepairTaskHelper.Enqueue(RepairSubmarines);
+            RepairTaskHelper.DelayNext(20);
+            RepairTaskHelper.Enqueue(() => AddonHelper.Callback(CompanyCraftSupply, true, 5));
+            RepairTaskHelper.Enqueue(ClickPreviousVoyageLog);
             return true;
         }
 
@@ -193,12 +358,12 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
             SelectString->Close(true);
 
-            RepairTaskManager.Enqueue(RepairSubmarines);
-            RepairTaskManager.DelayNext(20);
-            RepairTaskManager.Enqueue(() => AddonHelper.Callback(CompanyCraftSupply, true, 5));
-            RepairTaskManager.Enqueue(ClickPreviousVoyageLog);
-            RepairTaskManager.DelayNext(100);
-            RepairTaskManager.Enqueue(CommenceSubmarineVoyage);
+            RepairTaskHelper.Enqueue(RepairSubmarines);
+            RepairTaskHelper.DelayNext(20);
+            RepairTaskHelper.Enqueue(() => AddonHelper.Callback(CompanyCraftSupply, true, 5));
+            RepairTaskHelper.Enqueue(ClickPreviousVoyageLog);
+            RepairTaskHelper.DelayNext(100);
+            RepairTaskHelper.Enqueue(CommenceSubmarineVoyage);
             return true;
         }
 
@@ -207,7 +372,7 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
     private static bool? RepairSubmarines()
     {
-        if (!EzThrottler.Throttle("AutoSubmarineCollect-Repair", 100)) return false;
+        if (!Throttler.Throttle("AutoSubmarineCollect-Repair", 100)) return false;
         if (SelectYesno != null) return false;
         if (CompanyCraftSupply == null || !IsAddonAndNodesReady(CompanyCraftSupply)) return false;
 
@@ -228,8 +393,8 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
     {
         if (AirShipExplorationDetail != null && IsAddonAndNodesReady(AirShipExplorationDetail))
         {
-            RepairTaskManager.Abort();
-            RepairTaskManager.Enqueue(CommenceSubmarineVoyage);
+            RepairTaskHelper.Abort();
+            RepairTaskHelper.Enqueue(CommenceSubmarineVoyage);
 
             return true;
         }
@@ -241,18 +406,32 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
         return true;
     }
 
+    private static bool? Teleport(Vector3 pos)
+    {
+        var localPlayer = Service.ClientState.LocalPlayer;
+        if (localPlayer == null) return false;
+
+        var address = localPlayer.Address + 176;
+        MemoryHelper.Write(address, pos.X);
+        MemoryHelper.Write(address + 4, pos.Y);
+        MemoryHelper.Write(address + 8, pos.Z);
+
+        return true;
+    }
+
+    #region Events
     private void OnLogMessages(uint logMessageID, ushort logKind)
     {
         switch (logMessageID)
         {
             case 4290:
-                TaskManager.Abort();
-                RepairTaskManager.Abort();
-                RepairTaskManager.Enqueue(ReadyToRepairSubmarines);
+                TaskHelper.Abort();
+                RepairTaskHelper.Abort();
+                RepairTaskHelper.Enqueue(ReadyToRepairSubmarines);
                 break;
             case 4276:
-                TaskManager.Abort();
-                RepairTaskManager.Abort();
+                TaskHelper.Abort();
+                RepairTaskHelper.Abort();
                 break;
         }
     }
@@ -261,13 +440,13 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
     {
         if (AirShipExplorationResult == null || !IsAddonAndNodesReady(AirShipExplorationResult)) return;
 
-        AddonHelper.Callback(AirShipExplorationResult, true, 1);
-        if (TaskManager.IsBusy) AirShipExplorationResult->IsVisible = false;
+        Callback(AirShipExplorationResult, true, 1);
+        if (TaskHelper.IsBusy) AirShipExplorationResult->IsVisible = false;
     }
 
     private void OnAddonSelectString(AddonEvent type, AddonArgs args)
     {
-        if (!EzThrottler.Throttle("AutoSubmarineCollectOverlay")) return;
+        if (!Throttler.Throttle("AutoSubmarineCollectOverlay")) return;
         if (!CompanyWorkshopZones.Contains(Service.ClientState.TerritoryType)) return;
 
         Overlay.IsOpen = false;
@@ -280,24 +459,28 @@ public unsafe partial class AutoSubmarineCollect : DailyModuleBase
 
     private void AlwaysYes(AddonEvent type, AddonArgs args)
     {
-        if (!TaskManager.IsBusy) return;
+        if (!TaskHelper.IsBusy) return;
         Click.SendClick("select_yes");
     }
+    #endregion
 
     public override void Uninit()
     {
+        Service.CommandManager.RemoveSubCommand(Command);
+
         Service.AddonLifecycle.UnregisterListener(OnExplorationResult);
         Service.AddonLifecycle.UnregisterListener(AlwaysYes);
         Service.AddonLifecycle.UnregisterListener(OnAddonSelectString);
         Service.LogMessageManager.Unregister(OnLogMessages);
 
-        RepairTaskManager?.Abort();
-        RepairTaskManager = null;
+        RepairTaskHelper?.Abort();
+        RepairTaskHelper = null;
 
         base.Uninit();
     }
 
-
-    [GeneratedRegex("探索机体数：\\d+/(\\d+)")]
-    private static partial Regex SubmarineInfoRegex();
+    private class Config : ModuleConfiguration
+    {
+        public bool AddCommand = true;
+    }
 }

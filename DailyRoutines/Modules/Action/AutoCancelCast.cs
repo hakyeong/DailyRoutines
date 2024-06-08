@@ -5,7 +5,6 @@ using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Utility.Signatures;
-using ECommons.Automation.LegacyTaskManager;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
@@ -23,7 +22,7 @@ public unsafe class AutoCancelCast : DailyModuleBase
     public override void Init()
     {
         Service.Hook.InitializeFromAttributes(this);
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
 
         TargetAreaActions ??= LuminaCache.Get<Lumina.Excel.GeneratedSheets.Action>()
                                          .Where(x => x.TargetArea)
@@ -37,9 +36,9 @@ public unsafe class AutoCancelCast : DailyModuleBase
         if (flag is ConditionFlag.Casting or ConditionFlag.Casting87)
         {
             if (value)
-                TaskManager.Enqueue(IsNeedToCancel);
+                TaskHelper.Enqueue(IsNeedToCancel);
             else
-                TaskManager.Abort();
+                TaskHelper.Abort();
         }
     }
 

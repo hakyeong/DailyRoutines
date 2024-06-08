@@ -2,15 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Hooking;
 using Dalamud.Interface;
-using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
-using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using ImGuiNET;
 using CharacterStruct = FFXIVClientStructs.FFXIV.Client.Game.Character.Character;
@@ -21,6 +19,8 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("CustomizeGameObjectTitle", "CustomizeGameObjectDescription", ModuleCategories.系统)]
 public unsafe class CustomizeGameObject : DailyModuleBase
 {
+    private delegate byte IsTargetableDelegate(GameObjectStruct* gameObj);
+
     [Signature("40 53 48 83 EC 20 F3 0F 10 89 ?? ?? ?? ?? 0F 57 C0 0F 2E C8 48 8B D9 7A 0A",
                DetourName = nameof(IsTargetableDetour))]
     private static Hook<IsTargetableDelegate>? IsTargetableHook;
@@ -38,6 +38,8 @@ public unsafe class CustomizeGameObject : DailyModuleBase
     private static float ScaleEditInput = 1f;
     private static string ValueEditInput = string.Empty;
     private static bool ScaleVFXEditInput;
+
+    private static Vector2 CheckboxSize = ImGuiHelpers.ScaledVector2(20f);
 
     private static readonly Dictionary<nint, (CustomizePreset Preset, float Scale)> CustomizeHistory = [];
 
@@ -57,17 +59,16 @@ public unsafe class CustomizeGameObject : DailyModuleBase
     {
         TargetInfoPreviewUI();
 
-        var tableSize = ImGui.GetContentRegionAvail() with { Y = 0 };
-        if (ImGui.BeginTable("###ConfigTable", 7, ImGuiTableFlags.Borders, tableSize))
+        var tableSize = (ImGui.GetContentRegionAvail() - ImGuiHelpers.ScaledVector2(100f)) with { Y = 0 };
+        if (ImGui.BeginTable("###ConfigTable", 7, ImGuiTableFlags.BordersInner, tableSize))
         {
-            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
-            ImGui.TableSetupColumn("备注", ImGuiTableColumnFlags.None, 40);
+            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
+            ImGui.TableSetupColumn("备注", ImGuiTableColumnFlags.None, 20);
             ImGui.TableSetupColumn("模式", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("ModelSkeletonID").X);
             ImGui.TableSetupColumn("值", ImGuiTableColumnFlags.None, 30);
             ImGui.TableSetupColumn("缩放比例", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("99.99").X);
-            ImGui.TableSetupColumn("缩放特效", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
-            ImGui.TableSetupColumn("操作", ImGuiTableColumnFlags.WidthFixed,
-                                   (4 * Styles.CheckboxSize.X) + (4 * ImGui.GetStyle().ItemSpacing.X));
+            ImGui.TableSetupColumn("缩放特效", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
+            ImGui.TableSetupColumn("操作", ImGuiTableColumnFlags.WidthFixed, 6 * CheckboxSize.X);
 
             ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
 
@@ -80,14 +81,11 @@ public unsafe class CustomizeGameObject : DailyModuleBase
                 CustomizePresetEditorUI(ref TypeInput, ref ValueInput, ref ScaleInput, ref ScaleVFXInput,
                                         ref NoteInput);
 
-                ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin() - ImGuiHelpers.ScaledVector2(2f),
-                                                  ImGui.GetItemRectMax() + ImGuiHelpers.ScaledVector2(2f),
-                                                  ImGui.ColorConvertFloat4ToU32(ImGuiColors.DalamudWhite), 2f,
-                                                  ImDrawFlags.RoundCornersAll, 1f);
-
                 ImGuiHelpers.ScaledDummy(1f);
 
-                if (ImGuiOm.ButtonSelectable(Service.Lang.GetText("Add")))
+                var buttonSize = new Vector2(ImGui.GetContentRegionAvail().X,
+                                             24f * ImGuiHelpers.GlobalScale);
+                if (ImGui.Button(Service.Lang.GetText("Add"), buttonSize))
                 {
                     if (ScaleInput > 0 && !string.IsNullOrWhiteSpace(ValueInput))
                     {
@@ -147,6 +145,7 @@ public unsafe class CustomizeGameObject : DailyModuleBase
 
                     RemovePresetHistory(preset);
                 }
+                CheckboxSize = ImGui.GetItemRectSize();
 
                 ImGui.TableNextColumn();
                 ImGuiOm.Text(preset.Note);
@@ -399,7 +398,7 @@ public unsafe class CustomizeGameObject : DailyModuleBase
         var isTargetable = IsTargetableHook.Original(pTarget);
 
         if (ModuleConfig.CustomizePresets.Count == 0 || !pTarget->IsCharacter()) return isTargetable;
-        if (!EzThrottler.Throttle($"CustomizeGameObjectScale_{(nint)pTarget}", 1000)) return isTargetable;
+        if (!Throttler.Throttle($"CustomizeGameObjectScale_{(nint)pTarget}", 1000)) return isTargetable;
 
         var name = Marshal.PtrToStringUTF8((nint)pTarget->Name);
         var dataID = pTarget->DataID;
@@ -506,24 +505,17 @@ public unsafe class CustomizeGameObject : DailyModuleBase
 
     public override void Uninit()
     {
+        base.Uninit();
+
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
 
         if (Service.ClientState.LocalPlayer != null)
             ResetAllCustomizeFromHistory();
 
         CustomizeHistory.Clear();
-
-        base.Uninit();
     }
 
-    private struct ChibiTarget
-    {
-        public CustomizeType Type;
-        public string Value;
-        public float Scale;
-    }
-
-    private class CustomizePreset : IComparable<CustomizePreset>, IEquatable<CustomizePreset>
+    private class CustomizePreset : IEquatable<CustomizePreset>
     {
         public string        Note     { get; set; } = string.Empty;
         public CustomizeType Type     { get; set; }
@@ -532,25 +524,11 @@ public unsafe class CustomizeGameObject : DailyModuleBase
         public bool          ScaleVFX { get; set; }
         public bool          Enabled  { get; set; }
 
-        public int CompareTo(CustomizePreset? other)
-        {
-            if (other == null) return 1;
-
-            var typeComparison = Type.CompareTo(other.Type);
-            if (typeComparison != 0) return typeComparison;
-
-            var valueComparison = string.Compare(Value, other.Value, StringComparison.Ordinal);
-            if (valueComparison != 0) return valueComparison;
-
-            return 0;
-        }
-
         public bool Equals(CustomizePreset? other)
         {
             if (other == null) return false;
 
-            return Type == other.Type &&
-                   string.Equals(Value, other.Value, StringComparison.Ordinal);
+            return Type == other.Type && string.Equals(Value, other.Value, StringComparison.Ordinal);
         }
 
         public override bool Equals(object? obj)
@@ -559,11 +537,11 @@ public unsafe class CustomizeGameObject : DailyModuleBase
             return false;
         }
 
-        public override int GetHashCode() { return HashCode.Combine(Type, Value); }
+        public override int GetHashCode() => HashCode.Combine(Type, Value);
 
-        public static bool operator ==(CustomizePreset left, CustomizePreset right) { return Equals(left, right); }
+        public static bool operator ==(CustomizePreset left, CustomizePreset right) => Equals(left, right);
 
-        public static bool operator !=(CustomizePreset left, CustomizePreset right) { return !Equals(left, right); }
+        public static bool operator !=(CustomizePreset left, CustomizePreset right) => !Equals(left, right);
     }
 
     private enum CustomizeType
@@ -577,8 +555,6 @@ public unsafe class CustomizeGameObject : DailyModuleBase
 
     private class Config : ModuleConfiguration
     {
-        public readonly List<CustomizePreset> CustomizePresets = [];
+        public List<CustomizePreset> CustomizePresets = [];
     }
-
-    private delegate byte IsTargetableDelegate(GameObjectStruct* gameObj);
 }

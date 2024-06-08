@@ -3,7 +3,7 @@ using DailyRoutines.Managers;
 using Dalamud.Hooking;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
-using ECommons.Throttlers;
+
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
@@ -48,7 +48,7 @@ public class SoundEffectThrottler : DailyModuleBase
         var se = sound - 36;
         switch (se)
         {
-            case <= 16 when EzThrottler.Throttle($"SoundEffectThorttler-{se}", ModuleConfig.Throttle):
+            case <= 16 when Throttler.Throttle($"SoundEffectThorttler-{se}", ModuleConfig.Throttle):
                 for (var i = 0; i < ModuleConfig.Volume; i++)
                     PlaySoundEffectHook.Original(sound, a2, a3, a4);
 

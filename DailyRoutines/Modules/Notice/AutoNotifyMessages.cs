@@ -5,6 +5,7 @@ using DailyRoutines.Notifications;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Utility;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
@@ -112,14 +113,14 @@ public class AutoNotifyMessages : DailyModuleBase
         }
     }
 
-    private static void OnChatMessage(
+    private static unsafe void OnChatMessage(
         XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
         if (!ConfigValidChatTypes.Contains(type)) return;
 
         var locState = ChatTypesLoc.TryGetValue(type, out var prefix);
         var isSendByOwn = sender.ExtractText().Contains(Service.ClientState.LocalPlayer?.Name.ExtractText());
-        if ((!ConfigOnlyNotifyWhenBackground || !IsGameForeground()) &&
+        if (ConfigOnlyNotifyWhenBackground && !Framework.Instance()->WindowInactive &&
             !(ConfigBlockOwnMessages && isSendByOwn))
             WinToast.Notify($"[{(locState ? prefix : type)}]  {sender.ExtractText()}", message.ExtractText());
     }

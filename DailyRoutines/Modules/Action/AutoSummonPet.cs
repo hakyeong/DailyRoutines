@@ -1,8 +1,8 @@
 using System.Collections.Generic;
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using ECommons.Automation.LegacyTaskManager;
-using ECommons.GameFunctions;
+
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 
@@ -22,7 +22,7 @@ public class AutoSummonPet : DailyModuleBase
 
     public override void Init()
     {
-        TaskManager ??= new TaskManager { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
+        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
 
         Service.ClientState.TerritoryChanged += OnZoneChanged;
         Service.DutyState.DutyRecommenced += OnDutyRecommenced;
@@ -31,8 +31,8 @@ public class AutoSummonPet : DailyModuleBase
     // 重新挑战
     private void OnDutyRecommenced(object? sender, ushort e)
     {
-        TaskManager.Abort();
-        TaskManager.Enqueue(CheckCurrentJob);
+        TaskHelper.Abort();
+        TaskHelper.Enqueue(CheckCurrentJob);
     }
 
     // 进入副本
@@ -40,9 +40,9 @@ public class AutoSummonPet : DailyModuleBase
     {
         if (!PresetData.Contents.ContainsKey(zone) || Service.ClientState.IsPvP) return;
 
-        TaskManager.Abort();
-        TaskManager.DelayNext(100);
-        TaskManager.Enqueue(CheckCurrentJob);
+        TaskHelper.Abort();
+        TaskHelper.DelayNext(100);
+        TaskHelper.Enqueue(CheckCurrentJob);
     }
 
     private static unsafe bool? CheckCurrentJob()
@@ -55,9 +55,9 @@ public class AutoSummonPet : DailyModuleBase
         var job = player.ClassJob.Id;
         if (!SummonActions.TryGetValue(job, out var actionID)) return true;
 
-        if (IsOccupied()) return false;
+        if (Flags.OccupiedInEvent) return false;
 
-        var state = CharacterManager.Instance()->LookupPetByOwnerObject(player.BattleChara()) != null;
+        var state = CharacterManager.Instance()->LookupPetByOwnerObject((BattleChara*)player.Address) != null;
         if (state) return true;
 
         return ActionManager.Instance()->UseAction(ActionType.Action, actionID);
