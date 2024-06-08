@@ -19,7 +19,6 @@ using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
-
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -65,7 +64,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     private static Config ModuleConfig = null!;
     private static Throttler<string> MonitorThrottler = new();
-    private static Throttler<nint> ObjectsThrottler = new();
 
     private static string BlacklistKeyInput = string.Empty;
     private static float WindowWidth;
@@ -536,6 +534,9 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     private static void InteractWithObject(GameObject* obj, ObjectKind kind)
     {
+        if (Flags.IsOnMount)
+            Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.Dismount, 1);
+
         FFXIVClientStructs.FFXIV.Client.Game.Control.TargetSystem.Instance()->Target = obj;
         FFXIVClientStructs.FFXIV.Client.Game.Control.TargetSystem.Instance()->InteractWithObject(obj);
         if (kind is ObjectKind.EventObj)
