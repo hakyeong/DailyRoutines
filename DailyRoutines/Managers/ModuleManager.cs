@@ -47,6 +47,13 @@ public class ModuleManager : IDailyManager
         }
     }
 
+    public void Load(Type moduleType, bool affectConfig)
+    {
+        if (!Modules.TryGetValue(moduleType, out var instance)) return;
+
+        Load(instance, affectConfig);
+    }
+
     public void Load(DailyModuleBase module, bool affectConfig = false)
     {
         if (Modules.ContainsValue(module))
@@ -75,6 +82,13 @@ public class ModuleManager : IDailyManager
         }
         else
             Service.Log.Error($"Fail to fetch {module}");
+    }
+
+    public void Unload(Type moduleType, bool affectConfig)
+    {
+        if (!Modules.TryGetValue(moduleType, out var instance)) return;
+
+        Unload(instance, affectConfig);
     }
 
     public void Unload(DailyModuleBase module, bool affectConfig = false)
