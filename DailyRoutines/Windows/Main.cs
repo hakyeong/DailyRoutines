@@ -61,8 +61,6 @@ public class Main : Window, IDisposable
         MainSettings.Init();
     }
 
-    public override void PreDraw() { Styles.Refresh(); }
-
     public override void Draw()
     {
         if (!string.IsNullOrWhiteSpace(SearchString))
