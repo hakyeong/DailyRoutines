@@ -2,15 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
-
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using ImGuiNET;
 using CharacterStruct = FFXIVClientStructs.FFXIV.Client.Game.Character.Character;
@@ -41,6 +42,8 @@ public unsafe class CustomizeGameObject : DailyModuleBase
     private static string ValueEditInput = string.Empty;
     private static bool ScaleVFXEditInput;
 
+    private static Vector2 CheckboxSize;
+
     private static readonly Dictionary<nint, (CustomizePreset Preset, float Scale)> CustomizeHistory = [];
 
     public override string? Author { get; set; } = "HSS";
@@ -59,17 +62,16 @@ public unsafe class CustomizeGameObject : DailyModuleBase
     {
         TargetInfoPreviewUI();
 
-        var tableSize = ImGui.GetContentRegionAvail() with { Y = 0 };
-        if (ImGui.BeginTable("###ConfigTable", 7, ImGuiTableFlags.Borders, tableSize))
+        var tableSize = (ImGui.GetContentRegionAvail() - ImGuiHelpers.ScaledVector2(100f)) with { Y = 0 };
+        if (ImGui.BeginTable("###ConfigTable", 7, ImGuiTableFlags.BordersInner, tableSize))
         {
-            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
-            ImGui.TableSetupColumn("备注", ImGuiTableColumnFlags.None, 40);
+            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
+            ImGui.TableSetupColumn("备注", ImGuiTableColumnFlags.None, 20);
             ImGui.TableSetupColumn("模式", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("ModelSkeletonID").X);
             ImGui.TableSetupColumn("值", ImGuiTableColumnFlags.None, 30);
             ImGui.TableSetupColumn("缩放比例", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("99.99").X);
-            ImGui.TableSetupColumn("缩放特效", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
-            ImGui.TableSetupColumn("操作", ImGuiTableColumnFlags.WidthFixed,
-                                   (4 * Styles.CheckboxSize.X) + (4 * ImGui.GetStyle().ItemSpacing.X));
+            ImGui.TableSetupColumn("缩放特效", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
+            ImGui.TableSetupColumn("操作", ImGuiTableColumnFlags.WidthFixed, 6 * CheckboxSize.X);
 
             ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
 
@@ -82,14 +84,11 @@ public unsafe class CustomizeGameObject : DailyModuleBase
                 CustomizePresetEditorUI(ref TypeInput, ref ValueInput, ref ScaleInput, ref ScaleVFXInput,
                                         ref NoteInput);
 
-                ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin() - ImGuiHelpers.ScaledVector2(2f),
-                                                  ImGui.GetItemRectMax() + ImGuiHelpers.ScaledVector2(2f),
-                                                  ImGui.ColorConvertFloat4ToU32(ImGuiColors.DalamudWhite), 2f,
-                                                  ImDrawFlags.RoundCornersAll, 1f);
-
                 ImGuiHelpers.ScaledDummy(1f);
 
-                if (ImGuiOm.ButtonSelectable(Service.Lang.GetText("Add")))
+                var buttonSize = new Vector2(ImGui.GetContentRegionAvail().X,
+                                             24f * ImGuiHelpers.GlobalScale);
+                if (ImGui.Button(Service.Lang.GetText("Add"), buttonSize))
                 {
                     if (ScaleInput > 0 && !string.IsNullOrWhiteSpace(ValueInput))
                     {
@@ -149,6 +148,7 @@ public unsafe class CustomizeGameObject : DailyModuleBase
 
                     RemovePresetHistory(preset);
                 }
+                CheckboxSize = ImGui.GetItemRectSize() - ImGui.GetStyle().FramePadding / 2;
 
                 ImGui.TableNextColumn();
                 ImGuiOm.Text(preset.Note);
