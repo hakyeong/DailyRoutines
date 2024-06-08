@@ -1997,6 +1997,18 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoCheckFoodUsage-ZoneRestrictions" xml:space="preserve">
     <value>区域限制</value>
   </data>
+  <data name="PartyFinderFilter-Title" xml:space="preserve">
+    <value>招募过滤</value>
+  </data>
+  <data name="PartyFinderFilter-Description" xml:space="preserve">
+    <value>过滤招募人或描述匹配正则的招募及重复招募</value>
+  </data>
+  <data name="PartyFinderFilter-RegexError" xml:space="preserve">
+    <value>表达式非法</value>
+  </data>
+  <data name="PartyFinderFilter-WhileList" xml:space="preserve">
+    <value>白名单模式</value>
+  </data>
   <data name="Food" xml:space="preserve">
     <value>食物</value>
   </data>
