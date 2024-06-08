@@ -88,6 +88,8 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
             else
                 Service.CommandManager.RemoveSubCommand(Command);
         }
+
+        ImGuiOm.HelpMarker(Service.Lang.GetText("AutoSubmarineCollect-AddCommandHelp"));
     }
 
     public override void OverlayUI()
@@ -185,7 +187,7 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
         return Telepo.Instance()->Teleport(96, 0);
     }
 
-    private static bool? TeleportToHouseEntry()
+    private bool? TeleportToHouseEntry()
     {
         if (!Throttler.Throttle("TeleportToHouseEntry")) return false;
         if (Flags.BetweenAreas) return false;
@@ -211,6 +213,8 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
 
         if (Target == null) return false;
         TargetSystem.Instance()->InteractWithObject(Target);
+
+        TaskHelper.InsertDelayNext("WaitEnteringHouse", 500, false, 1);
         return true;
     }
 
