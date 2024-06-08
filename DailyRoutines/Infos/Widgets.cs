@@ -655,7 +655,7 @@ public static class Widgets
             ImGui.Separator();
 
             var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
-            if (ImGui.BeginTable("###SelectTable", headerFuncs.Length, ImGuiTableFlags.Borders, tableSize))
+            if (ImGui.BeginTable("###SelectTable", headerFuncs.Length + 1, ImGuiTableFlags.Borders, tableSize))
             {
                 ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
                 foreach (var header in headerFuncs)
