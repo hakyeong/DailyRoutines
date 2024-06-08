@@ -189,6 +189,12 @@ public enum ExecuteCommandFlag
     RequestCutscene831 = 831,
 
     /// <summary>
+    /// 移动到庭院门前
+    /// <para><c>param1</c>: 地块索引</para>
+    /// </summary>
+    MoveToFrontGate = 1122,
+
+    /// <summary>
     /// 庭院相关操作
     /// <para><c>param2</c>: 45 - 布置庭具状态</para>
     /// </summary>
