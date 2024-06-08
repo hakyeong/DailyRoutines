@@ -195,6 +195,17 @@ public enum ExecuteCommandFlag
     RequestAchievement = 1000,
 
     /// <summary>
+    /// 请求所有成就概览 (不含具体成就内容)
+    /// </summary>
+    RequestAllAchievement = 1001,
+
+    /// <summary>
+    /// 请求接近达成成就概览 (不含具体成就内容)
+    /// <para><c>param1</c>:未知, 固定为 1</para>
+    /// </summary>
+    RequestNearCompletionAchievement = 1002,
+
+    /// <summary>
     /// 移动到庭院门前
     /// <para><c>param1</c>: 地块索引</para>
     /// </summary>
