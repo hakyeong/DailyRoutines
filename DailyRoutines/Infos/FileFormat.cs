@@ -328,6 +328,9 @@ public class FileFormat
         [JsonProperty("house_info")]
         public string? HouseInfo { get; set; }
 
+        [JsonProperty("house_remain_day")]
+        public string? HouseRemainDay { get; set; }
+
         [JsonProperty("group_id")]
         public int GroupId { get; set; }
 
