@@ -40,6 +40,7 @@ public class PartyFinderFilter : DailyModuleBase
     public override void ConfigUI()
     {
         var index = 0;
+        ImGui.Text(Service.Lang.GetText("PartyFinderFilter-Description2"));
         if (ImGuiOm.ButtonIcon("##add", Dalamud.Interface.FontAwesomeIcon.Plus))
         {
             _blackList.Add(string.Empty);
