@@ -65,6 +65,14 @@ public class Main : Window, IDisposable
 
     public override void Draw()
     {
+        if (!string.IsNullOrWhiteSpace(SearchString))
+        {
+            if (ImGui.Button(Service.Lang.GetText("Clear")))
+                SearchString = string.Empty;
+
+            ImGui.SameLine();
+        }
+
         ImGui.SetNextItemWidth(-1f);
         ImGui.InputTextWithHint("##MainWindow-SearchInput", $"{Service.Lang.GetText("PleaseSearch")}...",
                                 ref SearchString, 100);
@@ -287,6 +295,31 @@ public class Main : Window, IDisposable
             }
 
             ImGui.Separator();
+
+            if (moduleInfo.PrecedingModule != null)
+            {
+                if (ImGui.Selectable($"    {Service.Lang.GetText("Settings-EnableAllPModules")}", isFavorite, ImGuiSelectableFlags.DontClosePopups))
+                {
+                    foreach (var pModuleType in moduleInfo.Module.GetCustomAttribute<PrecedingModuleAttribute>().Modules)
+                        Service.ModuleManager.Load(pModuleType, true);
+
+                    ModulesFavorite.Clear();
+                    ModulesFavorite.AddRange(Modules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
+                }
+
+                ImGui.Separator();
+
+                if (ImGui.Selectable($"    {Service.Lang.GetText("Settings-DisableAllPModules")}", isFavorite, ImGuiSelectableFlags.DontClosePopups))
+                {
+                    foreach (var pModuleType in moduleInfo.Module.GetCustomAttribute<PrecedingModuleAttribute>().Modules)
+                        Service.ModuleManager.Unload(pModuleType, true);
+
+                    ModulesFavorite.Clear();
+                    ModulesFavorite.AddRange(Modules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
+                }
+
+                ImGui.Separator();
+            }
 
             if (ImGuiOm.Selectable($"    {Service.Lang.GetText("Settings-ResetModule")}"))
             {

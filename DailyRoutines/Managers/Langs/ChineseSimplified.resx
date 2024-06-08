@@ -2027,4 +2027,13 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="ToTarget" xml:space="preserve">
     <value>选中</value>
   </data>
+  <data name="Clear" xml:space="preserve">
+    <value>清除</value>
+  </data>
+  <data name="Settings-DisableAllPModules" xml:space="preserve">
+    <value>批量禁用前置模块</value>
+  </data>
+  <data name="Settings-EnableAllPModules" xml:space="preserve">
+    <value>批量启用前置模块</value>
+  </data>
 </root>
