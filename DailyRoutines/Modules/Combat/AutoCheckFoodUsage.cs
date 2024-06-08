@@ -34,8 +34,9 @@ public class AutoCheckFoodUsage : DailyModuleBase
     private static uint SelectedItem;
     private static string SelectItemSearch = string.Empty;
     private static bool SelectItemIsHQ = true;
-
     private static string ZoneSearch = string.Empty;
+
+    private static Vector2 CheckboxSize = ImGuiHelpers.ScaledVector2(20f);
 
     public override void Init()
     {
@@ -90,7 +91,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
         var tableSize = (ImGui.GetContentRegionAvail() - ImGuiHelpers.ScaledVector2(100f)) with { Y = 0 };
         if (ImGui.BeginTable("FoodPreset", 4, ImGuiTableFlags.Borders, tableSize))
         {
-            ImGui.TableSetupColumn("添加", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
+            ImGui.TableSetupColumn("添加", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
             ImGui.TableSetupColumn("名称", ImGuiTableColumnFlags.None, 30);
             ImGui.TableSetupColumn("地区", ImGuiTableColumnFlags.None, 30);
             ImGui.TableSetupColumn("职业", ImGuiTableColumnFlags.None, 30);
@@ -182,6 +183,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
                     preset.Enabled = isEnabled;
                     SaveConfig(ModuleConfig);
                 }
+                CheckboxSize = ImGui.GetItemRectSize();
 
                 ImGui.TableNextColumn();
                 ImGui.Selectable($"{LuminaCache.GetRow<Item>(preset.ItemID).Name.RawString} {(preset.IsHQ ? "(HQ)" : "")}");

@@ -25,25 +25,8 @@ public static class Widgets
     public static SeString DRPrefix => drPrefix.Value;
     public static SeString DailyRoutinesPrefix => dailyRoutinesPrefix.Value;
 
-    private static readonly Lazy<SeString> rPrefix = new(() =>
-                                                             new SeStringBuilder()
-                                                                 .AddUiForeground(
-                                                                     SeIconChar.BoxedLetterR.ToIconString(), 34)
-                                                                 .AddUiForegroundOff().Build());
-
-    private static readonly Lazy<SeString> drPrefix = new(() =>
-                                                              new SeStringBuilder()
-                                                                  .AddUiForeground(
-                                                                      SeIconChar.BoxedLetterD.ToIconString(), 34)
-                                                                  .AddUiForeground(
-                                                                      SeIconChar.BoxedLetterR.ToIconString(), 34)
-                                                                  .AddUiForegroundOff().Build());
-
-    private static readonly Lazy<SeString> dailyRoutinesPrefix = new(() =>
-                                                                         new SeStringBuilder()
-                                                                             .AddUiForeground("[Daily Routines]", 34)
-                                                                             .AddUiForegroundOff().Build());
-
+    private static Vector2 CheckboxSize = ImGuiHelpers.ScaledVector2(20f);
+    
     public static void PreviewImageWithHelpText(
         string helpText, string imageUrl, Vector2 imageSize = default,
         FontAwesomeIcon imageIcon = FontAwesomeIcon.InfoCircle)
@@ -208,7 +191,7 @@ public static class Widgets
             var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
             if (ImGui.BeginTable("###ContentSelectTable", 5, ImGuiTableFlags.Borders, tableSize))
             {
-                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
+                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
                 ImGui.TableSetupColumn("Icon", ImGuiTableColumnFlags.WidthFixed, 20f * ImGuiHelpers.GlobalScale);
                 ImGui.TableSetupColumn("Level", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("123").X);
                 ImGui.TableSetupColumn("DutyName", ImGuiTableColumnFlags.WidthStretch, 40);
@@ -242,6 +225,7 @@ public static class Widgets
                     ImGui.TableNextColumn();
                     var state = selected.Contains(contentPair.Key);
                     ImGui.Checkbox("", ref state);
+                    CheckboxSize = ImGui.GetItemRectSize();
 
                     ImGui.TableNextColumn();
                     ImGui.Image(ImageHelper.GetIcon(contentPair.Value.ContentType.Value.Icon).ImGuiHandle,
@@ -294,7 +278,7 @@ public static class Widgets
             var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
             if (ImGui.BeginTable("###ZoneSelectTable", 2, ImGuiTableFlags.Borders, tableSize))
             {
-                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
+                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
                 ImGui.TableSetupColumn("PlaceName");
 
                 ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
@@ -318,6 +302,7 @@ public static class Widgets
                     ImGui.BeginDisabled();
                     var state = selected.Contains(zonePair.Key);
                     ImGui.Checkbox("", ref state);
+                    CheckboxSize = ImGui.GetItemRectSize();
                     ImGui.EndDisabled();
 
                     ImGui.TableNextColumn();
@@ -361,7 +346,7 @@ public static class Widgets
             var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
             if (ImGui.BeginTable("###JobSelectTable", 2, ImGuiTableFlags.Borders, tableSize))
             {
-                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
+                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
                 ImGui.TableSetupColumn("Job", ImGuiTableColumnFlags.WidthStretch);
 
                 ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
@@ -388,6 +373,7 @@ public static class Widgets
                     ImGui.BeginDisabled();
                     var state = job.RowId == 0 ? selected.Count == 0 : selected.Contains(job.RowId);
                     ImGui.Checkbox("", ref state);
+                    CheckboxSize = ImGui.GetItemRectSize();
                     ImGui.EndDisabled();
 
                     ImGui.TableNextColumn();
@@ -594,7 +580,7 @@ public static class Widgets
             var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
             if (ImGui.BeginTable("###SelectTable", headerFuncs.Length + 1, ImGuiTableFlags.Borders, tableSize))
             {
-                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
+                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
                 foreach (var header in headerFuncs)
                 {
                     ImGui.TableSetupColumn(header.Header, ImGuiTableColumnFlags.WidthStretch);
@@ -631,6 +617,7 @@ public static class Widgets
 
                         selectState = true;
                     }
+                    CheckboxSize = ImGui.GetItemRectSize();
 
                     foreach (var display in displayFuncs)
                     {
@@ -648,9 +635,31 @@ public static class Widgets
         return selectState;
     }
 
-
     public static void ConflictKeyText()
     {
         ImGui.Text($"{Service.Lang.GetText("ConflictKey")}: {Service.Config.ConflictKey}");
     }
+
+    #region Lazy
+
+    private static readonly Lazy<SeString> rPrefix = new(() =>
+                                                             new SeStringBuilder()
+                                                                 .AddUiForeground(
+                                                                     SeIconChar.BoxedLetterR.ToIconString(), 34)
+                                                                 .AddUiForegroundOff().Build());
+
+    private static readonly Lazy<SeString> drPrefix = new(() =>
+                                                              new SeStringBuilder()
+                                                                  .AddUiForeground(
+                                                                      SeIconChar.BoxedLetterD.ToIconString(), 34)
+                                                                  .AddUiForeground(
+                                                                      SeIconChar.BoxedLetterR.ToIconString(), 34)
+                                                                  .AddUiForegroundOff().Build());
+
+    private static readonly Lazy<SeString> dailyRoutinesPrefix = new(() =>
+                                                                         new SeStringBuilder()
+                                                                             .AddUiForeground("[Daily Routines]", 34)
+                                                                             .AddUiForegroundOff().Build());
+
+    #endregion
 }

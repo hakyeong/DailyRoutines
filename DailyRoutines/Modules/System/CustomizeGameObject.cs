@@ -4,12 +4,9 @@ using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Hooking;
 using Dalamud.Interface;
-using Dalamud.Interface.Colors;
-using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
@@ -42,7 +39,7 @@ public unsafe class CustomizeGameObject : DailyModuleBase
     private static string ValueEditInput = string.Empty;
     private static bool ScaleVFXEditInput;
 
-    private static Vector2 CheckboxSize;
+    private static Vector2 CheckboxSize = ImGuiHelpers.ScaledVector2(20f);
 
     private static readonly Dictionary<nint, (CustomizePreset Preset, float Scale)> CustomizeHistory = [];
 
@@ -148,7 +145,7 @@ public unsafe class CustomizeGameObject : DailyModuleBase
 
                     RemovePresetHistory(preset);
                 }
-                CheckboxSize = ImGui.GetItemRectSize() - ImGui.GetStyle().FramePadding / 2;
+                CheckboxSize = ImGui.GetItemRectSize();
 
                 ImGui.TableNextColumn();
                 ImGuiOm.Text(preset.Note);

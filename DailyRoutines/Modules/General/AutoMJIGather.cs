@@ -17,7 +17,6 @@ using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
-
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.MJI;
@@ -34,12 +33,16 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoMJIGatherTitle", "AutoMJIGatherDescription", ModuleCategories.一般)]
 public class AutoMJIGather : DailyModuleBase
 {
+    private delegate bool IsPlayerOnDivingDelegate(nint a1);
+
     [Signature("E8 ?? ?? ?? ?? 84 C0 74 ?? F3 0F 10 35 ?? ?? ?? ?? F3 0F 10 3D ?? ?? ?? ?? F3 44 0F 10 05",
                DetourName = nameof(IsPlayingOnDivingDetour))]
     private static Hook<IsPlayerOnDivingDelegate>? IsPlayerOnDivingHook;
 
     [Signature("4C 8D 35 ?? ?? ?? ?? 48 8B 09", ScanType = ScanType.Text)]
     private static nint UnknownPtrInTargetSystem;
+
+    private static Config ModuleConfig = null!;
 
     private static bool IsOnDiving;
     private static int CurrentGatherIndex;
@@ -48,7 +51,7 @@ public class AutoMJIGather : DailyModuleBase
     private static Dictionary<string, uint> GatheringItemsIcon = [];
     private static List<Vector3> DataCollectWaypoints = [];
 
-    private static Config ModuleConfig = null!;
+    private static Vector2 CheckboxSize = ImGuiHelpers.ScaledVector2(20f);
 
     public override void Init()
     {
@@ -65,54 +68,6 @@ public class AutoMJIGather : DailyModuleBase
                                         .Where(x => x.MapIcon != 0)
                                         .ToDictionary(x => x.Name.Value.Singular.RawString, x => x.MapIcon);
     }
-
-    public override void Uninit()
-    {
-        Service.Chat.ChatMessage -= OnChatMessage;
-        QueuedGatheringList.Clear();
-        IsOnDataCollecting = false;
-        CurrentGatherIndex = 0;
-
-        base.Uninit();
-    }
-
-    private class IslandGatherPoint : IEquatable<IslandGatherPoint>, IComparable<IslandGatherPoint>
-    {
-        public IslandGatherPoint()
-        {
-            MapIcon = new Lazy<IDalamudTextureWrap?>(() => ImageHelper.GetIcon(GatheringItemsIcon[Name]));
-        }
-
-        public IslandGatherPoint(string name)
-        {
-            Name = name;
-            MapIcon = new Lazy<IDalamudTextureWrap?>(() => ImageHelper.GetIcon(GatheringItemsIcon[Name]));
-        }
-
-        public string        Name    { get; set; } = string.Empty;
-        public bool          Enabled { get; set; }
-        public List<Vector3> Points  { get; set; } = [];
-
-        [JsonIgnore]
-        public Lazy<IDalamudTextureWrap?> MapIcon { get; set; }
-
-        public int CompareTo(IslandGatherPoint? other) =>
-            other == null ? 1 : string.Compare(Name, other.Name, StringComparison.Ordinal);
-
-        public bool Equals(IslandGatherPoint? other) => other != null && Name == other.Name;
-
-        public override bool Equals(object? obj) => Equals(obj as IslandGatherPoint);
-
-        public override int GetHashCode() => Name.GetHashCode();
-    }
-
-    private class Config : ModuleConfiguration
-    {
-        public List<IslandGatherPoint> IslandGatherPoints = [];
-        public bool StopWhenReachingCap = true;
-    }
-
-    private delegate bool IsPlayerOnDivingDelegate(nint a1);
 
     #region UI
 
@@ -187,7 +142,7 @@ public class AutoMJIGather : DailyModuleBase
         var tableSize = ((ImGui.GetContentRegionAvail() / 3) + ImGuiHelpers.ScaledVector2(50f)) with { Y = 0 };
         if (ImGui.BeginTable("GatherPointsTable1", 3, ImGuiTableFlags.Borders, tableSize))
         {
-            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
+            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
             ImGui.TableSetupColumn("名称", ImGuiTableColumnFlags.None, 40);
             ImGui.TableSetupColumn("数量", ImGuiTableColumnFlags.None, 20);
 
@@ -212,6 +167,7 @@ public class AutoMJIGather : DailyModuleBase
                 var isEnabled = gatherPoint.Enabled;
                 ImGui.BeginDisabled();
                 ImGui.Checkbox($"###{gatherPoint.Name}", ref isEnabled);
+                CheckboxSize = ImGui.GetItemRectSize();
                 ImGui.EndDisabled();
 
                 ImGui.TableNextColumn();
@@ -234,7 +190,7 @@ public class AutoMJIGather : DailyModuleBase
         ImGui.SameLine();
         if (ImGui.BeginTable("GatherPointsTable2", 3, ImGuiTableFlags.Borders, tableSize))
         {
-            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, Styles.CheckboxSize.X);
+            ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
             ImGui.TableSetupColumn("名称", ImGuiTableColumnFlags.None, 40);
             ImGui.TableSetupColumn("数量", ImGuiTableColumnFlags.None, 20);
 
@@ -259,6 +215,7 @@ public class AutoMJIGather : DailyModuleBase
                 var isEnabled = gatherPoint.Enabled;
                 ImGui.BeginDisabled();
                 ImGui.Checkbox($"###{gatherPoint.Name}", ref isEnabled);
+                CheckboxSize = ImGui.GetItemRectSize();
                 ImGui.EndDisabled();
 
                 ImGui.TableNextColumn();
@@ -572,4 +529,50 @@ public class AutoMJIGather : DailyModuleBase
     }
 
     #endregion
+
+    public override void Uninit()
+    {
+        Service.Chat.ChatMessage -= OnChatMessage;
+        QueuedGatheringList.Clear();
+        IsOnDataCollecting = false;
+        CurrentGatherIndex = 0;
+
+        base.Uninit();
+    }
+
+    private class IslandGatherPoint : IEquatable<IslandGatherPoint>, IComparable<IslandGatherPoint>
+    {
+        public IslandGatherPoint()
+        {
+            MapIcon = new Lazy<IDalamudTextureWrap?>(() => ImageHelper.GetIcon(GatheringItemsIcon[Name]));
+        }
+
+        public IslandGatherPoint(string name)
+        {
+            Name = name;
+            MapIcon = new Lazy<IDalamudTextureWrap?>(() => ImageHelper.GetIcon(GatheringItemsIcon[Name]));
+        }
+
+        public string        Name    { get; set; } = string.Empty;
+        public bool          Enabled { get; set; }
+        public List<Vector3> Points  { get; set; } = [];
+
+        [JsonIgnore]
+        public Lazy<IDalamudTextureWrap?> MapIcon { get; set; }
+
+        public int CompareTo(IslandGatherPoint? other) =>
+            other == null ? 1 : string.Compare(Name, other.Name, StringComparison.Ordinal);
+
+        public bool Equals(IslandGatherPoint? other) => other != null && Name == other.Name;
+
+        public override bool Equals(object? obj) => Equals(obj as IslandGatherPoint);
+
+        public override int GetHashCode() => Name.GetHashCode();
+    }
+
+    private class Config : ModuleConfiguration
+    {
+        public List<IslandGatherPoint> IslandGatherPoints = [];
+        public bool StopWhenReachingCap = true;
+    }
 }

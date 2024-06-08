@@ -1622,7 +1622,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value> 已成功重定向地面技能至: {0}</value>
   </data>
   <data name="AutoReplaceLocationAction-AdjustDistance" xml:space="preserve">
-    <value>重定向阈值距离</value>
+    <value>重定向距离阈值</value>
   </data>
   <data name="AutoReplaceLocationAction-SendMessage" xml:space="preserve">
     <value>发送重定向成功消息</value>
@@ -2053,5 +2053,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="Settings-EnableAllPModules" xml:space="preserve">
     <value>批量启用前置模块</value>
+  </data>
+  <data name="AutoReplaceLocationAction-AdjustDistanceHelp" xml:space="preserve">
+    <value>手动放置位置距中心点超出此距离时将不会尝试重定向</value>
   </data>
 </root>
