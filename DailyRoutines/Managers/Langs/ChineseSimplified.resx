@@ -2027,6 +2027,12 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="ToTarget" xml:space="preserve">
     <value>选中</value>
   </data>
+  <data name="AutoRequestAllFCBagsDescription" xml:space="preserve">
+    <value>启用后, 打开部队储物柜界面后自动请求所有页面数据, 且页面切换不再需要加载</value>
+  </data>
+  <data name="AutoRequestAllFCBagsTitle" xml:space="preserve">
+    <value>自动请求部队储物柜数据</value>
+  </data>
   <data name="Clear" xml:space="preserve">
     <value>清除</value>
   </data>
