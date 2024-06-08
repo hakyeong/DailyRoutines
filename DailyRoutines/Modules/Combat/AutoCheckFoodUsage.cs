@@ -114,34 +114,19 @@ public class AutoCheckFoodUsage : DailyModuleBase
 
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
-                if (ImGui.BeginCombo("###FoodSelectCombo", SelectedItem == 0 ? "" : LuminaCache.GetRow<Item>(SelectedItem).Name.RawString,
-                                     ImGuiComboFlags.HeightLarge))
-                {
-                    ImGui.SetNextItemWidth(-1f);
-                    ImGui.InputText("###ItemSearch", ref SelectItemSearch, 128);
-                    ImGui.Separator();
-
-                    foreach (var (rowID, item) in PresetData.Food)
+                SingleSelectCombo(PresetData.Food, ref SelectedItem, ref SelectItemSearch, x => $"{x.Name.RawString} ({x.RowId})",
+                    [new("物品", ImGuiTableColumnFlags.WidthStretch, 0)],
+                    [x => () =>
                     {
-                        var itemName = item.Name.RawString;
-
-                        if (!string.IsNullOrWhiteSpace(SelectItemSearch) &&
-                            !itemName.Contains(SelectItemSearch, StringComparison.OrdinalIgnoreCase)) continue;
-
-                        var itemAction = item.ItemAction.Value;
-                        if (itemAction?.Data == null) continue;
-
-                        var itemFood = LuminaCache.GetRow<ItemFood>(itemAction.Data[1]);
-                        if (itemFood == null) continue;
-
-                        var icon = ImageHelper.GetIcon(item.Icon, SelectItemIsHQ ? ITextureProvider.IconFlags.ItemHighQuality : ITextureProvider.IconFlags.None);
+                        var icon = ImageHelper.GetIcon(x.Icon, SelectItemIsHQ ? ITextureProvider.IconFlags.ItemHighQuality : ITextureProvider.IconFlags.None);
 
                         if (ImGuiOm.SelectableImageWithText(icon.ImGuiHandle, ImGuiHelpers.ScaledVector2(20f),
-                                                            item.Name.RawString, rowID == SelectedItem))
-                            SelectedItem = rowID;
-                    }
-                    ImGui.EndCombo();
-                }
+                                                            x.Name, x.RowId == SelectedItem,
+                                                            ImGuiSelectableFlags.DontClosePopups))
+                        {
+                            SelectedItem = SelectedItem == x.RowId ? 0 : x.RowId;
+                        }
+                    }], true);
 
                 ImGui.SameLine();
                 ImGui.Checkbox("HQ", ref SelectItemIsHQ);
@@ -209,8 +194,17 @@ public class AutoCheckFoodUsage : DailyModuleBase
                 ImGui.SetNextItemWidth(-1f);
                 ImGui.PushID("ZonesSelectCombo");
                 if (MultiSelectCombo(PresetData.Zones, ref zones, ref ZoneSearch, 
-                                     [new("区域", ImGuiTableColumnFlags.None, 30)], 
-                                     [x => () => ImGui.Text(x.PlaceName.Value.Name.RawString)]))
+                                     [new("区域", ImGuiTableColumnFlags.WidthStretch, 0)], 
+                                     [x => () =>
+                                     {
+                                         if (ImGui.Selectable(x.ExtractPlaceName(), zones.Contains(x.RowId), 
+                                                              ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups))
+                                         {
+                                             if (!zones.Remove(x.RowId))
+                                                 zones.Add(x.RowId);
+                                             SaveConfig(ModuleConfig);
+                                         }
+                                     }], true))
                 {
                     preset.Zones = zones;
                     SaveConfig(ModuleConfig);
