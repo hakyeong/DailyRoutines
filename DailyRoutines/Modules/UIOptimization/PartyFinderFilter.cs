@@ -89,10 +89,8 @@ public class PartyFinderFilter : DailyModuleBase
     private bool Verify(PartyFinderListing listing)
     {
         var description = listing.Description.ToString();
-        if (_descriptionSet.Contains(description))
+        if (!_descriptionSet.Add(description))
             return false;
-
-        _descriptionSet.Add(description);
 
         var name = listing.Name.ToString();
         var result = true;
