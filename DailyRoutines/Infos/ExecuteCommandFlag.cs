@@ -189,6 +189,12 @@ public enum ExecuteCommandFlag
     RequestCutscene831 = 831,
 
     /// <summary>
+    /// 请求成就进度数据
+    /// <para><c>param1</c>: 成就在 Achievement.csv 中的对应索引</para>
+    /// </summary>
+    RequestAchievement = 1000,
+
+    /// <summary>
     /// 移动到庭院门前
     /// <para><c>param1</c>: 地块索引</para>
     /// </summary>
