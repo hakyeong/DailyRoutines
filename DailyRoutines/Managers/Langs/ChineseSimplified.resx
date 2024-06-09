@@ -2063,4 +2063,13 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoReplaceLocationAction-AdjustDistanceHelp" xml:space="preserve">
     <value>手动放置位置距中心点超出此距离时将不会尝试重定向</value>
   </data>
+  <data name="BetterFateProgressUI-LeftFateAmount" xml:space="preserve">
+    <value>剩余 {0} 次</value>
+  </data>
+  <data name="BetterFateProgressUIDescription" xml:space="preserve">
+    <value>用模块界面取代游戏原生界面, 打开切换无需加载, 支持实时数据更新, 且支持右键快捷传送</value>
+  </data>
+  <data name="BetterFateProgressUITitle" xml:space="preserve">
+    <value>更好的危命任务完成度界面</value>
+  </data>
 </root>
