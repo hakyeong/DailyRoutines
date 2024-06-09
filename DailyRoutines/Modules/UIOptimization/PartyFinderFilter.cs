@@ -17,7 +17,7 @@ public class PartyFinderFilter : DailyModuleBase
 
     private readonly HashSet<string> _descriptionSet = [];
 
-    private List<string> _blackList = [];
+    private List<KeyValuePair<bool, string>> _blackList = [];
 
     private bool _isWhiteList;
 
@@ -27,7 +27,7 @@ public class PartyFinderFilter : DailyModuleBase
     {
         AddConfig("BlackList", _blackList);
         AddConfig("Reverse", _isWhiteList);
-        _blackList = GetConfig<List<string>>("BlackList");
+        _blackList = GetConfig<List<KeyValuePair<bool, string>>>("BlackList");
         _isWhiteList = GetConfig<bool>("Reverse");
         Service.PartyFinder.ReceiveListing += OnReceiveListing;
     }
@@ -43,28 +43,35 @@ public class PartyFinderFilter : DailyModuleBase
         var index = 0;
         ImGui.Text(Service.Lang.GetText("PartyFinderFilter-Description2"));
         if (ImGuiOm.ButtonIcon("##add", FontAwesomeIcon.Plus))
-            _blackList.Add(string.Empty);
-
+            _blackList.Add(new(true, string.Empty));
         ImGui.SameLine();
         if (ImGui.Checkbox(Service.Lang.GetText("PartyFinderFilter-WhileList"), ref _isWhiteList))
             UpdateConfig("Reverse", _isWhiteList);
 
-        foreach (var str in _blackList.ToList())
+        foreach (var item in _blackList.ToList())
         {
-            s = str;
+            var x = _blackList[index].Key;
+            if (ImGui.Checkbox($"##available{index}", ref x))
+            {
+                _blackList[index] = new(x, item.Value);
+                UpdateConfig("BlackList", _blackList);
+            }
+
+            ImGui.SameLine();
+            s = item.Value;
             ImGui.InputText($"##{index}", ref s, 500);
             if (ImGui.IsItemDeactivatedAfterEdit())
             {
                 try
                 {
                     _ = new Regex(s);
-                    _blackList[index] = s;
+                    _blackList[index] = new(item.Key, s);
                     UpdateConfig("BlackList", _blackList);
                 }
                 catch (ArgumentException)
                 {
                     NotifyHelper.NotificationWarning(Service.Lang.GetText("PartyFinderFilter-RegexError"));
-                    _blackList = GetConfig<List<string>>("BlackList");
+                    _blackList = GetConfig<List<KeyValuePair<bool, string>>>("BlackList");
                 }
             }
 
@@ -97,7 +104,7 @@ public class PartyFinderFilter : DailyModuleBase
         var result = true;
         try
         {
-            result = !(_blackList.Any(str => Regex.IsMatch(name, str) || Regex.IsMatch(description, str)) ^ _isWhiteList);
+            result = !(_blackList.Where(i => i.Key).Any(item => Regex.IsMatch(name, item.Value) || Regex.IsMatch(description, item.Value)) ^ _isWhiteList);
         }
         catch (Exception e)
         {
