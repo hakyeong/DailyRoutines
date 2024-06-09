@@ -113,4 +113,11 @@ public unsafe class OptimizedInteraction : DailyModuleBase
 
         return true;
     }
+
+    public override void Uninit()
+    {
+        Service.ClientState.TerritoryChanged -= OnZoneChanged;
+
+        base.Uninit();
+    }
 }
