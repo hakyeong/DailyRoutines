@@ -175,6 +175,9 @@ public class Main : Window, IDisposable
             else Service.ModuleManager.Unload(module, true);
         }
 
+        if (ImGui.IsItemHovered())
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+
         if (fromSearch) ImGuiOm.TooltipHover(moduleInfo.Category.ToString());
 
         DrawModuleContextMenu(moduleInfo);
