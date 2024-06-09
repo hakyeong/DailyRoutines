@@ -6,6 +6,8 @@ using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
 using Dalamud.Game.Gui.PartyFinder.Types;
 using Dalamud.Interface;
+using Dalamud.Interface.Colors;
+using Dalamud.Interface.Components;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
@@ -13,82 +15,92 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("PartyFinderFilterTitle", "PartyFinderFilterDescription", ModuleCategories.界面优化)]
 public class PartyFinderFilter : DailyModuleBase
 {
-    private int _batchIndex;
-
-    private readonly HashSet<string> _descriptionSet = [];
-
-    private List<KeyValuePair<bool, string>> _blackList = [];
-
-    private bool _isWhiteList;
-
-    private string s = string.Empty;
+    private int batchIndex;
+    private readonly HashSet<string> descriptionSet = [];
+    private static Config ModuleConfig = null!;
 
     public override void Init()
     {
-        AddConfig("BlackList", _blackList);
-        AddConfig("Reverse", _isWhiteList);
-        _blackList = GetConfig<List<KeyValuePair<bool, string>>>("BlackList");
-        _isWhiteList = GetConfig<bool>("Reverse");
+        ModuleConfig = LoadConfig<Config>() ?? new Config();
         Service.PartyFinder.ReceiveListing += OnReceiveListing;
-    }
-
-    public override void Uninit()
-    {
-        Service.PartyFinder.ReceiveListing -= OnReceiveListing;
-        base.Uninit();
     }
 
     public override void ConfigUI()
     {
-        var index = 0;
-        ImGui.Text(Service.Lang.GetText("PartyFinderFilter-Description2"));
-        if (ImGuiOm.ButtonIcon("##add", FontAwesomeIcon.Plus))
-            _blackList.Add(new(true, string.Empty));
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("WorkTheory")}:");
+        ImGuiOm.HelpMarker(Service.Lang.GetText("PartyFinderFilter-WorkTheoryHelp"));
+
+        ImGui.Spacing();
+
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("PartyFinderFilter-CurrentMode")}:");
+
         ImGui.SameLine();
-        if (ImGui.Checkbox(Service.Lang.GetText("PartyFinderFilter-WhileList"), ref _isWhiteList))
-            UpdateConfig("Reverse", _isWhiteList);
+        if (ImGuiComponents.ToggleButton("ModeToggle", ref ModuleConfig.IsWhiteList))
+            SaveConfig(ModuleConfig);
 
-        foreach (var item in _blackList.ToList())
+        ImGui.SameLine();
+        ImGui.Text(ModuleConfig.IsWhiteList ? Service.Lang.GetText("Whitelist") : Service.Lang.GetText("Blacklist"));
+
+        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Plus, Service.Lang.GetText("PartyFinderFilter-AddPreset")))
+            ModuleConfig.BlackList.Add(new(true, string.Empty));
+
+        DrawBlacklistEditor();
+    }
+
+    private void DrawBlacklistEditor()
+    {
+        var index = 0;
+        foreach (var item in ModuleConfig.BlackList.ToList())
         {
-            var x = _blackList[index].Key;
-            if (ImGui.Checkbox($"##available{index}", ref x))
+            var enableState = item.Key;
+            if (ImGui.Checkbox($"##available{index}", ref enableState))
             {
-                _blackList[index] = new(x, item.Value);
-                UpdateConfig("BlackList", _blackList);
+                ModuleConfig.BlackList[index] = new(enableState, item.Value);
+                SaveConfig(ModuleConfig);
             }
 
             ImGui.SameLine();
-            s = item.Value;
-            ImGui.InputText($"##{index}", ref s, 500);
-            if (ImGui.IsItemDeactivatedAfterEdit())
-            {
-                try
-                {
-                    _ = new Regex(s);
-                    _blackList[index] = new(item.Key, s);
-                    UpdateConfig("BlackList", _blackList);
-                }
-                catch (ArgumentException)
-                {
-                    NotifyHelper.NotificationWarning(Service.Lang.GetText("PartyFinderFilter-RegexError"));
-                    _blackList = GetConfig<List<KeyValuePair<bool, string>>>("BlackList");
-                }
-            }
+            if (DrawBlacklistItemText(index, item))
+                index++;
+        }
+    }
 
-            ImGui.SameLine();
-            if (ImGuiOm.ButtonIcon($"##delete{index}", FontAwesomeIcon.Trash))
-                _blackList.RemoveAt(index);
+    private bool DrawBlacklistItemText(int index, KeyValuePair<bool, string> item)
+    {
+        var value = item.Value;
+        ImGui.InputText($"##{index}", ref value, 500);
 
-            index++;
+        if (ImGui.IsItemDeactivatedAfterEdit())
+            HandleRegexUpdate(index, item.Key, value);
+
+        ImGui.SameLine();
+        if (ImGuiOm.ButtonIcon($"##delete{index}", FontAwesomeIcon.Trash))
+            ModuleConfig.BlackList.RemoveAt(index);
+        return true;
+    }
+
+    private void HandleRegexUpdate(int index, bool key, string value)
+    {
+        try
+        {
+            _ = new Regex(value);
+            ModuleConfig.BlackList[index] = new(key, value);
+            SaveConfig(ModuleConfig);
+        }
+        catch (ArgumentException)
+        {
+            NotifyHelper.NotificationWarning(Service.Lang.GetText("PartyFinderFilter-RegexError"));
+            ModuleConfig = LoadConfig<Config>() ?? new Config();
         }
     }
 
     private void OnReceiveListing(PartyFinderListing listing, PartyFinderListingEventArgs args)
     {
-        if (_batchIndex != args.BatchNumber)
+        if (batchIndex != args.BatchNumber)
         {
-            _batchIndex = args.BatchNumber;
-            _descriptionSet.Clear();
+            batchIndex = args.BatchNumber;
+            descriptionSet.Clear();
         }
 
         args.Visible = args.Visible && Verify(listing);
@@ -97,20 +109,27 @@ public class PartyFinderFilter : DailyModuleBase
     private bool Verify(PartyFinderListing listing)
     {
         var description = listing.Description.ToString();
-        if (!_descriptionSet.Add(description))
+        if (!descriptionSet.Add(description))
             return false;
 
-        var name = listing.Name.ToString();
-        var result = true;
-        try
-        {
-            result = !(_blackList.Where(i => i.Key).Any(item => Regex.IsMatch(name, item.Value) || Regex.IsMatch(description, item.Value)) ^ _isWhiteList);
-        }
-        catch (Exception e)
-        {
-            Service.Log.Error(GetType().Name + "cause error when filting\n" + e);
-        }
+        var isMatch = ModuleConfig.BlackList
+                                  .Where(i => i.Key)
+                                  .Any(item => Regex.IsMatch(listing.Name.ToString(), item.Value) ||
+                                               Regex.IsMatch(description, item.Value));
 
-        return result;
+        return ModuleConfig.IsWhiteList ? isMatch : !isMatch;
+    }
+
+
+    public override void Uninit()
+    {
+        Service.PartyFinder.ReceiveListing -= OnReceiveListing;
+        base.Uninit();
+    }
+
+    private class Config : ModuleConfiguration
+    {
+        public List<KeyValuePair<bool, string>> BlackList = [];
+        public bool IsWhiteList;
     }
 }

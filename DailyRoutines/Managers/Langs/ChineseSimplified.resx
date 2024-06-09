@@ -1995,12 +1995,12 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>区域限制</value>
   </data>
   <data name="PartyFinderFilterTitle" xml:space="preserve">
-    <value>自动招募过滤</value>
+    <value>招募过滤器</value>
   </data>
   <data name="PartyFinderFilterDescription" xml:space="preserve">
     <value>启用并配置完成后, 根据正则过滤指定招募人或描述的招募, 并自动过滤重复招募</value>
   </data>
-  <data name="PartyFinderFilter-Description2" xml:space="preserve">
+  <data name="PartyFinderFilter-WorkTheoryHelp" xml:space="preserve">
     <value>过滤规则:
 黑名单模式: 若招募的招募人 / 招募描述匹配正则时, 去除该招募
 白名单模式: 若招募的招募人 / 招募描述匹配正则时, 显示该招募
@@ -2009,9 +2009,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="PartyFinderFilter-RegexError" xml:space="preserve">
     <value>表达式非法</value>
-  </data>
-  <data name="PartyFinderFilter-WhiteList" xml:space="preserve">
-    <value>白名单模式</value>
   </data>
   <data name="Food" xml:space="preserve">
     <value>食物</value>
@@ -2070,6 +2067,15 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="BetterFateProgressUITitle" xml:space="preserve">
     <value>更好的危命任务完成度界面</value>
   </data>
+  <data name="Blacklist" xml:space="preserve">
+    <value>黑名单</value>
+  </data>
+  <data name="PartyFinderFilter-AddPreset" xml:space="preserve">
+    <value>新增配置</value>
+  </data>
+  <data name="PartyFinderFilter-CurrentMode" xml:space="preserve">
+    <value>当前工作模式</value>
+  </data>
   <data name="Settings-EnabledAmount" xml:space="preserve">
     <value>启用人数</value>
   </data>
@@ -2078,5 +2084,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="Settings-ModuleInfoCategory" xml:space="preserve">
     <value>分类</value>
+  </data>
+  <data name="Whitelist" xml:space="preserve">
+    <value>白名单</value>
   </data>
 </root>
