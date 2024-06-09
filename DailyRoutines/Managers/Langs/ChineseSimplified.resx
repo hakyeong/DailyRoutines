@@ -1922,9 +1922,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Favorite" xml:space="preserve">
     <value>收藏</value>
   </data>
-  <data name="Settings-ModuleInfoDisplayShort" xml:space="preserve">
-    <value>分类: {0} / 作者: {1}</value>
-  </data>
   <data name="Description" xml:space="preserve">
     <value>描述</value>
   </data>
@@ -1998,21 +1995,22 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>区域限制</value>
   </data>
   <data name="PartyFinderFilterTitle" xml:space="preserve">
-    <value>招募过滤</value>
+    <value>自动招募过滤</value>
   </data>
   <data name="PartyFinderFilterDescription" xml:space="preserve">
-    <value>过滤招募人或描述匹配正则的招募及重复招募</value>
+    <value>启用并配置完成后, 根据正则过滤指定招募人或描述的招募, 并自动过滤重复招募</value>
   </data>
   <data name="PartyFinderFilter-Description2" xml:space="preserve">
-    <value>过滤规则: 
-1. 去除重复招募
-2. 招募发起者Id / 招募描述 中能找到满足正则表达式的匹配项时，去除该招募
-（若启用白名单模式，则仅显示满足正则表达式的招募）</value>
+    <value>过滤规则:
+黑名单模式: 若招募的招募人 / 招募描述匹配正则时, 去除该招募
+白名单模式: 若招募的招募人 / 招募描述匹配正则时, 显示该招募
+
+(若出现相同描述的招募, 将仅保留首个)</value>
   </data>
   <data name="PartyFinderFilter-RegexError" xml:space="preserve">
     <value>表达式非法</value>
   </data>
-  <data name="PartyFinderFilter-WhileList" xml:space="preserve">
+  <data name="PartyFinderFilter-WhiteList" xml:space="preserve">
     <value>白名单模式</value>
   </data>
   <data name="Food" xml:space="preserve">
@@ -2071,5 +2069,14 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="BetterFateProgressUITitle" xml:space="preserve">
     <value>更好的危命任务完成度界面</value>
+  </data>
+  <data name="Settings-EnabledAmount" xml:space="preserve">
+    <value>启用人数</value>
+  </data>
+  <data name="Settings-ModuleInfoAuthor" xml:space="preserve">
+    <value>作者</value>
+  </data>
+  <data name="Settings-ModuleInfoCategory" xml:space="preserve">
+    <value>分类</value>
   </data>
 </root>

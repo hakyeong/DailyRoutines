@@ -275,7 +275,27 @@ public class Main : Window, IDisposable
             ImGui.Text($"{moduleInfo.Title}");
 
             ImGui.SetWindowFontScale(0.9f);
-            ImGui.Text(Service.Lang.GetText("Settings-ModuleInfoDisplayShort", moduleInfo.Category, moduleInfo.Author ?? "AtmoOmen"));
+            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Settings-ModuleInfoCategory")}:");
+
+            ImGui.SameLine();
+            ImGui.Text($"{moduleInfo.Category}");
+
+            ImGui.SameLine();
+            ImGui.Text("/");
+
+            ImGui.SameLine();
+            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Settings-ModuleInfoAuthor")}:");
+
+            ImGui.SameLine();
+            ImGui.Text($"{moduleInfo.Author ?? "AtmoOmen"}");
+
+            if (OnlineStatsManager.ModuleUsageStats.TryGetValue(moduleInfo.Title, out var amount))
+            {
+                ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Settings-EnabledAmount")}:");
+
+                ImGui.SameLine();
+                ImGui.Text($"{amount + (Service.Config.ModuleEnabled[moduleInfo.Module.Name] ? 1 : 0)}");
+            }
             ImGui.SetWindowFontScale(1f);
 
             ImGui.Separator();
