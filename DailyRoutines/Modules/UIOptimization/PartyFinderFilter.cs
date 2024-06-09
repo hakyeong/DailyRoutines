@@ -43,7 +43,6 @@ public class PartyFinderFilter : DailyModuleBase
         var index = 0;
         ImGui.Text(Service.Lang.GetText("PartyFinderFilter-Description2"));
         if (ImGuiOm.ButtonIcon("##add", FontAwesomeIcon.Plus))
-            _blackList.Add(string.Empty);
             _blackList.Add(new(true, string.Empty));
         ImGui.SameLine();
         if (ImGui.Checkbox(Service.Lang.GetText("PartyFinderFilter-WhileList"), ref _isWhiteList))
