@@ -569,7 +569,7 @@ public class MainSettings
     private static void DrawContact()
     {
         PresetFont.Axis18.Push();
-        ImGui.SetWindowFontScale(1.05f * ImGuiHelpers.GlobalScale);
+        ImGui.SetWindowFontScale(1.01f * ImGuiHelpers.GlobalScale);
         ImGuiHelpers.CenterCursorForText(Service.Lang.GetText("ContactHelp"));
         ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("ContactHelp"));
 
