@@ -1,8 +1,10 @@
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
+using Lumina.Excel.GeneratedSheets;
 using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
@@ -52,71 +54,60 @@ public unsafe class OptimizedInteraction : DailyModuleBase
         IsPlayerOnJumping0Hook.Enable();
         IsPlayerOnJumping1Hook.Enable();
         CheckTargetPositionHook.Enable();
+
+        Service.ClientState.TerritoryChanged += OnZoneChanged;
+        OnZoneChanged(Service.ClientState.TerritoryType);
+    }
+
+    private static void OnZoneChanged(ushort zone)
+    {
+        if (LuminaCache.GetRow<TerritoryType>(zone).IsPvpZone || Service.ClientState.IsPvPExcludingDen)
+        {
+            CameraObjectBlockedHook.Disable();
+            IsObjectInViewRangeHook.Disable();
+            InteractCheck0Hook.Disable();
+            IsPlayerOnJumping0Hook.Disable();
+            IsPlayerOnJumping1Hook.Disable();
+            CheckTargetPositionHook.Disable();
+        }
+        else
+        {
+            CameraObjectBlockedHook.Enable();
+            IsObjectInViewRangeHook.Enable();
+            InteractCheck0Hook.Enable();
+            IsPlayerOnJumping0Hook.Enable();
+            IsPlayerOnJumping1Hook.Enable();
+            CheckTargetPositionHook.Enable();
+        }
     }
 
     private static bool CameraObjectBlockedDetour(nint a1, nint a2, nint a3)
     {
-        if (Service.ClientState.IsPvPExcludingDen)
-        {
-            var original = CameraObjectBlockedHook.Original(a1, a2, a3);
-            return original;
-        }
-
         return true;
     }
 
     private static bool IsObjectInViewRangeHookDetour(TargetSystem* system, GameObject* gameObject)
     {
-        if (Service.ClientState.IsPvPExcludingDen)
-        {
-            var original = IsObjectInViewRangeHook.Original(system, gameObject);
-            return original;
-        }
-
         return true;
     }
 
     private static bool InteractCheck0Detour(nint a1, GameObject* localPlayer, nint a3, nint a4, bool a5)
     {
-        if (Service.ClientState.IsPvPExcludingDen)
-        {
-            var original = InteractCheck0Hook.Original(a1, localPlayer, a3, a4, a5);
-            return original;
-        }
-
         return true;
     }
 
     private static bool IsPlayerOnJumpingDetour0(nint a1)
     {
-        if (Service.ClientState.IsPvPExcludingDen)
-        {
-            var original = IsPlayerOnJumping0Hook.Original(a1);
-            return original;
-        }
-
         return false;
     }
 
     private static bool IsPlayerOnJumpingDetour1(nint a1)
     {
-        if (Service.ClientState.IsPvPExcludingDen)
-        {
-            var original = IsPlayerOnJumping1Hook.Original(a1);
-            return original;
-        }
-
         return false;
     }
 
     private static bool CheckTargetPositionDetour(nint a1, nint a2, nint a3, byte a4, byte a5)
     {
-        if (Service.ClientState.IsPvPExcludingDen)
-        {
-            var original = CheckTargetPositionHook.Original(a1, a2, a3, a4, a5);
-            return original;
-        }
-
         if (Flags.IsOnMount)
             Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.Dismount, 1);
 
