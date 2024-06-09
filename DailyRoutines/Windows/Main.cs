@@ -440,15 +440,6 @@ public class MainSettings
         public int    SortIndex     { get; set; }
     }
 
-    public class TroubleShootingInfo
-    {
-        public DateTime                   GenerateTime      { get; set; } = DateTime.Now;
-        public string                     PluginName        { get; set; } = Service.PluginInterface.Manifest.Name;
-        public string                     PluginDescription { get; set; } = Service.PluginInterface.Manifest.Description;
-        public Version                    Version           { get; set; } = Service.PluginInterface.Manifest.AssemblyVersion;
-        public List<InstalledPluginState> InstalledPlugins  { get; set; } = Service.PluginInterface.InstalledPlugins.ToList();
-    }
-
     private static string ConflictKeySearchString = string.Empty;
     private static readonly HttpClient client = new();
     private static int TotalDownloadCounts;
