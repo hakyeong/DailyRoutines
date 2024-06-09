@@ -61,7 +61,7 @@ public unsafe class OptimizedInteraction : DailyModuleBase
 
     private static void OnZoneChanged(ushort zone)
     {
-        if (LuminaCache.GetRow<TerritoryType>(zone).IsPvpZone || Service.ClientState.IsPvPExcludingDen)
+        if (LuminaCache.GetRow<TerritoryType>(zone).IsPvpZone)
         {
             CameraObjectBlockedHook.Disable();
             IsObjectInViewRangeHook.Disable();
