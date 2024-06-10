@@ -21,11 +21,13 @@ public sealed class Plugin : IDalamudPlugin
 
     public Plugin(DalamudPluginInterface pluginInterface)
     {
-        // if (pluginInterface.IsDev)
-        // {
-        //     IsDev = true;
-        //     return;
-        // }
+#if RELEASE
+        if (pluginInterface.IsDev)
+        {
+            IsDev = true;
+            return;
+        }
+#endif
 
         Version ??= Assembly.GetExecutingAssembly().GetName().Version;
 
