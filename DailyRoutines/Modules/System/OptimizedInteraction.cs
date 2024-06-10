@@ -1,10 +1,8 @@
-using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
-using Lumina.Excel.GeneratedSheets;
 using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
@@ -54,33 +52,7 @@ public unsafe class OptimizedInteraction : DailyModuleBase
         IsPlayerOnJumping0Hook.Enable();
         IsPlayerOnJumping1Hook.Enable();
         CheckTargetPositionHook.Enable();
-
-        Service.ClientState.TerritoryChanged += OnZoneChanged;
-        OnZoneChanged(Service.ClientState.TerritoryType);
     }
-
-    private static void OnZoneChanged(ushort zone)
-    {
-        if (LuminaCache.GetRow<TerritoryType>(zone).IsPvpZone)
-        {
-            CameraObjectBlockedHook.Disable();
-            IsObjectInViewRangeHook.Disable();
-            InteractCheck0Hook.Disable();
-            IsPlayerOnJumping0Hook.Disable();
-            IsPlayerOnJumping1Hook.Disable();
-            CheckTargetPositionHook.Disable();
-        }
-        else
-        {
-            CameraObjectBlockedHook.Enable();
-            IsObjectInViewRangeHook.Enable();
-            InteractCheck0Hook.Enable();
-            IsPlayerOnJumping0Hook.Enable();
-            IsPlayerOnJumping1Hook.Enable();
-            CheckTargetPositionHook.Enable();
-        }
-    }
-
     private static bool CameraObjectBlockedDetour(nint a1, nint a2, nint a3)
     {
         return true;
@@ -112,12 +84,5 @@ public unsafe class OptimizedInteraction : DailyModuleBase
             Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.Dismount, 1);
 
         return true;
-    }
-
-    public override void Uninit()
-    {
-        Service.ClientState.TerritoryChanged -= OnZoneChanged;
-
-        base.Uninit();
     }
 }
