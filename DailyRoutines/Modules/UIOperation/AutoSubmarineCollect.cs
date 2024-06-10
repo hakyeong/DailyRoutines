@@ -154,6 +154,7 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
         if (currentZone != WorkshopTerritory && !housingManager->IsInside())
         {
             TaskHelper.Enqueue(TeleportToHouseZone);
+            TaskHelper.Enqueue(TeleportForward);
             TaskHelper.Enqueue(TeleportToHouseEntry);
             TaskHelper.Enqueue(TeleportToRoomSelect);
             TaskHelper.Enqueue(TeleportToPanel);
@@ -164,6 +165,7 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
         // 正在房区但不在室内
         if (currentZone == WorkshopTerritory && !housingManager->IsInside())
         {
+            TaskHelper.Enqueue(TeleportForward);
             TaskHelper.Enqueue(TeleportToHouseEntry);
             TaskHelper.Enqueue(TeleportToRoomSelect);
             TaskHelper.Enqueue(TeleportToPanel);
@@ -186,6 +188,28 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
         if (WorkshopTerritory == 0) return false;
 
         return Telepo.Instance()->Teleport(96, 0);
+    }
+
+    private bool? TeleportForward()
+    {
+        if (!Throttler.Throttle("TeleportFoward")) return false;
+        if (Flags.BetweenAreas) return false;
+        if (Service.ClientState.TerritoryType != WorkshopTerritory) return false;
+
+        var localPlayer = Service.ClientState.LocalPlayer;
+        if (localPlayer == null) return false;
+
+        if (Flags.IsOnMount)
+        {
+            Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.Dismount, 1);
+            return false;
+        }
+
+        var pos = localPlayer.Position;
+        var movement = CalculateForwardMovement(localPlayer.Rotation, 10);
+        Teleport(pos with { X = pos.X + movement.xOffset, Z = pos.Z + movement.zOffset });
+        TaskHelper.InsertDelayNext("WaitTeleportForward", 500, false, 1);
+        return true;
     }
 
     private bool? TeleportToHouseEntry()
@@ -464,6 +488,16 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
         Click.SendClick("select_yes");
     }
     #endregion
+
+    public static (float xOffset, float zOffset) CalculateForwardMovement(double rotation, double distance)
+    {
+        var radians = (rotation - 0.5) * Math.PI;
+
+        var deltaX = distance * Math.Cos(radians);
+        var deltaZ = distance * Math.Sin(radians);
+
+        return ((float)deltaX, (float)deltaZ);
+    }
 
     public override void Uninit()
     {
