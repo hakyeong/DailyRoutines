@@ -46,7 +46,8 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
     private static AtkUnitBase* CompanyCraftSupply => (AtkUnitBase*)Service.Gui.GetAddonByName("CompanyCraftSupply");
 
     private static Lazy<string> RequisiteMaterialsName => new(() => LuminaCache.GetRow<Item>(10373).Name.RawString);
-    private static uint WorkshopTerritory => Service.AetheryteList.FirstOrDefault(x => x.AetheryteId == 96).TerritoryId;
+    private static uint WorkshopTerritory 
+        => Service.AetheryteList.FirstOrDefault(x => x.AetheryteData.GameData.PlaceName.Row == 1145).TerritoryId;
 
     private const string Command = "submarine";
     private static readonly HashSet<uint> CompanyWorkshopZones = [423, 424, 425, 653, 984];
