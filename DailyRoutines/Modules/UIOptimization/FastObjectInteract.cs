@@ -583,7 +583,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         return false;
     }
 
-
     public override void Uninit()
     {
         base.Uninit();
