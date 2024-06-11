@@ -12,6 +12,7 @@ public class PresetFont
     public static IFontHandle Axis12    => axis12.Value;
     public static IFontHandle Axis14    => axis14.Value;
     public static IFontHandle Axis18    => axis18.Value;
+    public static IFontHandle Icon      => Service.PluginInterface.UiBuilder.IconFontHandle;
 
     private static IFontHandle ConstructFontHandle(GameFontFamilyAndSize fontInfo)
         => FontAtlas.NewGameFontHandle(new GameFontStyle(fontInfo));
