@@ -55,6 +55,7 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
 
     public override void Init()
     {
+        Service.Hook.InitializeFromAttributes(this);
         ModuleConfig = LoadConfig<Config>() ?? new();
 
         TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 30000, ShowDebug = false };
@@ -154,7 +155,6 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
         if (currentZone != WorkshopTerritory && !housingManager->IsInside())
         {
             TaskHelper.Enqueue(TeleportToHouseZone);
-            TaskHelper.Enqueue(TeleportForward);
             TaskHelper.Enqueue(TeleportToHouseEntry);
             TaskHelper.Enqueue(TeleportToRoomSelect);
             TaskHelper.Enqueue(TeleportToPanel);
@@ -165,7 +165,6 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
         // 正在房区但不在室内
         if (currentZone == WorkshopTerritory && !housingManager->IsInside())
         {
-            TaskHelper.Enqueue(TeleportForward);
             TaskHelper.Enqueue(TeleportToHouseEntry);
             TaskHelper.Enqueue(TeleportToRoomSelect);
             TaskHelper.Enqueue(TeleportToPanel);
@@ -190,9 +189,9 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
         return Telepo.Instance()->Teleport(96, 0);
     }
 
-    private bool? TeleportForward()
+    private bool? TeleportToHouseEntry()
     {
-        if (!Throttler.Throttle("TeleportFoward")) return false;
+        if (!Throttler.Throttle("TeleportToHouseEntry")) return false;
         if (Flags.BetweenAreas) return false;
         if (Service.ClientState.TerritoryType != WorkshopTerritory) return false;
 
@@ -205,39 +204,19 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
             return false;
         }
 
-        var pos = localPlayer.Position;
-        var movement = CalculateForwardMovement(localPlayer.Rotation, 10);
-        Teleport(pos with { X = pos.X + movement.xOffset, Z = pos.Z + movement.zOffset });
-        TaskHelper.InsertDelayNext("WaitTeleportForward", 500, false, 1);
-        return true;
-    }
+        var pos = Service.ClientState.LocalPlayer.Position;
 
-    private bool? TeleportToHouseEntry()
-    {
-        if (!Throttler.Throttle("TeleportToHouseEntry")) return false;
-        if (Flags.BetweenAreas) return false;
-        if (Service.ClientState.TerritoryType != WorkshopTerritory) return false;
+        var targetSystem = (nint)TargetSystem.Instance();
+        var entry = Service.ObjectTable
+                           .Where(x => x.ObjectKind == ObjectKind.EventObj
+                                       && x.Name.TextValue == LuminaCache.GetRow<EObjName>(2002737).Singular.RawString
+                                       && TargetSystem_IsObjectInViewRange(targetSystem, x.Address))
+                           .MinBy(x => Vector3.Distance(pos, x.Position));
+        if (entry == null) return false;
 
-        if (Flags.IsOnMount)
-        {
-            Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.Dismount, 1);
-            return false;
-        }
-
-        GameObject* Target = null;
-        foreach (var target in Service.ObjectTable)
-        {
-            if (target.ObjectKind != ObjectKind.EventObj ||
-                target.Name.TextValue != LuminaCache.GetRow<EObjName>(2002737).Singular.RawString)
-                continue;
-
-            Target = (GameObject*)target.Address;
-            Teleport(target.Position with { Y = target.Position.Y - 1 });
-            break;
-        }
-
-        if (Target == null) return false;
-        TargetSystem.Instance()->InteractWithObject(Target);
+        var target = (GameObject*)entry.Address;
+        Teleport(target->Position with { Y = target->Position.Y - 1 });
+        TargetSystem.Instance()->InteractWithObject(target);
 
         TaskHelper.InsertDelayNext("WaitEnteringHouse", 500, false, 1);
         return true;
@@ -248,21 +227,20 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
         if (!Throttler.Throttle("TeleportToRoomSelect")) return false;
         if (!HousingManager.Instance()->IsInside()) return false;
 
-        GameObject* Target = null;
-        foreach (var target in Service.ObjectTable)
-        {
-            if (target.ObjectKind != ObjectKind.EventObj ||
-                target.Name.TextValue != LuminaCache.GetRow<EObjName>(2004353).Singular.RawString)
-                continue;
+        var localPlayer = Service.ClientState.LocalPlayer;
+        if (localPlayer == null) return false;
+        var pos = Service.ClientState.LocalPlayer.Position;
 
-            Target = (GameObject*)target.Address;
-            Teleport(target.Position with { Y = target.Position.Y - 1 });
-            break;
-        }
+        var entry = Service.ObjectTable
+                           .Where(x => x.ObjectKind == ObjectKind.EventObj
+                                       && x.Name.TextValue == LuminaCache.GetRow<EObjName>(2004353).Singular.RawString)
+                           .MinBy(x => Vector3.Distance(pos, x.Position));
+        if (entry == null) return false;
 
-        if (Target == null) return false;
+        var target = (GameObject*)entry.Address;
+        Teleport(target->Position with { Y = target->Position.Y - 1 });
+        TargetSystem.Instance()->InteractWithObject(target);
 
-        TargetSystem.Instance()->InteractWithObject(Target);
         return ClickHelper.SelectString("移动到部队工房");
     }
 
@@ -271,21 +249,20 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
         if (!Throttler.Throttle("TeleportToPanel")) return false;
         if (Flags.BetweenAreas) return false;
 
-        GameObject* Target = null;
-        foreach (var target in Service.ObjectTable)
-        {
-            if (target.ObjectKind != ObjectKind.EventObj ||
-                target.Name.TextValue != LuminaCache.GetRow<EObjName>(2005274).Singular.RawString)
-                continue;
+        var localPlayer = Service.ClientState.LocalPlayer;
+        if (localPlayer == null) return false;
+        var pos = Service.ClientState.LocalPlayer.Position;
 
-            Target = (GameObject*)target.Address;
-            Teleport(target.Position with { Y = target.Position.Y - 1 });
-            break;
-        }
+        var entry = Service.ObjectTable
+                           .Where(x => x.ObjectKind == ObjectKind.EventObj
+                                       && x.Name.TextValue == LuminaCache.GetRow<EObjName>(2005274).Singular.RawString)
+                           .MinBy(x => Vector3.Distance(pos, x.Position));
+        if (entry == null) return false;
 
-        if (Target == null) return false;
+        var target = (GameObject*)entry.Address;
+        Teleport(target->Position with { Y = target->Position.Y - 1 });
+        TargetSystem.Instance()->InteractWithObject(target);
 
-        TargetSystem.Instance()->InteractWithObject(Target);
         return ClickHelper.SelectString("管理潜水艇");
     }
 
@@ -372,7 +349,7 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
         {
             RepairTaskHelper.Enqueue(RepairSubmarines);
             RepairTaskHelper.DelayNext(20);
-            RepairTaskHelper.Enqueue(() => AddonHelper.Callback(CompanyCraftSupply, true, 5));
+            RepairTaskHelper.Enqueue(() => Callback(CompanyCraftSupply, true, 5));
             RepairTaskHelper.Enqueue(ClickPreviousVoyageLog);
             return true;
         }
@@ -385,7 +362,7 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
 
             RepairTaskHelper.Enqueue(RepairSubmarines);
             RepairTaskHelper.DelayNext(20);
-            RepairTaskHelper.Enqueue(() => AddonHelper.Callback(CompanyCraftSupply, true, 5));
+            RepairTaskHelper.Enqueue(() => Callback(CompanyCraftSupply, true, 5));
             RepairTaskHelper.Enqueue(ClickPreviousVoyageLog);
             RepairTaskHelper.DelayNext(100);
             RepairTaskHelper.Enqueue(CommenceSubmarineVoyage);
@@ -429,6 +406,23 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
         if (!ClickHelper.SelectString("上次的远航报告")) return false;
 
         return true;
+    }
+
+    public static bool TargetSystem_IsObjectInViewRange(nint targetSystem, nint targetGameObject)
+    {
+        if (targetGameObject == nint.Zero) return false;
+
+        var objectCount = *(int*)(targetSystem + 328);
+        if (objectCount <= 0) return false;
+
+        var i = (nint*)(targetSystem + 336);
+        for (var index = 0; index < objectCount; index++, i++)
+        {
+            if (*i == targetGameObject)
+                return true;
+        }
+
+        return false;
     }
 
     private static bool? Teleport(Vector3 pos)
