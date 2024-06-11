@@ -310,6 +310,8 @@ public unsafe class AutoLeveQuests : DailyModuleBase
                                 .Where(x => x.PlaceNameIssued.Row == currentZonePlaceNameID &&
                                             !string.IsNullOrEmpty(x.Name.RawString) &&
                                             x.ClassJobCategory.Row is (>= 9 and <= 16) or 19)
+                                .Reverse()
+                                .OrderBy(x => x.ClassJobCategory.Value.Name != (Service.ClientState.LocalPlayer?.ClassJob.GameData.Name ?? string.Empty))                                
                                 .ToDictionary(x => x.RowId, x => x);
 
         if (LeveQuests.Count <= 0)
