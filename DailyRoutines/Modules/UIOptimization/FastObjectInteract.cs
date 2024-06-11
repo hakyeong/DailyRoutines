@@ -40,7 +40,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
                DetourName = nameof(AgentWorldTravelReceiveEventDetour))]
     private static Hook<AgentWorldTravelReceiveEventDelegate>? AgentWorldTravelReceiveEventHook;
 
-
     private static readonly Dictionary<ObjectKind, string> ObjectKindLoc = new()
     {
         { ObjectKind.BattleNpc, "战斗类 NPC (不建议)" },
@@ -365,8 +364,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
             var gameObj = (GameObject*)obj.Address;
             if (ModuleConfig.OnlyDisplayInViewRange)
             {
-                if (!TargetSystem->IsObjectInViewRange(gameObj))
-                    continue;
+                if (!TargetSystem_IsObjectInViewRange((nint)TargetSystem, (nint)gameObj)) continue;
             }
 
             var objDistance = Vector3.Distance(localPlayer.Position, obj.Position);
@@ -567,6 +565,24 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
         return result;
     }
+
+    public bool TargetSystem_IsObjectInViewRange(nint targetSystem, nint targetGameObject)
+    {
+        if (targetGameObject == nint.Zero) return false;
+
+        var objectCount = *(int*)(targetSystem + 328);
+        if (objectCount <= 0) return false;
+
+        var i = (nint*)(targetSystem + 336);
+        for (var index = 0; index < objectCount; index++, i++)
+        {
+            if (*i == targetGameObject)
+                return true;
+        }
+
+        return false;
+    }
+
 
     public override void Uninit()
     {
