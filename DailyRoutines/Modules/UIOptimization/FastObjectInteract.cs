@@ -566,7 +566,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         return result;
     }
 
-    public bool TargetSystem_IsObjectInViewRange(nint targetSystem, nint targetGameObject)
+    public static bool TargetSystem_IsObjectInViewRange(nint targetSystem, nint targetGameObject)
     {
         if (targetGameObject == nint.Zero) return false;
 
