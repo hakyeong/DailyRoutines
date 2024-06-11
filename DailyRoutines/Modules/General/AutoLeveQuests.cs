@@ -13,7 +13,6 @@ using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
-
 using FFXIVClientStructs.FFXIV.Application.Network.WorkDefinitions;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
@@ -32,8 +31,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
     [Signature("E8 ?? ?? ?? ?? 83 FE 4F", DetourName = nameof(GameObjectRotateDetour))]
     private static Hook<GameObjectRotateDelegate>? GameObjectRotateHook;
 
-    [Signature("88 05 ?? ?? ?? ?? 0F B7 41 06", ScanType = ScanType.StaticAddress)]
-    private static byte LeveAllowances;
+    private const string LeveAllowancesSig = "88 05 ?? ?? ?? ?? 0F B7 41 06";
 
     private static Dictionary<uint, Leve> LeveQuests = [];
 
@@ -169,7 +167,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
         }
 
         if (Throttler.Throttle("AutoLeveQuests-GetLeveAllowancesDisplay", 1000))
-            LeveAllowancesDisplay = *(byte*)Service.SigScanner.GetStaticAddressFromSig("88 05 ?? ?? ?? ?? 0F B7 41 06");
+            LeveAllowancesDisplay = *(byte*)Service.SigScanner.GetStaticAddressFromSig(LeveAllowancesSig);
 
         var text = Service.Lang.GetText("AutoLeveQuests-CurrentLeveAllowances", LeveAllowancesDisplay);
         PresetFont.Axis14.Push();
@@ -184,7 +182,8 @@ public unsafe class AutoLeveQuests : DailyModuleBase
 
     public void EnqueueARound()
     {
-        if (SelectedLeve == null || LeveAllowances <= 0)
+        LeveAllowancesDisplay = *(byte*)Service.SigScanner.GetStaticAddressFromSig(LeveAllowancesSig);
+        if (SelectedLeve == null || LeveAllowancesDisplay <= 0)
         {
             TaskHelper.Abort();
             Service.AddonLifecycle.UnregisterListener(AlwaysYes);
