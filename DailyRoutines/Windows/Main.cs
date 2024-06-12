@@ -258,7 +258,6 @@ public class Main : Window, IDisposable
         switch (SelectedTab)
         {
             case 0:
-                ImGuiHelpers.ScaledDummy(1f, 24f);
                 ImGui.Spacing();
                 DrawHomePage();
                 break;
@@ -301,13 +300,17 @@ public class Main : Window, IDisposable
             ImGui.EndGroup();
         }
 
-        ImGui.SameLine(ImGui.GetCursorPosX() + ChildGreetingSize.X + 240f * ImGuiHelpers.GlobalScale, 4f * ImGuiHelpers.GlobalScale);
+        ImGui.Dummy(new(1));
+        ImGui.SameLine();
+
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 24f * ImGuiHelpers.GlobalScale);
+        ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X - ChildGreetingSize.X);
         ImGui.BeginGroup();
         DrawHomePage_GreetingComponent();
         ImGui.EndGroup();
         ChildGreetingSize = ImGui.GetItemRectSize();
 
-        ImGuiHelpers.ScaledDummy(1f, 16f);
+        ImGuiHelpers.ScaledDummy(1f, 8f);
 
         ImGui.BeginGroup();
         DrawHomePage_GameNewsComponent();
