@@ -112,7 +112,7 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
 
         DrawFateProgressTabs();
 
-        ImGui.Dummy(new Vector2(1));
+        ImGui.Dummy(new(1));
 
         PresetFont.Axis18.Pop();
     }
@@ -138,6 +138,8 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
 
     private static void DrawFateProgressTabs()
     {
+        if (FateProgress.Count != AchievementToZone.Count) return;
+
         ImGui.BeginGroup();
         if (ImGui.BeginTabBar("FateProgressTab"))
         {
