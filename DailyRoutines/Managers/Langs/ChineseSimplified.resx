@@ -1065,7 +1065,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>自动开启自动攻击</value>
   </data>
   <data name="Settings-SendCalendarToCharWhenLogin" xml:space="preserve">
-    <value>登录时发送日历至聊天栏</value>
+    <value>活动日历: 登录时发送至聊天栏</value>
   </data>
   <data name="ExpandPlayerMenuSearch-FFLogsSearch" xml:space="preserve">
     <value> 搜索: FFLogs</value>
@@ -1265,7 +1265,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>自动进退副本一次</value>
   </data>
   <data name="Settings-HideOutdatedEvents" xml:space="preserve">
-    <value>隐藏已结束活动</value>
+    <value>活动日历: 隐藏已结束活动</value>
   </data>
   <data name="AutoPlayerCommend-BlacklistContents" xml:space="preserve">
     <value>黑名单副本</value>
