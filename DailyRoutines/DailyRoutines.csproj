@@ -3,8 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Authors>AtmoOmen</Authors>
-        <Version>0.5.2.0</Version>
-        <Description>Help finish some boring daily tasks.</Description>
+        <Version>0.5.2.1</Version>
+        <Description>Help With Some Boring Tasks</Description>
         <Copyright></Copyright>
         <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
         <IsPackable>false</IsPackable>
