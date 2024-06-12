@@ -15,6 +15,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Client.UI.Shell;
@@ -333,300 +334,36 @@ public unsafe class QuickChatPanel : DailyModuleBase
         }
     }
 
+    public override void OverlayPreDraw()
+    {
+        if (Service.ClientState.LocalPlayer == null || 
+            AddonChatLog == null || !AddonChatLog->IsVisible ||
+            AddonChatLog->GetNodeById(5) == null)
+            Overlay.IsOpen = false;
+    }
+
     public override void OverlayUI()
     {
-        if (Service.ClientState.LocalPlayer == null)
-        {
-            Overlay.IsOpen = false;
-            return;
-        }
-
         var textInputNode = AddonChatLog->GetNodeById(5);
-        if (textInputNode == null) return;
-
-        var buttonPos = new Vector2(textInputNode->X + textInputNode->Width, textInputNode->ScreenY) +
-                        ModuleConfig.ButtonOffset;
-
+        var buttonPos = new Vector2(textInputNode->X + textInputNode->Width, textInputNode->ScreenY) + ModuleConfig.ButtonOffset;
         ImGui.SetWindowPos(buttonPos with { Y = buttonPos.Y - ImGui.GetWindowSize().Y - 5 });
 
         if (ImGui.BeginTabBar("###QuickChatPanel", ImGuiTabBarFlags.Reorderable))
         {
             // 消息
-            if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-Messages")))
-            {
-                var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
-                if (ImGui.BeginChild("MessagesChild", ImGui.GetContentRegionAvail(), false))
-                {
-                    PresetFont.Axis14.Push();
-                    ImGui.SetWindowFontScale(ModuleConfig.FontScale);
-                    for (var i = 0; i < ModuleConfig.SavedMessages.Count; i++)
-                    {
-                        var message = ModuleConfig.SavedMessages[i];
-
-                        var textWidth = ImGui.CalcTextSize(message).X;
-                        maxTextWidth = Math.Max(textWidth + 64, maxTextWidth);
-
-                        ImGuiOm.SelectableTextCentered(message);
-
-                        if (ImGui.IsKeyDown(ImGuiKey.LeftShift))
-                        {
-                            if (ImGui.BeginDragDropSource())
-                            {
-                                if (ImGui.SetDragDropPayload("MessageReorder", nint.Zero, 0)) _dropMacroIndex = i;
-                                ImGui.TextColored(ImGuiColors.DalamudYellow, message);
-                                ImGui.EndDragDropSource();
-                            }
-
-                            if (ImGui.BeginDragDropTarget())
-                            {
-                                if (_dropMacroIndex >= 0 ||
-                                    ImGui.AcceptDragDropPayload("MessageReorder").NativePtr != null)
-                                {
-                                    SwapMessages(_dropMacroIndex, i);
-                                    _dropMacroIndex = -1;
-                                }
-
-                                ImGui.EndDragDropTarget();
-                            }
-                        }
-
-                        if (ImGui.IsItemClicked(ImGuiMouseButton.Left)) ImGui.SetClipboardText(message);
-
-                        if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) ChatHelper.Instance.SendMessage(message);
-
-                        ImGuiOm.TooltipHover(Service.Lang.GetText("QuickChatPanel-SendMessageHelp"));
-
-                        if (i != ModuleConfig.SavedMessages.Count - 1)
-                            ImGui.Separator();
-                    }
-
-                    PresetFont.Axis14.Pop();
-                    ImGui.SetWindowFontScale(1f);
-                    ImGui.EndChild();
-                }
-
-                ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
-                                        ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
-
-                ImGui.EndTabItem();
-            }
+            MessageTabItem();
 
             // 宏
-            if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-Macro")))
-            {
-                var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
-                if (ImGui.BeginChild("MacroChild", ImGui.GetContentRegionAvail(), false))
-                {
-                    PresetFont.Axis14.Push();
-                    ImGui.SetWindowFontScale(ModuleConfig.FontScale);
-                    ImGui.BeginGroup();
-                    for (var i = 0; i < ModuleConfig.SavedMacros.Count; i++)
-                    {
-                        var macro = ModuleConfig.SavedMacros[i];
-
-                        var name = macro.Name;
-                        var icon = ImageHelper.GetIcon(macro.IconID);
-                        if (string.IsNullOrEmpty(name) || icon == null) continue;
-
-                        switch (ModuleConfig.OverlayMacroDisplayMode)
-                        {
-                            case MacroDisplayMode.List:
-                                if (ImGuiOm.SelectableImageWithText(icon.ImGuiHandle, new(24), name, false))
-                                {
-                                    var gameMacro =
-                                        RaptureMacroModule.Instance()->GetMacro(macro.Category, (uint)macro.Position);
-
-                                    RaptureShellModule.Instance()->ExecuteMacro(gameMacro);
-                                }
-
-                                break;
-                            case MacroDisplayMode.Buttons:
-                                if (ButtonImageWithTextVertical(icon, name))
-                                {
-                                    var gameMacro =
-                                        RaptureMacroModule.Instance()->GetMacro(macro.Category, (uint)macro.Position);
-
-                                    RaptureShellModule.Instance()->ExecuteMacro(gameMacro);
-                                }
-
-                                break;
-                        }
-
-                        if (ImGui.IsKeyDown(ImGuiKey.LeftShift))
-                        {
-                            if (ImGui.BeginDragDropSource())
-                            {
-                                if (ImGui.SetDragDropPayload("MacroReorder", nint.Zero, 0)) _dropMacroIndex = i;
-                                ImGui.TextColored(ImGuiColors.DalamudYellow, name);
-                                ImGui.EndDragDropSource();
-                            }
-
-                            if (ImGui.BeginDragDropTarget())
-                            {
-                                if (_dropMacroIndex >= 0 ||
-                                    ImGui.AcceptDragDropPayload("MacroReorder").NativePtr != null)
-                                {
-                                    SwapMacros(_dropMacroIndex, i);
-                                    _dropMacroIndex = -1;
-                                }
-
-                                ImGui.EndDragDropTarget();
-                            }
-                        }
-
-                        switch (ModuleConfig.OverlayMacroDisplayMode)
-                        {
-                            case MacroDisplayMode.List:
-                                if (i != ModuleConfig.SavedMacros.Count - 1)
-                                    ImGui.Separator();
-
-                                break;
-                            case MacroDisplayMode.Buttons:
-                                if ((i + 1) % 5 != 0) ImGui.SameLine();
-                                else
-                                {
-                                    ImGui.SameLine();
-                                    ImGui.Dummy(new(20 * ModuleConfig.FontScale));
-                                }
-
-                                break;
-                        }
-                    }
-
-                    ImGui.EndGroup();
-                    maxTextWidth = ImGui.GetItemRectSize().X;
-
-                    ImGui.SetWindowFontScale(1f);
-                    PresetFont.Axis14.Pop();
-                    ImGui.EndChild();
-                }
-
-                ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
-                                        ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
-
-                ImGui.EndTabItem();
-            }
+            MacroTabItem();
 
             // 系统音
-            if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-SystemSound")))
-            {
-                var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
-                PresetFont.Axis14.Push();
-                ImGui.SetWindowFontScale(ModuleConfig.FontScale);
-                ImGui.BeginGroup();
-                foreach (var seNote in ModuleConfig.SoundEffectNotes)
-                {
-                    ImGuiOm.ButtonSelectable($"{seNote.Value}###PlaySound{seNote.Key}");
-
-                    if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
-                        UIModule.PlayChatSoundEffect(seNote.Key);
-
-                    if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
-                        ChatHelper.Instance.SendMessage($"<se.{seNote.Key}><se.{seNote.Key}>");
-
-                    ImGuiOm.TooltipHover(Service.Lang.GetText("QuickChatPanel-SystemSoundHelp"));
-                }
-
-                ImGui.EndGroup();
-                maxTextWidth = ImGui.GetItemRectSize().X;
-                ImGui.SetWindowFontScale(1f);
-                PresetFont.Axis14.Pop();
-
-                ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
-                                        ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
-
-                ImGui.EndTabItem();
-            }
+            SystemSoundTabItem();
 
             // 游戏物品
-            if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-GameItems")))
-            {
-                var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
-                if (ImGui.BeginChild("GameItemChild", ImGui.GetContentRegionAvail(), false))
-                {
-                    PresetFont.Axis14.Push();
-                    ImGui.SetWindowFontScale(ModuleConfig.FontScale);
-
-                    ImGui.SetNextItemWidth(-1f);
-                    ImGui.InputTextWithHint("###GameItemSearchInput", Service.Lang.GetText("PleaseSearch"),
-                                            ref ItemSearchInput, 100);
-
-                    if (ImGui.IsItemDeactivatedAfterEdit())
-                    {
-                        if (!string.IsNullOrWhiteSpace(ItemSearchInput) && ItemSearchInput.Length > 1)
-                        {
-                            _ItemNames = ItemNames
-                                         .Where(
-                                             x => x.Key.Contains(ItemSearchInput, StringComparison.OrdinalIgnoreCase))
-                                         .ToDictionary(x => x.Key, x => x.Value);
-                        }
-                    }
-
-                    ImGui.Separator();
-
-                    var longestText = string.Empty;
-                    foreach (var (itemName, item) in _ItemNames)
-                    {
-                        if (itemName.Length > longestText.Length) longestText = itemName;
-                        if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(item.Icon).ImGuiHandle,
-                                                            new(24),
-                                                            itemName, false))
-                            Service.Chat.Print(new SeStringBuilder().AddItemLink(item.RowId).Build());
-                    }
-
-                    maxTextWidth = ImGui.CalcTextSize(longestText).X + (200f * ImGuiHelpers.GlobalScale);
-
-                    ImGui.SetWindowFontScale(1f);
-                    PresetFont.Axis14.Pop();
-                    ImGui.EndChild();
-                }
-
-                ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
-                                        ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
-
-                ImGui.EndTabItem();
-            }
+            GameItemTabItem();
 
             // 特殊物品符号
-            if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-SpecialIconChar")))
-            {
-                var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
-                if (ImGui.BeginChild("SeIconChild", ImGui.GetContentRegionAvail(), false))
-                {
-                    PresetFont.Axis14.Push();
-                    ImGui.SetWindowFontScale(ModuleConfig.FontScale);
-
-                    ImGui.BeginGroup();
-                    for (var i = 0; i < SeIconChars.Length; i++)
-                    {
-                        var icon = SeIconChars[i];
-
-                        if (ImGui.Button($"{icon}", new(48 * ModuleConfig.FontScale)))
-                            ImGui.SetClipboardText(icon.ToString());
-
-                        ImGuiOm.TooltipHover($"0x{(int)icon:X4}");
-
-                        if ((i + 1) % 7 != 0) ImGui.SameLine();
-                        else
-                        {
-                            ImGui.SameLine();
-                            ImGui.Dummy(new(20 * ModuleConfig.FontScale));
-                        }
-                    }
-
-                    ImGui.EndGroup();
-
-                    maxTextWidth = ImGui.GetItemRectSize().X;
-                    ImGui.SetWindowFontScale(1f);
-                    PresetFont.Axis14.Pop();
-                    ImGui.EndChild();
-                }
-
-                ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
-                                        ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
-
-                ImGui.EndTabItem();
-            }
+            SpecialIconCharTabItem();
 
             ImGui.SameLine();
             if (ImGuiOm.ButtonIcon("OpenQuickChatPanelSettings", FontAwesomeIcon.Cog))
@@ -646,6 +383,296 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
             ImGui.EndTabBar();
         }
+    }
+
+    private void MessageTabItem()
+    {
+        if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-Messages")))
+        {
+            var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
+            if (ImGui.BeginChild("MessagesChild", ImGui.GetContentRegionAvail(), false))
+            {
+                PresetFont.Axis14.Push();
+                ImGui.SetWindowFontScale(ModuleConfig.FontScale);
+                for (var i = 0; i < ModuleConfig.SavedMessages.Count; i++)
+                {
+                    var message = ModuleConfig.SavedMessages[i];
+
+                    var textWidth = ImGui.CalcTextSize(message).X;
+                    maxTextWidth = Math.Max(textWidth + 64, maxTextWidth);
+
+                    ImGuiOm.SelectableTextCentered(message);
+
+                    if (ImGui.IsKeyDown(ImGuiKey.LeftShift))
+                    {
+                        if (ImGui.BeginDragDropSource())
+                        {
+                            if (ImGui.SetDragDropPayload("MessageReorder", nint.Zero, 0)) _dropMacroIndex = i;
+                            ImGui.TextColored(ImGuiColors.DalamudYellow, message);
+                            ImGui.EndDragDropSource();
+                        }
+
+                        if (ImGui.BeginDragDropTarget())
+                        {
+                            if (_dropMacroIndex >= 0 ||
+                                ImGui.AcceptDragDropPayload("MessageReorder").NativePtr != null)
+                            {
+                                SwapMessages(_dropMacroIndex, i);
+                                _dropMacroIndex = -1;
+                            }
+
+                            ImGui.EndDragDropTarget();
+                        }
+                    }
+
+                    if (ImGui.IsItemClicked(ImGuiMouseButton.Left)) ImGui.SetClipboardText(message);
+
+                    if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) ChatHelper.Instance.SendMessage(message);
+
+                    ImGuiOm.TooltipHover(Service.Lang.GetText("QuickChatPanel-SendMessageHelp"));
+
+                    if (i != ModuleConfig.SavedMessages.Count - 1)
+                        ImGui.Separator();
+                }
+
+                PresetFont.Axis14.Pop();
+                ImGui.SetWindowFontScale(1f);
+                ImGui.EndChild();
+            }
+
+            ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
+                                    ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
+
+            ImGui.EndTabItem();
+        }
+    }
+
+    private void MacroTabItem()
+    {
+        if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-Macro")))
+        {
+            var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
+            if (ImGui.BeginChild("MacroChild", ImGui.GetContentRegionAvail(), false))
+            {
+                PresetFont.Axis14.Push();
+                ImGui.SetWindowFontScale(ModuleConfig.FontScale);
+                ImGui.BeginGroup();
+                for (var i = 0; i < ModuleConfig.SavedMacros.Count; i++)
+                {
+                    var macro = ModuleConfig.SavedMacros[i];
+
+                    var name = macro.Name;
+                    var icon = ImageHelper.GetIcon(macro.IconID);
+                    if (string.IsNullOrEmpty(name) || icon == null) continue;
+
+                    switch (ModuleConfig.OverlayMacroDisplayMode)
+                    {
+                        case MacroDisplayMode.List:
+                            if (ImGuiOm.SelectableImageWithText(icon.ImGuiHandle, new(24), name, false))
+                            {
+                                var gameMacro =
+                                    RaptureMacroModule.Instance()->GetMacro(macro.Category, (uint)macro.Position);
+
+                                RaptureShellModule.Instance()->ExecuteMacro(gameMacro);
+                            }
+
+                            break;
+                        case MacroDisplayMode.Buttons:
+                            if (ButtonImageWithTextVertical(icon, name))
+                            {
+                                var gameMacro =
+                                    RaptureMacroModule.Instance()->GetMacro(macro.Category, (uint)macro.Position);
+
+                                RaptureShellModule.Instance()->ExecuteMacro(gameMacro);
+                            }
+
+                            break;
+                    }
+
+                    if (ImGui.IsKeyDown(ImGuiKey.LeftShift))
+                    {
+                        if (ImGui.BeginDragDropSource())
+                        {
+                            if (ImGui.SetDragDropPayload("MacroReorder", nint.Zero, 0)) _dropMacroIndex = i;
+                            ImGui.TextColored(ImGuiColors.DalamudYellow, name);
+                            ImGui.EndDragDropSource();
+                        }
+
+                        if (ImGui.BeginDragDropTarget())
+                        {
+                            if (_dropMacroIndex >= 0 ||
+                                ImGui.AcceptDragDropPayload("MacroReorder").NativePtr != null)
+                            {
+                                SwapMacros(_dropMacroIndex, i);
+                                _dropMacroIndex = -1;
+                            }
+
+                            ImGui.EndDragDropTarget();
+                        }
+                    }
+
+                    switch (ModuleConfig.OverlayMacroDisplayMode)
+                    {
+                        case MacroDisplayMode.List:
+                            if (i != ModuleConfig.SavedMacros.Count - 1)
+                                ImGui.Separator();
+
+                            break;
+                        case MacroDisplayMode.Buttons:
+                            if ((i + 1) % 5 != 0) ImGui.SameLine();
+                            else
+                            {
+                                ImGui.SameLine();
+                                ImGui.Dummy(new(20 * ModuleConfig.FontScale));
+                            }
+
+                            break;
+                    }
+                }
+
+                ImGui.EndGroup();
+                maxTextWidth = ImGui.GetItemRectSize().X;
+
+                ImGui.SetWindowFontScale(1f);
+                PresetFont.Axis14.Pop();
+                ImGui.EndChild();
+            }
+
+            ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
+                                    ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
+
+            ImGui.EndTabItem();
+        }
+
+    }
+
+    private static void SystemSoundTabItem()
+    {
+        if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-SystemSound")))
+        {
+            PresetFont.Axis14.Push();
+            ImGui.SetWindowFontScale(ModuleConfig.FontScale);
+            ImGui.BeginGroup();
+            foreach (var seNote in ModuleConfig.SoundEffectNotes)
+            {
+                ImGuiOm.ButtonSelectable($"{seNote.Value}###PlaySound{seNote.Key}");
+
+                if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
+                    UIModule.PlayChatSoundEffect(seNote.Key);
+
+                if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                    ChatHelper.Instance.SendMessage($"<se.{seNote.Key}><se.{seNote.Key}>");
+
+                ImGuiOm.TooltipHover(Service.Lang.GetText("QuickChatPanel-SystemSoundHelp"));
+            }
+
+            ImGui.EndGroup();
+            var maxTextWidth = ImGui.GetItemRectSize().X;
+            ImGui.SetWindowFontScale(1f);
+            PresetFont.Axis14.Pop();
+
+            ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
+                                    ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
+
+            ImGui.EndTabItem();
+        }
+
+    }
+
+    private static void GameItemTabItem()
+    {
+        if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-GameItems")))
+        {
+            var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
+            if (ImGui.BeginChild("GameItemChild", ImGui.GetContentRegionAvail(), false))
+            {
+                PresetFont.Axis14.Push();
+                ImGui.SetWindowFontScale(ModuleConfig.FontScale);
+
+                ImGui.SetNextItemWidth(-1f);
+                ImGui.InputTextWithHint("###GameItemSearchInput", Service.Lang.GetText("PleaseSearch"),
+                                        ref ItemSearchInput, 100);
+
+                if (ImGui.IsItemDeactivatedAfterEdit())
+                {
+                    if (!string.IsNullOrWhiteSpace(ItemSearchInput) && ItemSearchInput.Length > 1)
+                    {
+                        _ItemNames = ItemNames
+                                     .Where(
+                                         x => x.Key.Contains(ItemSearchInput, StringComparison.OrdinalIgnoreCase))
+                                     .ToDictionary(x => x.Key, x => x.Value);
+                    }
+                }
+
+                ImGui.Separator();
+
+                var longestText = string.Empty;
+                foreach (var (itemName, item) in _ItemNames)
+                {
+                    if (itemName.Length > longestText.Length) longestText = itemName;
+                    if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(item.Icon).ImGuiHandle,
+                                                        new(24),
+                                                        itemName, false))
+                        Service.Chat.Print(new SeStringBuilder().AddItemLink(item.RowId).Build());
+                }
+
+                maxTextWidth = ImGui.CalcTextSize(longestText).X + (200f * ImGuiHelpers.GlobalScale);
+
+                ImGui.SetWindowFontScale(1f);
+                PresetFont.Axis14.Pop();
+                ImGui.EndChild();
+            }
+
+            ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
+                                    ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
+
+            ImGui.EndTabItem();
+        }
+
+    }
+
+    private static void SpecialIconCharTabItem()
+    {
+        if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-SpecialIconChar")))
+        {
+            var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
+            if (ImGui.BeginChild("SeIconChild", ImGui.GetContentRegionAvail(), false))
+            {
+                PresetFont.Axis14.Push();
+                ImGui.SetWindowFontScale(ModuleConfig.FontScale);
+
+                ImGui.BeginGroup();
+                for (var i = 0; i < SeIconChars.Length; i++)
+                {
+                    var icon = SeIconChars[i];
+
+                    if (ImGui.Button($"{icon}", new(48 * ModuleConfig.FontScale)))
+                        ImGui.SetClipboardText(icon.ToString());
+
+                    ImGuiOm.TooltipHover($"0x{(int)icon:X4}");
+
+                    if ((i + 1) % 7 != 0) ImGui.SameLine();
+                    else
+                    {
+                        ImGui.SameLine();
+                        ImGui.Dummy(new(20 * ModuleConfig.FontScale));
+                    }
+                }
+
+                ImGui.EndGroup();
+
+                maxTextWidth = ImGui.GetItemRectSize().X;
+                ImGui.SetWindowFontScale(1f);
+                PresetFont.Axis14.Pop();
+                ImGui.EndChild();
+            }
+
+            ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
+                                    ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
+
+            ImGui.EndTabItem();
+        }
+
     }
 
     private void OnAddon(AddonEvent type, AddonArgs? args)
@@ -695,7 +722,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
     private void MakeIconNode(uint nodeId, Vector2 position, int icon)
     {
-        var imageNode = AddonHelper.MakeImageNode(nodeId, new AddonHelper.PartInfo(0, 0, 64, 64));
+        var imageNode = MakeImageNode(nodeId, new PartInfo(0, 0, 64, 64));
         imageNode->AtkResNode.NodeFlags = NodeFlags.AnchorTop | NodeFlags.AnchorLeft | NodeFlags.Visible |
                                           NodeFlags.Enabled | NodeFlags.EmitsEvents;
 
@@ -709,7 +736,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
         imageNode->AtkResNode.SetHeight(ModuleConfig.ButtonSize);
         imageNode->AtkResNode.SetPositionShort((short)position.X, (short)position.Y);
 
-        AddonHelper.LinkNodeAtEnd((AtkResNode*)imageNode, AddonChatLog);
+        LinkNodeAtEnd((AtkResNode*)imageNode, AddonChatLog);
 
         imageNode->AtkResNode.NodeFlags |= NodeFlags.RespondToMouse | NodeFlags.EmitsEvents | NodeFlags.HasCollision;
         AddonChatLog->UpdateCollisionNodeList(true);
@@ -729,7 +756,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             var node = AddonChatLog->UldManager.NodeList[i];
             if (node->NodeID == 10001)
             {
-                AddonHelper.UnlinkAndFreeImageNode((AtkImageNode*)node, AddonChatLog);
+                UnlinkAndFreeImageNode((AtkImageNode*)node, AddonChatLog);
                 Service.AddonEvent.RemoveEvent(MouseClickHandle);
                 MouseClickHandle = null;
             }
