@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -50,11 +49,16 @@ public class Main : Window, IDisposable
     private static Vector2 LeftTabComponentSize;
     private static Vector2 LogoComponentSize;
     private static Vector2 CategoriesComponentSize;
-    private static Vector2 ChildUpRightSize;
+
+    private static Vector2 UpperTabComponentSize;
+    private static Vector2 SettingsButtonSize;
+
+    private static Vector2 RightTabComponentSize;
     private static Vector2 ChildGameCalendarsSize;
     private static Vector2 ChildGreetingSize;
-    private static Vector2 ChildPluginInfoSize;
-    private static Vector2 ChildChangelogSize;
+    private static Vector2 PluginInfoComponentSize;
+    private static Vector2 ContactComponentSize;
+    private static Vector2 ButonCotactSize;
 
     private static int SelectedTab;
     internal static string SearchString = string.Empty;
@@ -62,7 +66,7 @@ public class Main : Window, IDisposable
     public Main() : base("Daily Routines - 主界面###DailyRoutines-Main")
     {
         Flags = ImGuiWindowFlags.NoScrollbar;
-        SizeConstraints = new WindowSizeConstraints { MinimumSize = new(900, 600) };
+        SizeConstraints = new WindowSizeConstraints { MinimumSize = ImGuiHelpers.ScaledVector2(650, 375) };
         SelectedTab = Service.Config.DefaultHomePage;
 
         if (Service.ClientState.ClientLanguage != (ClientLanguage)4)
@@ -77,31 +81,26 @@ public class Main : Window, IDisposable
 
     public override void Draw()
     {
+        PresetFont.Axis18.Push();
         DrawLeftTabComponent();
 
         ImGui.SameLine();
         ImGui.BeginGroup();
-        var childUpRightSize = ChildUpRightSize with 
-            { X = ImGui.GetWindowWidth() - LeftTabComponentSize.X - (ImGui.GetStyle().ItemSpacing.X * 4)};
-        if (ImGui.BeginChild("ChildUpRight", childUpRightSize, false, ChildFlags))
-        {
-            ImGuiHelpers.ScaledDummy(1f, 8f);
-            DrawUpperTabComponent();
-            ImGuiHelpers.ScaledDummy(1f, 8f);
-            ImGui.EndChild(); 
-        }
+        DrawUpperTabComponent();
 
         if (ImGui.BeginChild("ChildDownRight", ImGui.GetContentRegionAvail(), false, ChildFlags))
         {
-            DrawLowerTabComponent();
+            DrawRightTabComponent();
             ImGui.EndChild();
         }
         ImGui.EndGroup();
+        PresetFont.Axis18.Pop();
     }
 
+    #region 左侧
     private static void DrawLeftTabComponent()
     {
-        if (ImGui.BeginChild("ChildLeft", LeftTabComponentSize, false, ChildFlags))
+        if (ImGui.BeginChild("LeftTabComponentSize", LeftTabComponentSize, false, ChildFlags))
         {
             ImGui.BeginGroup();
             ImGuiHelpers.ScaledDummy(1f, 16f);
@@ -111,7 +110,7 @@ public class Main : Window, IDisposable
             DrawCategoriesComponent();
             ImGui.EndGroup();
 
-            LeftTabComponentSize.X = Math.Max(ImGui.GetItemRectSize().X, 300f);
+            LeftTabComponentSize.X = Math.Max(ImGui.GetItemRectSize().X, 200f * ImGuiHelpers.GlobalScale);
             LeftTabComponentSize.Y = ImGui.GetItemRectSize().Y;
 
             ImGui.EndChild();
@@ -130,18 +129,16 @@ public class Main : Window, IDisposable
         if (imageState) ImGui.Image(imageHandle.ImGuiHandle, ImGuiHelpers.ScaledVector2(72f));
         else ImGuiHelpers.ScaledDummy(72f);
 
-        PresetFont.Axis18.Push();
         ImGui.SetWindowFontScale(1.4f);
 
         ImGuiHelpers.CenterCursorForText("Daily");
         ImGuiOm.Text("Daily");
 
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 4f * ImGuiHelpers.GlobalScale);
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (4f * ImGuiHelpers.GlobalScale));
         ImGuiHelpers.CenterCursorForText("Routines");
         ImGuiOm.Text("Routines");
 
         ImGui.SetWindowFontScale(1f);
-        PresetFont.Axis18.Pop();
         ImGui.EndGroup();
 
         if (ImGui.IsItemHovered())
@@ -165,7 +162,6 @@ public class Main : Window, IDisposable
             selectedModule = (ModuleCategories)(SelectedTab % 100);
 
         ImGui.BeginGroup();
-        PresetFont.Axis18.Push();
         ImGui.SetWindowFontScale(1.1f);
 
         var buttonSize = new Vector2(156f * ImGuiHelpers.GlobalScale, ImGui.CalcTextSize("你好").Y);
@@ -177,7 +173,8 @@ public class Main : Window, IDisposable
         {
             SearchString = string.Empty;
             SelectedTab = 3;
-        }        ImGui.PopStyleColor(3);
+        }
+        ImGui.PopStyleColor(3);
 
         ImGuiHelpers.ScaledDummy(1f, 12f);
 
@@ -198,117 +195,134 @@ public class Main : Window, IDisposable
             ImGui.PopStyleColor(3);
         }
         ImGui.SetWindowFontScale(1f);
-        PresetFont.Axis18.Pop();
         ImGui.EndGroup();
 
         CategoriesComponentSize = ImGui.GetItemRectSize();
     }
+    #endregion
+
+    #region 上方
 
     private static void DrawUpperTabComponent()
     {
-        PresetFont.Axis18.Push();
-        ImGui.SetWindowFontScale(1.2f);
+        UpperTabComponentSize.X = ImGui.GetContentRegionAvail().X;
 
-        var startCursorPos = ImGui.GetCursorPos();
-        var emptyString = string.Empty;
-        ImGui.SetCursorPos(startCursorPos with { X = startCursorPos.X + 36f * ImGuiHelpers.GlobalScale });
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 24f * ImGuiHelpers.GlobalScale - ImGui.GetStyle().ItemSpacing.X * 2);
-        ImGui.PushStyleColor(ImGuiCol.FrameBg, ImGui.GetColorU32(ImGuiCol.ChildBg));
-        ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudWhite);
-        ImGui.InputText("###Search", ref SearchString, 128);
-        ImGui.PopStyleColor(2);
+        if (ImGui.BeginChild("ChildUpRight", UpperTabComponentSize, false, ChildFlags))
+        {
+            ImGui.SetWindowFontScale(1.2f);
+            ImGuiHelpers.ScaledDummy(1f, 8f);
 
-        ImGui.SetCursorPos(startCursorPos);
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 32f * ImGuiHelpers.GlobalScale - ImGui.GetStyle().ItemSpacing.X * 2);
-        ImGui.BeginDisabled();
-        ImGui.InputText("###SearchDisplay", ref emptyString, 0, ImGuiInputTextFlags.ReadOnly);
-        ImGui.EndDisabled();
-        ChildUpRightSize = ImGui.GetItemRectSize() * 2;
+            var startCursorPos = ImGui.GetCursorPos();
+            var emptyString = string.Empty;
 
-        ImGui.SameLine();
-        ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.ChildBg));
-        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
-        ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
-        if (ImGuiOm.ButtonIcon("Settings", FontAwesomeIcon.Cog, 
-                       new(32f * ImGuiHelpers.GlobalScale, ChildUpRightSize.Y / 2), Service.Lang.GetText("Settings")))
-            SelectedTab = 1;
-        ImGui.PopStyleColor(3);
+            // 真的输入框
+            ImGui.SetCursorPos(startCursorPos with { X = startCursorPos.X + (36f * ImGuiHelpers.GlobalScale) });
+            ImGui.SetNextItemWidth(
+                ImGui.GetContentRegionAvail().X - (24f * ImGuiHelpers.GlobalScale) - (ImGui.GetStyle().ItemSpacing.X * 2));
+            ImGui.PushStyleColor(ImGuiCol.FrameBg, ImGui.GetColorU32(ImGuiCol.ChildBg));
+            ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudWhite);
+            ImGui.InputText("###Search", ref SearchString, 128);
+            ImGui.PopStyleColor(2);
 
-        PresetFont.Icon.Push();
-        ImGui.AlignTextToFramePadding();
-        ImGui.SameLine();
-        ImGui.SetCursorPos(new(startCursorPos.X + 8f * ImGuiHelpers.GlobalScale, startCursorPos.Y + 4f * ImGuiHelpers.GlobalScale));
-        ImGui.Text(FontAwesomeIcon.Search.ToIconString());
-        PresetFont.Icon.Pop();
+            // 假的输入框
+            ImGui.SetCursorPos(startCursorPos);
+            ImGui.SetNextItemWidth(
+                ImGui.GetContentRegionAvail().X - SettingsButtonSize.X - (ImGui.GetStyle().ItemSpacing.X * 2));
+            ImGui.BeginDisabled();
+            ImGui.InputText("###SearchDisplay", ref emptyString, 0, ImGuiInputTextFlags.ReadOnly);
+            ImGui.EndDisabled();
 
-        ImGui.SetWindowFontScale(1f);
-        PresetFont.Axis18.Pop();
+            // 设置按钮
+            ImGui.SameLine();
+            ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.ChildBg));
+            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
+            ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
+            if (ImGuiOm.ButtonIcon("Settings", FontAwesomeIcon.Cog,
+                                   new(32f * ImGuiHelpers.GlobalScale, UpperTabComponentSize.Y / 2), 
+                                   Service.Lang.GetText("Settings")))
+                SelectedTab = 1;
+            ImGui.PopStyleColor(3);
+            SettingsButtonSize = ImGui.GetItemRectSize();
+
+            UpperTabComponentSize.Y = ImGui.GetItemRectSize().Y * 2;
+
+            // 搜素图标
+            ImGui.AlignTextToFramePadding();
+            ImGui.SameLine();
+            ImGui.SetCursorPos(new(startCursorPos.X + 8f * ImGuiHelpers.GlobalScale, startCursorPos.Y + 4f * ImGuiHelpers.GlobalScale));
+            PresetFont.Icon.Push();
+            ImGui.Text(FontAwesomeIcon.Search.ToIconString());
+            PresetFont.Icon.Pop();
+
+            ImGui.SetWindowFontScale(1f);
+            ImGui.EndChild();
+        }
     }
 
-    private static void DrawLowerTabComponent()
-    {
-        // 0 - 主页; 1 - 设置; 2 - 搜索; 3 - 收藏
-        // 大于 100 - 模块分类
-        if (!string.IsNullOrWhiteSpace(SearchString))
-        {
-            DrawModulesSearchResult(Modules);
-            return;
-        }
+    #endregion
 
-        switch (SelectedTab)
+    #region 右侧
+    private static void DrawRightTabComponent()
+    {
+        RightTabComponentSize = ImGui.GetContentRegionAvail();
+        if (ImGui.BeginChild("RightTabComponentChild", RightTabComponentSize, false, ChildFlags))
         {
-            case 0:
-                ImGui.Spacing();
-                DrawHomePage();
-                break;
-            case 1:
-                MainSettings.Draw();
-                break;
-            case 3:
-                DrawModulesFavorites(ModulesFavorite);
-                break;
-            case > 100:
-                var selectedModule = (ModuleCategories)(SelectedTab % 100);
-                DrawModuleCategory(selectedModule);
-                break;
+            // 0 - 主页; 1 - 设置; 2 - 搜索; 3 - 收藏
+            // 大于 100 - 模块分类
+            if (!string.IsNullOrWhiteSpace(SearchString))
+            {
+                SelectedTab = 101;
+                DrawModulesSearchResult(Modules);
+                return;
+            }
+
+            switch (SelectedTab)
+            {
+                case 0:
+                    DrawHomePage();
+                    break;
+                case 1:
+                    MainSettings.Draw();
+                    break;
+                case 3:
+                    DrawModulesFavorites(ModulesFavorite);
+                    break;
+                case > 100:
+                    var selectedModule = (ModuleCategories)(SelectedTab % 100);
+                    DrawModuleCategory(selectedModule);
+                    break;
+            }
+
+            ImGui.EndChild();
         }
     }
 
     private static void DrawHomePage()
     {
-        PresetFont.Axis18.Push();
-
         var imageState = ImageHelper
             .TryGetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/icon.png", out var imageHandle);
 
-        if (imageState)
-        {
-            ImGui.BeginGroup();
-            if (imageState) ImGui.Image(imageHandle.ImGuiHandle, ImGuiHelpers.ScaledVector2(72f));
-            else ImGuiHelpers.ScaledDummy(72f);
+        ImGui.BeginGroup();
+        if (imageState) ImGui.Image(imageHandle.ImGuiHandle, ImGuiHelpers.ScaledVector2(72f));
+        else ImGuiHelpers.ScaledDummy(72f);
 
-            ImGui.SameLine();
-            ImGui.SetCursorPosY(ImGui.GetCursorPosY());
-            ImGui.BeginGroup();
-            ImGui.SetWindowFontScale(1.6f);
-            ImGuiOm.Text("Daily Routines");
-            ImGui.SetWindowFontScale(0.9f);
-            ImGuiOm.Text("Help With Some Boring Tasks");
-            ImGui.EndGroup();
+        ImGui.SameLine();
+        ImGui.BeginGroup();
+        ImGui.SetWindowFontScale(1.6f);
+        ImGuiOm.Text("Daily Routines");
+        ImGui.SetWindowFontScale(0.9f);
+        ImGuiOm.Text("Help With Some Boring Tasks");
+        ImGui.EndGroup();
 
-            ImGui.SetWindowFontScale(1f);
-            ImGui.EndGroup();
-        }
+        ImGui.SetWindowFontScale(1f);
+        ImGui.EndGroup();
 
         ImGui.Dummy(new(1));
-        ImGui.SameLine();
 
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 24f * ImGuiHelpers.GlobalScale);
-        ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X - ChildGreetingSize.X);
-        ImGui.BeginGroup();
+        ImGui.SameLine();
+        ImGui.SetCursorPos(new(ImGui.GetContentRegionAvail().X - ChildGreetingSize.X,
+                           ImGui.GetCursorStartPos().Y));
         DrawHomePage_GreetingComponent();
-        ImGui.EndGroup();
-        ChildGreetingSize = ImGui.GetItemRectSize();
 
         ImGuiHelpers.ScaledDummy(1f, 8f);
 
@@ -323,14 +337,19 @@ public class Main : Window, IDisposable
 
         ImGui.SameLine();
         ImGui.BeginGroup();
+
+        ImGuiHelpers.ScaledDummy(1f, 8f);
+
+        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X
+                            - PluginInfoComponentSize.X - (2 * ImGui.GetStyle().ItemSpacing.X));
         DrawHomePage_PluginInfoComponent();
 
-        ImGuiHelpers.ScaledDummy(1f, 16f);
+        ImGuiHelpers.ScaledDummy(1f, 32f);
 
+        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X 
+                            - ContactComponentSize.X - (2 * ImGui.GetStyle().ItemSpacing.X));
         DrawHomePage_ContactComponent();
         ImGui.EndGroup();
-
-        PresetFont.Axis18.Pop();
     }
 
     private static void DrawHomePage_GreetingComponent()
@@ -342,9 +361,9 @@ public class Main : Window, IDisposable
         var greetingObject = ImGui.CalcTextSize($"{world}, {name}");
         ImGui.SetWindowFontScale(1f);
 
-        var greetingChildSize = greetingObject with { Y = 2 * greetingObject.Y } + 2 * ImGui.GetStyle().ItemSpacing;
-        if (ImGui.BeginChild("HomePage_Greeting", greetingChildSize, false, ChildFlags))
+        if (ImGui.BeginChild("HomePage_Greeting", ChildGreetingSize, false, ChildFlags))
         {
+            ImGui.BeginGroup();
             ImGui.SetWindowFontScale(1.2f);
             var greetingText = $"{GetGreetingByTime()} !";
             var greetingTextSize = ImGui.CalcTextSize(greetingText);
@@ -355,6 +374,9 @@ public class Main : Window, IDisposable
             ImGui.SetWindowFontScale(1.6f);
             ImGui.Text($"{world}, {name}");
             ImGui.SetWindowFontScale(1f);
+            ImGui.EndGroup();
+
+            ChildGreetingSize = ImGui.GetItemRectSize();
 
             ImGui.EndChild();
         }
@@ -423,150 +445,99 @@ public class Main : Window, IDisposable
 
     private static void DrawHomePage_PluginInfoComponent()
     {
-        if (ImGui.BeginChild("HomePage_PluginInfo", ChildPluginInfoSize, false, ImGuiWindowFlags.NoScrollbar))
-        {
-            ImGui.SetWindowFontScale(1.1f);
-            ImGui.BeginGroup();
-            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("CurrentVersion")}:");
+        ImGui.SetWindowFontScale(1.1f);
+        ImGui.BeginGroup();
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("CurrentVersion")}:");
 
-            ImGui.SameLine();
-            ImGui.TextColored(Plugin.Version < MainSettings.LatestVersionInfo.Version ? ImGuiColors.DPSRed : ImGuiColors.DalamudWhite,
-                              $"{Plugin.Version}");
+        ImGui.SameLine();
+        ImGui.TextColored(Plugin.Version < MainSettings.LatestVersionInfo.Version ? ImGuiColors.DPSRed : ImGuiColors.DalamudWhite,
+                          $"{Plugin.Version}");
 
-            if (Plugin.Version < MainSettings.LatestVersionInfo.Version)
-                ImGuiOm.TooltipHover(Service.Lang.GetText("LowVersionWarning"));
+        if (Plugin.Version < MainSettings.LatestVersionInfo.Version)
+            ImGuiOm.TooltipHover(Service.Lang.GetText("LowVersionWarning"));
 
-            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestVersion")}:");
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestVersion")}:");
 
-            ImGui.SameLine();
-            ImGui.Text($"{MainSettings.LatestVersionInfo.Version}");
+        ImGui.SameLine();
+        ImGui.Text($"{MainSettings.LatestVersionInfo.Version}");
 
-            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("TotalDL")}:");
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("TotalDL")}:");
 
-            ImGui.SameLine();
-            ImGui.Text($"{MainSettings.TotalDownloadCounts}");
+        ImGui.SameLine();
+        ImGui.Text($"{MainSettings.TotalDownloadCounts}");
 
-            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestDL")}:");
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestDL")}:");
 
-            ImGui.SameLine();
-            ImGui.Text($"{MainSettings.LatestVersionInfo.DownloadCount}");
-            ImGui.EndGroup();
-            ImGui.SetWindowFontScale(1f);
+        ImGui.SameLine();
+        ImGui.Text($"{MainSettings.LatestVersionInfo.DownloadCount}");
+        ImGui.EndGroup();
+        ImGui.SetWindowFontScale(1f);
 
-            ChildPluginInfoSize = ImGui.GetItemRectSize() + 2 * ImGui.GetStyle().ItemSpacing;
-            ImGui.EndChild();
-        }
+        PluginInfoComponentSize = ImGui.GetItemRectSize();
     }
 
     private static void DrawHomePage_ContactComponent()
     {
-        if (ImGui.BeginChild("HomePage_Contact", ChildChangelogSize, false, ChildFlags))
-        {
-            ChildChangelogSize = ImGui.GetContentRegionAvail();
+        ButonCotactSize = ImGuiHelpers.ScaledVector2(150, 100);
 
-            var buttonSize = ImGuiHelpers.ScaledVector2(140, 100);
+        ImGui.BeginGroup();
+        ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedGrey);
+        if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.CodePullRequest, "GitHub", ButonCotactSize))
+            Util.OpenLink("https://github.com/AtmoOmen/DailyRoutines");
+        ImGui.PopStyleColor();
 
-            ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedGrey);
-            if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.CodePullRequest, "GitHub", buttonSize))
-                Util.OpenLink("https://github.com/AtmoOmen/DailyRoutines");
-            ImGui.PopStyleColor();
+        ImGui.SameLine();
+        ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedPink);
+        if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.PlayCircle, "Bilibili", ButonCotactSize))
+            Util.OpenLink("https://space.bilibili.com/22008977");
+        ImGui.PopStyleColor();
 
-            ImGui.SameLine();
-            ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedPink);
-            if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.PlayCircle, "Bilibili", buttonSize))
-                Util.OpenLink("https://space.bilibili.com/22008977");
-            ImGui.PopStyleColor();
+        ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.TankBlue);
+        if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Comments, "QQ 群", ButonCotactSize))
+            Util.OpenLink("https://qm.qq.com/q/QlImB8pn2");
+        ImGui.PopStyleColor();
+        ImGuiOm.TooltipHover("951926472");
 
-            ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.TankBlue);
-            if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Comments, "QQ 群", buttonSize))
-                Util.OpenLink("https://qm.qq.com/q/QlImB8pn2");
-            ImGui.PopStyleColor();
-            ImGuiOm.TooltipHover("951926472");
+        ImGui.SameLine();
+        ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedPurple);
+        if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Donate, "爱发电", ButonCotactSize))
+            Util.OpenLink("https://afdian.net/a/AtmoOmen");
+        ImGui.PopStyleColor();
+        ImGuiOm.TooltipHover(Service.Lang.GetText("DonateHelp"));
+        ImGui.EndGroup();
 
-            ImGui.SameLine();
-            ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedPurple);
-            if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Donate, "爱发电", buttonSize))
-                Util.OpenLink("https://afdian.net/a/AtmoOmen");
-            ImGui.PopStyleColor();
-            ImGuiOm.TooltipHover(Service.Lang.GetText("DonateHelp"));
-
-            ImGui.EndChild();
-        }
+        ContactComponentSize = ImGui.GetItemRectSize();
     }
 
     private static void DrawModuleCategory(ModuleCategories category)
     {
         if (!categorizedModules.TryGetValue(category, out var modules)) return;
-        var modulesInCategory = modules.ToArray();
-
-        PresetFont.Axis14.Push();
-        try
-        {
-            for (var i = 0; i < modulesInCategory.Length; i++)
-            {
-                var module = modulesInCategory[i];
-
-                ImGui.PushID($"{module.Module.Name}-{module.Category}-{module.Title}-{module.Description}");
-                DrawModuleUI(module, false);
-                ImGui.PopID();
-
-                if (i < modulesInCategory.Length - 1) ImGui.Separator();
-            }
-        }
-        catch (Exception _)
-        {
-            PresetFont.Axis14.Pop();
-        }
-        PresetFont.Axis14.Pop();
+        DrawModules(modules);
     }
 
     private static void DrawModulesFavorites(IReadOnlyList<ModuleInfo> modules)
-    {
-        PresetFont.Axis14.Push();
-        try
-        {
-            for (var i = 0; i < modules.Count; i++)
-            {
-                var module = modules[i];
-
-                ImGui.PushID($"{module.Category}-{module.Description}-{module.Title}-{module.Module}");
-                DrawModuleUI(module, false);
-                ImGui.PopID();
-
-                if (i < modules.Count - 1) ImGui.Separator();
-            }
-        }
-        catch (Exception _)
-        {
-            PresetFont.Axis14.Pop();
-        }
-        PresetFont.Axis14.Pop();
-    }
+        => DrawModules(modules);
 
     private static void DrawModulesSearchResult(IReadOnlyList<ModuleInfo> modules)
+        => DrawModules(modules, true);
+
+    private static void DrawModules(IReadOnlyList<ModuleInfo> modules, bool isFromSearch = false)
     {
-        PresetFont.Axis14.Push();
-        try
+        for (var i = 0; i < modules.Count; i++)
         {
-            for (var i = 0; i < modules.Count; i++)
-            {
-                var module = modules[i];
-                if (!module.Title.Contains(SearchString.Trim(), StringComparison.OrdinalIgnoreCase) &&
-                    !module.Description.Contains(SearchString.Trim(), StringComparison.OrdinalIgnoreCase) &&
-                    !module.Module.Name.Contains(SearchString.Trim(), StringComparison.OrdinalIgnoreCase)) continue;
+            var module = modules[i];
+            if (!module.Title.Contains(SearchString.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                !module.Description.Contains(SearchString.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                !module.Module.Name.Contains(SearchString.Trim(), StringComparison.OrdinalIgnoreCase)) continue;
 
-                ImGui.PushID($"{module.Category}-{module.Description}-{module.Title}-{module.Module}");
-                DrawModuleUI(module, true);
-                ImGui.PopID();
+            ImGui.PushID($"{module.Category}-{module.Description}-{module.Title}-{module.Module}");
+            ImGui.SetWindowFontScale(0.8f);
+            DrawModuleUI(module, isFromSearch);
+            ImGui.SetWindowFontScale(1f);
+            ImGui.PopID();
 
-                if (i < modules.Count - 1) ImGui.Separator();
-            }
+            if (i < modules.Count - 1) ImGui.Separator();
         }
-        catch (Exception _)
-        {
-            PresetFont.Axis14.Pop();
-        }
-        PresetFont.Axis14.Pop();
     }
 
     private static void DrawModuleUI(ModuleInfo moduleInfo, bool fromSearch)
@@ -593,12 +564,9 @@ public class Main : Window, IDisposable
         var moduleText = $"[{moduleName}]";
         ImGui.SameLine();
         var origCursorPosX = ImGui.GetCursorPosX();
-        ImGui.SetCursorPosX(ImGui.GetWindowWidth() - (ImGui.CalcTextSize(moduleText).X * 0.8f) -
-                            (4 * ImGui.GetStyle().FramePadding.X));
-
-        ImGui.SetWindowFontScale(0.8f);
+        ImGui.SetCursorPosX(ImGui.GetWindowWidth() - ImGui.CalcTextSize(moduleText).X -
+                            (2 * ImGui.GetStyle().ItemSpacing.X));
         ImGui.TextDisabled(moduleText);
-        ImGui.SetWindowFontScale(1f);
 
         var isWithAuthor = !string.IsNullOrEmpty(moduleInfo.Author);
         if (isWithAuthor)
@@ -781,6 +749,7 @@ public class Main : Window, IDisposable
             ImGui.EndPopup();
         }
     }
+    #endregion
 
     private static void RefreshModuleInfo()
     {
@@ -1232,14 +1201,14 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
             lastImageChangeTime = ImGui.GetTime();
         }
 
-        ChildSize = new Vector2(CurrentImageSize.X + 2 * ImGui.GetStyle().ItemSpacing.X, CurrentImageSize.Y * 1.3f);
+        ChildSize = new Vector2(CurrentImageSize.X + 2 * ImGui.GetStyle().ItemSpacing.X, CurrentImageSize.Y * 1.2f);
         if (ImGui.BeginChild("NewsImageCarousel", ChildSize, false, ImGuiWindowFlags.NoScrollbar))
         {
             var news = newsList[currentIndex];
             ImGuiHelpers.CenterCursorFor(CurrentImageSize.X);
             if (ImageHelper.TryGetImage(news.HomeImagePath, out var imageHandle))
             {
-                CurrentImageSize = imageHandle.Size * 1.3f;
+                CurrentImageSize = imageHandle.Size * 1.5f;
                 ImGui.Image(imageHandle.ImGuiHandle, CurrentImageSize);
             }
             else
