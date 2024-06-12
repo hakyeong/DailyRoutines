@@ -782,46 +782,6 @@ public class Main : Window, IDisposable
         }
     }
 
-    private static unsafe int SearchInputEditCallback(ImGuiInputTextCallbackData* data)
-    {
-        if (data->EventFlag != ImGuiInputTextFlags.CallbackAlways) return 0;
-
-        var buf = (sbyte*)data->Buf;
-
-        var needsCorrection = false;
-        for (var i = 0; i < 6; i++)
-        {
-            if (buf[i] != ' ')
-            {
-                needsCorrection = true;
-                break;
-            }
-        }
-
-        if (needsCorrection)
-        {
-            for (var i = data->BufTextLen - 1; i >= 0; i--)
-            {
-                buf[i + 6] = buf[i];
-            }
-            for (var i = 0; i < 6; i++)
-            {
-                buf[i] = (sbyte)' ';
-            }
-            data->BufTextLen += 6;
-            data->BufDirty = 1;
-        }
-
-        if (data->CursorPos < 6)
-        {
-            data->CursorPos = 6;
-            data->SelectionStart = 6;
-            data->SelectionEnd = 6;
-        }
-
-        return 0;
-    }
-
     private static void RefreshModuleInfo()
     {
         ImageHelper.GetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/icon.png");
@@ -868,7 +828,7 @@ public class Main : Window, IDisposable
         return DateTime.Now.Hour switch
         {
             >= 18 => "晚上好",
-            >= 16 => "傍晚好",
+            >= 17 => "傍晚好",
             >= 14 => "下午好",
             >= 11 => "中午好",
             >= 9 => "上午好",
