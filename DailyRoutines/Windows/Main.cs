@@ -105,9 +105,13 @@ public class Main : Window, IDisposable
             ImGui.BeginGroup();
             ImGuiHelpers.ScaledDummy(1f, 16f);
             DrawLogoComponent();
-            ImGuiHelpers.ScaledDummy(1f, 48f);
 
+            ImGuiHelpers.ScaledDummy(1f, 8f);
+            DrawContactComponent();
+
+            ImGuiHelpers.ScaledDummy(1f, 16f);
             DrawCategoriesComponent();
+
             ImGui.EndGroup();
 
             LeftTabComponentSize.X = Math.Max(ImGui.GetItemRectSize().X, 200f * ImGuiHelpers.GlobalScale);
@@ -151,6 +155,37 @@ public class Main : Window, IDisposable
         }
 
         LogoComponentSize = ImGui.GetItemRectSize();
+    }
+
+    private static void DrawContactComponent()
+    {
+        ImGuiHelpers.CenterCursorFor(ContactComponentSize.X);
+
+        ImGui.BeginGroup();
+        ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.ChildBg));
+        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
+        ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
+
+        if (ImGuiOm.ButtonIcon("GitHub", FontAwesomeIcon.CodePullRequest, "GitHub"))
+            Util.OpenLink("https://github.com/AtmoOmen/DailyRoutines");
+
+        ImGui.SameLine();
+        if (ImGuiOm.ButtonIcon("Bilibili", FontAwesomeIcon.PlayCircle, "Bilibili"))
+            Util.OpenLink("https://space.bilibili.com/22008977");
+
+        ImGui.SameLine();
+        if (ImGuiOm.ButtonIcon("QQ 群", FontAwesomeIcon.Comments, "QQ 群"))
+            Util.OpenLink("https://qm.qq.com/q/QlImB8pn2");
+
+        ImGui.SameLine();
+        if (ImGuiOm.ButtonIcon("爱发电", FontAwesomeIcon.Donate, "爱发电"))
+            Util.OpenLink("https://afdian.net/a/AtmoOmen");
+        ImGuiOm.TooltipHover(Service.Lang.GetText("DonateHelp"));
+
+        ImGui.PopStyleColor(3);
+        ImGui.EndGroup();
+
+        ContactComponentSize = ImGui.GetItemRectSize();
     }
 
     private static void DrawCategoriesComponent()
@@ -199,6 +234,7 @@ public class Main : Window, IDisposable
 
         CategoriesComponentSize = ImGui.GetItemRectSize();
     }
+
     #endregion
 
     #region 上方
@@ -340,15 +376,11 @@ public class Main : Window, IDisposable
 
         ImGuiHelpers.ScaledDummy(1f, 8f);
 
-        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X
-                            - PluginInfoComponentSize.X - (2 * ImGui.GetStyle().ItemSpacing.X));
         DrawHomePage_PluginInfoComponent();
 
-        ImGuiHelpers.ScaledDummy(1f, 32f);
+        ImGuiHelpers.ScaledDummy(1f, 8f);
 
-        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X 
-                            - ContactComponentSize.X - (2 * ImGui.GetStyle().ItemSpacing.X));
-        DrawHomePage_ContactComponent();
+        DrawHomePage_ChangelogComponent();
         ImGui.EndGroup();
     }
 
@@ -476,37 +508,24 @@ public class Main : Window, IDisposable
         PluginInfoComponentSize = ImGui.GetItemRectSize();
     }
 
-    private static void DrawHomePage_ContactComponent()
+    private static void DrawHomePage_ChangelogComponent()
     {
-        ButonCotactSize = ImGuiHelpers.ScaledVector2(150, 100);
+        var imageState0 = 
+            ImageHelper.TryGetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/Changelog.png", 
+                                    out var imageWarpper);
 
-        ImGui.BeginGroup();
-        ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedGrey);
-        if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.CodePullRequest, "GitHub", ButonCotactSize))
-            Util.OpenLink("https://github.com/AtmoOmen/DailyRoutines");
-        ImGui.PopStyleColor();
-
-        ImGui.SameLine();
-        ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedPink);
-        if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.PlayCircle, "Bilibili", ButonCotactSize))
-            Util.OpenLink("https://space.bilibili.com/22008977");
-        ImGui.PopStyleColor();
-
-        ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.TankBlue);
-        if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Comments, "QQ 群", ButonCotactSize))
-            Util.OpenLink("https://qm.qq.com/q/QlImB8pn2");
-        ImGui.PopStyleColor();
-        ImGuiOm.TooltipHover("951926472");
-
-        ImGui.SameLine();
-        ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedPurple);
-        if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Donate, "爱发电", ButonCotactSize))
-            Util.OpenLink("https://afdian.net/a/AtmoOmen");
-        ImGui.PopStyleColor();
-        ImGuiOm.TooltipHover(Service.Lang.GetText("DonateHelp"));
-        ImGui.EndGroup();
-
-        ContactComponentSize = ImGui.GetItemRectSize();
+        if (imageState0)
+            if (ImGui.CollapsingHeader(
+                    Service.Lang.GetText("Changelog", MainSettings.LatestVersionInfo.PublishTime.ToShortDateString())))
+            {
+                ImGui.Image(imageWarpper.ImGuiHandle, ImGui.GetContentRegionAvail());
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.BeginTooltip();
+                    ImGui.Image(imageWarpper.ImGuiHandle, imageWarpper.Size);
+                    ImGui.EndTooltip();
+                }
+            }
     }
 
     private static void DrawModuleCategory(ModuleCategories category)
@@ -1201,14 +1220,14 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
             lastImageChangeTime = ImGui.GetTime();
         }
 
-        ChildSize = new Vector2(CurrentImageSize.X + 2 * ImGui.GetStyle().ItemSpacing.X, CurrentImageSize.Y * 1.2f);
+        ChildSize = new Vector2(CurrentImageSize.X + 2 * ImGui.GetStyle().ItemSpacing.X, CurrentImageSize.Y * 1.3f);
         if (ImGui.BeginChild("NewsImageCarousel", ChildSize, false, ImGuiWindowFlags.NoScrollbar))
         {
             var news = newsList[currentIndex];
             ImGuiHelpers.CenterCursorFor(CurrentImageSize.X);
             if (ImageHelper.TryGetImage(news.HomeImagePath, out var imageHandle))
             {
-                CurrentImageSize = imageHandle.Size * 1.5f;
+                CurrentImageSize = imageHandle.Size * 1.25f;
                 ImGui.Image(imageHandle.ImGuiHandle, CurrentImageSize);
             }
             else
