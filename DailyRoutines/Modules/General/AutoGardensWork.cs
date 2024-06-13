@@ -189,7 +189,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("AutoGardensWork-ObtainGardensAround"),
-                         groupSize with { X = 80f * ImGuiHelpers.GlobalScale }))
+                         groupSize with { X = 100f * ImGuiHelpers.GlobalScale }))
             ObtainGardensAround();
 
         ImGui.EndGroup();
@@ -312,6 +312,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
         foreach (var garden in ModuleConfig.Gardens.Where(x => x.ZoneID == Service.ClientState.TerritoryType))
         {
             var gameObj = GetGameObjectFromObjectID(garden.ObjectID);
+            if (gameObj == null) continue;
             var objDistance = Vector3.Distance(localPlayer->Position, gameObj->Position);
             if (objDistance > 5) continue;
 
@@ -338,7 +339,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
         });
 
 
-    private static void ObtainGardensAround()
+    private void ObtainGardensAround()
     {
         foreach (var gameObj in Service.ObjectTable.Where(x => x is { ObjectKind: ObjectKind.EventObj, DataId: 2003757 }))
         {
@@ -350,6 +351,8 @@ public unsafe class AutoGardensWork : DailyModuleBase
             var garden = new GameGarden($"{zoneName}_{objectID}", objectID, zoneID);
             if (!ModuleConfig.Gardens.Contains(garden)) ModuleConfig.Gardens.Add(garden);
         }
+
+        SaveConfig(ModuleConfig);
     }
 
     private static bool? CheckFertilizerState()
