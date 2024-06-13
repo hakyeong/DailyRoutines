@@ -144,7 +144,13 @@ public class Main : Window, IDisposable
         ImGui.SetWindowFontScale(1f);
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (4f * ImGuiHelpers.GlobalScale));
         ImGuiHelpers.CenterCursorForText($"[{Plugin.Version}]");
-        ImGuiOm.TextDisabledWrapped($"[{Plugin.Version}]");
+        if (Plugin.Version < MainSettings.LatestVersionInfo.Version)
+        {
+            ImGui.TextColored(ImGuiColors.DPSRed, $"[{Plugin.Version}]");
+            ImGuiOm.TooltipHover(Service.Lang.GetText("LowVersionWarning"));
+        }
+        else
+            ImGuiOm.TextDisabledWrapped($"[{Plugin.Version}]");
 
         ImGui.EndGroup();
 
@@ -491,8 +497,7 @@ public class Main : Window, IDisposable
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("CurrentVersion")}:");
 
         ImGui.SameLine();
-        ImGui.TextColored(Plugin.Version < MainSettings.LatestVersionInfo.Version ? ImGuiColors.DPSRed : ImGuiColors.DalamudWhite,
-                          $"{Plugin.Version}");
+        ImGui.TextColored(Plugin.Version < MainSettings.LatestVersionInfo.Version ? ImGuiColors.DPSRed : ImGuiColors.DalamudWhite, $"{Plugin.Version}");
 
         if (Plugin.Version < MainSettings.LatestVersionInfo.Version)
             ImGuiOm.TooltipHover(Service.Lang.GetText("LowVersionWarning"));
@@ -502,15 +507,15 @@ public class Main : Window, IDisposable
         ImGui.SameLine();
         ImGui.Text($"{MainSettings.LatestVersionInfo.Version}");
 
-        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("TotalDL")}:");
-
-        ImGui.SameLine();
-        ImGui.Text($"{MainSettings.TotalDownloadCounts}");
-
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestDL")}:");
 
         ImGui.SameLine();
         ImGui.Text($"{MainSettings.LatestVersionInfo.DownloadCount}");
+
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("TotalDL")}:");
+
+        ImGui.SameLine();
+        ImGui.Text($"{MainSettings.TotalDownloadCounts}");
         ImGui.EndGroup();
         ImGui.SetWindowFontScale(1f);
     }
