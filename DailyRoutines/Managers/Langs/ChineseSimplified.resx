@@ -2088,7 +2088,38 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Whitelist" xml:space="preserve">
     <value>白名单</value>
   </data>
+  <data name="AutoSplitStacks-AddCommand" xml:space="preserve">
+    <value>添加 {0} 指令</value>
+  </data>
+  <data name="AutoSplitStacks-CommandHelp" xml:space="preserve">
+    <value>/pdrsplit &lt;物品 ID&gt;/&lt;物品名称&gt;
+执行保存的指定物品配置组</value>
+  </data>
+  <data name="AutoSplitStacks-HoldCtrlToDelete" xml:space="preserve">
+    <value>删除 (按住 Ctrl)</value>
+  </data>
+  <data name="AutoSplitStacks-Notification-FullInventory" xml:space="preserve">
+    <value>物品栏已满, 停止拆分</value>
+  </data>
+  <data name="AutoSplitStacks-Notification-ItemNoFound" xml:space="preserve">
+    <value>未找到对应物品, 停止拆分</value>
+  </data>
+  <data name="AutoSplitStacks-SplitAmount" xml:space="preserve">
+    <value>拆分数量</value>
+  </data>
+  <data name="AutoSplitStacksDescription" xml:space="preserve">
+    <value>启用并配置完毕后, 允许快速拆分一组物品</value>
+  </data>
+  <data name="AutoSplitStacksTitle" xml:space="preserve">
+    <value>自动拆分物品</value>
+  </data>
   <data name="CustomizeGCRank-GCRank" xml:space="preserve">
     <value>军衔等级</value>
+  </data>
+  <data name="Execute" xml:space="preserve">
+    <value>执行</value>
+  </data>
+  <data name="Item" xml:space="preserve">
+    <value>物品</value>
   </data>
 </root>
