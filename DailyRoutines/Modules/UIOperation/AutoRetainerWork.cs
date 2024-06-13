@@ -814,44 +814,68 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         }
 
         // 高于最大值
-        if (modifiedPrice > itemDetails.Preset.PriceMaximum)
+        if (modifiedPrice > itemDetails.Preset.PriceMaximum &&
+            itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.高于最大值)))
         {
-            ProcessAbortCondition(AbortCondition.高于最大值, itemDetails.Preset.AbortLogic);
+            var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.高于最大值)).Value;
+            NotifyAbortCondition(AbortCondition.高于最大值);
+            EnqueueAbortBehavior(behavior);
             return true;
         }
 
         // 高于预期值
-        if (modifiedPrice > itemDetails.Preset.PriceExpected)
+        if (modifiedPrice > itemDetails.Preset.PriceExpected &&
+            itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.高于预期值)))
         {
-            ProcessAbortCondition(AbortCondition.高于预期值, itemDetails.Preset.AbortLogic);
+            var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.高于预期值)).Value;
+            NotifyAbortCondition(AbortCondition.高于预期值);
+            EnqueueAbortBehavior(behavior);
             return true;
         }
 
         // 大于可接受降价值
-        if (itemDetails.OrigPrice - modifiedPrice > itemDetails.Preset.PriceMaxReduction)
+        if (itemDetails.Preset.PriceMaxReduction != 0 && itemDetails.OrigPrice - modifiedPrice > 0 &&
+            itemDetails.OrigPrice - modifiedPrice > itemDetails.Preset.PriceMaxReduction &&
+            itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.大于可接受降价值)))
         {
-            ProcessAbortCondition(AbortCondition.大于可接受降价值, itemDetails.Preset.AbortLogic);
+            var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.大于可接受降价值))
+                                      .Value;
+
+            NotifyAbortCondition(AbortCondition.大于可接受降价值);
+            EnqueueAbortBehavior(behavior);
             return true;
         }
 
         // 低于收购价
-        if (ItemsSellPrice.TryGetValue(CurrentItem.ItemID, out var buyingPrice) && modifiedPrice < buyingPrice)
+        if (ItemsSellPrice.TryGetValue(CurrentItem.ItemID, out var buyingPrice) &&
+            modifiedPrice < buyingPrice &&
+            itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.低于收购价)))
         {
-            ProcessAbortCondition(AbortCondition.低于收购价, itemDetails.Preset.AbortLogic);
+            var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault
+                (x => x.Key.HasFlag(AbortCondition.低于收购价)).Value;
+
+            NotifyAbortCondition(AbortCondition.低于收购价);
+            EnqueueAbortBehavior(behavior);
             return true;
         }
 
         // 低于最小值
-        if (modifiedPrice < itemDetails.Preset.PriceMinimum)
+        if (modifiedPrice < itemDetails.Preset.PriceMinimum &&
+            itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.低于最小值)))
         {
-            ProcessAbortCondition(AbortCondition.低于最小值, itemDetails.Preset.AbortLogic);
+            var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.低于最小值)).Value;
+            NotifyAbortCondition(AbortCondition.低于最小值);
+            EnqueueAbortBehavior(behavior);
             return true;
         }
 
         // 低于预期值
-        if (modifiedPrice < itemDetails.Preset.PriceExpected)
+        if (modifiedPrice < itemDetails.Preset.PriceExpected &&
+            itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.低于预期值)))
         {
-            ProcessAbortCondition(AbortCondition.低于预期值, itemDetails.Preset.AbortLogic);
+            var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.低于预期值)).Value;
+            NotifyAbortCondition(AbortCondition.低于预期值);
+            EnqueueAbortBehavior(behavior);
             return true;
         }
 
@@ -908,15 +932,6 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         {
             ClickRetainerSell.Using((nint)RetainerList).Decline();
             RetainerSell->Close(true);
-        }
-
-        void ProcessAbortCondition(AbortCondition condition, IReadOnlyDictionary<AbortCondition, AbortBehavior> abortLogic)
-        {
-            if (abortLogic.TryGetValue(condition, out var behavior))
-            {
-                NotifyAbortCondition(condition);
-                EnqueueAbortBehavior(behavior);
-            }
         }
 
         void EnqueueAbortBehavior(AbortBehavior behavior)
