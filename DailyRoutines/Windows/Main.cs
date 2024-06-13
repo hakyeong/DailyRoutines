@@ -56,9 +56,7 @@ public class Main : Window, IDisposable
     private static Vector2 RightTabComponentSize;
     private static Vector2 ChildGameCalendarsSize;
     private static Vector2 ChildGreetingSize;
-    private static Vector2 PluginInfoComponentSize;
     private static Vector2 ContactComponentSize;
-    private static Vector2 ButonCotactSize;
 
     private static int SelectedTab;
     internal static string SearchString = string.Empty;
@@ -504,8 +502,6 @@ public class Main : Window, IDisposable
         ImGui.Text($"{MainSettings.LatestVersionInfo.DownloadCount}");
         ImGui.EndGroup();
         ImGui.SetWindowFontScale(1f);
-
-        PluginInfoComponentSize = ImGui.GetItemRectSize();
     }
 
     private static void DrawHomePage_ChangelogComponent()
