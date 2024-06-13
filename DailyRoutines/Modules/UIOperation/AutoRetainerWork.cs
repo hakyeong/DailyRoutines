@@ -25,7 +25,6 @@ using Dalamud.Memory;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using Dalamud.Utility.Signatures;
-
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -42,6 +41,20 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoRetainerWorkTitle", "AutoRetainerWorkDescription", ModuleCategories.界面操作)]
 public unsafe class AutoRetainerWork : DailyModuleBase
 {
+    private delegate nint InfoProxyItemSearchAddPageDelegate(byte* a1, byte* a2);
+
+    [Signature(
+        "48 89 5C 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 0F B6 82 ?? ?? ?? ?? 48 8B FA 48 8B D9 38 41 19 74 54",
+        DetourName = nameof(InfoProxyItemSearchAddPageDetour))]
+    private static Hook<InfoProxyItemSearchAddPageDelegate>? InfoProxyItemSearchAddPageHook;
+
+    private delegate nint MarketboardPacketDelegate(nint a1, nint packetData);
+
+    [Signature(
+        "40 53 48 83 EC ?? 48 8B 0D ?? ?? ?? ?? 48 8B DA E8 ?? ?? ?? ?? 48 85 C0 74 ?? 4C 8B 00 48 8B C8 41 FF 90 ?? ?? ?? ?? 48 8B C8 BA ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 74 ?? 48 8D 53 ?? 41 B8 ?? ?? ?? ?? 48 8B C8 48 83 C4 ?? 5B E9 ?? ?? ?? ?? 48 83 C4 ?? 5B C3 CC CC CC CC CC CC CC CC CC CC 40 53",
+        DetourName = nameof(MarketboardHistorDetour))]
+    private static Hook<MarketboardPacketDelegate>? MarketboardHistoryHook;
+
     private static Config ModuleConfig = null!;
 
     private static Dictionary<string, Item>? ItemNames;
@@ -65,20 +78,10 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
     private static readonly HashSet<ulong> PlayerRetainers = [];
 
-    [Signature(
-        "48 89 5C 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 0F B6 82 ?? ?? ?? ?? 48 8B FA 48 8B D9 38 41 19 74 54",
-        DetourName = nameof(InfoProxyItemSearchAddPageDetour))]
-    private readonly Hook<InfoProxyItemSearchAddPageDelegate>? InfoProxyItemSearchAddPageHook;
-
-    [Signature(
-        "40 53 48 83 EC ?? 48 8B 0D ?? ?? ?? ?? 48 8B DA E8 ?? ?? ?? ?? 48 85 C0 74 ?? 4C 8B 00 48 8B C8 41 FF 90 ?? ?? ?? ?? 48 8B C8 BA ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 74 ?? 48 8D 53 ?? 41 B8 ?? ?? ?? ?? 48 8B C8 48 83 C4 ?? 5B E9 ?? ?? ?? ?? 48 83 C4 ?? 5B C3 CC CC CC CC CC CC CC CC CC CC 40 53",
-        DetourName = nameof(MarketboardHistorDetour))]
-    private readonly Hook<MarketboardPacketDelegate>? MarketboardHistoryHook;
-
     public override void Init()
     {
-        ChildSizeLeft = new Vector2(200 * ImGuiHelpers.GlobalScale, 350 * ImGuiHelpers.GlobalScale);
-        ChildSizeRight = new Vector2(450 * ImGuiHelpers.GlobalScale, 350 * ImGuiHelpers.GlobalScale);
+        ChildSizeLeft = ImGuiHelpers.ScaledVector2(200, 350);
+        ChildSizeRight = ImGuiHelpers.ScaledVector2(450, 350);
 
         ItemsSellPrice ??= LuminaCache.Get<Item>()
                                       .Where(x => !string.IsNullOrEmpty(x.Name.RawString) && x.PriceLow != 0)
@@ -113,188 +116,6 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "RetainerItemTransferProgress",
                                                 OnEntrustDupsAddons);
     }
-
-    public override void Uninit()
-    {
-        Service.AddonLifecycle.UnregisterListener(OnRetainerSellList);
-        Service.AddonLifecycle.UnregisterListener(OnRetainerList);
-        Service.AddonLifecycle.UnregisterListener(OnRetainerSell);
-        Service.AddonLifecycle.UnregisterListener(OnEntrustDupsAddons);
-
-        Cache.Clear();
-
-        base.Uninit();
-    }
-
-    private class Config : ModuleConfiguration
-    {
-        public readonly Dictionary<string, ItemConfig> ItemConfigs = new()
-        {
-            { new ItemKey(0, false).ToString(), new(0, false) },
-            { new ItemKey(0, true).ToString(), new(0, true) },
-        };
-
-        public int AdjustMethod;
-        public int OperationDelay;
-
-        public bool SendProcessMessage = true;
-    }
-
-    private delegate nint MarketboardPacketDelegate(nint a1, nint packetData);
-
-    private delegate nint InfoProxyItemSearchAddPageDelegate(byte* a1, byte* a2);
-
-    #region 预定义
-
-    private static readonly InventoryType[] InventoryTypes =
-    [
-        InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3,
-        InventoryType.Inventory4,
-    ];
-
-    public enum AdjustBehavior
-    {
-        固定值,
-        百分比,
-    }
-
-    [Flags]
-    public enum AbortCondition
-    {
-        无 = 1,
-        低于最小值 = 2,
-        低于预期值 = 4,
-        低于收购价 = 8,
-        大于可接受降价值 = 16,
-        高于预期值 = 32,
-        高于最大值 = 64,
-    }
-
-    public enum AbortBehavior
-    {
-        无,
-        收回至雇员,
-        收回至背包,
-        出售至系统商店,
-        改价至最小值,
-        改价至预期值,
-        改价至最高值,
-    }
-
-    public class ItemKey : IEquatable<ItemKey>
-    {
-        public ItemKey() { }
-
-        public ItemKey(uint itemID, bool isHQ)
-        {
-            ItemID = itemID;
-            IsHQ = isHQ;
-        }
-
-        public uint ItemID { get; set; }
-        public bool IsHQ   { get; set; }
-
-        public bool Equals(ItemKey? other)
-        {
-            if (other is null || GetType() != other.GetType())
-                return false;
-
-            return ItemID == other.ItemID && IsHQ == other.IsHQ;
-        }
-
-        public override string ToString() { return $"{ItemID}_{(IsHQ ? "HQ" : "NQ")}"; }
-
-        public override bool Equals(object? obj) { return Equals(obj as ItemKey); }
-
-        public override int GetHashCode() { return HashCode.Combine(ItemID, IsHQ); }
-
-        public static bool operator ==(ItemKey? lhs, ItemKey? rhs)
-        {
-            if (lhs is null) return rhs is null;
-            return lhs.Equals(rhs);
-        }
-
-        public static bool operator !=(ItemKey lhs, ItemKey rhs) { return !(lhs == rhs); }
-    }
-
-    public class ItemConfig : IEquatable<ItemConfig>
-    {
-        public ItemConfig() { }
-
-        public ItemConfig(uint itemID, bool isHQ)
-        {
-            ItemID = itemID;
-            IsHQ = isHQ;
-            ItemName = itemID == 0
-                           ? Service.Lang.GetText("AutoRetainerPriceAdjust-CommonItemPreset")
-                           : LuminaCache.GetRow<Item>(ItemID).Name.RawString;
-        }
-
-        public uint   ItemID   { get; set; }
-        public bool   IsHQ     { get; set; }
-        public string ItemName { get; set; } = string.Empty;
-
-        /// <summary>
-        ///     改价行为
-        /// </summary>
-        public AdjustBehavior AdjustBehavior { get; set; } = AdjustBehavior.固定值;
-
-        /// <summary>
-        ///     改价具体值
-        /// </summary>
-        public Dictionary<AdjustBehavior, int> AdjustValues { get; set; } = new()
-        {
-            { AdjustBehavior.固定值, 1 },
-            { AdjustBehavior.百分比, 10 },
-        };
-
-        /// <summary>
-        ///     最低可接受价格 (最小值: 1)
-        /// </summary>
-        public int PriceMinimum { get; set; } = 100;
-
-        /// <summary>
-        ///     最大可接受价格
-        /// </summary>
-        public int PriceMaximum { get; set; } = 100000000;
-
-        /// <summary>
-        ///     预期价格 (最小值: PriceMinimum + 1)
-        /// </summary>
-        public int PriceExpected { get; set; } = 200;
-
-        /// <summary>
-        ///     最大可接受降价值 (设置为 0 以禁用)
-        /// </summary>
-        public int PriceMaxReduction { get; set; }
-
-        /// <summary>
-        ///     意外情况逻辑
-        /// </summary>
-        public Dictionary<AbortCondition, AbortBehavior> AbortLogic { get; set; } = [];
-
-        public bool Equals(ItemConfig? other)
-        {
-            if (other is null || GetType() != other.GetType())
-                return false;
-
-            return ItemID == other.ItemID && IsHQ == other.IsHQ;
-        }
-
-        public override bool Equals(object? obj) { return Equals(obj as ItemConfig); }
-
-        public override int GetHashCode() { return HashCode.Combine(ItemID, IsHQ); }
-
-        public static bool operator ==(ItemConfig? lhs, ItemConfig? rhs)
-        {
-            if (lhs is null) return rhs is null;
-            return lhs.Equals(rhs);
-        }
-
-        public static bool operator !=(ItemConfig lhs, ItemConfig rhs) { return !(lhs == rhs); }
-    }
-
-    #endregion
 
     #region 游戏界面
 
@@ -993,68 +814,44 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         }
 
         // 高于最大值
-        if (modifiedPrice > itemDetails.Preset.PriceMaximum &&
-            itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.高于最大值)))
+        if (modifiedPrice > itemDetails.Preset.PriceMaximum)
         {
-            var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.高于最大值)).Value;
-            NotifyAbortCondition(AbortCondition.高于最大值);
-            EnqueueAbortBehavior(behavior);
+            ProcessAbortCondition(AbortCondition.高于最大值, itemDetails.Preset.AbortLogic);
             return true;
         }
 
         // 高于预期值
-        if (modifiedPrice > itemDetails.Preset.PriceExpected &&
-            itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.高于预期值)))
+        if (modifiedPrice > itemDetails.Preset.PriceExpected)
         {
-            var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.高于预期值)).Value;
-            NotifyAbortCondition(AbortCondition.高于预期值);
-            EnqueueAbortBehavior(behavior);
+            ProcessAbortCondition(AbortCondition.高于预期值, itemDetails.Preset.AbortLogic);
             return true;
         }
 
         // 大于可接受降价值
-        if (itemDetails.Preset.PriceMaxReduction != 0 && itemDetails.OrigPrice - modifiedPrice > 0 &&
-            itemDetails.OrigPrice - modifiedPrice > itemDetails.Preset.PriceMaxReduction &&
-            itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.大于可接受降价值)))
+        if (itemDetails.OrigPrice - modifiedPrice > itemDetails.Preset.PriceMaxReduction)
         {
-            var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.大于可接受降价值))
-                                      .Value;
-
-            NotifyAbortCondition(AbortCondition.大于可接受降价值);
-            EnqueueAbortBehavior(behavior);
+            ProcessAbortCondition(AbortCondition.大于可接受降价值, itemDetails.Preset.AbortLogic);
             return true;
         }
 
         // 低于收购价
-        if (ItemsSellPrice.TryGetValue(CurrentItem.ItemID, out var buyingPrice) &&
-            modifiedPrice < buyingPrice &&
-            itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.低于收购价)))
+        if (ItemsSellPrice.TryGetValue(CurrentItem.ItemID, out var buyingPrice) && modifiedPrice < buyingPrice)
         {
-            var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault
-                (x => x.Key.HasFlag(AbortCondition.低于收购价)).Value;
-
-            NotifyAbortCondition(AbortCondition.低于收购价);
-            EnqueueAbortBehavior(behavior);
+            ProcessAbortCondition(AbortCondition.低于收购价, itemDetails.Preset.AbortLogic);
             return true;
         }
 
         // 低于最小值
-        if (modifiedPrice < itemDetails.Preset.PriceMinimum &&
-            itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.低于最小值)))
+        if (modifiedPrice < itemDetails.Preset.PriceMinimum)
         {
-            var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.低于最小值)).Value;
-            NotifyAbortCondition(AbortCondition.低于最小值);
-            EnqueueAbortBehavior(behavior);
+            ProcessAbortCondition(AbortCondition.低于最小值, itemDetails.Preset.AbortLogic);
             return true;
         }
 
         // 低于预期值
-        if (modifiedPrice < itemDetails.Preset.PriceExpected &&
-            itemDetails.Preset.AbortLogic.Keys.Any(x => x.HasFlag(AbortCondition.低于预期值)))
+        if (modifiedPrice < itemDetails.Preset.PriceExpected)
         {
-            var behavior = itemDetails.Preset.AbortLogic.FirstOrDefault(x => x.Key.HasFlag(AbortCondition.低于预期值)).Value;
-            NotifyAbortCondition(AbortCondition.低于预期值);
-            EnqueueAbortBehavior(behavior);
+            ProcessAbortCondition(AbortCondition.低于预期值, itemDetails.Preset.AbortLogic);
             return true;
         }
 
@@ -1111,6 +908,15 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         {
             ClickRetainerSell.Using((nint)RetainerList).Decline();
             RetainerSell->Close(true);
+        }
+
+        void ProcessAbortCondition(AbortCondition condition, IReadOnlyDictionary<AbortCondition, AbortBehavior> abortLogic)
+        {
+            if (abortLogic.TryGetValue(condition, out var behavior))
+            {
+                NotifyAbortCondition(condition);
+                EnqueueAbortBehavior(behavior);
+            }
         }
 
         void EnqueueAbortBehavior(AbortBehavior behavior)
@@ -1953,4 +1759,183 @@ public unsafe class AutoRetainerWork : DailyModuleBase
     }
 
     #endregion
+
+    public override void Uninit()
+    {
+        Service.AddonLifecycle.UnregisterListener(OnRetainerSellList);
+        Service.AddonLifecycle.UnregisterListener(OnRetainerList);
+        Service.AddonLifecycle.UnregisterListener(OnRetainerSell);
+        Service.AddonLifecycle.UnregisterListener(OnEntrustDupsAddons);
+
+        Cache.Clear();
+
+        base.Uninit();
+    }
+
+    #region 预定义
+
+    private static readonly InventoryType[] InventoryTypes =
+    [
+        InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3,
+        InventoryType.Inventory4,
+    ];
+
+    public enum AdjustBehavior
+    {
+        固定值,
+        百分比,
+    }
+
+    [Flags]
+    public enum AbortCondition
+    {
+        无 = 1,
+        低于最小值 = 2,
+        低于预期值 = 4,
+        低于收购价 = 8,
+        大于可接受降价值 = 16,
+        高于预期值 = 32,
+        高于最大值 = 64,
+    }
+
+    public enum AbortBehavior
+    {
+        无,
+        收回至雇员,
+        收回至背包,
+        出售至系统商店,
+        改价至最小值,
+        改价至预期值,
+        改价至最高值,
+    }
+
+    private class Config : ModuleConfiguration
+    {
+        public readonly Dictionary<string, ItemConfig> ItemConfigs = new()
+        {
+            { new ItemKey(0, false).ToString(), new(0, false) },
+            { new ItemKey(0, true).ToString(), new(0, true) },
+        };
+
+        public int AdjustMethod;
+        public int OperationDelay;
+
+        public bool SendProcessMessage = true;
+    }
+
+    public class ItemKey : IEquatable<ItemKey>
+    {
+        public ItemKey() { }
+
+        public ItemKey(uint itemID, bool isHQ)
+        {
+            ItemID = itemID;
+            IsHQ = isHQ;
+        }
+
+        public uint ItemID { get; set; }
+        public bool IsHQ { get; set; }
+
+        public bool Equals(ItemKey? other)
+        {
+            if (other is null || GetType() != other.GetType())
+                return false;
+
+            return ItemID == other.ItemID && IsHQ == other.IsHQ;
+        }
+
+        public override string ToString() { return $"{ItemID}_{(IsHQ ? "HQ" : "NQ")}"; }
+
+        public override bool Equals(object? obj) { return Equals(obj as ItemKey); }
+
+        public override int GetHashCode() { return HashCode.Combine(ItemID, IsHQ); }
+
+        public static bool operator ==(ItemKey? lhs, ItemKey? rhs)
+        {
+            if (lhs is null) return rhs is null;
+            return lhs.Equals(rhs);
+        }
+
+        public static bool operator !=(ItemKey lhs, ItemKey rhs) { return !(lhs == rhs); }
+    }
+
+    public class ItemConfig : IEquatable<ItemConfig>
+    {
+        public ItemConfig() { }
+
+        public ItemConfig(uint itemID, bool isHQ)
+        {
+            ItemID = itemID;
+            IsHQ = isHQ;
+            ItemName = itemID == 0
+                           ? Service.Lang.GetText("AutoRetainerPriceAdjust-CommonItemPreset")
+                           : LuminaCache.GetRow<Item>(ItemID).Name.RawString;
+        }
+
+        public uint ItemID { get; set; }
+        public bool IsHQ { get; set; }
+        public string ItemName { get; set; } = string.Empty;
+
+        /// <summary>
+        ///     改价行为
+        /// </summary>
+        public AdjustBehavior AdjustBehavior { get; set; } = AdjustBehavior.固定值;
+
+        /// <summary>
+        ///     改价具体值
+        /// </summary>
+        public Dictionary<AdjustBehavior, int> AdjustValues { get; set; } = new()
+        {
+            { AdjustBehavior.固定值, 1 },
+            { AdjustBehavior.百分比, 10 },
+        };
+
+        /// <summary>
+        ///     最低可接受价格 (最小值: 1)
+        /// </summary>
+        public int PriceMinimum { get; set; } = 100;
+
+        /// <summary>
+        ///     最大可接受价格
+        /// </summary>
+        public int PriceMaximum { get; set; } = 100000000;
+
+        /// <summary>
+        ///     预期价格 (最小值: PriceMinimum + 1)
+        /// </summary>
+        public int PriceExpected { get; set; } = 200;
+
+        /// <summary>
+        ///     最大可接受降价值 (设置为 0 以禁用)
+        /// </summary>
+        public int PriceMaxReduction { get; set; }
+
+        /// <summary>
+        ///     意外情况逻辑
+        /// </summary>
+        public Dictionary<AbortCondition, AbortBehavior> AbortLogic { get; set; } = [];
+
+        public bool Equals(ItemConfig? other)
+        {
+            if (other is null || GetType() != other.GetType())
+                return false;
+
+            return ItemID == other.ItemID && IsHQ == other.IsHQ;
+        }
+
+        public override bool Equals(object? obj) { return Equals(obj as ItemConfig); }
+
+        public override int GetHashCode() { return HashCode.Combine(ItemID, IsHQ); }
+
+        public static bool operator ==(ItemConfig? lhs, ItemConfig? rhs)
+        {
+            if (lhs is null) return rhs is null;
+            return lhs.Equals(rhs);
+        }
+
+        public static bool operator !=(ItemConfig lhs, ItemConfig rhs) { return !(lhs == rhs); }
+    }
+
+    #endregion
+
 }
