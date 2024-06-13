@@ -10,6 +10,8 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("CustomizeGCRankTitle", "CustomizeGCRankDescription", ModuleCategories.系统)]
 public unsafe class CustomizeGCRank : DailyModuleBase
 {
+    private delegate byte GetGrandCompanyRankDeleagte(PlayerState* instance);
+
     [Signature("E8 ?? ?? ?? ?? 3C ?? 88 44 24", DetourName = nameof(GetGrandCompanyRankDetour))]
     private static Hook<GetGrandCompanyRankDeleagte>? GetGrandCompanyRankHook;
 
@@ -29,7 +31,7 @@ public unsafe class CustomizeGCRank : DailyModuleBase
     public override void ConfigUI()
     {
         ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
-        ImGui.SliderInt("军衔等级", ref CustomRank, 1, 19);
+        ImGui.SliderInt(Service.Lang.GetText("CustomizeGCRank-GCRank"), ref CustomRank, 1, 19);
 
         if (ImGui.IsItemDeactivatedAfterEdit())
             UpdateConfig(nameof(CustomRank), CustomRank);
@@ -64,6 +66,4 @@ public unsafe class CustomizeGCRank : DailyModuleBase
 
         base.Uninit();
     }
-
-    private delegate byte GetGrandCompanyRankDeleagte(PlayerState* instance);
 }

@@ -2088,4 +2088,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Whitelist" xml:space="preserve">
     <value>白名单</value>
   </data>
+  <data name="CustomizeGCRank-GCRank" xml:space="preserve">
+    <value>军衔等级</value>
+  </data>
 </root>
