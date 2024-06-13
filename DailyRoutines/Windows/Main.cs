@@ -57,6 +57,7 @@ public class Main : Window, IDisposable
     private static Vector2 ChildGameCalendarsSize;
     private static Vector2 ChildGreetingSize;
     private static Vector2 ContactComponentSize;
+    private static Vector2 HomePageMainInfoSize;
 
     private static int SelectedTab;
     internal static string SearchString = string.Empty;
@@ -136,11 +137,15 @@ public class Main : Window, IDisposable
         ImGuiHelpers.CenterCursorForText("Daily");
         ImGuiOm.Text("Daily");
 
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (4f * ImGuiHelpers.GlobalScale));
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (8f * ImGuiHelpers.GlobalScale));
         ImGuiHelpers.CenterCursorForText("Routines");
         ImGuiOm.Text("Routines");
 
         ImGui.SetWindowFontScale(1f);
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (4f * ImGuiHelpers.GlobalScale));
+        ImGuiHelpers.CenterCursorForText($"[{Plugin.Version}]");
+        ImGuiOm.TextDisabledWrapped($"[{Plugin.Version}]");
+
         ImGui.EndGroup();
 
         if (ImGui.IsItemHovered())
@@ -358,7 +363,10 @@ public class Main : Window, IDisposable
                            ImGui.GetCursorStartPos().Y));
         DrawHomePage_GreetingComponent();
 
-        ImGuiHelpers.ScaledDummy(1f, 8f);
+        ImGuiHelpers.ScaledDummy(1f, 36f);
+
+        ImGuiHelpers.CenterCursorFor(HomePageMainInfoSize.X);
+        ImGui.BeginGroup();
 
         ImGui.BeginGroup();
         DrawHomePage_GameNewsComponent();
@@ -380,6 +388,9 @@ public class Main : Window, IDisposable
 
         DrawHomePage_ChangelogComponent();
         ImGui.EndGroup();
+
+        ImGui.EndGroup();
+        HomePageMainInfoSize = ImGui.GetItemRectSize();
     }
 
     private static void DrawHomePage_GreetingComponent()
@@ -510,18 +521,24 @@ public class Main : Window, IDisposable
             ImageHelper.TryGetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/Changelog.png", 
                                     out var imageWarpper);
 
-        if (imageState0)
-            if (ImGui.CollapsingHeader(
-                    Service.Lang.GetText("Changelog", MainSettings.LatestVersionInfo.PublishTime.ToShortDateString())))
-            {
-                ImGui.Image(imageWarpper.ImGuiHandle, ImGui.GetContentRegionAvail());
-                if (ImGui.IsItemHovered())
+        var childSize = ImageCarousel.CurrentImageSize + ImGui.GetStyle().ItemSpacing * 2;
+        if (ImGui.BeginChild("HomePage_ChangelogComponent", childSize, false, ChildFlags))
+        {
+            if (imageState0)
+                if (ImGui.CollapsingHeader(
+                        Service.Lang.GetText("Changelog", MainSettings.LatestVersionInfo.PublishTime.ToShortDateString())))
                 {
-                    ImGui.BeginTooltip();
-                    ImGui.Image(imageWarpper.ImGuiHandle, imageWarpper.Size);
-                    ImGui.EndTooltip();
+                    ImGui.Image(imageWarpper.ImGuiHandle, ImageCarousel.CurrentImageSize);
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.BeginTooltip();
+                        ImGui.Image(imageWarpper.ImGuiHandle, imageWarpper.Size * 0.8f);
+                        ImGui.EndTooltip();
+                    }
                 }
-            }
+
+            ImGui.EndChild();
+        }
     }
 
     private static void DrawModuleCategory(ModuleCategories category)
