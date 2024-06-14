@@ -71,6 +71,7 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
 
     private static IDalamudTextureWrap? BicolorGemIcon;
     private static int BicolorGemAmount;
+    private static uint BicolorGemCap;
     private static Vector2 BicolorGemComponentSize;
 
     public override void Init()
@@ -82,6 +83,7 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
         RefreshBackground();
 
         BicolorGemIcon ??= ImageHelper.GetIcon(LuminaCache.GetRow<Item>(26807).Icon, ITextureProvider.IconFlags.HiRes);
+        BicolorGemCap = LuminaCache.GetRow<Item>(26807).StackSize;
 
         Overlay ??= new Overlay(this);
         Overlay.Flags &= ~ImGuiWindowFlags.NoTitleBar;
@@ -129,7 +131,7 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
 
         ImGui.SameLine();
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 2f);
-        ImGui.Text($"{BicolorGemAmount}/1000");
+        ImGui.Text($"{BicolorGemAmount}/{BicolorGemCap}");
 
         ImGui.EndGroup();
         ImGui.SetCursorPos(originalPos);
