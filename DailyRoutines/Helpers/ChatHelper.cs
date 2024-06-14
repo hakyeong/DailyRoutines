@@ -21,7 +21,7 @@ public class ChatHelper
     private ProcessChatBoxDelegate? ProcessChatBox { get; }
     private readonly unsafe delegate* unmanaged<Utf8String*, int, IntPtr, void> _sanitiseString = null!;
 
-    public static ChatHelper? instance;
+    private static ChatHelper? instance;
 
     public static ChatHelper Instance
     {
@@ -77,17 +77,6 @@ public class ChatHelper
         }
 
         SendMessageUnsafe(bytes);
-    }
-
-    public void ExecuteCommand(string message)
-    {
-        if (!message.StartsWith('/'))
-        {
-            NotifyHelper.Error("Command Not Prefixed With A Slash (/)");
-            return;
-        }
-
-        SendMessage(message);
     }
 
     public unsafe string SanitizeText(string text)
