@@ -339,7 +339,7 @@ public unsafe class AutoLogin : DailyModuleBase
         if (agent == null) return false;
 
         var addon = AddonState.CharaSelectWorldServer;
-        if (addon == null || !IsAddonAndNodesReady(addon)) return false;
+        if (addon == null) return false;
 
         for (var i = 0; i < 16; i++)
         {
