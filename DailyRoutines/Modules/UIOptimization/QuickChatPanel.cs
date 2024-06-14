@@ -48,8 +48,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
     private static Dictionary<string, Item>? ItemNames;
     private static Dictionary<string, Item> _ItemNames = [];
 
-    private static AtkUnitBase* AddonChatLog => (AtkUnitBase*)Service.Gui.GetAddonByName("ChatLog");
-
     public override void Init()
     {
         ModuleConfig = LoadConfig<Config>() ?? new();
@@ -77,7 +75,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "ChatLog", OnAddon);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "ChatLog", OnAddon);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "ChatLog", OnAddon);
-        if (AddonChatLog != null) OnAddon(AddonEvent.PostSetup, null);
+        if (AddonState.ChatLog != null) OnAddon(AddonEvent.PostSetup, null);
 
         Overlay ??= new Overlay(this);
         Overlay.Flags |= ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize;
@@ -337,14 +335,14 @@ public unsafe class QuickChatPanel : DailyModuleBase
     public override void OverlayPreDraw()
     {
         if (Service.ClientState.LocalPlayer == null || 
-            AddonChatLog == null || !AddonChatLog->IsVisible ||
-            AddonChatLog->GetNodeById(5) == null)
+            AddonState.ChatLog == null || !AddonState.ChatLog->IsVisible ||
+            AddonState.ChatLog->GetNodeById(5) == null)
             Overlay.IsOpen = false;
     }
 
     public override void OverlayUI()
     {
-        var textInputNode = AddonChatLog->GetNodeById(5);
+        var textInputNode = AddonState.ChatLog->GetNodeById(5);
         var buttonPos = new Vector2(textInputNode->X + textInputNode->Width, textInputNode->ScreenY) + ModuleConfig.ButtonOffset;
         ImGui.SetWindowPos(buttonPos with { Y = buttonPos.Y - ImGui.GetWindowSize().Y - 5 });
 
@@ -690,20 +688,20 @@ public unsafe class QuickChatPanel : DailyModuleBase
         {
             case AddonEvent.PostSetup:
             case AddonEvent.PostRefresh:
-                if (Service.ClientState.LocalPlayer == null || AddonChatLog == null) return;
+                if (Service.ClientState.LocalPlayer == null || AddonState.ChatLog == null) return;
                 FreeNode();
 
-                var textInputNode = AddonChatLog->GetNodeById(5);
-                var collisionNode = AddonChatLog->GetNodeById(15);
+                var textInputNode = AddonState.ChatLog->GetNodeById(5);
+                var collisionNode = AddonState.ChatLog->GetNodeById(15);
                 if (textInputNode == null || collisionNode == null) return;
 
                 ButtonPos = new Vector2(textInputNode->X + textInputNode->Width - ModuleConfig.ButtonSize - 6,
                                         textInputNode->Y - 3) + ModuleConfig.ButtonOffset;
 
                 AtkResNode* iconNode = null;
-                for (var i = 0; i < AddonChatLog->UldManager.NodeListCount; i++)
+                for (var i = 0; i < AddonState.ChatLog->UldManager.NodeListCount; i++)
                 {
-                    var node = AddonChatLog->UldManager.NodeList[i];
+                    var node = AddonState.ChatLog->UldManager.NodeList[i];
                     if (node->NodeID == 10001)
                     {
                         iconNode = node;
@@ -744,12 +742,12 @@ public unsafe class QuickChatPanel : DailyModuleBase
         imageNode->AtkResNode.SetHeight(ModuleConfig.ButtonSize);
         imageNode->AtkResNode.SetPositionShort((short)position.X, (short)position.Y);
 
-        LinkNodeAtEnd((AtkResNode*)imageNode, AddonChatLog);
+        LinkNodeAtEnd((AtkResNode*)imageNode, AddonState.ChatLog);
 
         imageNode->AtkResNode.NodeFlags |= NodeFlags.RespondToMouse | NodeFlags.EmitsEvents | NodeFlags.HasCollision;
-        AddonChatLog->UpdateCollisionNodeList(true);
+        AddonState.ChatLog->UpdateCollisionNodeList(true);
         MouseClickHandle ??=
-            Service.AddonEvent.AddEvent((nint)AddonChatLog, (nint)(&imageNode->AtkResNode), AddonEventType.MouseClick,
+            Service.AddonEvent.AddEvent((nint)AddonState.ChatLog, (nint)(&imageNode->AtkResNode), AddonEventType.MouseClick,
                                         OnEvent);
     }
 
@@ -757,14 +755,14 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
     private static void FreeNode()
     {
-        if (AddonChatLog == null) return;
+        if (AddonState.ChatLog == null) return;
 
-        for (var i = 0; i < AddonChatLog->UldManager.NodeListCount; i++)
+        for (var i = 0; i < AddonState.ChatLog->UldManager.NodeListCount; i++)
         {
-            var node = AddonChatLog->UldManager.NodeList[i];
+            var node = AddonState.ChatLog->UldManager.NodeList[i];
             if (node->NodeID == 10001)
             {
-                UnlinkAndFreeImageNode((AtkImageNode*)node, AddonChatLog);
+                UnlinkAndFreeImageNode((AtkImageNode*)node, AddonState.ChatLog);
                 Service.AddonEvent.RemoveEvent(MouseClickHandle);
                 MouseClickHandle = null;
             }

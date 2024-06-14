@@ -10,6 +10,7 @@ public static unsafe class AddonState
     public static AtkUnitBase* InventoryExpansion => (AtkUnitBase*)Service.Gui.GetAddonByName("InventoryExpansion");
     public static AtkUnitBase* SelectString       => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectString");
     public static AtkUnitBase* InputNumeric       => (AtkUnitBase*)Service.Gui.GetAddonByName("InputNumeric");
+    public static AtkUnitBase* ChatLog            => (AtkUnitBase*)Service.Gui.GetAddonByName("ChatLog");
 
     public static AtkUnitBase* ToAtkUnitBase(this nint ptr) => (AtkUnitBase*)ptr;
 }
