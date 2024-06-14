@@ -27,7 +27,12 @@ public static class Widgets
     public static SeString DailyRoutinesPrefix => dailyRoutinesPrefix.Value;
 
     private static Vector2 CheckboxSize = ImGuiHelpers.ScaledVector2(20f);
-    
+
+    public static SeString WithDRPrefix(string text) 
+        => new SeStringBuilder().Append(DRPrefix).Append($" {text}").Build();
+    public static SeString WithDRPrefix(SeString text) 
+        => new SeStringBuilder().Append(DRPrefix).Append(" ").Append(text).Build();
+
     public static void PreviewImageWithHelpText(
         string helpText, string imageUrl, Vector2 imageSize = default,
         FontAwesomeIcon imageIcon = FontAwesomeIcon.InfoCircle)
