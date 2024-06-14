@@ -2122,4 +2122,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Item" xml:space="preserve">
     <value>物品</value>
   </data>
+  <data name="AutoSplitStacks-FastSplit" xml:space="preserve">
+    <value>快捷拆分</value>
+  </data>
+  <data name="AutoSplitStacks-PleaseInputSplitAmount" xml:space="preserve">
+    <value>请输入拆分数量</value>
+  </data>
 </root>
