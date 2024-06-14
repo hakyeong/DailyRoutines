@@ -113,7 +113,7 @@ public unsafe class AutoNoviceNetwork : DailyModuleBase
         TaskHelper.Enqueue(() =>
         {
             if (!IsNoviceNetworkFlagSet(PlayerState.Instance(), 8U))
-                ChatHelper.Instance.ExecuteCommand("/beginnerchannel on");
+                ChatHelper.Instance.SendMessage("/beginnerchannel on");
         });
 
         TaskHelper.Enqueue(TryJoin);
