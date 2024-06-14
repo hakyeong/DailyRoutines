@@ -2122,6 +2122,18 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Item" xml:space="preserve">
     <value>物品</value>
   </data>
+  <data name="AutoLogin-AddCommand" xml:space="preserve">
+    <value>添加 {0} 指令</value>
+  </data>
+  <data name="AutoLogin-AddCommandHelp" xml:space="preserve">
+    <value>1.{0} &lt;角色索引&gt;
+    登录到当前服务器下指定索引的角色
+2.{1} &lt;服务器名&gt; &lt;角色索引&gt;
+    登录到指定服务器下指定索引的角色</value>
+  </data>
+  <data name="AutoLogin-CommandHelp" xml:space="preserve">
+    <value>登录到 (当前/指定) 服务器下指定索引的角色</value>
+  </data>
   <data name="AutoSplitStacks-FastSplit" xml:space="preserve">
     <value>快捷拆分</value>
   </data>
