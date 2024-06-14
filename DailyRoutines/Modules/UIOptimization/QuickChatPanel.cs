@@ -15,7 +15,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
-using Dalamud.Interface.Utility.Raii;
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Client.UI.Shell;
@@ -478,7 +478,10 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
                             break;
                         case MacroDisplayMode.Buttons:
-                            if (ButtonImageWithTextVertical(icon, name))
+                            var textSize = ImGui.CalcTextSize("六个字也行吧");
+                            var buttonSize = textSize with { Y = textSize.Y * 2 + icon.Height };
+
+                            if (ImGuiOm.ButtonImageWithTextVertical(icon, name, buttonSize))
                             {
                                 var gameMacro =
                                     RaptureMacroModule.Instance()->GetMacro(macro.Category, (uint)macro.Position);
@@ -610,10 +613,15 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 foreach (var (itemName, item) in _ItemNames)
                 {
                     if (itemName.Length > longestText.Length) longestText = itemName;
-                    if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(item.Icon).ImGuiHandle,
-                                                        new(24),
-                                                        itemName, false))
-                        Service.Chat.Print(new SeStringBuilder().AddItemLink(item.RowId).Build());
+
+                    var isConflictKeyHolding = Service.KeyState[Service.Config.ConflictKey];
+                    var icon = ImageHelper.GetIcon(item.Icon, 
+                                                   isConflictKeyHolding 
+                                                       ? ITextureProvider.IconFlags.ItemHighQuality 
+                                                       : ITextureProvider.IconFlags.None).ImGuiHandle;
+
+                    if (ImGuiOm.SelectableImageWithText(icon, ImGuiHelpers.ScaledVector2(24f), itemName, false))
+                        Service.Chat.Print(new SeStringBuilder().AddItemLink(item.RowId, isConflictKeyHolding).Build());
                 }
 
                 maxTextWidth = ImGui.CalcTextSize(longestText).X + (200f * ImGuiHelpers.GlobalScale);
