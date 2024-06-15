@@ -298,7 +298,9 @@ public unsafe class AutoLeveQuests : DailyModuleBase
 
     private static void GetMapLeveQuests()
     {
-        var currentZonePlaceNameID = LuminaCache.GetRow<TerritoryType>(Service.ClientState.TerritoryType).PlaceName.Row;
+
+
+        var currentZonePlaceNameID = LuminaCache.GetRow<TerritoryType>(Service.ClientState.TerritoryType)?.PlaceName.Row ?? 0;
 
         if (Service.ClientState.TerritoryType == 0 || currentZonePlaceNameID == 0)
         {
