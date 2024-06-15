@@ -2140,4 +2140,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoSplitStacks-PleaseInputSplitAmount" xml:space="preserve">
     <value>请输入拆分数量</value>
   </data>
+  <data name="Settings-ResetModuleSuccessNotice" xml:space="preserve">
+    <value>重置 {0} 模块完成</value>
+  </data>
+  <data name="Settings-ShowOverlayConfig" xml:space="preserve">
+    <value>显示配置悬浮窗</value>
+  </data>
 </root>

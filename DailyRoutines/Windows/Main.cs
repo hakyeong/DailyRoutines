@@ -85,18 +85,25 @@ public class Main : Window, IDisposable
     public override void Draw()
     {
         PresetFont.Axis18.Push();
-        DrawLeftTabComponent();
-
-        ImGui.SameLine();
-        ImGui.BeginGroup();
-        DrawUpperTabComponent();
-
-        if (ImGui.BeginChild("ChildDownRight", ImGui.GetContentRegionAvail(), false, ChildFlags))
+        try
         {
-            DrawRightTabComponent();
-            ImGui.EndChild();
+            DrawLeftTabComponent();
+
+            ImGui.SameLine();
+            ImGui.BeginGroup();
+            DrawUpperTabComponent();
+
+            if (ImGui.BeginChild("ChildDownRight", ImGui.GetContentRegionAvail(), false, ChildFlags))
+            {
+                DrawRightTabComponent();
+                ImGui.EndChild();
+            }
+            ImGui.EndGroup();
         }
-        ImGui.EndGroup();
+        catch (Exception _)
+        {
+            // ignored
+        }
         PresetFont.Axis18.Pop();
     }
 
@@ -774,7 +781,7 @@ public class Main : Window, IDisposable
 
                     if (isModuleEnabled) Service.ModuleManager.Load(module);
 
-                    NotifyHelper.NotificationSuccess($"重置 {moduleInfo.Title} 模块完成");
+                    NotifyHelper.NotificationSuccess(Service.Lang.GetText("Settings-ResetModuleSuccessNotice", moduleInfo.Title));
                 });
             }
 
@@ -784,6 +791,17 @@ public class Main : Window, IDisposable
                 if (ImGuiOm.Selectable($"    {Service.Lang.GetText("Settings-ModuleConfiguration")}"))
                     OpenFileOrFolder
                         (Path.Join(Service.PluginInterface.ConfigDirectory.FullName, $"{moduleInfo.Module.Name}.json"));
+            }
+
+            if (moduleInfo.WithConfigUI)
+            {
+                ImGui.Separator();
+                if (ImGuiOm.Selectable($"    {Service.Lang.GetText("Settings-ShowOverlayConfig")}"))
+                {
+                    var module = Service.ModuleManager.Modules[moduleInfo.Module];
+                    module.OverlayConfig ??= new(module);
+                    module.OverlayConfig.IsOpen ^= true;
+                }
             }
             ImGui.SetWindowFontScale(1f);
 
