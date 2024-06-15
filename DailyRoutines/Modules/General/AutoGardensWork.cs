@@ -16,6 +16,7 @@ using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
+using FFXIVClientStructs.FFXIV.Client.Game.Housing;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -194,15 +195,17 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
         ImGui.EndGroup();
 
-        var tableSize = ImGui.GetItemRectSize() with { Y = 0 };
-
         ImGui.Spacing();
 
-        if (ImGui.BeginTable("GardensTable", 4, ImGuiTableFlags.Borders, tableSize))
+        var tableSize = ImGui.GetItemRectSize() with { Y = 0 };
+        var twoCharaSize = ImGui.CalcTextSize("测试");
+        if (ImGui.BeginTable("GardensTable", 6, ImGuiTableFlags.Borders, tableSize))
         {
             ImGui.TableSetupColumn("名称", ImGuiTableColumnFlags.None, 20);
             ImGui.TableSetupColumn("ObjectID", ImGuiTableColumnFlags.None, 20);
             ImGui.TableSetupColumn("地点", ImGuiTableColumnFlags.None, 15);
+            ImGui.TableSetupColumn("房区", ImGuiTableColumnFlags.WidthFixed, twoCharaSize.X);
+            ImGui.TableSetupColumn("地皮", ImGuiTableColumnFlags.WidthFixed, twoCharaSize.X);
             ImGui.TableSetupColumn("操作", ImGuiTableColumnFlags.None, 10);
 
             ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
@@ -214,6 +217,12 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
             ImGui.TableNextColumn();
             ImGui.Text(Service.Lang.GetText("Zone"));
+
+            ImGui.TableNextColumn();
+            ImGui.Text(Service.Lang.GetText("Ward"));
+
+            ImGui.TableNextColumn();
+            ImGui.Text(Service.Lang.GetText("Plot"));
 
             foreach (var garden in ModuleConfig.Gardens.ToList())
             {
@@ -254,6 +263,12 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
                 ImGui.TableNextColumn();
                 ImGui.Text(LuminaCache.GetRow<TerritoryType>(garden.ZoneID).ExtractPlaceName());
+
+                ImGui.TableNextColumn();
+                ImGui.Text($"{garden.Ward + 1}");
+
+                ImGui.TableNextColumn();
+                ImGui.Text(garden.Plot.ToString());
 
                 ImGui.TableNextColumn();
                 if (ImGuiOm.ButtonIcon("Target", FontAwesomeIcon.MousePointer, Service.Lang.GetText("ToTarget")))
@@ -309,10 +324,22 @@ public unsafe class AutoGardensWork : DailyModuleBase
         var localPlayer = (GameObject*)Service.ClientState.LocalPlayer.Address;
         if (localPlayer == null) return;
 
-        foreach (var garden in ModuleConfig.Gardens.Where(x => x.ZoneID == Service.ClientState.TerritoryType))
+        var manager = HousingManager.Instance();
+        var ward = manager->GetCurrentWard();
+        var plot = manager->GetCurrentPlot();
+        if (ward == -1 || plot == -1)
+        {
+            NotifyHelper.NotificationError(Service.Lang.GetText("AutoGardensWork-NotInValidWardOrPlot"));
+            return;
+        }
+
+        foreach (var garden in ModuleConfig.Gardens.Where(x => 
+                                                              x.ZoneID == Service.ClientState.TerritoryType &&
+                                                              x.Ward == ward && x.Plot == plot))
         {
             var gameObj = GetGameObjectFromObjectID(garden.ObjectID);
             if (gameObj == null) continue;
+
             var objDistance = Vector3.Distance(localPlayer->Position, gameObj->Position);
             if (objDistance > 5) continue;
 
@@ -341,6 +368,15 @@ public unsafe class AutoGardensWork : DailyModuleBase
 
     private void ObtainGardensAround()
     {
+        var manager = HousingManager.Instance();
+        var ward = manager->GetCurrentWard();
+        var plot = manager->GetCurrentPlot();
+        if (ward == -1 || plot == -1)
+        {
+            NotifyHelper.NotificationError(Service.Lang.GetText("AutoGardensWork-NotInValidWardOrPlot"));
+            return;
+        }
+
         foreach (var gameObj in Service.ObjectTable.Where(x => x is { ObjectKind: ObjectKind.EventObj, DataId: 2003757 }))
         {
             if (Vector3.Distance(gameObj.Position, Service.ClientState.LocalPlayer.Position) > 20) continue;
@@ -348,7 +384,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
             var objectID = gameObj.ObjectId;
             var zoneID = Service.ClientState.TerritoryType;
             var zoneName = LuminaCache.GetRow<TerritoryType>(zoneID).ExtractPlaceName();
-            var garden = new GameGarden($"{zoneName}_{objectID}", objectID, zoneID);
+            var garden = new GameGarden($"{zoneName}_{objectID}", objectID, zoneID, ward, plot);
             if (!ModuleConfig.Gardens.Contains(garden)) ModuleConfig.Gardens.Add(garden);
         }
 
@@ -510,14 +546,18 @@ public unsafe class AutoGardensWork : DailyModuleBase
         public string Name     { get; set; } = string.Empty;
         public ulong  ObjectID { get; set; }
         public ushort ZoneID   { get; set; }
+        public sbyte  Ward     { get; set; }
+        public sbyte  Plot     { get; set; }
 
         public GameGarden() { }
 
-        public GameGarden(string name, ulong objectID, ushort zoneID)
+        public GameGarden(string name, ulong objectID, ushort zoneID, sbyte ward, sbyte plot)
         {
             Name = name;
             ObjectID = objectID;
             ZoneID = zoneID;
+            Ward = ward;
+            Plot = plot;
         }
 
         public bool Equals(GameGarden? other)

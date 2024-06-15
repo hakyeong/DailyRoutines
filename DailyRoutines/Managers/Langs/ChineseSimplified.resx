@@ -2152,4 +2152,13 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoPreserveCollectableTitle" xml:space="preserve">
     <value>自动确认采集收藏品</value>
   </data>
+  <data name="AutoGardensWork-NotInValidWardOrPlot" xml:space="preserve">
+    <value>当前未处于任一有效房区或地皮内</value>
+  </data>
+  <data name="Plot" xml:space="preserve">
+    <value>地皮</value>
+  </data>
+  <data name="Ward" xml:space="preserve">
+    <value>房区</value>
+  </data>
 </root>
