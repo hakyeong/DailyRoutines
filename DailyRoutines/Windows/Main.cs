@@ -64,11 +64,10 @@ public class Main : Window, IDisposable
 
     public Main() : base("Daily Routines - 主界面###DailyRoutines-Main")
     {
-        Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoResize;
+        Flags = ImGuiWindowFlags.NoScrollbar;
         SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = ImGuiHelpers.ScaledVector2(650, 400),
-            MaximumSize = ImGuiHelpers.ScaledVector2(650, 400),
         };
         SelectedTab = Service.Config.DefaultHomePage;
 
