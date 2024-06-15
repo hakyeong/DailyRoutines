@@ -2146,4 +2146,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Settings-ShowOverlayConfig" xml:space="preserve">
     <value>显示配置悬浮窗</value>
   </data>
+  <data name="AutoPreserveCollectableDescription" xml:space="preserve">
+    <value>当出现确认是否将采集道具收为收藏品界面时, 自动点击确认</value>
+  </data>
+  <data name="AutoPreserveCollectableTitle" xml:space="preserve">
+    <value>自动确认采集收藏品</value>
+  </data>
 </root>
