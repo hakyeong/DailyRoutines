@@ -64,8 +64,12 @@ public class Main : Window, IDisposable
 
     public Main() : base("Daily Routines - 主界面###DailyRoutines-Main")
     {
-        Flags = ImGuiWindowFlags.NoScrollbar;
-        SizeConstraints = new WindowSizeConstraints { MinimumSize = ImGuiHelpers.ScaledVector2(650, 375) };
+        Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoResize;
+        SizeConstraints = new WindowSizeConstraints
+        {
+            MinimumSize = ImGuiHelpers.ScaledVector2(650, 400),
+            MaximumSize = ImGuiHelpers.ScaledVector2(650, 400),
+        };
         SelectedTab = Service.Config.DefaultHomePage;
 
         if (Service.ClientState.ClientLanguage != (ClientLanguage)4)
@@ -376,7 +380,7 @@ public class Main : Window, IDisposable
 
         ImGui.BeginGroup();
         DrawHomePage_GameNewsComponent();
-        ImGuiHelpers.ScaledDummy(1f, 8f);
+        ImGuiHelpers.ScaledDummy(1f, 4f);
         DrawHomePage_GameCalendarsComponent();
         ImGui.EndGroup();
 
@@ -1238,7 +1242,9 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
             lastImageChangeTime = ImGui.GetTime();
         }
 
-        ChildSize = new Vector2(CurrentImageSize.X + 2 * ImGui.GetStyle().ItemSpacing.X, CurrentImageSize.Y * 1.3f);
+        var singleCharaSize = ImGui.CalcTextSize("测试");
+        var itemSpacing = ImGui.GetStyle().ItemSpacing;
+        ChildSize = new Vector2(CurrentImageSize.X + 2 * itemSpacing.X, CurrentImageSize.Y + singleCharaSize.Y * 2) ;
         if (ImGui.BeginChild("NewsImageCarousel", ChildSize, false, ImGuiWindowFlags.NoScrollbar))
         {
             var news = newsList[currentIndex];
