@@ -72,6 +72,8 @@ public unsafe class AutoNoviceNetwork : DailyModuleBase
         ImGui.BeginDisabled(TaskHelper.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("Start")))
         {
+            Service.Hook.InitializeFromAttributes(this);
+
             TryTimes = 0;
             TaskHelper.Enqueue(EnqueueARound);
         }
