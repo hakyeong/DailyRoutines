@@ -41,7 +41,7 @@ public unsafe class CustomizeGameObject : DailyModuleBase
 
     private static Vector2 CheckboxSize = ImGuiHelpers.ScaledVector2(20f);
 
-    private static readonly Dictionary<nint, (CustomizePreset Preset, float Scale)> CustomizeHistory = [];
+    private static readonly Dictionary<nint, CustomizeHistoryEntry> CustomizeHistory = [];
 
     public override string? Author { get; set; } = "HSS";
 
@@ -441,15 +441,17 @@ public unsafe class CustomizeGameObject : DailyModuleBase
                     break;
             }
 
-            if (isNeedToReScale &&
-                (pTarget->Scale != preset.Scale || (preset.ScaleVFX && pTarget->VfxScale != preset.Scale)))
+            if (isNeedToReScale && !CustomizeHistory.ContainsKey((nint)pTarget))
             {
-                CustomizeHistory.TryAdd((nint)pTarget, (preset, pTarget->Scale));
-
-                pTarget->Scale = preset.Scale;
-                if (preset.ScaleVFX) pTarget->VfxScale = preset.Scale;
-                pTarget->DisableDraw();
-                pTarget->EnableDraw();
+                var modifiedScale = pTarget->Scale * preset.Scale;
+                var entry = new CustomizeHistoryEntry(preset, pTarget->Scale, modifiedScale);
+                if (CustomizeHistory.TryAdd((nint)pTarget, entry))
+                {
+                    pTarget->Scale = modifiedScale;
+                    if (preset.ScaleVFX) pTarget->VfxScale = modifiedScale;
+                    pTarget->DisableDraw();
+                    pTarget->EnableDraw();
+                }
             }
         }
 
@@ -481,8 +483,8 @@ public unsafe class CustomizeGameObject : DailyModuleBase
         var gameObj = (GameObjectStruct*)address;
         if (gameObj == null || !gameObj->IsReadyToDraw()) return;
 
-        gameObj->Scale = data.Scale;
-        gameObj->VfxScale = data.Scale;
+        gameObj->Scale = data.OrigScale;
+        gameObj->VfxScale = data.OrigScale;
         gameObj->DisableDraw();
         gameObj->EnableDraw();
     }
@@ -496,8 +498,8 @@ public unsafe class CustomizeGameObject : DailyModuleBase
             var gameObj = (GameObjectStruct*)objectPtr;
             if (gameObj == null || !gameObj->IsReadyToDraw()) continue;
 
-            gameObj->Scale = data.Scale;
-            gameObj->VfxScale = data.Scale;
+            gameObj->Scale = data.OrigScale;
+            gameObj->VfxScale = data.OrigScale;
             gameObj->DisableDraw();
             gameObj->EnableDraw();
         }
@@ -543,6 +545,8 @@ public unsafe class CustomizeGameObject : DailyModuleBase
 
         public static bool operator !=(CustomizePreset left, CustomizePreset right) => !Equals(left, right);
     }
+
+    private sealed record CustomizeHistoryEntry(CustomizePreset Preset, float OrigScale, float CurrentScale);
 
     private enum CustomizeType
     {
