@@ -397,60 +397,50 @@ public unsafe class CustomizeGameObject : DailyModuleBase
     {
         var isTargetable = IsTargetableHook.Original(pTarget);
 
-        if (ModuleConfig.CustomizePresets.Count == 0 || !pTarget->IsCharacter()) return isTargetable;
-        if (!Throttler.Throttle($"CustomizeGameObjectScale_{(nint)pTarget}", 1000)) return isTargetable;
+        var targetAddress = (nint)pTarget;
+        if (Throttler.Throttle($"CustomizeGameObjectScale_{targetAddress}", 1000) || ModuleConfig.CustomizePresets.Count == 0 || !pTarget->IsCharacter() || pTarget->RenderFlags == 0)
+            return isTargetable;
 
         var name = Marshal.PtrToStringUTF8((nint)pTarget->Name);
-        var dataID = pTarget->DataID;
-        var objectID = pTarget->ObjectID;
+        var dataID = pTarget->DataID.ToString();
+        var objectID = pTarget->ObjectID.ToString();
         var charaData = ((CharacterStruct*)pTarget)->CharacterData;
-        var modelCharaID = charaData.ModelCharaId;
-        var modelSkeletonID = charaData.ModelSkeletonId;
+        var modelCharaID = charaData.ModelCharaId.ToString();
+        var modelSkeletonID = charaData.ModelSkeletonId.ToString();
 
         foreach (var preset in ModuleConfig.CustomizePresets)
         {
             if (!preset.Enabled) continue;
 
-            var isNeedToReScale = false;
-            switch (preset.Type)
+            var isNeedToReScale = preset.Type switch
             {
-                case CustomizeType.Name:
-                    if (name.Equals(preset.Value)) isNeedToReScale = true;
-                    break;
-                case CustomizeType.DataID:
-                    if (dataID.ToString() == preset.Value) isNeedToReScale = true;
-                    break;
-                case CustomizeType.ObjectID:
-                    if (objectID.ToString() == preset.Value) isNeedToReScale = true;
-                    break;
-                case CustomizeType.ModelCharaID:
-                    if (modelCharaID.ToString() == preset.Value)
-                    {
-                        isNeedToReScale = true;
-                        charaData.ModelScale = preset.Scale;
-                    }
+                CustomizeType.Name => name == preset.Value,
+                CustomizeType.DataID => dataID == preset.Value,
+                CustomizeType.ObjectID => objectID == preset.Value,
+                CustomizeType.ModelCharaID => modelCharaID == preset.Value,
+                CustomizeType.ModelSkeletonID => modelSkeletonID == preset.Value,
+                _ => false,
+            };
 
-                    break;
-                case CustomizeType.ModelSkeletonID:
-                    if (modelSkeletonID.ToString() == preset.Value)
-                    {
-                        isNeedToReScale = true;
-                        charaData.ModelScale = preset.Scale;
-                    }
-
-                    break;
-            }
-
-            if (isNeedToReScale && !CustomizeHistory.ContainsKey((nint)pTarget))
+            if (isNeedToReScale)
             {
-                var modifiedScale = pTarget->Scale * preset.Scale;
-                var entry = new CustomizeHistoryEntry(preset, pTarget->Scale, modifiedScale);
-                if (CustomizeHistory.TryAdd((nint)pTarget, entry))
+                if (CustomizeHistory.TryGetValue(targetAddress, out var historyEntry))
                 {
-                    pTarget->Scale = modifiedScale;
-                    if (preset.ScaleVFX) pTarget->VfxScale = modifiedScale;
-                    pTarget->DisableDraw();
-                    pTarget->EnableDraw();
+                    if (pTarget->Scale != historyEntry.CurrentScale)
+                        CustomizeHistory.Remove(targetAddress);
+                }
+
+                if (!CustomizeHistory.ContainsKey(targetAddress))
+                {
+                    var modifiedScale = pTarget->Scale * preset.Scale;
+                    var entry = new CustomizeHistoryEntry(preset, pTarget->Scale, modifiedScale);
+                    if (CustomizeHistory.TryAdd(targetAddress, entry))
+                    {
+                        pTarget->Scale = modifiedScale;
+                        if (preset.ScaleVFX) pTarget->VfxScale = modifiedScale;
+                        pTarget->DisableDraw();
+                        pTarget->EnableDraw();
+                    }
                 }
             }
         }
