@@ -101,7 +101,7 @@ public unsafe class AutoNoviceNetwork : DailyModuleBase
         ImGui.Text($"{Service.Lang.GetText("AutoNoviceNetwork-JoinState")}:");
 
         if (Throttler.Throttle("AutoNoviceNetwork", 1000))
-            IsInNoviceNetworkDisplay = IsInNoviceNetwork;
+            IsInNoviceNetworkDisplay = IsInNoviceNetwork();
 
         ImGui.SameLine();
         ImGui.TextColored(IsInNoviceNetworkDisplay ? ImGuiColors.HealerGreen : ImGuiColors.DPSRed,
@@ -125,7 +125,7 @@ public unsafe class AutoNoviceNetwork : DailyModuleBase
 
         TaskHelper.Enqueue(() =>
         {
-            if (IsInNoviceNetwork)
+            if (IsInNoviceNetwork())
             {
                 TaskHelper.Abort();
                 return;
@@ -138,11 +138,11 @@ public unsafe class AutoNoviceNetwork : DailyModuleBase
     private static void TryJoin()
         => TryJoinNoviceNetwork(&InfoProxyBeginner.Instance()->InfoProxyInterface);
 
-    private static bool IsInNoviceNetwork => InfoProxyBeginner.Instance()->IsInNoviceNetwork;
+    private static bool IsInNoviceNetwork() => InfoProxyBeginner.Instance()->IsInNoviceNetwork;
 
     private void OnAfkStateCheck(object? sender, ElapsedEventArgs e)
     {
-        if (!IsTryJoinWhenInactive || IsInNoviceNetwork || TaskHelper.IsBusy) return;
+        if (!IsTryJoinWhenInactive || IsInNoviceNetwork() || TaskHelper.IsBusy) return;
         if (Flags.BoundByDuty || Flags.OccupiedInEvent) return;
 
         var idleTime = GetIdleTime();
