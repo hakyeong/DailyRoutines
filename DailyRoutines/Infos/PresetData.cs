@@ -10,24 +10,19 @@ namespace DailyRoutines.Infos;
 
 public class PresetData
 {
-    public static Dictionary<uint, Action>                 PlayerActions => playerActions.Value;
-    public static Dictionary<uint, Status>                 Statuses      => statuses.Value;
-    public static Dictionary<uint, ContentFinderCondition> Contents      => contents.Value;
-    public static Dictionary<uint, Item>                   Gears         => gears.Value;
-    public static Dictionary<uint, Item>                   Dyes          => dyes.Value;
-    public static Dictionary<uint, World>                  CNWorlds      => cnWorlds.Value;
-    public static Dictionary<uint, TerritoryType>          Zones         => zones.Value;
-    public static Dictionary<uint, Mount>                  Mounts        => mounts.Value;
-    public static Dictionary<uint, Item>                   Food          => food.Value;
-    public static Dictionary<uint, Item>                   Seeds         => seeds.Value;
-    public static Dictionary<uint, Item>                   Soils         => soils.Value;
-    public static Dictionary<uint, Item>                   Fertilizers   => fertilizers.Value;
-
-    public static bool TryGetPlayerActions(uint rowID, out Action action)
-        => PlayerActions.TryGetValue(rowID, out action);
-
-    public static bool TryGetStatus(uint rowID, out Status status)
-        => Statuses.TryGetValue(rowID, out status);
+    public static Dictionary<uint, Action>                 PlayerActions   => playerActions.Value;
+    public static Dictionary<uint, Status>                 Statuses        => statuses.Value;
+    public static Dictionary<uint, ContentFinderCondition> Contents        => contents.Value;
+    public static Dictionary<uint, Item>                   Gears           => gears.Value;
+    public static Dictionary<uint, Item>                   Dyes            => dyes.Value;
+    public static Dictionary<uint, World>                  CNWorlds        => cnWorlds.Value;
+    public static Dictionary<uint, TerritoryType>          Zones           => zones.Value;
+    public static Dictionary<uint, Mount>                  Mounts          => mounts.Value;
+    public static Dictionary<uint, Item>                   Food            => food.Value;
+    public static Dictionary<uint, Item>                   Seeds           => seeds.Value;
+    public static Dictionary<uint, Item>                   Soils           => soils.Value;
+    public static Dictionary<uint, Item>                   Fertilizers     => fertilizers.Value;
+    public static Dictionary<uint, ContentFinderCondition> HighEndContents => highEndContents.Value;
 
     public static bool TryGetContent(uint rowID, out ContentFinderCondition content)
         => Contents.TryGetValue(rowID, out content);
@@ -35,22 +30,16 @@ public class PresetData
     public static bool TryGetGear(uint rowID, out Item item)
         => Gears.TryGetValue(rowID, out item);
 
-    public static bool TryGetStain(uint rowID, out Item item)
-        => Dyes.TryGetValue(rowID, out item);
-
     public static bool TryGetCNWorld(uint rowID, out World world)
         => CNWorlds.TryGetValue(rowID, out world);
 
-    public static bool TryGetZone(uint rowID, out TerritoryType zone)
-        => Zones.TryGetValue(rowID, out zone);
-
-    public static bool TryGetMount(uint rowID, out Mount mount)
-        => Mounts.TryGetValue(rowID, out mount);
-
-    public static bool TryGetFood(uint rowID, out Item foodItem)
-        => Food.TryGetValue(rowID, out foodItem);
-
     #region Lazy
+
+    private static readonly Lazy<Dictionary<uint, ContentFinderCondition>> highEndContents =
+        new(() => LuminaCache.Get<ContentFinderCondition>()
+                             .Where(x => !string.IsNullOrWhiteSpace(x.Name.RawString) && x.HighEndDuty)
+                             .DistinctBy(x => x.TerritoryType.Row)
+                             .ToDictionary(x => x.TerritoryType.Row, x => x));
 
     private static readonly Lazy<Dictionary<uint, Item>> seeds =
         new(() => LuminaCache.Get<Item>()
