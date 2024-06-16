@@ -24,6 +24,10 @@ public class AutoLeaveDuty : DailyModuleBase
 
     public override void ConfigUI()
     {
+        ImGui.TextColored(ImGuiColors.TankBlue, Service.Lang.GetText("AutoLeaveDuty-Note"));
+
+        ImGui.Spacing();
+
         ImGui.AlignTextToFramePadding();
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoLeaveDuty-BlacklistContents")}:");
 
