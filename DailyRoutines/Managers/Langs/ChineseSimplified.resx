@@ -2176,4 +2176,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoLeaveDuty-Note" xml:space="preserve">
     <value>注: 为防止卡战斗状态, 会调用额外方法辅助退本, 请忽略其产生的提示信息</value>
   </data>
+  <data name="QuickChatPanel-SendChatboxMessage" xml:space="preserve">
+    <value>发送 (聊天栏信息)</value>
+  </data>
 </root>

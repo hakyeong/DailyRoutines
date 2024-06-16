@@ -13,8 +13,8 @@ using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
-using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -48,6 +48,8 @@ public unsafe class QuickChatPanel : DailyModuleBase
     private static Dictionary<string, Item>? ItemNames;
     private static Dictionary<string, Item> _ItemNames = [];
 
+    private static Vector2 TwentyCharsSize;
+
     public override void Init()
     {
         ModuleConfig = LoadConfig<Config>() ?? new();
@@ -78,9 +80,8 @@ public unsafe class QuickChatPanel : DailyModuleBase
         if (AddonState.ChatLog != null) OnAddon(AddonEvent.PostSetup, null);
 
         Overlay ??= new Overlay(this);
-        Overlay.Flags |= ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize;
+        Overlay.Flags |= ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollWithMouse;
         Overlay.Flags &= ~ImGuiWindowFlags.AlwaysAutoResize;
-        Overlay.Flags &= ~ImGuiWindowFlags.NoScrollbar;
 
         TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
@@ -334,7 +335,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
     public override void OverlayPreDraw()
     {
-        if (Service.ClientState.LocalPlayer == null || 
+        if (Service.ClientState.LocalPlayer == null ||
             AddonState.ChatLog == null || !AddonState.ChatLog->IsVisible ||
             AddonState.ChatLog->GetNodeById(5) == null)
             Overlay.IsOpen = false;
@@ -343,9 +344,54 @@ public unsafe class QuickChatPanel : DailyModuleBase
     public override void OverlayUI()
     {
         var textInputNode = AddonState.ChatLog->GetNodeById(5);
-        var buttonPos = new Vector2(textInputNode->X + textInputNode->Width, textInputNode->ScreenY) + ModuleConfig.ButtonOffset;
-        ImGui.SetWindowPos(buttonPos with { Y = buttonPos.Y - ImGui.GetWindowSize().Y - 5 });
+        var buttonPos = new Vector2(textInputNode->X + textInputNode->Width, textInputNode->ScreenY) +
+                        ModuleConfig.ButtonOffset;
 
+        ImGui.SetWindowPos(buttonPos with { Y = buttonPos.Y - ImGui.GetWindowSize().Y - 16f });
+
+        if (!PresetFont.Axis14.Available) return;
+        using var font = ImRaii.PushFont(PresetFont.Axis14.Lock().ImFont);
+        try
+        {
+            TwentyCharsSize = ImGui.CalcTextSize("我也不知道要说什么但是真得要凑齐二十几个汉字");
+
+            var isOpen = true;
+            ImGui.SetNextWindowPos(new(ImGui.GetWindowPos().X, ImGui.GetWindowPos().Y + ImGui.GetWindowHeight()));
+            ImGui.SetNextWindowSize(new(ImGui.GetWindowWidth(), TwentyCharsSize.Y * 1.8f));
+            if (ImGui.Begin("###QuickChatPanel-SendMessages", ref isOpen, 
+                            ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollbar | 
+                            ImGuiWindowFlags.NoScrollWithMouse))
+            {
+
+                if (ImGuiOm.SelectableTextCentered(Service.Lang.GetText("QuickChatPanel-SendChatboxMessage")))
+                {
+                    var inputNode = (AtkComponentTextInput*)AddonState.ChatLog->GetComponentNodeById(5);
+                    var text = inputNode->AtkComponentInputBase.UnkText1;
+                    if (!string.IsNullOrWhiteSpace(text.ToString()))
+                    {
+                        ChatHelper.Instance.SendMessageUnsafe(text.AsSpan().ToArray());
+                        inputNode->AtkComponentInputBase.UnkText1.Clear();
+                        inputNode->AtkComponentInputBase.UnkText2.Clear();
+                        inputNode->AtkComponentInputBase.AtkTextNode->SetText(string.Empty);
+                    }
+                }
+                ImGui.End();
+            }
+
+            ImGui.BeginGroup();
+            DrawOverlayContent();
+            ImGui.EndGroup();
+
+            ImGui.Separator();
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
+    }
+
+    private void DrawOverlayContent()
+    {
         if (ImGui.BeginTabBar("###QuickChatPanel", ImGuiTabBarFlags.Reorderable))
         {
             // 消息
@@ -390,7 +436,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
             var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
             if (ImGui.BeginChild("MessagesChild", ImGui.GetContentRegionAvail(), false))
             {
-                PresetFont.Axis14.Push();
                 ImGui.SetWindowFontScale(ModuleConfig.FontScale);
                 for (var i = 0; i < ModuleConfig.SavedMessages.Count; i++)
                 {
@@ -398,6 +443,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
                     var textWidth = ImGui.CalcTextSize(message).X;
                     maxTextWidth = Math.Max(textWidth + 64, maxTextWidth);
+                    maxTextWidth = Math.Max(TwentyCharsSize.X, maxTextWidth);
 
                     ImGuiOm.SelectableTextCentered(message);
 
@@ -433,7 +479,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                         ImGui.Separator();
                 }
 
-                PresetFont.Axis14.Pop();
+
                 ImGui.SetWindowFontScale(1f);
                 ImGui.EndChild();
             }
@@ -452,7 +498,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
             var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
             if (ImGui.BeginChild("MacroChild", ImGui.GetContentRegionAvail(), false))
             {
-                PresetFont.Axis14.Push();
                 ImGui.SetWindowFontScale(ModuleConfig.FontScale);
                 ImGui.BeginGroup();
                 for (var i = 0; i < ModuleConfig.SavedMacros.Count; i++)
@@ -477,7 +522,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                             break;
                         case MacroDisplayMode.Buttons:
                             var textSize = ImGui.CalcTextSize("六个字也行吧");
-                            var buttonSize = textSize with { Y = textSize.Y * 2 + icon.Height };
+                            var buttonSize = textSize with { Y = (textSize.Y * 2) + icon.Height };
 
                             if (ImGuiOm.ButtonImageWithTextVertical(icon, name, buttonSize))
                             {
@@ -535,7 +580,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 maxTextWidth = ImGui.GetItemRectSize().X;
 
                 ImGui.SetWindowFontScale(1f);
-                PresetFont.Axis14.Pop();
+
                 ImGui.EndChild();
             }
 
@@ -544,40 +589,42 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
             ImGui.EndTabItem();
         }
-
     }
 
     private static void SystemSoundTabItem()
     {
         if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-SystemSound")))
         {
-            PresetFont.Axis14.Push();
-            ImGui.SetWindowFontScale(ModuleConfig.FontScale);
-            ImGui.BeginGroup();
-            foreach (var seNote in ModuleConfig.SoundEffectNotes)
+            var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
+            if (ImGui.BeginChild("SystemSoundChild"))
             {
-                ImGuiOm.ButtonSelectable($"{seNote.Value}###PlaySound{seNote.Key}");
+                ImGui.SetWindowFontScale(ModuleConfig.FontScale);
+                ImGui.BeginGroup();
+                foreach (var seNote in ModuleConfig.SoundEffectNotes)
+                {
+                    ImGuiOm.ButtonSelectable($"{seNote.Value}###PlaySound{seNote.Key}");
 
-                if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
-                    UIModule.PlayChatSoundEffect(seNote.Key);
+                    if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
+                        UIModule.PlayChatSoundEffect(seNote.Key);
 
-                if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
-                    ChatHelper.Instance.SendMessage($"<se.{seNote.Key}><se.{seNote.Key}>");
+                    if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                        ChatHelper.Instance.SendMessage($"<se.{seNote.Key}><se.{seNote.Key}>");
 
-                ImGuiOm.TooltipHover(Service.Lang.GetText("QuickChatPanel-SystemSoundHelp"));
+                    ImGuiOm.TooltipHover(Service.Lang.GetText("QuickChatPanel-SystemSoundHelp"));
+                }
+
+                ImGui.EndGroup();
+                maxTextWidth = ImGui.GetItemRectSize().X;
+                maxTextWidth = Math.Max(TwentyCharsSize.X, maxTextWidth);
+                ImGui.SetWindowFontScale(1f);
+                ImGui.EndChild();
             }
-
-            ImGui.EndGroup();
-            var maxTextWidth = ImGui.GetItemRectSize().X;
-            ImGui.SetWindowFontScale(1f);
-            PresetFont.Axis14.Pop();
 
             ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
                                     ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
 
             ImGui.EndTabItem();
         }
-
     }
 
     private static void GameItemTabItem()
@@ -587,7 +634,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
             var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
             if (ImGui.BeginChild("GameItemChild", ImGui.GetContentRegionAvail(), false))
             {
-                PresetFont.Axis14.Push();
                 ImGui.SetWindowFontScale(ModuleConfig.FontScale);
 
                 ImGui.SetNextItemWidth(-1f);
@@ -613,9 +659,9 @@ public unsafe class QuickChatPanel : DailyModuleBase
                     if (itemName.Length > longestText.Length) longestText = itemName;
 
                     var isConflictKeyHolding = Service.KeyState[Service.Config.ConflictKey];
-                    var icon = ImageHelper.GetIcon(item.Icon, 
-                                                   isConflictKeyHolding 
-                                                       ? ITextureProvider.IconFlags.ItemHighQuality 
+                    var icon = ImageHelper.GetIcon(item.Icon,
+                                                   isConflictKeyHolding
+                                                       ? ITextureProvider.IconFlags.ItemHighQuality
                                                        : ITextureProvider.IconFlags.None).ImGuiHandle;
 
                     if (ImGuiOm.SelectableImageWithText(icon, ImGuiHelpers.ScaledVector2(24f), itemName, false))
@@ -623,9 +669,10 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 }
 
                 maxTextWidth = ImGui.CalcTextSize(longestText).X + (200f * ImGuiHelpers.GlobalScale);
+                maxTextWidth = Math.Max(TwentyCharsSize.X, maxTextWidth);
 
                 ImGui.SetWindowFontScale(1f);
-                PresetFont.Axis14.Pop();
+
                 ImGui.EndChild();
             }
 
@@ -634,7 +681,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
             ImGui.EndTabItem();
         }
-
     }
 
     private static void SpecialIconCharTabItem()
@@ -644,7 +690,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
             var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
             if (ImGui.BeginChild("SeIconChild", ImGui.GetContentRegionAvail(), false))
             {
-                PresetFont.Axis14.Push();
                 ImGui.SetWindowFontScale(ModuleConfig.FontScale);
 
                 ImGui.BeginGroup();
@@ -668,8 +713,9 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 ImGui.EndGroup();
 
                 maxTextWidth = ImGui.GetItemRectSize().X;
+                maxTextWidth = Math.Max(TwentyCharsSize.X, maxTextWidth);
                 ImGui.SetWindowFontScale(1f);
-                PresetFont.Axis14.Pop();
+
                 ImGui.EndChild();
             }
 
@@ -678,7 +724,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
             ImGui.EndTabItem();
         }
-
     }
 
     private void OnAddon(AddonEvent type, AddonArgs? args)
@@ -751,7 +796,10 @@ public unsafe class QuickChatPanel : DailyModuleBase
                                         OnEvent);
     }
 
-    private void OnEvent(AddonEventType atkEventType, IntPtr atkUnitBase, IntPtr atkResNode) { Overlay.IsOpen ^= true; }
+    private void OnEvent(AddonEventType atkEventType, nint atkUnitBase, nint atkResNode)
+    {
+        Overlay.IsOpen ^= true;
+    }
 
     private static void FreeNode()
     {
@@ -767,36 +815,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 MouseClickHandle = null;
             }
         }
-    }
-
-    private static bool ButtonImageWithTextVertical(IDalamudTextureWrap icon, string text)
-    {
-        ImGui.PushID($"{text}_{icon}");
-        var iconSize = icon.Size;
-        var textSize = ImGui.CalcTextSize(text);
-        var windowDrawList = ImGui.GetWindowDrawList();
-        var cursorScreenPos = ImGui.GetCursorScreenPos();
-        var padding = ImGui.GetStyle().FramePadding.X;
-        var spacing = 3f * ImGuiHelpers.GlobalScale;
-        var buttonWidth = Math.Max(iconSize.X, textSize.X) + (padding * 2);
-        var buttonHeight = iconSize.Y + textSize.Y + (padding * 2) + spacing;
-
-        var result = ImGui.Button(string.Empty, new Vector2(buttonWidth, buttonHeight));
-
-        var iconStartPos =
-            new Vector2(cursorScreenPos.X + ((buttonWidth - iconSize.X) / 2), cursorScreenPos.Y + padding);
-
-        var iconEndPos = iconStartPos + iconSize;
-        var iconPos = new Vector2(cursorScreenPos.X + ((buttonWidth - iconSize.X) / 2), cursorScreenPos.Y + padding);
-        var textPos = new Vector2(cursorScreenPos.X + ((buttonWidth - textSize.X) / 2),
-                                  iconPos.Y + iconSize.Y + spacing);
-
-        windowDrawList.AddImage(icon.ImGuiHandle, iconStartPos, iconEndPos);
-        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
-
-        ImGui.PopID();
-
-        return result;
     }
 
     private void SwapMacros(int index1, int index2)
