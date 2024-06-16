@@ -224,6 +224,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
     private void OnAddonYesno(AddonEvent type, AddonArgs args)
     {
+        if (!TaskHelper.IsBusy) return;
         TaskHelper.Enqueue(() => Click.SendClick(SkipWhenHQ ? "select_no" : "select_yes"), "ConfirmHQ", 2);
         TaskHelper.DelayNext("Delay_ConfirmHQ", 20, false, 2);
     }
