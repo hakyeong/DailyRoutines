@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -11,6 +12,7 @@ using Dalamud.Hooking;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -67,7 +69,7 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
     };
 
     private static readonly Dictionary<uint, IDalamudTextureWrap> ZoneTextures = [];
-    private static readonly Vector2 ChildSize = ImGuiHelpers.ScaledVector2(333.5f, 112f);
+    private static readonly Vector2 FateProgressUISize = ImGuiHelpers.ScaledVector2(333.5f, 112f);
 
     private static IDalamudTextureWrap? BicolorGemIcon;
     private static int BicolorGemAmount;
@@ -88,9 +90,12 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
         Overlay ??= new Overlay(this);
         Overlay.Flags &= ~ImGuiWindowFlags.NoTitleBar;
         Overlay.Flags &= ~ImGuiWindowFlags.AlwaysAutoResize;
-        Overlay.Flags |= ImGuiWindowFlags.NoResize;
-        Overlay.Flags |= ImGuiWindowFlags.NoScrollbar;
-        Overlay.Flags |= ImGuiWindowFlags.NoScrollWithMouse;
+        Overlay.Flags |= ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse;
+
+        Overlay.SizeConstraints = new()
+        {
+            MinimumSize = FateProgressUISize,
+        };
 
         Overlay.WindowName = $"{LuminaCache.GetRow<Addon>(3924).Text.RawString}###BetterFateProgressUI";
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "FateProgress", OnAddon);
@@ -108,15 +113,20 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
 
     public override void OverlayUI()
     {
-        PresetFont.Axis18.Push();
+        if (!PresetFont.Axis18.Available) return;
+        using var font = ImRaii.PushFont(PresetFont.Axis18.Lock().ImFont);
+        try
+        {
+            DrawBicolorGemComponent();
 
-        DrawBicolorGemComponent();
+            DrawFateProgressTabs();
 
-        DrawFateProgressTabs();
-
-        ImGui.Dummy(new(1));
-
-        PresetFont.Axis18.Pop();
+            ImGui.Dummy(new(1));
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
     }
 
     private static void DrawBicolorGemComponent()
@@ -124,7 +134,8 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
         if (BicolorGemIcon == null) return;
 
         var originalPos = ImGui.GetCursorPos();
-        ImGui.SetCursorPos(BicolorGemComponentSize with { X = ImGui.GetWindowSize().X - BicolorGemComponentSize.X - ImGui.GetStyle().ItemSpacing.X * 2 });
+        ImGui.SetCursorPos(BicolorGemComponentSize with 
+                               { X = ImGui.GetWindowSize().X - BicolorGemComponentSize.X - (ImGui.GetStyle().ItemSpacing.X * 2) });
         ImGui.BeginGroup();
 
         ImGui.Image(BicolorGemIcon.ImGuiHandle, ImGuiHelpers.ScaledVector2(24f));
@@ -152,7 +163,7 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
         ImGui.EndGroup();
 
         var itemSpacing = ImGui.GetStyle().ItemSpacing;
-        ImGui.SetWindowSize(new((ChildSize.X * 2) + (itemSpacing.X * 3), ImGui.GetCursorPosY() + itemSpacing.Y));
+        ImGui.SetWindowSize(new((FateProgressUISize.X * 2) + (itemSpacing.X * 3), ImGui.GetCursorPosY() + itemSpacing.Y));
     }
 
     private static void DrawFateProgressTabItem(string tabTitle, int start, int count)
@@ -180,7 +191,7 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
     {
         var zoneSheetRow = LuminaCache.GetRow<TerritoryType>(AchievementToZone[achievementID]);
 
-        if (ImGui.BeginChild($"{achievementID}", ChildSize, true, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
+        if (ImGui.BeginChild($"{achievementID}", FateProgressUISize, true, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
         {
             DrawBackgroundImage(bgCounter);
             DisplayZoneName(zoneSheetRow);
