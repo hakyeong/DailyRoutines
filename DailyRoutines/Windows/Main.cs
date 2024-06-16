@@ -97,7 +97,7 @@ public class Main : Window, IDisposable
             DrawRightTabComponent();
             ImGui.EndGroup();
         }
-        catch (Exception _)
+        catch (Exception)
         {
             // ignored
         }
