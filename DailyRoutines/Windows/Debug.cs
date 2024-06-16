@@ -10,6 +10,7 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
+using FFXIVClientStructs.FFXIV.Client.Game.Housing;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
@@ -58,6 +59,7 @@ public unsafe class Debug() : Window("Daily Routines - 调试窗口###DailyRouti
         {
             var infoInstance = TerritoryInfo.Instance();
             var mapAgent = AgentMap.Instance();
+            var houseManager = HousingManager.Instance();
             if (ImGui.BeginTable("TerritoryInfoTable", 2, ImGuiTableFlags.Borders))
             {
                 ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
@@ -173,6 +175,34 @@ public unsafe class Debug() : Window("Daily Routines - 调试窗口###DailyRouti
                 var roundedY = (float)Math.Round(Service.ClientState.LocalPlayer?.Position.Y ?? 0f, 2);
                 var roundedZ = (float)Math.Round(Service.ClientState.LocalPlayer?.Position.Z ?? 0f, 2);
                 ImGui.Text($"<{roundedX:F2}, {roundedY:F2}, {roundedZ:F2}>");
+
+                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+                ImGui.TableNextColumn();
+                ImGui.Text("房屋信息");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.Text("Ward ID (房区)");
+                ImGui.TableNextColumn();
+                ImGui.Text($"{houseManager->GetCurrentWard()}");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.Text("Plot ID (地皮)");
+                ImGui.TableNextColumn();
+                ImGui.Text($"{houseManager->GetCurrentPlot()}");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.Text("House ID");
+                ImGui.TableNextColumn();
+                ImGui.Text($"{houseManager->GetCurrentHouseId()}");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.Text("Room ID");
+                ImGui.TableNextColumn();
+                ImGui.Text($"{houseManager->GetCurrentRoom()}");
 
                 ImGui.EndTable();
             }
