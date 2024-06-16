@@ -17,6 +17,7 @@ using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility;
 using ImGuiNET;
@@ -83,7 +84,8 @@ public class Main : Window, IDisposable
 
     public override void Draw()
     {
-        PresetFont.Axis18.Push();
+        if (!PresetFont.Axis18.Available) return;
+        using var font = ImRaii.PushFont(PresetFont.Axis18.Lock().ImFont);
         try
         {
             DrawLeftTabComponent();
@@ -92,18 +94,13 @@ public class Main : Window, IDisposable
             ImGui.BeginGroup();
             DrawUpperTabComponent();
 
-            if (ImGui.BeginChild("ChildDownRight", ImGui.GetContentRegionAvail(), false, ChildFlags))
-            {
-                DrawRightTabComponent();
-                ImGui.EndChild();
-            }
+            DrawRightTabComponent();
             ImGui.EndGroup();
         }
         catch (Exception _)
         {
             // ignored
         }
-        PresetFont.Axis18.Pop();
     }
 
     #region 左侧
@@ -936,13 +933,11 @@ public class MainSettings
 
     internal static void Draw()
     {
-        PresetFont.Axis18.Push();
         DrawGlobalConfig();
 
         ImGui.Separator();
 
         DrawTooltips();
-        PresetFont.Axis18.Pop();
     }
 
     internal static void DrawGlobalConfig()
@@ -1088,7 +1083,7 @@ public class MainSettings
     {
         Task.Run(async () =>
         {
-            ImageHelper.TryGetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/Changelog.png", out _);
+            ImageHelper.GetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/Changelog.png");
             await GetGameCalendar();
             await GetGameNews();
             TotalDownloadCounts = await GetTotalDownloadsAsync();
@@ -1259,7 +1254,7 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
             lastImageChangeTime = ImGui.GetTime();
         }
 
-        var singleCharaSize = ImGui.CalcTextSize("测试");
+        var singleCharaSize = ImGui.CalcTextSize("测");
         var itemSpacing = ImGui.GetStyle().ItemSpacing;
         ChildSize = new Vector2(CurrentImageSize.X + 2 * itemSpacing.X, CurrentImageSize.Y + singleCharaSize.Y * 2) ;
         if (ImGui.BeginChild("NewsImageCarousel", ChildSize, false, ImGuiWindowFlags.NoScrollbar))
