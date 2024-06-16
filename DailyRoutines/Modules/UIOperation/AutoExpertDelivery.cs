@@ -11,7 +11,6 @@ using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Colors;
-using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -36,20 +35,18 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
     private static HashSet<uint> HQItems = [];
 
     private static bool SkipWhenHQ;
-    private static DateTime? _LastUpdate;
-
     public override void Init()
     {
         AddConfig(nameof(SkipWhenHQ), SkipWhenHQ);
         SkipWhenHQ = GetConfig<bool>("SkipWhenHQ");
 
-        _LastUpdate ??= DateTime.Now;
-
+        TaskHelper ??= new() { AbortOnTimeout = true };
         Overlay ??= new Overlay(this);
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "GrandCompanySupplyList", OnAddonSupplyList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "GrandCompanySupplyList", OnAddonSupplyList);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "GrandCompanySupplyReward", OnAddonSupplyReward);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", OnAddonYesno);
     }
 
     public override void OverlayUI()
@@ -64,36 +61,35 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
         ImGui.Separator();
 
-        ImGui.BeginDisabled(DateTime.Now - _LastUpdate <= TimeSpan.FromSeconds(1));
+        ImGui.BeginDisabled(TaskHelper.IsBusy);
         if (ImGui.Checkbox(Service.Lang.GetText("AutoExpertDelivery-SkipHQ"), ref SkipWhenHQ))
             UpdateConfig("SkipWhenHQ", SkipWhenHQ);
 
-        if (ImGui.Button(Service.Lang.GetText("Start"))) Service.FrameworkManager.Register(OnUpdate);
+        if (ImGui.Button(Service.Lang.GetText("Start")))
+            EnqueueARound();
         ImGui.EndDisabled();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"))) Service.FrameworkManager.Unregister(OnUpdate);
+        if (ImGui.Button(Service.Lang.GetText("Stop")))
+            TaskHelper.Abort();
     }
 
-    private static void OnUpdate(IFramework framework)
+    private void EnqueueARound()
     {
-        if (!Throttler.Throttle("AutoExpertDelivery", 100)) return;
-        _LastUpdate = framework.LastUpdate;
+        TaskHelper.DelayNext("Delay_ClickCategory", 20);
+        TaskHelper.Enqueue(ClickCategory);
 
-        // 点击分类
-        ClickCategory();
+        TaskHelper.DelayNext("Delay_CheckIfToReachCap", 20);
+        TaskHelper.Enqueue(CheckIfToReachCap);
 
-        // 检查是否即将超限
-        CheckIfToReachCap();
+        TaskHelper.DelayNext("Delay_ClickListUI", 20);
+        TaskHelper.Enqueue(ClickListUI);
 
-        // 点击确认提交 HQ 物品
-        ConfirmHQItemUI();
-
-        // 点击列表物品
-        ClickListUI();
+        TaskHelper.DelayNext("Delay_EnqueueNewRound", 20);
+        TaskHelper.Enqueue(EnqueueARound);
     }
 
-    private static void CheckIfToReachCap()
+    private void CheckIfToReachCap()
     {
         if (AddonState.GrandCompanySupplyList == null || !IsAddonAndNodesReady(AddonState.GrandCompanySupplyList)) return;
 
@@ -102,8 +98,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
         if (addon->ExpertDeliveryList->ListLength == 0)
         {
-            Service.FrameworkManager.Unregister(OnUpdate);
-
+            TaskHelper.Abort();
             MakeSureAddonsClosed();
             return;
         }
@@ -116,8 +111,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         var grandCompany = UIState.Instance()->PlayerState.GrandCompany;
         if ((GrandCompany)grandCompany == GrandCompany.None)
         {
-            Service.FrameworkManager.Unregister(OnUpdate);
-
+            TaskHelper.Abort();
             MakeSureAddonsClosed();
             return;
         }
@@ -127,19 +121,12 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         var firstItemAmount = AddonState.GrandCompanySupplyList->AtkValues[265].UInt;
         if (firstItemAmount + companySeals > capAmount)
         {
-            Service.FrameworkManager.Unregister(OnUpdate);
+            TaskHelper.Abort();
             MakeSureAddonsClosed();
         }
     }
 
-    private static void ConfirmHQItemUI()
-    {
-        if (AddonState.SelectYesno == null || !IsAddonAndNodesReady(AddonState.SelectYesno)) return;
-
-        Click.SendClick(SkipWhenHQ ? "select_no" : "select_yes");
-    }
-
-    private static void ClickListUI()
+    private void ClickListUI()
     {
         if (AddonState.GrandCompanySupplyList == null || !IsAddonAndNodesReady(AddonState.GrandCompanySupplyList)) return;
 
@@ -162,8 +149,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
                 break;
             }
 
-            if (onlyHQLeft)
-                Service.FrameworkManager.Unregister(OnUpdate);
+            if (onlyHQLeft) TaskHelper.Abort();
         }
         else
             ClickGrandCompanySupplyList.Using((nint)addon).ItemEntry(0);
@@ -225,13 +211,28 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         };
     }
 
-    private static void OnAddonSupplyReward(AddonEvent type, AddonArgs args)
-        => ClickGrandCompanySupplyReward.Using(args.Addon).Deliver();
+    private void OnAddonSupplyReward(AddonEvent type, AddonArgs args)
+    {
+        TaskHelper.Enqueue(() =>
+        {
+            if (AddonState.GrandCompanySupplyList != null)
+                AddonState.GrandCompanySupplyList->Close(false);
+        }, "ConfirmListAddonClosed", 2);
+        TaskHelper.Enqueue(() => ClickGrandCompanySupplyReward.Using(args.Addon).Deliver(), "ConfirmSupplyReward", 2);
+        TaskHelper.DelayNext("Delay_ConfirmSupplyReward", 20, false, 2);
+    }
+
+    private void OnAddonYesno(AddonEvent type, AddonArgs args)
+    {
+        TaskHelper.Enqueue(() => Click.SendClick(SkipWhenHQ ? "select_no" : "select_yes"), "ConfirmHQ", 2);
+        TaskHelper.DelayNext("Delay_ConfirmHQ", 20, false, 2);
+    }
 
     public override void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnAddonSupplyList);
         Service.AddonLifecycle.UnregisterListener(OnAddonSupplyReward);
+        Service.AddonLifecycle.UnregisterListener(OnAddonYesno);
 
         base.Uninit();
     }
