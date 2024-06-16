@@ -2161,4 +2161,16 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Ward" xml:space="preserve">
     <value>房区</value>
   </data>
+  <data name="AutoLeaveDuty-AddCurrentHighEnd" xml:space="preserve">
+    <value>添加现版本高难</value>
+  </data>
+  <data name="AutoLeaveDuty-BlacklistContents" xml:space="preserve">
+    <value>黑名单副本</value>
+  </data>
+  <data name="AutoLeaveDutyDescription" xml:space="preserve">
+    <value>启用并配置完成后, 在非黑名单副本完成时自动退出</value>
+  </data>
+  <data name="AutoLeaveDutyTitle" xml:space="preserve">
+    <value>自动退出副本</value>
+  </data>
 </root>
