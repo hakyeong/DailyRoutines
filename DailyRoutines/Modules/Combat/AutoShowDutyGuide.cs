@@ -10,6 +10,7 @@ using DailyRoutines.Windows;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
 using ImGuiNET;
 
@@ -84,7 +85,7 @@ public class AutoShowDutyGuide : DailyModuleBase
 
     public override void OverlayOnOpen() => ImGui.SetScrollHereY();
 
-    public override void OverlayUI()
+    public override void OverlayPreDraw()
     {
         if (!IsOnDebug && (!Flags.BoundByDuty || GuideText.Count <= 0))
         {
@@ -96,8 +97,24 @@ public class AutoShowDutyGuide : DailyModuleBase
 
         if (GuideText.Count > 0)
             Overlay.WindowName = $"{GuideText[0]}###AutoShowDutyGuide-GuideWindow";
+    }
 
-        PresetFont.Axis14.Push();
+    public override void OverlayUI()
+    {
+        if (!PresetFont.Axis14.Available) return;
+        using var font = ImRaii.PushFont(PresetFont.Axis14.Lock().ImFont);
+        try
+        {
+            DrawDutyContent();
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
+    }
+
+    private static void DrawDutyContent()
+    {
         if (ImGuiOm.SelectableImageWithText(NoviceIcon.ImGuiHandle, ImGuiHelpers.ScaledVector2(24f),
                                             Service.Lang.GetText("AutoShowDutyGuide-Source"), false))
             Util.OpenLink($"https://ff14.org/duty/{CurrentDuty}.htm");
@@ -134,7 +151,6 @@ public class AutoShowDutyGuide : DailyModuleBase
 
         ImGui.SetWindowFontScale(1f);
         ImGui.PopTextWrapPos();
-        PresetFont.Axis14.Pop();
     }
 
     private void OnZoneChange(ushort territory)

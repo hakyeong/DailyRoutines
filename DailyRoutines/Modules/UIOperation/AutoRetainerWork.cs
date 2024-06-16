@@ -317,7 +317,6 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         if (ImGui.BeginChild("ItemConfigEditorChild", ChildSizeRight, true))
         {
             // 物品基本信息展示
-            PresetFont.Axis14.Push();
             ImGui.Image(itemLogo.ImGuiHandle, ImGuiHelpers.ScaledVector2(32));
 
             ImGui.SameLine();
@@ -329,7 +328,6 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (6f * ImGuiHelpers.GlobalScale));
             ImGui.Text(itemConfig.IsHQ ? $"({Service.Lang.GetText("HQ")})" : "");
             ImGui.SetWindowFontScale(1f);
-            PresetFont.Axis14.Pop();
 
             ImGui.Separator();
 

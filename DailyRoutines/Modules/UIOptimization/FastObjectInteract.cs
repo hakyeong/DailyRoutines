@@ -16,6 +16,7 @@ using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Memory;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
@@ -275,8 +276,20 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     public override void OverlayUI()
     {
-        PresetFont.Axis14.Push();
+        if (!PresetFont.Axis14.Available) return;
+        using var font = ImRaii.PushFont(PresetFont.Axis14.Lock().ImFont);
+        try
+        {
+            DrawOverlayContent();
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
+    }
 
+    private void DrawOverlayContent()
+    {
         ObjectToSelect? instanceChangeObject = null;
         ObjectToSelect? worldTravelObject = null;
 
@@ -322,8 +335,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
             WorldChangeWidget(worldTravelObject);
 
         WindowWidth = Math.Max(ModuleConfig.MinButtonWidth, ImGui.GetItemRectSize().X);
-
-        PresetFont.Axis14.Pop();
     }
 
     private void OnUpdate(IFramework framework)
