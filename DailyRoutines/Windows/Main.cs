@@ -85,21 +85,23 @@ public class Main : Window, IDisposable
     public override void Draw()
     {
         if (!PresetFont.Axis18.Available) return;
-        using var font = ImRaii.PushFont(PresetFont.Axis18.Lock().ImFont);
-        try
+        using (var font = ImRaii.PushFont(PresetFont.Axis18.Lock().ImFont))
         {
-            DrawLeftTabComponent();
+            try
+            {
+                DrawLeftTabComponent();
 
-            ImGui.SameLine();
-            ImGui.BeginGroup();
-            DrawUpperTabComponent();
+                ImGui.SameLine();
+                ImGui.BeginGroup();
+                DrawUpperTabComponent();
 
-            DrawRightTabComponent();
-            ImGui.EndGroup();
-        }
-        catch (Exception)
-        {
-            // ignored
+                DrawRightTabComponent();
+                ImGui.EndGroup();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
     }
 
