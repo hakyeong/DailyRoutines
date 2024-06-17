@@ -31,6 +31,7 @@ public class Main : Window, IDisposable
     {
         public Type             Module          { get; set; } = null!;
         public string[]?        PrecedingModule { get; set; }
+        public string           ModuleName      { get; set; } = null!;
         public string           Title           { get; set; } = null!;
         public string           Description     { get; set; } = null!;
         public string?          Author          { get; set; }
@@ -309,7 +310,7 @@ public class Main : Window, IDisposable
     {
         RightTabComponentSize = ImGui.GetContentRegionAvail();
         if (ImGui.BeginChild("RightTabComponentChild", RightTabComponentSize, false, ChildFlags | 
-                                 (SelectedTab > 100 ? ImGuiWindowFlags.None : ImGuiWindowFlags.NoScrollWithMouse)))
+                                 (SelectedTab == 0 ? ImGuiWindowFlags.NoScrollWithMouse : ImGuiWindowFlags.None)))
         {
             // 0 - 主页; 1 - 设置; 2 - 搜索; 3 - 收藏
             // 大于 100 - 模块分类
@@ -559,6 +560,7 @@ public class Main : Window, IDisposable
 
     private static void DrawModules(IReadOnlyList<ModuleInfo> modules, bool isFromSearch = false)
     {
+        using var font = ImRaii.PushFont(FontHelper.GetFont(18f));
         for (var i = 0; i < modules.Count; i++)
         {
             var module = modules[i];
@@ -567,9 +569,7 @@ public class Main : Window, IDisposable
                 !module.Module.Name.Contains(SearchString.Trim(), StringComparison.OrdinalIgnoreCase)) continue;
 
             ImGui.PushID($"{module.Category}-{module.Description}-{module.Title}-{module.Module}");
-            ImGui.SetWindowFontScale(0.8f);
             DrawModuleUI(module, isFromSearch);
-            ImGui.SetWindowFontScale(1f);
             ImGui.PopID();
 
             if (i < modules.Count - 1) ImGui.Separator();
@@ -580,14 +580,13 @@ public class Main : Window, IDisposable
     {
         ImGuiHelpers.ScaledDummy(1f, 4f);
 
-        var moduleName = moduleInfo.Module.Name;
-        if (!Service.Config.ModuleEnabled.TryGetValue(moduleName, out var isModuleEnabled)) return;
+        if (!Service.Config.ModuleEnabled.TryGetValue(moduleInfo.ModuleName, out var isModuleEnabled)) return;
+        if (!Service.ModuleManager.Modules.TryGetValue(moduleInfo.Module, out var moduleInstance)) return;
 
         if (ImGuiOm.CheckboxColored("", ref isModuleEnabled))
         {
-            var module = Service.ModuleManager.Modules[moduleInfo.Module];
-            if (isModuleEnabled) Service.ModuleManager.Load(module, true);
-            else Service.ModuleManager.Unload(module, true);
+            if (isModuleEnabled) Service.ModuleManager.Load(moduleInstance, true);
+            else Service.ModuleManager.Unload(moduleInstance, true);
         }
 
         if (ImGui.IsItemHovered())
@@ -597,36 +596,34 @@ public class Main : Window, IDisposable
 
         DrawModuleContextMenu(moduleInfo);
 
-        var moduleText = $"[{moduleName}]";
         ImGui.SameLine();
+        var moduleText = $"[{moduleInfo.ModuleName}]";
         var origCursorPosX = ImGui.GetCursorPosX();
-        ImGui.SetCursorPosX(ImGui.GetWindowWidth() - ImGui.CalcTextSize(moduleText).X -
-                            (2 * ImGui.GetStyle().ItemSpacing.X));
+        ImGui.SetCursorPosX(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize(moduleText).X + (4 * ImGui.GetStyle().ItemSpacing.X));
         ImGui.TextDisabled(moduleText);
 
         var isWithAuthor = !string.IsNullOrEmpty(moduleInfo.Author);
         if (isWithAuthor)
         {
             ImGui.SameLine();
+            var spacing = isWithAuthor && isModuleEnabled ? 20f * ImGuiHelpers.GlobalScale : -20f * ImGuiHelpers.GlobalScale;
             ImGui.SetCursorPosX(origCursorPosX + ImGui.CalcTextSize(moduleInfo.Title).X +
-                                (ImGui.GetStyle().FramePadding.X * 8) +
-                                (isModuleEnabled && moduleInfo.WithConfigUI ? 20f : -15f));
+                                (ImGui.GetStyle().ItemSpacing.X * 8) + spacing);
 
             ImGui.TextColored(ImGuiColors.DalamudGrey3, $"{Service.Lang.GetText("Author")}: {moduleInfo.Author}");
         }
 
         ImGui.SameLine();
         ImGui.SetCursorPosX(origCursorPosX);
-
         if (isModuleEnabled)
         {
             if (moduleInfo.WithConfigUI)
             {
-                if (CollapsingHeader())
+                if (CollapsingHeader(moduleInfo.Title))
                 {
                     ImGui.SetCursorPosX(origCursorPosX);
                     ImGui.BeginGroup();
-                    Service.ModuleManager.Modules[moduleInfo.Module].ConfigUI();
+                    moduleInstance.ConfigUI();
                     ImGui.EndGroup();
                 }
             }
@@ -666,16 +663,15 @@ public class Main : Window, IDisposable
             ImGui.SameLine(0, 0);
             ImGuiOm.TextDisabledWrapped(")");
         }
-
         ImGui.EndGroup();
 
         return;
 
-        bool CollapsingHeader()
+        bool CollapsingHeader(string title)
         {
             ImGui.PushStyleColor(ImGuiCol.Text, isModuleEnabled ? ImGuiColors.DalamudYellow : ImGuiColors.DalamudWhite);
             ImGui.PushStyleColor(ImGuiCol.Header, ImGui.ColorConvertFloat4ToU32(new Vector4(0)));
-            var collapsingHeader = ImGui.CollapsingHeader(moduleInfo.Title);
+            var collapsingHeader = ImGui.CollapsingHeader(title);
             ImGui.PopStyleColor(2);
 
             return collapsingHeader;
@@ -812,6 +808,7 @@ public class Main : Window, IDisposable
                                                            .Select(t => t.Name + "Title")
                                                            .Select(title => Service.Lang.GetText(title))
                                                            .ToArray(),
+                                     ModuleName = type.Name,
                                      Title = Service.Lang.GetText(
                                          type.GetCustomAttribute<ModuleDescriptionAttribute>()?.TitleKey ??
                                          "DevModuleTitle"),
