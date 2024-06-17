@@ -35,8 +35,7 @@ public unsafe class Debug() : Window("Daily Routines - 调试窗口###DailyRouti
 
     public override void Draw()
     {
-        if (!PresetFont.Axis14.Available) return;
-        using var font = ImRaii.PushFont(PresetFont.Axis14.Lock().ImFont);
+        using var font = ImRaii.PushFont(FontHelper.GetFont(18f));
         try
         {
             if (ImGui.BeginTabBar("DebugTab"))

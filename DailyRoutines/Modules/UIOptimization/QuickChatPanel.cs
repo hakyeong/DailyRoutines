@@ -349,8 +349,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
         ImGui.SetWindowPos(buttonPos with { Y = buttonPos.Y - ImGui.GetWindowSize().Y - 16f });
 
-        if (!PresetFont.Axis14.Available) return;
-        using var font = ImRaii.PushFont(PresetFont.Axis14.Lock().ImFont);
+        using var font = ImRaii.PushFont(FontHelper.GetFont(18f));
         try
         {
             TwentyCharsSize = ImGui.CalcTextSize("我也不知道要说什么但是真得要凑齐二十几个汉字");

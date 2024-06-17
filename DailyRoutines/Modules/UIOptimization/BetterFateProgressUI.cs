@@ -113,8 +113,7 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
 
     public override void OverlayUI()
     {
-        if (!PresetFont.Axis18.Available) return;
-        using var font = ImRaii.PushFont(PresetFont.Axis18.Lock().ImFont);
+        using var font = ImRaii.PushFont(FontHelper.GetFont(24f));
         try
         {
             DrawBicolorGemComponent();

@@ -78,37 +78,29 @@ public class Main : Window, IDisposable
                 "Daily Routines - 主界面 (本插件不對國際服提供支持 / This Plugin ONLY Provides Help For CN Client)###DailyRoutines-Main";
         }
 
+
         RefreshModuleInfo();
         MainSettings.Init();
     }
 
     public override void Draw()
     {
-        if (!PresetFont.Axis18.Available) return;
-        using (var font = ImRaii.PushFont(PresetFont.Axis18.Lock().ImFont))
-        {
-            try
-            {
-                DrawLeftTabComponent();
+        using var font = ImRaii.PushFont(FontHelper.GetFont(24f));
+        DrawLeftTabComponent();
 
-                ImGui.SameLine();
-                ImGui.BeginGroup();
-                DrawUpperTabComponent();
+        ImGui.SameLine();
+        ImGui.BeginGroup();
+        DrawUpperTabComponent();
 
-                DrawRightTabComponent();
-                ImGui.EndGroup();
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
-        }
+        DrawRightTabComponent();
+        ImGui.EndGroup();
     }
 
     #region 左侧
     private static void DrawLeftTabComponent()
     {
-        if (ImGui.BeginChild("LeftTabComponentSize", LeftTabComponentSize, false, ChildFlags))
+        LeftTabComponentSize.Y = ImGui.GetContentRegionAvail().Y;
+        if (ImGui.BeginChild("LeftTabComponentSize", LeftTabComponentSize, false, ChildFlags | ImGuiWindowFlags.NoScrollWithMouse))
         {
             ImGui.BeginGroup();
             ImGuiHelpers.ScaledDummy(1f, 16f);
@@ -123,8 +115,6 @@ public class Main : Window, IDisposable
             ImGui.EndGroup();
 
             LeftTabComponentSize.X = Math.Max(ImGui.GetItemRectSize().X, 200f * ImGuiHelpers.GlobalScale);
-            LeftTabComponentSize.Y = ImGui.GetItemRectSize().Y;
-
             ImGui.EndChild();
         }
     }
@@ -260,8 +250,7 @@ public class Main : Window, IDisposable
     private static void DrawUpperTabComponent()
     {
         UpperTabComponentSize.X = ImGui.GetContentRegionAvail().X;
-
-        if (ImGui.BeginChild("ChildUpRight", UpperTabComponentSize, false, ChildFlags))
+        if (ImGui.BeginChild("ChildUpRight", UpperTabComponentSize, false, ChildFlags | ImGuiWindowFlags.NoScrollWithMouse))
         {
             ImGui.SetWindowFontScale(1.2f);
             ImGuiHelpers.ScaledDummy(1f, 8f);
@@ -304,9 +293,9 @@ public class Main : Window, IDisposable
             ImGui.AlignTextToFramePadding();
             ImGui.SameLine();
             ImGui.SetCursorPos(new(startCursorPos.X + 8f * ImGuiHelpers.GlobalScale, startCursorPos.Y + 4f * ImGuiHelpers.GlobalScale));
-            PresetFont.Icon.Push();
+
+            using var font = ImRaii.PushFont(UiBuilder.IconFont);
             ImGui.Text(FontAwesomeIcon.Search.ToIconString());
-            PresetFont.Icon.Pop();
 
             ImGui.SetWindowFontScale(1f);
             ImGui.EndChild();

@@ -276,8 +276,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     public override void OverlayUI()
     {
-        if (!PresetFont.Axis14.Available) return;
-        using var font = ImRaii.PushFont(PresetFont.Axis14.Lock().ImFont);
+        using var font = ImRaii.PushFont(FontHelper.GetFont(18f));
         try
         {
             DrawOverlayContent();
