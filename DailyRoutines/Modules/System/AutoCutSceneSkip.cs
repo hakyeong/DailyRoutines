@@ -74,8 +74,8 @@ public class AutoCutSceneSkip : DailyModuleBase
                 if (!TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) || !IsAddonAndNodesReady(addon))
                     return false;
 
-                if (addon->GetTextNodeById(2)->NodeText.ExtractText()
-                                                       .Contains(LuminaCache.GetRow<Addon>(281).Text.RawString))
+                if (addon->GetTextNodeById(2)->
+                        NodeText.ExtractText().Contains(LuminaCache.GetRow<Addon>(281).Text.RawString))
                 {
                     if (Click.TrySendClick("select_string1"))
                     {
