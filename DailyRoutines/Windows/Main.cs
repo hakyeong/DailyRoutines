@@ -1264,8 +1264,10 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
             if (ImGui.IsItemClicked())
                 Util.OpenLink(news.Url);
 
+            ImGui.Indent();
             ImGui.TextWrapped(news.Title);
-            
+            ImGui.Unindent();
+
             ImGui.EndChild();
         }
     }
