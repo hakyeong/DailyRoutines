@@ -11,7 +11,7 @@ public unsafe class ClickGrandCompanySupplyList(nint addon = default) :
     // 筹备军需品
     public void Supply()
     {
-        var atkUnitBase = addon.ToAtkUnitBase();
+        var atkUnitBase = AddonAddress.ToAtkUnitBase();
         if (atkUnitBase == null) return;
 
         var buttonNode = atkUnitBase->GetNodeById(11)->GetAsAtkComponentRadioButton();
@@ -21,7 +21,7 @@ public unsafe class ClickGrandCompanySupplyList(nint addon = default) :
     // 筹备补给品
     public void Provisioning()
     {
-        var atkUnitBase = addon.ToAtkUnitBase();
+        var atkUnitBase = AddonAddress.ToAtkUnitBase();
         if (atkUnitBase == null) return;
 
         var buttonNode = atkUnitBase->GetNodeById(12)->GetAsAtkComponentRadioButton();
@@ -31,7 +31,7 @@ public unsafe class ClickGrandCompanySupplyList(nint addon = default) :
     // 筹备稀有品
     public void ExpertDelivery()
     {
-        var atkUnitBase = addon.ToAtkUnitBase();
+        var atkUnitBase = AddonAddress.ToAtkUnitBase();
         if (atkUnitBase == null) return;
 
         var buttonNode = atkUnitBase->GetNodeById(13)->GetAsAtkComponentRadioButton();
