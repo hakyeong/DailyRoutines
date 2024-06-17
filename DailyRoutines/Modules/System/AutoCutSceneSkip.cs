@@ -18,15 +18,15 @@ public class AutoCutSceneSkip : DailyModuleBase
     private static nint ConditionAddress;
 
     [Signature("40 53 48 83 EC 20 80 79 29 00 48 8B D9 0F 85", DetourName = nameof(CutsceneHandleInputDetour))]
-    private readonly Hook<CutsceneHandleInputDelegate>? CutsceneHandleInputHook;
+    private static Hook<CutsceneHandleInputDelegate>? CutsceneHandleInputHook;
 
     [Signature(
         "48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 44 8B C1 BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 75 ?? 48 83 C4 ?? C3 48 8B 00 48 83 C4 ?? C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 8B 05 ?? ?? ?? ?? BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E9 ?? ?? ?? ?? CC CC CC CC CC CC CC CC 48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 44 8B C1 BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 75 ?? 48 83 C4 ?? C3 48 8B 00 48 83 C4 ?? C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 8B 05 ?? ?? ?? ?? BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E9 ?? ?? ?? ?? CC CC CC CC CC CC CC CC 48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 44 8B CA",
         DetourName = nameof(GetCutSceneRowDetour))]
-    private readonly Hook<GetCutSceneRowDelegate>? GetCutSceneRowHook;
+    private static Hook<GetCutSceneRowDelegate>? GetCutSceneRowHook;
 
-    private uint CurrentCutscene;
-    private bool ProhibitSkippingUnseenCutscene;
+    private static uint CurrentCutscene;
+    private static bool ProhibitSkippingUnseenCutscene;
 
     public override void Init()
     {
@@ -71,20 +71,19 @@ public class AutoCutSceneSkip : DailyModuleBase
 
             TaskHelper.Enqueue(() =>
             {
-                if (TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) && IsAddonAndNodesReady(addon))
-                {
-                    if (addon->GetTextNodeById(2)->NodeText.ExtractText()
-                                                           .Contains(LuminaCache.GetRow<Addon>(281).Text.RawString))
-                    {
-                        var state = Click.TrySendClick("select_string1");
-                        if (state)
-                        {
-                            TaskHelper.Abort();
-                            return true;
-                        }
+                if (!TryGetAddonByName<AtkUnitBase>("SelectString", out var addon) || !IsAddonAndNodesReady(addon))
+                    return false;
 
-                        return false;
+                if (addon->GetTextNodeById(2)->NodeText.ExtractText()
+                                                       .Contains(LuminaCache.GetRow<Addon>(281).Text.RawString))
+                {
+                    if (Click.TrySendClick("select_string1"))
+                    {
+                        TaskHelper.Abort();
+                        return true;
                     }
+
+                    return false;
                 }
 
                 return false;
@@ -96,7 +95,7 @@ public class AutoCutSceneSkip : DailyModuleBase
         CutsceneHandleInputHook.Original(a1);
     }
 
-    private nint GetCutSceneRowDetour(uint row)
+    private static nint GetCutSceneRowDetour(uint row)
     {
         CurrentCutscene = row;
         return GetCutSceneRowHook.Original(row);

@@ -4,15 +4,15 @@ using Dalamud.Game.Command;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("InstantReturnTitle", "InstantReturnDescription", ModuleCategories.系统)]
-public class InstantReturn : DailyModuleBase
+public unsafe class InstantReturn : DailyModuleBase
 {
-    private delegate byte ReturnDelegate(nint a1);
-
+    private delegate byte ReturnDelegate(AgentInterface* agentReturn);
     [Signature("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 48 8B 3D ?? ?? ?? ?? 48 8B D9 48 8D 0D",
                DetourName = nameof(ReturnDetour))]
     private static Hook<ReturnDelegate>? ReturnHook;
@@ -69,12 +69,12 @@ public class InstantReturn : DailyModuleBase
         Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.InstantReturn);
     }
 
-    private static unsafe byte ReturnDetour(nint a1)
+    private static byte ReturnDetour(AgentInterface* agentReturn)
     {
         if (!HookOrigin ||
             Service.ClientState.IsPvPExcludingDen ||
             ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 6) != 0)
-            return ReturnHook.Original(a1);
+            return ReturnHook.Original(agentReturn);
 
         Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.InstantReturn);
         return 1;

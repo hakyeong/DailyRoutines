@@ -13,11 +13,12 @@ namespace DailyRoutines.Modules;
                    ModuleCategories.系统)]
 public unsafe class ClipboardMultiLineToOneLine : DailyModuleBase
 {
-    internal static bool IsBlocked;
-
+    private delegate Utf8String* GetClipboardDataDelegate(nint a1);
     [Signature("40 53 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 8B D9 BA",
                DetourName = nameof(GetClipboardDataDetour))]
-    private readonly Hook<GetClipboardDataDelegate>? GetClipboardDataHook;
+    private static Hook<GetClipboardDataDelegate>? GetClipboardDataHook;
+
+    internal static bool IsBlocked;
 
     public override void Init()
     {
@@ -38,7 +39,7 @@ public unsafe class ClipboardMultiLineToOneLine : DailyModuleBase
         };
     }
 
-    private nint GetClipboardDataDetour(nint a1)
+    private static Utf8String* GetClipboardDataDetour(nint a1)
     {
         if (IsBlocked || Framework.Instance()->WindowInactive) return GetClipboardDataHook.Original(a1);
 
@@ -53,7 +54,7 @@ public unsafe class ClipboardMultiLineToOneLine : DailyModuleBase
 
         if (modifiedText == originalText) return GetClipboardDataHook.Original(a1);
 
-        return (nint)Utf8String.FromString(modifiedText);
+        return Utf8String.FromString(modifiedText);
     }
 
     public override void Uninit()
@@ -62,6 +63,4 @@ public unsafe class ClipboardMultiLineToOneLine : DailyModuleBase
 
         base.Uninit();
     }
-
-    private delegate nint GetClipboardDataDelegate(nint a1);
 }
