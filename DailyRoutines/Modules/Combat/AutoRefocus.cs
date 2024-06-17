@@ -3,12 +3,11 @@ using DailyRoutines.Managers;
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
-
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoRefocusTitle", "AutoRefocusDescription", ModuleCategories.Õ½¶·)]
+[ModuleDescription("AutoRefocusTitle", "AutoRefocusDescription", ModuleCategories.æˆ˜æ–—)]
 public unsafe class AutoRefocus : DailyModuleBase
 {
     [Signature("E8 ?? ?? ?? ?? BA 0C 00 00 00 48 8D 0D", DetourName = nameof(SetFocusTargetByObjectID))]
@@ -39,11 +38,11 @@ public unsafe class AutoRefocus : DailyModuleBase
         if (Throttler.Throttle("AutoRefocus", 1000))
         {
             if (Service.Target.FocusTarget == null)
-                SetFocusTargetByObjectIDHook.Original(TargetSystem.StaticAddressPointers.pInstance, (long)FocusTarget);
+                SetFocusTargetByObjectIDHook.Original(TargetSystem.StaticAddressPointers.pInstance, (ulong)FocusTarget);
         }
     }
 
-    private static void SetFocusTargetByObjectID(TargetSystem* targetSystem, long objectID)
+    private static void SetFocusTargetByObjectID(TargetSystem* targetSystem, ulong objectID)
     {
         if (objectID == 0xE000_0000)
         {
@@ -63,5 +62,5 @@ public unsafe class AutoRefocus : DailyModuleBase
         base.Uninit();
     }
 
-    private delegate void SetFocusTargetByObjectIDDelegate(TargetSystem* targetSystem, long objectID);
+    private delegate void SetFocusTargetByObjectIDDelegate(TargetSystem* targetSystem, ulong objectID);
 }
