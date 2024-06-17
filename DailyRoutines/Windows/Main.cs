@@ -308,7 +308,8 @@ public class Main : Window, IDisposable
     private static void DrawRightTabComponent()
     {
         RightTabComponentSize = ImGui.GetContentRegionAvail();
-        if (ImGui.BeginChild("RightTabComponentChild", RightTabComponentSize, false, ChildFlags))
+        if (ImGui.BeginChild("RightTabComponentChild", RightTabComponentSize, false, ChildFlags | 
+                                 (SelectedTab > 100 ? ImGuiWindowFlags.None : ImGuiWindowFlags.NoScrollWithMouse)))
         {
             // 0 - 主页; 1 - 设置; 2 - 搜索; 3 - 收藏
             // 大于 100 - 模块分类
@@ -318,7 +319,7 @@ public class Main : Window, IDisposable
                 DrawModulesSearchResult(Modules);
                 return;
             }
-
+            
             switch (SelectedTab)
             {
                 case 0:
