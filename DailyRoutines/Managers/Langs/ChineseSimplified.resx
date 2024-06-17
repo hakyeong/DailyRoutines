@@ -2179,4 +2179,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="QuickChatPanel-SendChatboxMessage" xml:space="preserve">
     <value>发送 (聊天栏信息)</value>
   </data>
+  <data name="AutoCollectableExchangeDescription" xml:space="preserve">
+    <value>启用并打开收藏品交易界面, 并点击开始后, 自动交易该栏目下所有可用收藏品</value>
+  </data>
+  <data name="AutoCollectableExchangeTitle" xml:space="preserve">
+    <value>自动交易收藏品</value>
+  </data>
 </root>
