@@ -569,7 +569,14 @@ public class Main : Window, IDisposable
                 !module.Module.Name.Contains(SearchString.Trim(), StringComparison.OrdinalIgnoreCase)) continue;
 
             ImGui.PushID($"{module.Category}-{module.Description}-{module.Title}-{module.Module}");
-            DrawModuleUI(module, isFromSearch);
+            try
+            {
+                DrawModuleUI(module, isFromSearch);
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
             ImGui.PopID();
 
             if (i < modules.Count - 1) ImGui.Separator();
