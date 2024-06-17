@@ -18,7 +18,7 @@ public partial class TaskHelper : IDisposable
         Instances.Add(this);
     }
 
-    private TaskHelperTask?            CurrentTask     { get; set; }
+    public TaskHelperTask?            CurrentTask     { get; set; }
     public  string                     CurrentTaskName => CurrentTask?.Name;
     private SortedSet<TaskHelperQueue> Queues          { get; set; } = [new(1), new(0)];
     public  List<string>               TaskStack       => Queues.SelectMany(q => q.Tasks.Select(t => t.Name)).ToList();
