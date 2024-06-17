@@ -39,6 +39,7 @@ public unsafe class AutoLogin : DailyModuleBase
     private static int _dropIndex = -1;
 
     private static bool HasLoginOnce;
+    private static int DefaultLoginIndex = -1;
     private static ushort ManualWorldID;
     private static int ManualCharaIndex = -1;
 
@@ -292,14 +293,12 @@ public unsafe class AutoLogin : DailyModuleBase
 
     private void SelectCharacterDefault()
     {
-        var info = ModuleConfig.LoginInfos.FirstOrDefault();
-        if (info == null)
+        foreach (var loginInfo in ModuleConfig.LoginInfos)
         {
-            TaskHelper.Abort();
-            return;
+            DefaultLoginIndex = 0;
+            TaskHelper.Enqueue(() => SelectCharacter((ushort)loginInfo.WorldID, loginInfo.CharaIndex), $"SelectCharaDefault_{loginInfo.WorldID}_{loginInfo.CharaIndex}");
+            break;
         }
-
-        TaskHelper.Enqueue(() => SelectCharacter((ushort)info.WorldID, info.CharaIndex), "SelectCharaDefault1");
     }
 
     private bool? SelectCharacter(ushort worldID, int charaIndex)
@@ -313,7 +312,6 @@ public unsafe class AutoLogin : DailyModuleBase
         var addon = AddonState.CharaSelectListMenu;
         if (addon == null || !IsAddonAndNodesReady(addon)) return false;
 
-        if (agent->WorldId == 0) return false;
         if (agent->WorldId != worldID)
         {
             TaskHelper.Enqueue(() => SelectWorld(worldID), "SelectWorld", 2);
@@ -353,13 +351,19 @@ public unsafe class AutoLogin : DailyModuleBase
         }
 
         TaskHelper.Abort();
-        NotifyHelper.NotificationError("没有找到对应的服务器");
+        if (DefaultLoginIndex != -1 && DefaultLoginIndex < ModuleConfig.LoginInfos.Count)
+        {
+            var loginInfo = ModuleConfig.LoginInfos[DefaultLoginIndex];
+            DefaultLoginIndex++;
+            TaskHelper.Enqueue(() => SelectCharacter((ushort)loginInfo.WorldID, loginInfo.CharaIndex), $"SelectCharaDefault_{loginInfo.WorldID}_{loginInfo.CharaIndex}");
+        }
         return true;
     }
 
     private static void ResetStates()
     {
         HasLoginOnce = true;
+        DefaultLoginIndex = -1;
         ManualWorldID = 0;
         ManualCharaIndex = -1;
     }
