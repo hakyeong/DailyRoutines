@@ -14,6 +14,7 @@ public static unsafe class AddonState
     public static AtkUnitBase* SelectYesno         => (AtkUnitBase*)Service.Gui.GetAddonByName("SelectYesno");
     public static AtkUnitBase* TitleMenu           => (AtkUnitBase*)Service.Gui.GetAddonByName("_TitleMenu");
     public static AtkUnitBase* CharaSelectListMenu => (AtkUnitBase*)Service.Gui.GetAddonByName("_CharaSelectListMenu");
+    public static AtkUnitBase* CollectablesShop    => (AtkUnitBase*)Service.Gui.GetAddonByName("CollectablesShop");
 
     public static AtkUnitBase* GrandCompanySupplyReward =>
         (AtkUnitBase*)Service.Gui.GetAddonByName("GrandCompanySupplyReward");
