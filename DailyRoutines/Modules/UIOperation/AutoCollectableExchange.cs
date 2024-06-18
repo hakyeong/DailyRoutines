@@ -19,6 +19,7 @@ public unsafe class AutoCollectableExchange : DailyModuleBase
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "CollectablesShop", OnAddon);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "CollectabsleShop", OnAddon);
+        if (AddonState.CollectablesShop != null) OnAddon(AddonEvent.PostSetup, null);
     }
 
     public override void OverlayUI()
@@ -29,7 +30,7 @@ public unsafe class AutoCollectableExchange : DailyModuleBase
             return;
         }
         var buttonNode = AddonState.CollectablesShop->GetNodeById(51);
-        if (buttonNode == null);
+        if (buttonNode == null) return;
 
         ImGui.SetWindowPos(new(buttonNode->ScreenX - ImGui.GetWindowSize().X, buttonNode->ScreenY + 4f));
 
@@ -37,7 +38,7 @@ public unsafe class AutoCollectableExchange : DailyModuleBase
         ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("AutoCollectableExchangeTitle"));
 
         ImGui.SameLine();
-        ImGui.BeginDisabled(TaskHelper.IsBusy);
+        ImGui.BeginDisabled(!buttonNode->NodeFlags.HasFlag(NodeFlags.Enabled) || TaskHelper.IsBusy);
         if (ImGui.Button(Service.Lang.GetText("Start"))) EnqueueExchange();
         ImGui.EndDisabled();
 
@@ -74,7 +75,7 @@ public unsafe class AutoCollectableExchange : DailyModuleBase
         });
     }
 
-    private void OnAddon(AddonEvent type, AddonArgs args)
+    private void OnAddon(AddonEvent type, AddonArgs? args)
     {
         Overlay.IsOpen = type switch
         {
