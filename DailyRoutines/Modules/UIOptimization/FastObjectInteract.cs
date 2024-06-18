@@ -540,13 +540,14 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         }
     }
 
-    private static void InteractWithObject(GameObject* obj, ObjectKind kind)
+    private void InteractWithObject(GameObject* obj, ObjectKind kind)
     {
+        TaskHelper.Abort();
         if (Flags.IsOnMount)
             Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.Dismount, 1);
 
         FFXIVClientStructs.FFXIV.Client.Game.Control.TargetSystem.Instance()->Target = obj;
-        FFXIVClientStructs.FFXIV.Client.Game.Control.TargetSystem.Instance()->InteractWithObject(obj);
+        TaskHelper.Enqueue(() => FFXIVClientStructs.FFXIV.Client.Game.Control.TargetSystem.Instance()->InteractWithObject(obj) != 0);
         if (kind is ObjectKind.EventObj)
             FFXIVClientStructs.FFXIV.Client.Game.Control.TargetSystem.Instance()->OpenObjectInteraction(obj);
     }
@@ -641,7 +642,9 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
             }
 
             if (ImGui.IsItemClicked(ImGuiMouseButton.Left) && IsReacheable())
-                InteractWithObject((GameObject*)GameObject, Kind);
+            {
+                ((FastObjectInteract)Service.ModuleManager.Modules[typeof(FastObjectInteract)]).InteractWithObject((GameObject*)GameObject, Kind);
+            }
             else if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
                 FFXIVClientStructs.FFXIV.Client.Game.Control.TargetSystem.Instance()->Target = (GameObject*)GameObject;
 
@@ -652,7 +655,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         {
             ImGui.BeginDisabled(!IsReacheable());
             if (ButtonCenterText(GameObject.ToString(), Name))
-                InteractWithObject((GameObject*)GameObject, Kind);
+                ((FastObjectInteract)Service.ModuleManager.Modules[typeof(FastObjectInteract)]).InteractWithObject((GameObject*)GameObject, Kind);
 
             ImGui.EndDisabled();
 
