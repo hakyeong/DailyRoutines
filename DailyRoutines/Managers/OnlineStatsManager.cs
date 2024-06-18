@@ -23,9 +23,10 @@ public class OnlineStatsManager : IDailyManager
         Path.Join(Service.PluginInterface.GetPluginConfigDirectory(), "OnlineStatsCacheData.json");
 
     private const string BaseUrlRest = "https://fygyuifkxhpsruanuqfa.supabase.co/rest/v1/";
+    private const string WorkerUrl = "https://spbs.atmoomen.top/";
 
     private const string SupabaseAnonKey =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5Z3l1aWZreGhwc3J1YW51cWZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTQxODE0MjAsImV4cCI6MjAyOTc1NzQyMH0.eId2N2z-MXspJ6_z043MoMCujIjyIGtAlwVHEND5VIs";
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5Z3l1aWZreGhwc3J1YW51cWZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTg2ODc4NTMsImV4cCI6MjAzNDI2Mzg1M30.0iNVyleMyC6IKzMZybwqd-9B6PI9kViEzOV9ZEtfpho";
 
     private static readonly HttpClient Client = new();
 
@@ -86,21 +87,12 @@ public class OnlineStatsManager : IDailyManager
 
     private static async Task DownloadModuleUsageStats()
     {
-        var response = await Client.GetAsync($"{BaseUrlRest}module_usage_stats");
+        var response = await Client.GetAsync(WorkerUrl);
 
         if (response.IsSuccessStatusCode)
         {
             var jsonContent = await response.Content.ReadAsStringAsync();
-            var jsonArray = JArray.Parse(jsonContent);
-            var moduleUsageStats = new Dictionary<string, int>();
-
-            foreach (var jToken in jsonArray)
-            {
-                var item = (JObject)jToken;
-                var module = item["module"].ToString();
-                var usageCount = (int)item["usage_count"];
-                moduleUsageStats[module] = usageCount;
-            }
+            var moduleUsageStats = JsonConvert.DeserializeObject<Dictionary<string, int>>(jsonContent);
 
             var statsData = new StatsData
             {
