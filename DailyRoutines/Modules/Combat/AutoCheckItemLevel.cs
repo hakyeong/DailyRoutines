@@ -20,7 +20,6 @@ public unsafe class AutoCheckItemLevel : DailyModuleBase
     private static readonly HashSet<uint> HaveOffHandJobCategories = [2, 7, 8, 20];
 
     private static HudPartyMember? CurrentMember;
-    private static readonly Dictionary<ulong, uint> MembersIL = [];
 
     public override void Init()
     {
@@ -38,7 +37,6 @@ public unsafe class AutoCheckItemLevel : DailyModuleBase
         if (!PresetData.TryGetContent(zone, out var content) || content.PvP ||
             !ValidContentJobCategories.Contains(content.AcceptClassJobCategory.Row)) return;
 
-        MembersIL.Clear();
         NotifyHelper.Chat(new SeStringBuilder().Append($"{Service.Lang.GetText("AutoCheckItemLevel-ILRequired")}: ")
                                                .AddUiForeground(content.ItemLevelRequired.ToString(), 34).Build());
 
