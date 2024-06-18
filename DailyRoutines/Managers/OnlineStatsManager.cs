@@ -79,7 +79,7 @@ public class OnlineStatsManager : IDailyManager
         var jsonData = File.ReadAllText(CacheFilePath);
         var statsData = JsonConvert.DeserializeObject<StatsData>(jsonData);
         if (statsData != null && DateTime.TryParse(statsData.LastUpdated, out var lastUpdateTime))
-            return (DateTime.UtcNow - lastUpdateTime).TotalHours > 24;
+            return (DateTime.UtcNow - lastUpdateTime).TotalHours > 2;
 
         return true;
     }
