@@ -276,13 +276,15 @@ public class Main : Window, IDisposable
             ImGui.InputText("###SearchDisplay", ref emptyString, 0, ImGuiInputTextFlags.ReadOnly);
             ImGui.EndDisabled();
 
+            var inputHeight = ImGui.GetItemRectSize().Y;
+
             // 设置按钮
             ImGui.SameLine();
             ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.ChildBg));
             ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
             ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
             if (ImGuiOm.ButtonIcon("Settings", FontAwesomeIcon.Cog,
-                                   new(32f * ImGuiHelpers.GlobalScale, UpperTabComponentSize.Y / 2), 
+                                   new(32f * ImGuiHelpers.GlobalScale, inputHeight), 
                                    Service.Lang.GetText("Settings")))
                 SelectedTab = 1;
             ImGui.PopStyleColor(3);
