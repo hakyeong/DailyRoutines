@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DailyRoutines.Modules;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace DailyRoutines.Managers;
 
@@ -55,18 +56,14 @@ public class OnlineStatsManager : IDailyManager
         try
         {
             if (NeedToRefreshData())
-            {
-                await DownloadAllEntriesAndCalculateStats();
-            }
+                await DownloadModuleUsageStats();
 
             if (File.Exists(CacheFilePath))
             {
                 var jsonData = File.ReadAllText(CacheFilePath);
                 var statsData = JsonConvert.DeserializeObject<StatsData>(jsonData);
                 if (statsData is { ModuleUsageStats: not null })
-                {
                     ModuleUsageStats = statsData.ModuleUsageStats;
-                }
             }
         }
         catch (Exception ex)
@@ -87,51 +84,34 @@ public class OnlineStatsManager : IDailyManager
         return true;
     }
 
-    public static async Task DownloadAllEntriesAndCalculateStats()
+    private static async Task DownloadModuleUsageStats()
     {
-        var moduleUsageCounts = new Dictionary<string, int>();
-        var offset = 0;
-        const int limit = 1000; // Fetch 1000 rows at a time
-        var hasMoreData = true;
+        var response = await Client.GetAsync($"{BaseUrlRest}module_usage_stats");
 
-        while (hasMoreData)
+        if (response.IsSuccessStatusCode)
         {
-            var response = await Client.GetAsync($"{BaseUrlRest}ModulesState?select=enabled_modules&limit={limit}&offset={offset}");
+            var jsonContent = await response.Content.ReadAsStringAsync();
+            var jsonArray = JArray.Parse(jsonContent);
+            var moduleUsageStats = new Dictionary<string, int>();
 
-            if (response.IsSuccessStatusCode)
+            foreach (var jToken in jsonArray)
             {
-                var jsonContent = await response.Content.ReadAsStringAsync();
-                var modulesStates = JsonConvert.DeserializeObject<List<ModulesState>>(jsonContent);
-                if (modulesStates is { Count: > 0 })
-                {
-                    foreach (var state in modulesStates)
-                    {
-                        foreach (var module in state.EnabledModules)
-                        {
-                            if (!moduleUsageCounts.TryAdd(module, 1))
-                                moduleUsageCounts[module] += 2;
-                        }
-                    }
-                    offset += limit;
-                }
-                else
-                {
-                    hasMoreData = false;
-                }
+                var item = (JObject)jToken;
+                var module = item["module"].ToString();
+                var usageCount = (int)item["usage_count"];
+                moduleUsageStats[module] = usageCount;
             }
-            else
+
+            var statsData = new StatsData
             {
-                Service.Log.Debug($"Failed to download entries. StatusCode: {response.StatusCode}");
-                break;
-            }
+                LastUpdated = DateTime.UtcNow.ToString("o"),
+                ModuleUsageStats = moduleUsageStats,
+            };
+
+            File.WriteAllText(CacheFilePath, JsonConvert.SerializeObject(statsData));
         }
-
-        var statsData = new StatsData
-        {
-            LastUpdated = DateTime.UtcNow.ToString("o"),
-            ModuleUsageStats = moduleUsageCounts,
-        };
-        File.WriteAllText(CacheFilePath, JsonConvert.SerializeObject(statsData)); 
+        else
+            Service.Log.Debug($"Failed to download module usage stats. StatusCode: {response.StatusCode}");
     }
 
     public static async Task UploadEntry(ModulesState entry)
