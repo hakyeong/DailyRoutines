@@ -13,6 +13,11 @@ public static unsafe class AddonState
     public static AtkUnitBase* ChatLog                  => GetAddonByName("ChatLog");
     public static AtkUnitBase* SelectYesno              => GetAddonByName("SelectYesno");
     public static AtkUnitBase* TitleMenu                => GetAddonByName("_TitleMenu");
+    public static AtkUnitBase* PartyList                => GetAddonByName("_PartyList");
+    public static AtkUnitBase* NowLoading               => GetAddonByName("NowLoading");
+    public static AtkUnitBase* FadeMiddle               => GetAddonByName("FadeMiddle");
+    public static AtkUnitBase* FadeBack                 => GetAddonByName("FadeBack");
+    public static AtkUnitBase* CharacterInspect         => GetAddonByName("CharacterInspect");
     public static AtkUnitBase* CharaSelectListMenu      => GetAddonByName("_CharaSelectListMenu");
     public static AtkUnitBase* CollectablesShop         => GetAddonByName("CollectablesShop");
     public static AtkUnitBase* GrandCompanySupplyReward => GetAddonByName("GrandCompanySupplyReward");
