@@ -9,9 +9,9 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using DailyRoutines.Helpers;
 using DailyRoutines.Modules;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace DailyRoutines.Managers;
 
@@ -22,20 +22,11 @@ public class OnlineStatsManager : IDailyManager
     private static string CacheFilePath =>
         Path.Join(Service.PluginInterface.GetPluginConfigDirectory(), "OnlineStatsCacheData.json");
 
-    private const string BaseUrlRest = "https://fygyuifkxhpsruanuqfa.supabase.co/rest/v1/";
     private const string WorkerUrl = "https://spbs.atmoomen.top/";
-
-    private const string SupabaseAnonKey =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5Z3l1aWZreGhwc3J1YW51cWZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTg2ODc4NTMsImV4cCI6MjAzNDI2Mzg1M30.0iNVyleMyC6IKzMZybwqd-9B6PI9kViEzOV9ZEtfpho";
 
     private static readonly HttpClient Client = new();
 
-    public OnlineStatsManager()
-    {
-        Client.DefaultRequestHeaders.Add("apikey", SupabaseAnonKey);
-        Client.DefaultRequestHeaders.Add("Authorization", $"Bearer {SupabaseAnonKey}");
-        Client.DefaultRequestHeaders.Add("Prefer", "return=minimal");
-    }
+    public OnlineStatsManager() { Client.DefaultRequestHeaders.Add("Prefer", "return=minimal"); }
 
     private void Init()
     {
@@ -69,7 +60,7 @@ public class OnlineStatsManager : IDailyManager
         }
         catch (Exception ex)
         {
-            Service.Log.Debug($"Exception in DownloadOrLoadModuleStats: {ex.Message}");
+            NotifyHelper.Error("下载在线或加载本地数据时出现异常", ex);
         }
     }
 
@@ -103,16 +94,19 @@ public class OnlineStatsManager : IDailyManager
             File.WriteAllText(CacheFilePath, JsonConvert.SerializeObject(statsData));
         }
         else
-            Service.Log.Debug($"Failed to download module usage stats. StatusCode: {response.StatusCode}");
+            NotifyHelper.Debug($"下载模块启用数据失败\n" +
+                               $"状态码: {response.StatusCode}");
     }
 
     public static async Task UploadEntry(ModulesState entry)
     {
         var content = new StringContent(JsonConvert.SerializeObject(entry), Encoding.UTF8, "application/json");
-        var response = await Client.PutAsync($"{BaseUrlRest}ModulesState?character=eq.{entry.Character}", content);
+        var response = await Client.PutAsync($"{WorkerUrl}?character=eq.{entry.Character}", content);
 
-        if (response.StatusCode != HttpStatusCode.Created && response.StatusCode != HttpStatusCode.NoContent)
-            Service.Log.Debug($"StatusCode: {response.StatusCode} Content: {await response.Content.ReadAsStringAsync()}");
+        if (response.StatusCode != HttpStatusCode.OK)
+            NotifyHelper.Debug(
+                $"上传模块启用数据失败\n" +
+                $"状态码: {response.StatusCode} 返回内容: {await response.Content.ReadAsStringAsync()}");
     }
 
     public static string GetEncryptedMachineCode()
