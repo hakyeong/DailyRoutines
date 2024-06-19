@@ -2197,4 +2197,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Settings-InterfaceFontSize" xml:space="preserve">
     <value>界面字号</value>
   </data>
+  <data name="DisableGroundActionAutoFaceDescription" xml:space="preserve">
+    <value>启用后, 在使用地面类技能时将不会再更改当前面向</value>
+  </data>
+  <data name="DisableGroundActionAutoFaceTitle" xml:space="preserve">
+    <value>禁止地面类技能改变面向</value>
+  </data>
 </root>
