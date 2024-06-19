@@ -6,7 +6,6 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
