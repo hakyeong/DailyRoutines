@@ -86,7 +86,7 @@ public class Main : Window, IDisposable
 
     public override void Draw()
     {
-        using var font = ImRaii.PushFont(FontHelper.GetFont(24f));
+        using var font = ImRaii.PushFont(FontHelper.GetFont(Service.Config.InterfaceFontSize));
         DrawLeftTabComponent();
 
         ImGui.SameLine();
@@ -562,7 +562,7 @@ public class Main : Window, IDisposable
 
     private static void DrawModules(IReadOnlyList<ModuleInfo> modules, bool isFromSearch = false)
     {
-        using var font = ImRaii.PushFont(FontHelper.GetFont(18f));
+        using var font = ImRaii.PushFont(FontHelper.GetFont(Service.Config.InterfaceFontSize * 0.75f));
         for (var i = 0; i < modules.Count; i++)
         {
             var module = modules[i];
@@ -1031,6 +1031,19 @@ public class MainSettings
         if (ImGui.Checkbox("###HideOutdatedEvents", ref checkboxBool2))
         {
             Service.Config.IsHideOutdatedEvent ^= true;
+            Service.Config.Save();
+        }
+
+        // 界面文本字号
+        ImGuiOm.TextIcon(FontAwesomeIcon.Font, "界面字号");
+
+        ImGui.SameLine();
+        var fontTemp = Service.Config.InterfaceFontSize;
+        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        ImGui.InputFloat("###InterfaceFontInput", ref fontTemp, 0, 0, "%.1f");
+        if (ImGui.IsItemDeactivatedAfterEdit())
+        {
+            Service.Config.InterfaceFontSize = fontTemp;
             Service.Config.Save();
         }
 

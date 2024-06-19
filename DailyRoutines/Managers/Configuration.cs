@@ -15,6 +15,7 @@ public class Configuration : IPluginConfiguration
     public bool                     SendCalendarToChatWhenLogin { get; set; } = false;
     public bool                     IsHideOutdatedEvent         { get; set; } = true;
     public bool                     AllowAnonymousUpload        { get; set; } = true;
+    public float                    InterfaceFontSize           { get; set; } = 20f;
     public int                      DefaultHomePage             { get; set; } = 0;
     public Dictionary<string, bool> ModuleEnabled               { get; set; } = [];
     public HashSet<string>          ModuleFavorites             { get; set; } = [];
