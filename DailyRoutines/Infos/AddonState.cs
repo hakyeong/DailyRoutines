@@ -11,6 +11,7 @@ public static unsafe class AddonState
     public static AtkUnitBase* SelectString             => GetAddonByName("SelectString");
     public static AtkUnitBase* InputNumeric             => GetAddonByName("InputNumeric");
     public static AtkUnitBase* ChatLog                  => GetAddonByName("ChatLog");
+    public static AtkUnitBase* CharaCard                => GetAddonByName("CharaCard");
     public static AtkUnitBase* SelectYesno              => GetAddonByName("SelectYesno");
     public static AtkUnitBase* TitleMenu                => GetAddonByName("_TitleMenu");
     public static AtkUnitBase* MateriaAttach            => GetAddonByName("MateriaAttach");
