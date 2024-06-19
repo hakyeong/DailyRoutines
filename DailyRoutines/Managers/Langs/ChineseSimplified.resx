@@ -2185,4 +2185,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoCollectableExchangeTitle" xml:space="preserve">
     <value>自动交易收藏品</value>
   </data>
+  <data name="AutoConfirmMateriaWorkDescription" xml:space="preserve">
+    <value>启用后, 自动确认魔晶石镶嵌/回收, 并取消镶嵌魔晶石时的前后摇限制</value>
+  </data>
+  <data name="AutoConfirmMateriaWorkTitle" xml:space="preserve">
+    <value>自动确认镶嵌回收魔晶石</value>
+  </data>
 </root>
