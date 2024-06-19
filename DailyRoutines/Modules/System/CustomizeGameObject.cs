@@ -400,7 +400,7 @@ public unsafe class CustomizeGameObject : DailyModuleBase
 
         var targetAddress = (nint)pTarget;
         if (!Throttler.Throttle($"CustomizeGameObjectScale_{targetAddress}", 1000)) return isTargetable;
-        if (Flags.WatchingCutscene) return isTargetable;
+        if (Service.PluginInterface.UiBuilder.CutsceneActive) return isTargetable;
         if (AddonState.CharacterInspect != null || AddonState.CharaCard != null) return isTargetable;
         if (ModuleConfig.CustomizePresets.Count == 0 || !pTarget->IsReadyToDraw() || !pTarget->IsCharacter()) return isTargetable;
 
