@@ -1035,7 +1035,7 @@ public class MainSettings
         }
 
         // 界面文本字号
-        ImGuiOm.TextIcon(FontAwesomeIcon.Font, "界面字号");
+        ImGuiOm.TextIcon(FontAwesomeIcon.Font, Service.Lang.GetText("Settings-InterfaceFontSize"));
 
         ImGui.SameLine();
         var fontTemp = Service.Config.InterfaceFontSize;
@@ -1049,7 +1049,7 @@ public class MainSettings
         }
 
         // 默认页面
-        ImGuiOm.TextIcon(FontAwesomeIcon.Home, "默认页面");
+        ImGuiOm.TextIcon(FontAwesomeIcon.Home, Service.Lang.GetText("Settings-DefaultHomePage"));
 
         ImGui.SameLine();
         var defaultHomePage = Service.Config.DefaultHomePage;

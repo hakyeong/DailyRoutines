@@ -2191,4 +2191,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoConfirmMateriaWorkTitle" xml:space="preserve">
     <value>自动确认镶嵌回收魔晶石</value>
   </data>
+  <data name="Settings-DefaultHomePage" xml:space="preserve">
+    <value>默认页面</value>
+  </data>
+  <data name="Settings-InterfaceFontSize" xml:space="preserve">
+    <value>界面字号</value>
+  </data>
 </root>
