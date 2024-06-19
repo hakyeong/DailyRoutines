@@ -13,6 +13,9 @@ public static unsafe class AddonState
     public static AtkUnitBase* ChatLog                  => GetAddonByName("ChatLog");
     public static AtkUnitBase* SelectYesno              => GetAddonByName("SelectYesno");
     public static AtkUnitBase* TitleMenu                => GetAddonByName("_TitleMenu");
+    public static AtkUnitBase* MateriaAttach            => GetAddonByName("MateriaAttach");
+    public static AtkUnitBase* MateriaAttachDialog      => GetAddonByName("MateriaAttachDialog");
+    public static AtkUnitBase* MateriaRetrieveDialog    => GetAddonByName("MateriaRetrieveDialog");
     public static AtkUnitBase* PartyList                => GetAddonByName("_PartyList");
     public static AtkUnitBase* NowLoading               => GetAddonByName("NowLoading");
     public static AtkUnitBase* FadeMiddle               => GetAddonByName("FadeMiddle");
