@@ -132,6 +132,17 @@ public enum ExecuteCommandFlag
     RequestInventory = 405,
 
     /// <summary>
+    /// 进入镶嵌魔晶石状态
+    /// <para><c>param1</c>: 物品 ID</para>
+    /// </summary>
+    EnterMateriaAttachState = 408,
+
+    /// <summary>
+    /// 退出镶嵌魔晶石状态
+    /// </summary>
+    LeaveMateriaAttachState = 410,
+
+    /// <summary>
     /// 请求收藏柜的数据
     /// </summary>
     RequestCabinet = 424,
@@ -312,8 +323,8 @@ public enum ExecuteCommandFlag
     RequestDutySupport = 2653,
 
     /// <summary>
-    /// 分解指定的物品
-    /// <para><c>param1</c>: 未知, 固定为 3735552</para>
+    /// 分解指定的物品 / 回收指定物品的魔晶石
+    /// <para><c>param1</c>: 分解: 3735552 / 回收魔晶石: 3735553</para>
     /// <para><c>param2</c>: 未知, 可能为位置信息</para>
     /// <para><c>param3</c>: 未知, 可能为位置信息</para>
     /// <para><c>param4</c>: 物品 ID</para>
