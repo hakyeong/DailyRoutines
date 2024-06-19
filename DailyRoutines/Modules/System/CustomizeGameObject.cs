@@ -4,7 +4,9 @@ using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using DailyRoutines.Infos;
 using DailyRoutines.Managers;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
@@ -398,8 +400,10 @@ public unsafe class CustomizeGameObject : DailyModuleBase
         var isTargetable = IsTargetableHook.Original(pTarget);
 
         var targetAddress = (nint)pTarget;
-        if (Throttler.Throttle($"CustomizeGameObjectScale_{targetAddress}", 1000) || ModuleConfig.CustomizePresets.Count == 0 || !pTarget->IsCharacter() || pTarget->RenderFlags == 0)
-            return isTargetable;
+        if (!Throttler.Throttle($"CustomizeGameObjectScale_{targetAddress}", 1000)) return isTargetable;
+        if (Flags.WatchingCutscene) return isTargetable;
+        if (AddonState.CharacterInspect != null || AddonState.CharaCard != null) return isTargetable;
+        if (ModuleConfig.CustomizePresets.Count == 0 || !pTarget->IsReadyToDraw() || !pTarget->IsCharacter()) return isTargetable;
 
         var name = Marshal.PtrToStringUTF8((nint)pTarget->Name);
         var dataID = pTarget->DataID.ToString();
@@ -438,9 +442,12 @@ public unsafe class CustomizeGameObject : DailyModuleBase
                     {
                         pTarget->Scale = modifiedScale;
                         if (preset.ScaleVFX) pTarget->VfxScale = modifiedScale;
-                        pTarget->DisableDraw();
-                        pTarget->EnableDraw();
+                        if (preset.Type is CustomizeType.ModelCharaID or CustomizeType.ModelSkeletonID)
+                            charaData.ModelScale = modifiedScale;
                     }
+
+                    pTarget->DisableDraw();
+                    pTarget->EnableDraw();
                 }
             }
         }
