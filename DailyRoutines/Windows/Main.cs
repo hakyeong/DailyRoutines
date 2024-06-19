@@ -1040,7 +1040,8 @@ public class MainSettings
         ImGui.SameLine();
         var fontTemp = Service.Config.InterfaceFontSize;
         ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
-        ImGui.InputFloat("###InterfaceFontInput", ref fontTemp, 0, 0, "%.1f");
+        if (ImGui.InputFloat("###InterfaceFontInput", ref fontTemp, 0, 0, "%.1f"))
+            fontTemp = Math.Max(fontTemp, 8);
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
             Service.Config.InterfaceFontSize = fontTemp;
