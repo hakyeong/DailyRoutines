@@ -38,7 +38,6 @@ public class AutoSkipPraetorium : DailyModuleBase
         }
     }
 
-
     public override void Uninit()
     {
         SetEnabled(false);
