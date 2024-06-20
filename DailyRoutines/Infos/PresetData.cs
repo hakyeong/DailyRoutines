@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using DailyRoutines.Helpers;
+using DailyRoutines.Managers;
+using Dalamud.Interface.Internal;
 using Lumina.Excel.GeneratedSheets;
 using Action = Lumina.Excel.GeneratedSheets.Action;
 using Status = Lumina.Excel.GeneratedSheets.Status;
@@ -23,6 +26,7 @@ public class PresetData
     public static Dictionary<uint, Item>                   Soils           => soils.Value;
     public static Dictionary<uint, Item>                   Fertilizers     => fertilizers.Value;
     public static Dictionary<uint, ContentFinderCondition> HighEndContents => highEndContents.Value;
+    public static IDalamudTextureWrap Icon => icon.Value;
 
     public static bool TryGetContent(uint rowID, out ContentFinderCondition content)
         => Contents.TryGetValue(rowID, out content);
@@ -34,6 +38,10 @@ public class PresetData
         => CNWorlds.TryGetValue(rowID, out world);
 
     #region Lazy
+
+    private static readonly Lazy<IDalamudTextureWrap> icon =
+        new(() => Service.Texture.GetTextureFromFile(
+                new(Path.Join(Service.PluginInterface.AssemblyLocation.DirectoryName, "Assets", "icon.png"))));
 
     private static readonly Lazy<Dictionary<uint, ContentFinderCondition>> highEndContents =
         new(() => LuminaCache.Get<ContentFinderCondition>()

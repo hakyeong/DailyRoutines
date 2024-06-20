@@ -129,15 +129,11 @@ public class Main : Window, IDisposable
 
     private static void DrawLogoComponent()
     {
-        var imageState = ImageHelper
-            .TryGetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/icon.png", out var imageHandle);
-
         ImGuiHelpers.CenterCursorFor(LogoComponentSize.X);
         ImGui.BeginGroup();
 
         ImGuiHelpers.CenterCursorFor(72f * ImGuiHelpers.GlobalScale);
-        if (imageState) ImGui.Image(imageHandle.ImGuiHandle, ImGuiHelpers.ScaledVector2(72f));
-        else ImGuiHelpers.ScaledDummy(72f);
+        ImGui.Image(PresetData.Icon.ImGuiHandle, ImGuiHelpers.ScaledVector2(72f));
 
         ImGui.SetWindowFontScale(1.4f);
 
@@ -353,12 +349,8 @@ public class Main : Window, IDisposable
 
     private static void DrawHomePage()
     {
-        var imageState = ImageHelper
-            .TryGetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/icon.png", out var imageHandle);
-
         ImGui.BeginGroup();
-        if (imageState) ImGui.Image(imageHandle.ImGuiHandle, ImGuiHelpers.ScaledVector2(72f));
-        else ImGuiHelpers.ScaledDummy(72f);
+        ImGui.Image(PresetData.Icon.ImGuiHandle, ImGuiHelpers.ScaledVector2(72f));
 
         ImGui.SameLine();
         ImGui.BeginGroup();
@@ -1272,7 +1264,7 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
     public IReadOnlyList<MainSettings.GameNews> News             { get; set; } = newsList;
     public float                                ChangeInterval   { get; set; } = 5.0f;
     public Vector2                              ChildSize        { get; set; }
-    public Vector2                              CurrentImageSize { get; set; }
+    public Vector2                              CurrentImageSize { get; set; } = new(375, 200);
 
     private int currentIndex;
     private double lastImageChangeTime;
@@ -1300,7 +1292,13 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
                 ImGui.Image(imageHandle.ImGuiHandle, CurrentImageSize);
             }
             else
-                ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
+            {
+                if (ImGui.BeginChild("ImageNotLoadChild", new(375, 200)))
+                {
+                    ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
+                    ImGui.EndChild();
+                }
+            }
 
             if (ImGui.IsItemHovered())
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);

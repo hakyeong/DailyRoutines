@@ -50,7 +50,10 @@
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Update="Assets\FFXIVICON.ico">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Assets\icon.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Remove="DailyRoutines.csproj.DotSettings" />
         <EmbeddedResource Remove="Managers\Langs\ChineseSimplified.resx" />
