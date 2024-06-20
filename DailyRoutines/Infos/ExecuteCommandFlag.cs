@@ -143,6 +143,11 @@ public enum ExecuteCommandFlag
     LeaveMateriaAttachState = 410,
 
     /// <summary>
+    /// 取消魔晶石镶嵌委托
+    /// </summary>
+    CancelMateriaMeldRequest = 419,
+
+    /// <summary>
     /// 请求收藏柜的数据
     /// </summary>
     RequestCabinet = 424,
