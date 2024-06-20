@@ -101,19 +101,6 @@ public class AutoShowDutyGuide : DailyModuleBase
 
     public override void OverlayUI()
     {
-        using var font = ImRaii.PushFont(FontHelper.GetFont(18f));
-        try
-        {
-            DrawDutyContent();
-        }
-        catch (Exception)
-        {
-            // ignored
-        }
-    }
-
-    private static void DrawDutyContent()
-    {
         if (ImGuiOm.SelectableImageWithText(NoviceIcon.ImGuiHandle, ImGuiHelpers.ScaledVector2(24f),
                                             Service.Lang.GetText("AutoShowDutyGuide-Source"), false))
             Util.OpenLink($"https://ff14.org/duty/{CurrentDuty}.htm");

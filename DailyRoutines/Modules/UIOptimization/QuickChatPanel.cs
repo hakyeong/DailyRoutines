@@ -338,7 +338,10 @@ public unsafe class QuickChatPanel : DailyModuleBase
         if (Service.ClientState.LocalPlayer == null ||
             AddonState.ChatLog == null || !AddonState.ChatLog->IsVisible ||
             AddonState.ChatLog->GetNodeById(5) == null)
+        {
             Overlay.IsOpen = false;
+            return;
+        }
     }
 
     public override void OverlayUI()
@@ -349,44 +352,36 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
         ImGui.SetWindowPos(buttonPos with { Y = buttonPos.Y - ImGui.GetWindowSize().Y - 16f });
 
-        using var font = ImRaii.PushFont(FontHelper.GetFont(18f));
-        try
-        {
-            TwentyCharsSize = ImGui.CalcTextSize("我也不知道要说什么但是真得要凑齐二十几个汉字");
+        TwentyCharsSize = ImGui.CalcTextSize("我也不知道要说什么但是真得要凑齐二十几个汉字");
 
-            var isOpen = true;
-            ImGui.SetNextWindowPos(new(ImGui.GetWindowPos().X, ImGui.GetWindowPos().Y + ImGui.GetWindowHeight()));
-            ImGui.SetNextWindowSize(new(ImGui.GetWindowWidth(), TwentyCharsSize.Y * 1.8f));
-            if (ImGui.Begin("###QuickChatPanel-SendMessages", ref isOpen, 
-                            ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollbar | 
-                            ImGuiWindowFlags.NoScrollWithMouse))
+        var isOpen = true;
+        ImGui.SetNextWindowPos(new(ImGui.GetWindowPos().X, ImGui.GetWindowPos().Y + ImGui.GetWindowHeight()));
+        ImGui.SetNextWindowSize(new(ImGui.GetWindowWidth(), TwentyCharsSize.Y * 1.8f));
+        if (ImGui.Begin("###QuickChatPanel-SendMessages", ref isOpen,
+                        ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollbar |
+                        ImGuiWindowFlags.NoScrollWithMouse))
+        {
+
+            if (ImGuiOm.SelectableTextCentered(Service.Lang.GetText("QuickChatPanel-SendChatboxMessage")))
             {
-
-                if (ImGuiOm.SelectableTextCentered(Service.Lang.GetText("QuickChatPanel-SendChatboxMessage")))
+                var inputNode = (AtkComponentTextInput*)AddonState.ChatLog->GetComponentNodeById(5);
+                var text = inputNode->AtkComponentInputBase.UnkText1;
+                if (!string.IsNullOrWhiteSpace(text.ToString()))
                 {
-                    var inputNode = (AtkComponentTextInput*)AddonState.ChatLog->GetComponentNodeById(5);
-                    var text = inputNode->AtkComponentInputBase.UnkText1;
-                    if (!string.IsNullOrWhiteSpace(text.ToString()))
-                    {
-                        ChatHelper.Instance.SendMessageUnsafe(text.AsSpan().ToArray());
-                        inputNode->AtkComponentInputBase.UnkText1.Clear();
-                        inputNode->AtkComponentInputBase.UnkText2.Clear();
-                        inputNode->AtkComponentInputBase.AtkTextNode->SetText(string.Empty);
-                    }
+                    ChatHelper.Instance.SendMessageUnsafe(text.AsSpan().ToArray());
+                    inputNode->AtkComponentInputBase.UnkText1.Clear();
+                    inputNode->AtkComponentInputBase.UnkText2.Clear();
+                    inputNode->AtkComponentInputBase.AtkTextNode->SetText(string.Empty);
                 }
-                ImGui.End();
             }
-
-            ImGui.BeginGroup();
-            DrawOverlayContent();
-            ImGui.EndGroup();
-
-            ImGui.Separator();
+            ImGui.End();
         }
-        catch (Exception)
-        {
-            // ignored
-        }
+
+        ImGui.BeginGroup();
+        DrawOverlayContent();
+        ImGui.EndGroup();
+
+        ImGui.Separator();
     }
 
     private void DrawOverlayContent()

@@ -113,19 +113,10 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
 
     public override void OverlayUI()
     {
-        using var font = ImRaii.PushFont(FontHelper.GetFont(24f));
-        try
-        {
-            DrawBicolorGemComponent();
+        DrawBicolorGemComponent();
+        DrawFateProgressTabs();
 
-            DrawFateProgressTabs();
-
-            ImGui.Dummy(new(1));
-        }
-        catch (Exception)
-        {
-            // ignored
-        }
+        ImGui.Dummy(new(1));
     }
 
     private static void DrawBicolorGemComponent()

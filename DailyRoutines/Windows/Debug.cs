@@ -35,20 +35,12 @@ public unsafe class Debug() : Window("Daily Routines - 调试窗口###DailyRouti
 
     public override void Draw()
     {
-        using var font = ImRaii.PushFont(FontHelper.GetFont(18f));
-        try
+        if (ImGui.BeginTabBar("DebugTab"))
         {
-            if (ImGui.BeginTabBar("DebugTab"))
-            {
-                DrawInfo();
-                DrawManagers();
-                DrawOthers();
-                ImGui.EndTabBar();
-            }
-        }
-        catch (Exception)
-        {
-            // ignored
+            DrawInfo();
+            DrawManagers();
+            DrawOthers();
+            ImGui.EndTabBar();
         }
     }
 

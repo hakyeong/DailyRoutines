@@ -87,14 +87,21 @@ public class Main : Window, IDisposable
     public override void Draw()
     {
         using var font = ImRaii.PushFont(FontHelper.GetFont(Service.Config.InterfaceFontSize));
-        DrawLeftTabComponent();
+        try
+        {
+            DrawLeftTabComponent();
 
-        ImGui.SameLine();
-        ImGui.BeginGroup();
-        DrawUpperTabComponent();
+            ImGui.SameLine();
+            ImGui.BeginGroup();
+            DrawUpperTabComponent();
 
-        DrawRightTabComponent();
-        ImGui.EndGroup();
+            DrawRightTabComponent();
+            ImGui.EndGroup();
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
     }
 
     #region 左侧
@@ -562,7 +569,7 @@ public class Main : Window, IDisposable
 
     private static void DrawModules(IReadOnlyList<ModuleInfo> modules, bool isFromSearch = false)
     {
-        using var font = ImRaii.PushFont(FontHelper.GetFont(Service.Config.InterfaceFontSize * 0.75f));
+        using var font = ImRaii.PushFont(FontHelper.GetFont(Service.Config.InterfaceFontSize * 0.8f));
         for (var i = 0; i < modules.Count; i++)
         {
             var module = modules[i];
@@ -579,6 +586,7 @@ public class Main : Window, IDisposable
             {
                 // ignored
             }
+
             ImGui.PopID();
 
             if (i < modules.Count - 1) ImGui.Separator();
@@ -1249,20 +1257,21 @@ public class MainSettings
 
 public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
 {
-    public float   ChangeInterval   { get; set; } = 5.0f;
-    public Vector2 ChildSize        { get; set; }
-    public Vector2 CurrentImageSize { get; set; }
+    public IReadOnlyList<MainSettings.GameNews> News             { get; set; } = newsList;
+    public float                                ChangeInterval   { get; set; } = 5.0f;
+    public Vector2                              ChildSize        { get; set; }
+    public Vector2                              CurrentImageSize { get; set; }
 
     private int currentIndex;
     private double lastImageChangeTime;
 
     public void Draw()
     {
-        if (newsList.Count == 0) return;
+        if (News.Count == 0) return;
 
         if (ImGui.GetTime() - lastImageChangeTime > ChangeInterval)
         {
-            currentIndex = (currentIndex + 1) % newsList.Count;
+            currentIndex = (currentIndex + 1) % News.Count;
             lastImageChangeTime = ImGui.GetTime();
         }
 
@@ -1271,7 +1280,7 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
         ChildSize = new Vector2(CurrentImageSize.X + 2 * itemSpacing.X, CurrentImageSize.Y + singleCharaSize.Y * 2) ;
         if (ImGui.BeginChild("NewsImageCarousel", ChildSize, false, ImGuiWindowFlags.NoScrollbar))
         {
-            var news = newsList[currentIndex];
+            var news = News[currentIndex];
             ImGuiHelpers.CenterCursorFor(CurrentImageSize.X);
             if (ImageHelper.TryGetImage(news.HomeImagePath, out var imageHandle))
             {

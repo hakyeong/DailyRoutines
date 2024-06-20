@@ -276,19 +276,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     public override void OverlayUI()
     {
-        using var font = ImRaii.PushFont(FontHelper.GetFont(18f));
-        try
-        {
-            DrawOverlayContent();
-        }
-        catch (Exception)
-        {
-            // ignored
-        }
-    }
-
-    private void DrawOverlayContent()
-    {
         ObjectToSelect? instanceChangeObject = null;
         ObjectToSelect? worldTravelObject = null;
 
