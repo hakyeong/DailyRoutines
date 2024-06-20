@@ -9,6 +9,8 @@ namespace DailyRoutines.Notifications;
 
 public class WinToast : DailyNotificationBase
 {
+    public override NotifyType NotifyType => NotifyType.Text;
+
     private class ToastMessage(string? title, string message, ToolTipIcon icon = ToolTipIcon.Info)
     {
         public string? Title { get; set; } = title;
@@ -60,6 +62,9 @@ public class WinToast : DailyNotificationBase
 
     private static void ShowBalloonTip(ToastMessage message)
     {
+        if (Service.Config.EnableTTS)
+            TextToTalk.Speak(message.Message, true);
+
         icon.ShowBalloonTip(
             5000, string.IsNullOrEmpty(message.Title) ? Plugin.Name : SanitizeHelper.Sanitize(message.Title),
             SanitizeHelper.Sanitize(message.Message), message.Icon);

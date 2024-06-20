@@ -60,6 +60,7 @@
         <PackageReference Include="DalamudPackager" Version="2.1.12" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
         <PackageReference Include="System.Management" Version="8.0.0" />
+        <PackageReference Include="System.Speech" Version="8.0.0" />
         <PackageReference Include="TinyPinyin" Version="1.1.0" />
     </ItemGroup>
 

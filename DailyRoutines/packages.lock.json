@@ -30,6 +30,12 @@
           "System.CodeDom": "8.0.0"
         }
       },
+      "System.Speech": {
+        "type": "Direct",
+        "requested": "[8.0.0, )",
+        "resolved": "8.0.0",
+        "contentHash": "CNuiA6vb95Oe5PRjClZEBiaju31vwB8OIeCgeSBXyZL6+MS4RVVB2X/C11z0xCkooHE3Vy91nM2z76emIzR+sg=="
+      },
       "TinyPinyin": {
         "type": "Direct",
         "requested": "[1.1.0, )",
@@ -92,9 +98,6 @@
           "ILRepack": "[2.0.18, )",
           "Reloaded.Memory": "[7.1.0, )"
         }
-      },
-      "ecommons": {
-        "type": "Project"
       },
       "omentools": {
         "type": "Project"
