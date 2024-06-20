@@ -8,7 +8,6 @@ using DailyRoutines.Managers;
 using DailyRoutines.Modules;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
-using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.Game.Housing;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -103,12 +102,12 @@ public unsafe class Debug() : Window("Daily Routines - 调试窗口###DailyRouti
                 ImGui.TableNextColumn();
                 ImGui.Text($"{new Vector2(mapAgent->SelectedOffsetX, mapAgent->SelectedOffsetY)}");
 
-                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
-                ImGui.TableNextColumn();
-                ImGui.Text("标点信息");
-
                 if (mapAgent->IsFlagMarkerSet == 1)
                 {
+                    ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+                    ImGui.TableNextColumn();
+                    ImGui.Text("标点信息");
+
                     ImGui.TableNextRow();
                     ImGui.TableNextColumn();
                     ImGui.Text("Position");
