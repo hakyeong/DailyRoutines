@@ -3,6 +3,7 @@ using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
 using Dalamud;
 using Dalamud.Hooking;
+using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -17,12 +18,12 @@ public class AutoCutSceneSkip : DailyModuleBase
     private const string ConditionSig = "75 11 BA ?? ?? ?? ?? 48 8B CF E8 ?? ?? ?? ?? 84 C0 74 52";
     private static nint ConditionAddress;
 
+    private delegate void CutsceneHandleInputDelegate(nint a1);
     [Signature("40 53 48 83 EC 20 80 79 29 00 48 8B D9 0F 85", DetourName = nameof(CutsceneHandleInputDetour))]
     private static Hook<CutsceneHandleInputDelegate>? CutsceneHandleInputHook;
 
-    [Signature(
-        "48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 44 8B C1 BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 75 ?? 48 83 C4 ?? C3 48 8B 00 48 83 C4 ?? C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 8B 05 ?? ?? ?? ?? BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E9 ?? ?? ?? ?? CC CC CC CC CC CC CC CC 48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 44 8B C1 BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 75 ?? 48 83 C4 ?? C3 48 8B 00 48 83 C4 ?? C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 8B 05 ?? ?? ?? ?? BA ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? E9 ?? ?? ?? ?? CC CC CC CC CC CC CC CC 48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 44 8B CA",
-        DetourName = nameof(GetCutSceneRowDetour))]
+    private delegate nint GetCutSceneRowDelegate(uint row);
+    [Signature("E8 ?? ?? ?? ?? 48 85 C0 0F 84 ?? ?? ?? ?? F6 40 ?? ?? 75 ?? BA", DetourName = nameof(GetCutSceneRowDetour))]
     private static Hook<GetCutSceneRowDelegate>? GetCutSceneRowHook;
 
     private static uint CurrentCutscene;
@@ -30,6 +31,13 @@ public class AutoCutSceneSkip : DailyModuleBase
 
     public override void Init()
     {
+        if (Service.SigScanner.TryScanText(
+                "0F B6 D3 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 48 8B 5C 24 ?? B8 ?? ?? ?? ?? 48 83 C4 ?? 5F C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC",
+                out var ptr))
+        {
+
+        }
+
         Service.Hook.InitializeFromAttributes(this);
         ConditionAddress = Service.SigScanner.ScanText(ConditionSig);
         CutsceneHandleInputHook?.Enable();
@@ -49,6 +57,7 @@ public class AutoCutSceneSkip : DailyModuleBase
 
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoCutSceneSkip-ProhibitSkippingUnseenCutsceneHelp"));
     }
+
 
     private unsafe void CutsceneHandleInputDetour(nint a1)
     {
@@ -100,8 +109,4 @@ public class AutoCutSceneSkip : DailyModuleBase
         CurrentCutscene = row;
         return GetCutSceneRowHook.Original(row);
     }
-
-    private delegate void CutsceneHandleInputDelegate(nint a1);
-
-    private delegate nint GetCutSceneRowDelegate(uint row);
 }
