@@ -1042,6 +1042,18 @@ public class MainSettings
             Service.Config.Save();
         }
 
+        // 启用 TTS
+        ImGuiOm.TextIcon(FontAwesomeIcon.Microphone, Service.Lang.GetText("Settings-EnableTTS"));
+
+        ImGui.SameLine();
+        var enableTTS = Service.Config.EnableTTS;
+        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        if (ImGui.Checkbox("###EnableTTS", ref enableTTS))
+        {
+            Service.Config.EnableTTS = enableTTS;
+            Service.Config.Save();
+        }
+
         // 界面文本字号
         ImGuiOm.TextIcon(FontAwesomeIcon.Font, Service.Lang.GetText("Settings-InterfaceFontSize"));
 

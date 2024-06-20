@@ -2209,4 +2209,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="InstantLogoutTitle" xml:space="preserve">
     <value>即刻登出</value>
   </data>
+  <data name="Settings-EnableTTS" xml:space="preserve">
+    <value>为通知启用 TTS (文本转语音)</value>
+  </data>
 </root>
