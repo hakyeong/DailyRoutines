@@ -2203,4 +2203,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="DisableGroundActionAutoFaceTitle" xml:space="preserve">
     <value>禁止地面类技能改变面向</value>
   </data>
+  <data name="InstantLogoutDescription" xml:space="preserve">
+    <value>启用后, 解除游戏内所有的登出限制, 并在尝试登出时即刻返回至标题界面</value>
+  </data>
+  <data name="InstantLogoutTitle" xml:space="preserve">
+    <value>即刻登出</value>
+  </data>
 </root>
