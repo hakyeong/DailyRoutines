@@ -3,7 +3,6 @@ using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
 using Dalamud;
 using Dalamud.Hooking;
-using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -31,13 +30,6 @@ public class AutoCutSceneSkip : DailyModuleBase
 
     public override void Init()
     {
-        if (Service.SigScanner.TryScanText(
-                "0F B6 D3 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 48 8D 4C 24 ?? E8 ?? ?? ?? ?? 48 8B 5C 24 ?? B8 ?? ?? ?? ?? 48 83 C4 ?? 5F C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC CC",
-                out var ptr))
-        {
-
-        }
-
         Service.Hook.InitializeFromAttributes(this);
         ConditionAddress = Service.SigScanner.ScanText(ConditionSig);
         CutsceneHandleInputHook?.Enable();
