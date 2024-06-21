@@ -2010,6 +2010,12 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="PartyFinderFilter-RegexError" xml:space="preserve">
     <value>表达式非法</value>
   </data>
+  <data name="MarkInPartyListTitle" xml:space="preserve">
+    <value>头标进小队列表</value>
+  </data>
+  <data name="PartyFinderFilterDescription" xml:space="preserve">
+    <value>头标同时在小队列表人名前显示，显示头标期间将隐藏小队列表中的队员序号</value>
+  </data>
   <data name="Food" xml:space="preserve">
     <value>食物</value>
   </data>
