@@ -334,7 +334,7 @@ public class Main : Window, IDisposable
             if (!string.IsNullOrWhiteSpace(SearchString))
             {
                 SelectedTab = 101;
-                DrawModulesSearchResult(Modules);
+                DrawModules(Modules, true);
                 return;
             }
             
@@ -347,11 +347,12 @@ public class Main : Window, IDisposable
                     MainSettings.Draw();
                     break;
                 case 3:
-                    DrawModulesFavorites(ModulesFavorite);
+                    DrawModules(ModulesFavorite);
                     break;
                 case > 100:
                     var selectedModule = (ModuleCategories)(SelectedTab % 100);
-                    DrawModuleCategory(selectedModule);
+                    if (categorizedModules.TryGetValue(selectedModule, out var modules))
+                        DrawModules(modules);
                     break;
             }
 
@@ -554,22 +555,13 @@ public class Main : Window, IDisposable
         }
     }
 
-    private static void DrawModuleCategory(ModuleCategories category)
-    {
-        if (!categorizedModules.TryGetValue(category, out var modules)) return;
-        DrawModules(modules);
-    }
-
-    private static void DrawModulesFavorites(IReadOnlyList<ModuleInfo> modules)
-        => DrawModules(modules);
-
-    private static void DrawModulesSearchResult(IReadOnlyList<ModuleInfo> modules)
-        => DrawModules(modules, true);
-
     private static void DrawModules(IReadOnlyList<ModuleInfo> modules, bool isFromSearch = false)
     {
-        var origSize = InterfaceFont.FontSize;
-        InterfaceFont.FontSize = 1.1f * origSize;
+        DrawModulesInternal(modules, isFromSearch);
+    }
+
+    private static void DrawModulesInternal(IReadOnlyList<ModuleInfo> modules, bool isFromSearch = false)
+    {
         for (var i = 0; i < modules.Count; i++)
         {
             var module = modules[i];
@@ -591,7 +583,6 @@ public class Main : Window, IDisposable
 
             if (i < modules.Count - 1) ImGui.Separator();
         }
-        InterfaceFont.FontSize = origSize;
     }
 
     private static void DrawModuleUI(ModuleInfo moduleInfo, bool fromSearch)
