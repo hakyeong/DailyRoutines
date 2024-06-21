@@ -2212,4 +2212,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Settings-EnableTTS" xml:space="preserve">
     <value>为通知启用 TTS (文本转语音)</value>
   </data>
+  <data name="AutoExpertDelivery-AutoSwitch" xml:space="preserve">
+    <value>自动切换至 筹备稀有品 栏目</value>
+  </data>
 </root>

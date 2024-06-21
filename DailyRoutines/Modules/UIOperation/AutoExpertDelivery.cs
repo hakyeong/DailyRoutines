@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -23,6 +22,12 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoExpertDeliveryTitle", "AutoExpertDeliveryDescription", ModuleCategories.界面操作)]
 public unsafe class AutoExpertDelivery : DailyModuleBase
 {
+    private class Config : ModuleConfiguration
+    {
+        public bool SkipWhenHQ;
+        public bool AutoSwitchWhenOpen = true;
+    }
+
     private static readonly List<InventoryType> ValidInventoryTypes =
     [
         InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3,
@@ -32,13 +37,13 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         InventoryType.ArmoryOffHand,
     ];
 
+    private static Config ModuleConfig = null!;
+
     private static HashSet<uint> HQItems = [];
 
-    private static bool SkipWhenHQ;
     public override void Init()
     {
-        AddConfig(nameof(SkipWhenHQ), SkipWhenHQ);
-        SkipWhenHQ = GetConfig<bool>("SkipWhenHQ");
+        ModuleConfig = LoadConfig<Config>() ?? new();
 
         TaskHelper ??= new() { AbortOnTimeout = true };
         Overlay ??= new Overlay(this);
@@ -58,12 +63,17 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         ImGui.SetWindowPos(pos);
 
         ImGui.TextColored(ImGuiColors.DalamudYellow, Service.Lang.GetText("AutoExpertDeliveryTitle"));
-
         ImGui.Separator();
 
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoExpertDelivery-AutoSwitch"), ref ModuleConfig.AutoSwitchWhenOpen))
+        {
+            ClickGrandCompanySupplyList.Using((nint)addon).ExpertDelivery();
+            SaveConfig(ModuleConfig);
+        }
+
         ImGui.BeginDisabled(TaskHelper.IsBusy);
-        if (ImGui.Checkbox(Service.Lang.GetText("AutoExpertDelivery-SkipHQ"), ref SkipWhenHQ))
-            UpdateConfig("SkipWhenHQ", SkipWhenHQ);
+        if (ImGui.Checkbox(Service.Lang.GetText("AutoExpertDelivery-SkipHQ"), ref ModuleConfig.SkipWhenHQ))
+            SaveConfig(ModuleConfig);
 
         if (ImGui.Button(Service.Lang.GetText("Start")))
             EnqueueARound();
@@ -76,16 +86,9 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
     private void EnqueueARound()
     {
-        TaskHelper.DelayNext("Delay_ClickCategory", 20);
         TaskHelper.Enqueue(ClickCategory);
-
-        TaskHelper.DelayNext("Delay_CheckIfToReachCap", 20);
         TaskHelper.Enqueue(CheckIfToReachCap);
-
-        TaskHelper.DelayNext("Delay_ClickListUI", 20);
         TaskHelper.Enqueue(ClickListUI);
-
-        TaskHelper.DelayNext("Delay_EnqueueNewRound", 20);
         TaskHelper.Enqueue(EnqueueARound);
     }
 
@@ -133,7 +136,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
         var addon = (AddonGrandCompanySupplyList*)AddonState.GrandCompanySupplyList;
         if (addon == null) return;
 
-        if (SkipWhenHQ)
+        if (ModuleConfig.SkipWhenHQ)
         {
             HQItems = InventoryScanner(ValidInventoryTypes);
 
@@ -209,6 +212,9 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
             AddonEvent.PreFinalize => false,
             _ => Overlay.IsOpen,
         };
+
+        if (ModuleConfig.AutoSwitchWhenOpen && type == AddonEvent.PostSetup)
+            ClickGrandCompanySupplyList.Using(args.Addon).ExpertDelivery();
     }
 
     private void OnAddonSupplyReward(AddonEvent type, AddonArgs args)
@@ -225,7 +231,7 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
     private void OnAddonYesno(AddonEvent type, AddonArgs args)
     {
         if (!TaskHelper.IsBusy) return;
-        TaskHelper.Enqueue(() => Click.SendClick(SkipWhenHQ ? "select_no" : "select_yes"), "ConfirmHQ", 2);
+        TaskHelper.Enqueue(() => Click.SendClick(ModuleConfig.SkipWhenHQ ? "select_no" : "select_yes"), "ConfirmHQ", 2);
         TaskHelper.DelayNext("Delay_ConfirmHQ", 20, false, 2);
     }
 
