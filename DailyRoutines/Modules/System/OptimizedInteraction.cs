@@ -76,7 +76,7 @@ public unsafe class OptimizedInteraction : DailyModuleBase
         return true;
     }
 
-    private static bool IsPlayerOnJumpingDetour(nint a1) { return false; }
+    private static bool IsPlayerOnJumpingDetour(nint a1) => false;
 
     private static bool CheckTargetPositionDetour(nint a1, nint a2, nint a3, byte a4, byte a5)
     {
