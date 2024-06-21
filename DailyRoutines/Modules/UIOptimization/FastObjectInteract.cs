@@ -6,17 +6,12 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using ClickLib;
-using ClickLib.Clicks;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
-using Dalamud.Game.Addon.Lifecycle;
-using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
-using Dalamud.Interface.Utility.Raii;
 using Dalamud.Memory;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
@@ -35,11 +30,13 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("FastObjectInteractTitle", "FastObjectInteractDescription", ModuleCategories.界面优化)]
 public unsafe partial class FastObjectInteract : DailyModuleBase
 {
-    private delegate nint AgentWorldTravelReceiveEventDelegate(
-        AgentWorldTravel* agent, nint a2, nint a3, nint a4, long eventCase);
-    [Signature("40 55 53 56 57 41 54 41 56 41 57 48 8D AC 24 ?? ?? ?? ?? B8",
-               DetourName = nameof(AgentWorldTravelReceiveEventDetour))]
-    private static Hook<AgentWorldTravelReceiveEventDelegate>? AgentWorldTravelReceiveEventHook;
+    private delegate nint AgentWorldTravelReceiveEventDelegate(AgentWorldTravel* agent, nint a2, nint a3, nint a4, long eventCase);
+    [Signature("40 55 53 56 57 41 54 41 56 41 57 48 8D AC 24 ?? ?? ?? ?? B8")]
+    private static AgentWorldTravelReceiveEventDelegate? AgentWorldTravelReceiveEvent;
+
+    private delegate nint WorldTravelSetupInfoDelegate(nint worldTravel, ushort currentWorld, ushort targetWorld);
+    [Signature("E8 ?? ?? ?? ?? 48 8D 8E ?? ?? ?? ?? E8 ?? ?? ?? ?? 4C 8B 05 ?? ?? ?? ?? 48 8D 4C 24 ?? 48 8B D0 E8 ?? ?? ?? ?? 48 8B 4E")]
+    private static WorldTravelSetupInfoDelegate? WorldTravelSetupInfo;
 
     private static readonly Dictionary<ObjectKind, string> ObjectKindLoc = new()
     {
@@ -76,9 +73,8 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     private static bool IsInInstancedArea;
     private static int InstancedAreaAmount = 3;
 
-    private static HashSet<uint> WorldTravelValidZones = [132, 129, 130];
+    private static readonly HashSet<uint> WorldTravelValidZones = [132, 129, 130];
     private static Dictionary<uint, string> DCWorlds = [];
-    private static uint WorldToTravel;
     private static bool IsOnWorldTravelling;
 
     public override void Init()
@@ -117,7 +113,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
         Service.ClientState.TerritoryChanged += OnZoneChanged;
         Service.ClientState.Login += OnLogin;
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PreDraw, "WorldTravelFinderReady", OnAddonWorldTravel);
         Service.FrameworkManager.Register(OnUpdate);
 
         OnZoneChanged(1);
@@ -388,38 +383,9 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     private static void OnZoneChanged(ushort zone)
     {
-        WorldToTravel = 0;
-        AgentWorldTravelReceiveEventHook.Disable();
-
         if (zone == 0 || zone == Service.ClientState.TerritoryType) return;
 
         InstancedAreaAmount = 3;
-    }
-
-    private static void OnAddonWorldTravel(AddonEvent type, AddonArgs args)
-    {
-        if (WorldToTravel == 0) return;
-
-        var addon = (AtkUnitBase*)args.Addon;
-        if (addon == null) return;
-
-        if (TryGetAddonByName<AtkUnitBase>("SelectYesno", out var addon0) && IsAddonAndNodesReady(addon0))
-            addon0->Close(true);
-
-        addon->GetTextNodeById(31)->SetText(LuminaCache.GetRow<World>(WorldToTravel).Name.RawString);
-    }
-
-    private static nint AgentWorldTravelReceiveEventDetour(
-        AgentWorldTravel* agent, nint a2, nint a3, nint a4, long eventCase)
-    {
-        if (WorldToTravel == 0)
-        {
-            AgentWorldTravelReceiveEventHook.Disable();
-            return AgentWorldTravelReceiveEventHook.Original(agent, a2, a3, a4, eventCase);
-        }
-
-        agent->WorldToTravel = WorldToTravel;
-        return AgentWorldTravelReceiveEventHook.Original(agent, a2, a3, a4, eventCase);
     }
 
     private void InstanceZoneChangeWidget(ObjectToSelect objectToSelect)
@@ -472,59 +438,29 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         }
     }
 
-    private void WorldChangeWidget(ObjectToSelect _)
+    private static void WorldChangeWidget(ObjectToSelect _)
     {
         var lobbyData = AgentLobby.Instance()->LobbyData;
         ImGui.BeginGroup();
+        ImGui.BeginDisabled(Flags.IsOnWorldTravel);
         foreach (var worldPair in DCWorlds)
         {
             if (worldPair.Key == lobbyData.CurrentWorldId) continue;
 
             if (ButtonCenterText($"WorldTravelWidget_{worldPair.Key}", worldPair.Value))
-                WorldTravel(worldPair.Key);
+            {
+                var agent = AgentWorldTravel.Instance();
+                agent->WorldToTravel = worldPair.Key;
+                WorldTravelSetupInfo((nint)agent, AgentLobby.Instance()->LobbyData.CurrentWorldId, (ushort)worldPair.Key);
+                var a2 = 1;
+                var a3 = 0;
+                var a4 = 1;
+                const int a5 = 1;
+                AgentWorldTravelReceiveEvent(agent, (nint)(&a2), (nint)(&a3), (nint)(&a4), a5);
+            }
         }
-
+        ImGui.EndDisabled();
         ImGui.EndGroup();
-        return;
-
-        void WorldTravel(uint worldID)
-        {
-            TaskHelper.Abort();
-
-            TaskHelper.Enqueue(() => Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.RequestWorldTravel));
-            TaskHelper.Enqueue(() => WorldToTravel = worldID);
-            TaskHelper.Enqueue(AgentWorldTravelReceiveEventHook.Enable);
-
-            TaskHelper.Enqueue(() =>
-            {
-                if (!Throttler.Throttle("FastObjectInteract-WorldTravelAgentShow", 100)) return false;
-
-                AgentWorldTravel.Instance()->AgentInterface.Show();
-                return AgentWorldTravel.Instance()->AgentInterface.IsAgentActive();
-            });
-
-            TaskHelper.Enqueue(() =>
-            {
-                if (!Throttler.Throttle("FastObjectInteract-WorldTravelSelectWorld", 100)) return false;
-
-                var addon = (AtkUnitBase*)Service.Gui.GetAddonByName("WorldTravelSelect");
-
-                AddonHelper.Callback(addon, true, 2);
-                return TryGetAddonByName<AtkUnitBase>("SelectYesno", out var _);
-            });
-
-            TaskHelper.Enqueue(() =>
-            {
-                if (!TryGetAddonByName<AtkUnitBase>("SelectYesno", out var addon) || !IsAddonAndNodesReady(addon))
-                    return false;
-
-                ClickSelectYesNo.Using((nint)addon).Yes();
-                addon->Close(true);
-                return true;
-            });
-
-            TaskHelper.Enqueue(AgentWorldTravelReceiveEventHook.Disable);
-        }
     }
 
     private void InteractWithObject(GameObject* obj, ObjectKind kind)
@@ -596,7 +532,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
         Service.ClientState.Login -= OnLogin;
         Service.ClientState.TerritoryChanged -= OnZoneChanged;
-        Service.AddonLifecycle.UnregisterListener(OnAddonWorldTravel);
         ObjectsToSelect.Clear();
     }
 
