@@ -3,7 +3,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Authors>AtmoOmen</Authors>
-        <Version>0.5.3.1</Version>
+        <Version>0.5.3.2</Version>
         <Description>Help With Some Boring Tasks</Description>
         <Copyright></Copyright>
         <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
