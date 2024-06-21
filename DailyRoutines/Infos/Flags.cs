@@ -61,5 +61,6 @@ public static class Flags
 
     public static bool CanMount => !Service.Condition[ConditionFlag.Mounted] && !Service.Condition[ConditionFlag.Mounting] && !Service.Condition[ConditionFlag.InCombat] && !Service.Condition[ConditionFlag.Casting];
 
-
+    public static bool IsOnWorldTravel => Service.Condition[ConditionFlag.WaitingToVisitOtherWorld] ||
+                                          Service.Condition[ConditionFlag.ReadyingVisitOtherWorld];
 }
