@@ -1,3 +1,4 @@
+using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
@@ -23,7 +24,11 @@ public unsafe class InstantLogout : DailyModuleBase
 
     private static nint ExecuteLogoutCommandDetour(uint* a1, nint a2, nint a3)
     {
-        SendLogout();
+        if (*(a1 + 32) > 0)
+            SendLogout();
+        else
+            ChatHelper.Instance.SendMessage("/xlkill");
+
         return nint.Zero;
     }
 }
