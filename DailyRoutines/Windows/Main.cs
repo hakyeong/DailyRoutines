@@ -27,6 +27,8 @@ namespace DailyRoutines.Windows;
 
 public class Main : Window, IDisposable
 {
+    public static ImFontPtr InterfaceFont { get; set; }
+
     public class ModuleInfo
     {
         public Type             Module          { get; set; } = null!;
@@ -69,7 +71,7 @@ public class Main : Window, IDisposable
         Flags = ImGuiWindowFlags.NoScrollbar;
         SizeConstraints = new WindowSizeConstraints
         {
-            MinimumSize = ImGuiHelpers.ScaledVector2(650, 400),
+            MinimumSize = new(650, 400),
         };
         SelectedTab = Service.Config.DefaultHomePage;
 
@@ -84,9 +86,14 @@ public class Main : Window, IDisposable
         MainSettings.Init();
     }
 
+    public override void PreDraw()
+    {
+        InterfaceFont = FontHelper.GetFont(Service.Config.InterfaceFontSize);
+        ImGui.PushFont(InterfaceFont);
+    }
+
     public override void Draw()
     {
-        using var font = ImRaii.PushFont(FontHelper.GetFont(Service.Config.InterfaceFontSize));
         try
         {
             DrawLeftTabComponent();
@@ -102,6 +109,11 @@ public class Main : Window, IDisposable
         {
             // ignored
         }
+    }
+
+    public override void PostDraw()
+    {
+        ImGui.PopFont();
     }
 
     #region 左侧
@@ -374,28 +386,30 @@ public class Main : Window, IDisposable
 
         ImGuiHelpers.CenterCursorFor(HomePageMainInfoSize.X);
         ImGui.BeginGroup();
+        {
+            ImGui.BeginGroup();
+            ImageCarousel.Draw();
 
-        ImGui.BeginGroup();
-        DrawHomePage_GameNewsComponent();
-        ImGuiHelpers.ScaledDummy(1f, 4f);
-        DrawHomePage_GameCalendarsComponent();
-        ImGui.EndGroup();
+            ImGuiHelpers.ScaledDummy(1f, 4f);
 
-        ImGui.SameLine();
-        ImGuiHelpers.ScaledDummy(4f, 1f);
+            DrawHomePage_GameCalendarsComponent();
+            ImGui.EndGroup();
 
-        ImGui.SameLine();
-        ImGui.BeginGroup();
+            ImGui.SameLine();
+            ImGuiHelpers.ScaledDummy(4f, 1f);
 
-        ImGuiHelpers.ScaledDummy(1f, 8f);
+            ImGui.SameLine();
+            ImGui.BeginGroup();
 
-        DrawHomePage_PluginInfoComponent();
+            ImGuiHelpers.ScaledDummy(1f, 8f);
 
-        ImGuiHelpers.ScaledDummy(1f, 8f);
+            DrawHomePage_PluginInfoComponent();
 
-        DrawHomePage_ChangelogComponent();
-        ImGui.EndGroup();
+            ImGuiHelpers.ScaledDummy(1f, 8f);
 
+            DrawHomePage_ChangelogComponent();
+            ImGui.EndGroup();
+        }
         ImGui.EndGroup();
         HomePageMainInfoSize = ImGui.GetItemRectSize();
     }
@@ -432,11 +446,11 @@ public class Main : Window, IDisposable
 
     private static void DrawHomePage_GameCalendarsComponent()
     {
+        if (MainSettings.GameCalendars is not { Count: > 0 }) return;
+
         ImGui.SetWindowFontScale(0.8f);
         if (ImGui.BeginChild("HomePage_GameEvents", ChildGameCalendarsSize))
         {
-            if (MainSettings.GameCalendars is not { Count: > 0 }) return;
-
             ChildGameCalendarsSize.X = ImageCarousel.ChildSize.X;
             ImGui.BeginGroup();
             foreach (var activity in MainSettings.GameCalendars)
@@ -484,13 +498,6 @@ public class Main : Window, IDisposable
         ImGui.SetWindowFontScale(1f);
     }
 
-    private static void DrawHomePage_GameNewsComponent()
-    {
-        if (MainSettings.GameNewsList is not { Count: > 0 }) return;
-
-        ImageCarousel.Draw();
-    }
-
     private static void DrawHomePage_PluginInfoComponent()
     {
         ImGui.SetWindowFontScale(1.1f);
@@ -528,7 +535,7 @@ public class Main : Window, IDisposable
                                     out var imageWarpper);
 
         var childSize = ImageCarousel.CurrentImageSize + ImGui.GetStyle().ItemSpacing * 2;
-        if (ImGui.BeginChild("HomePage_ChangelogComponent", childSize, false, ChildFlags))
+        if (ImGui.BeginChild("HomePage_ChangelogComponent", childSize, false, ChildFlags | ImGuiWindowFlags.NoScrollWithMouse))
         {
             if (imageState0)
                 if (ImGui.CollapsingHeader(
@@ -561,7 +568,8 @@ public class Main : Window, IDisposable
 
     private static void DrawModules(IReadOnlyList<ModuleInfo> modules, bool isFromSearch = false)
     {
-        using var font = ImRaii.PushFont(FontHelper.GetFont(Service.Config.InterfaceFontSize * 0.8f));
+        var origSize = InterfaceFont.FontSize;
+        InterfaceFont.FontSize = 1.1f * origSize;
         for (var i = 0; i < modules.Count; i++)
         {
             var module = modules[i];
@@ -583,6 +591,7 @@ public class Main : Window, IDisposable
 
             if (i < modules.Count - 1) ImGui.Separator();
         }
+        InterfaceFont.FontSize = origSize;
     }
 
     private static void DrawModuleUI(ModuleInfo moduleInfo, bool fromSearch)
@@ -1261,10 +1270,11 @@ public class MainSettings
 
 public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
 {
-    public IReadOnlyList<MainSettings.GameNews> News             { get; set; } = newsList;
-    public float                                ChangeInterval   { get; set; } = 5.0f;
-    public Vector2                              ChildSize        { get; set; }
-    public Vector2                              CurrentImageSize { get; set; } = new(375, 200);
+    public IReadOnlyList<MainSettings.GameNews> News           { get; set; } = newsList;
+    public float                                ChangeInterval { get; set; } = 5.0f;
+    public Vector2                              ChildSize      { get; set; }
+
+    public readonly Vector2 CurrentImageSize = ImGuiHelpers.ScaledVector2(375, 200);
 
     private int currentIndex;
     private double lastImageChangeTime;
@@ -1279,21 +1289,20 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
             lastImageChangeTime = ImGui.GetTime();
         }
 
-        var singleCharaSize = ImGui.CalcTextSize("测");
+        var singleCharSize = ImGui.CalcTextSize("测");
         var itemSpacing = ImGui.GetStyle().ItemSpacing;
-        ChildSize = new Vector2(CurrentImageSize.X + 2 * itemSpacing.X, CurrentImageSize.Y + singleCharaSize.Y * 2) ;
+        ChildSize = new Vector2(CurrentImageSize.X + (2 * itemSpacing.X), CurrentImageSize.Y + (singleCharSize.Y * 2));
+
         if (ImGui.BeginChild("NewsImageCarousel", ChildSize, false, ImGuiWindowFlags.NoScrollbar))
         {
             var news = News[currentIndex];
-            ImGuiHelpers.CenterCursorFor(CurrentImageSize.X);
             if (ImageHelper.TryGetImage(news.HomeImagePath, out var imageHandle))
             {
-                CurrentImageSize = imageHandle.Size * 1.25f;
                 ImGui.Image(imageHandle.ImGuiHandle, CurrentImageSize);
             }
             else
             {
-                if (ImGui.BeginChild("ImageNotLoadChild", new(375, 200)))
+                if (ImGui.BeginChild("ImageNotLoadChild", CurrentImageSize))
                 {
                     ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
                     ImGui.EndChild();
@@ -1306,9 +1315,9 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
             if (ImGui.IsItemClicked())
                 Util.OpenLink(news.Url);
 
-            ImGui.Indent();
+            ImGui.Indent(2f * ImGuiHelpers.GlobalScale);
             ImGui.TextWrapped(news.Title);
-            ImGui.Unindent();
+            ImGui.Unindent(2f * ImGuiHelpers.GlobalScale);
 
             ImGui.EndChild();
         }
