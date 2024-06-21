@@ -10,12 +10,12 @@ public class OverlayConfig : Window
 {
     private DailyModuleBase ModuleBase { get; init; }
 
-    private const ImGuiWindowFlags WindowFlags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize;
+    private const ImGuiWindowFlags WindowFlags = ImGuiWindowFlags.NoScrollbar;
 
     public OverlayConfig(DailyModuleBase moduleBase) : 
         base($"{Service.Lang.GetText(
             moduleBase.GetType().GetCustomAttribute<ModuleDescriptionAttribute>()?.TitleKey ??
-            "DevModuleTitle")}###{moduleBase}")
+            "DevModuleTitle")}###{moduleBase}ConfigOverlay")
     {
         Flags = WindowFlags;
         RespectCloseHotkey = false;
