@@ -67,7 +67,8 @@ public unsafe class AutoExpertDelivery : DailyModuleBase
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoExpertDelivery-AutoSwitch"), ref ModuleConfig.AutoSwitchWhenOpen))
         {
-            ClickGrandCompanySupplyList.Using((nint)addon).ExpertDelivery();
+            if (ModuleConfig.AutoSwitchWhenOpen)
+                ClickGrandCompanySupplyList.Using((nint)addon).ExpertDelivery();
             SaveConfig(ModuleConfig);
         }
 
