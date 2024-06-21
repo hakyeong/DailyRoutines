@@ -529,6 +529,8 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     private void InteractWithObject(GameObject* obj, ObjectKind kind)
     {
+        TaskHelper.RemoveAllTasks(2);
+
         if (Flags.IsOnMount)
             TaskHelper.Enqueue(() => Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.Dismount, 1), "DismountInteract", 2);
 
