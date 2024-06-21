@@ -529,10 +529,8 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     private void InteractWithObject(GameObject* obj, ObjectKind kind)
     {
-        TaskHelper.Abort();
-
         if (Flags.IsOnMount)
-            TaskHelper.Enqueue(() => Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.Dismount, 1));
+            TaskHelper.Enqueue(() => Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.Dismount, 1), "DismountInteract", 2);
 
         TaskHelper.Enqueue(() =>
         {
@@ -540,10 +538,12 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
             FFXIVClientStructs.FFXIV.Client.Game.Control.TargetSystem.Instance()->Target = obj;
             return FFXIVClientStructs.FFXIV.Client.Game.Control.TargetSystem.Instance()->InteractWithObject(obj) != 0;
-        });
+        }, "Interact", 2);
 
         if (kind is ObjectKind.EventObj)
-            TaskHelper.Enqueue(() => FFXIVClientStructs.FFXIV.Client.Game.Control.TargetSystem.Instance()->OpenObjectInteraction(obj));
+            TaskHelper.Enqueue(
+                () => FFXIVClientStructs.FFXIV.Client.Game.Control.TargetSystem.Instance()->OpenObjectInteraction(obj),
+                "OpenInteraction", 2);
     }
 
     private static bool IsWindowShouldBeOpen()
