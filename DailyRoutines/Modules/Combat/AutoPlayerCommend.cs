@@ -123,6 +123,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+
         if (ImGui.BeginCombo("###BlacklistContentsCombo",
                              Service.Lang.GetText("AutoPlayerCommend-BlacklistContentsAmount",
                                                   ModuleConfig.BlacklistContents.Count)))
@@ -386,7 +387,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
 
     private class Config : ModuleConfiguration
     {
-        public readonly HashSet<ContentInfo> BlacklistContents = [];
-        public readonly HashSet<PlayerInfo> BlacklistPlayers = [];
+        public HashSet<ContentInfo> BlacklistContents = [];
+        public HashSet<PlayerInfo> BlacklistPlayers = [];
     }
 }
