@@ -20,19 +20,19 @@ public class MarkInPartyList : DailyModuleBase
 {
     public override string? Author => "status102";
 
-    private const ImGuiWindowFlags flags = ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoMouseInputs | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoNav;
-    public Dictionary<MarkIcon, IDalamudTextureWrap> markIcon = [];
-    public Dictionary<MarkIcon, int> markedObject = new(8);
+    private const ImGuiWindowFlags Flags = ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoMouseInputs | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoNav;
     private Vector2 PartyListIconOffset = new(0, 0);
     private float PartyListIconScale = 1f;
-    private bool needClear;
+    private Dictionary<MarkIcon, IDalamudTextureWrap> _markIcon = [];
+    private readonly Dictionary<MarkIcon, int> _markedObject = new(8);
+    private bool _needClear;
 
     public override void Init()
     {
         Service.Hook.InitializeFromAttributes(this);
         try
         {
-            markIcon = Enum.GetValues<MarkIcon>().ToDictionary(x => x, x => Service.Texture.GetIcon((uint)x)!);
+            _markIcon = Enum.GetValues<MarkIcon>().ToDictionary(x => x, x => Service.Texture.GetIcon((uint)x)!);
         }
         catch (Exception e)
         {
@@ -42,11 +42,11 @@ public class MarkInPartyList : DailyModuleBase
         Service.ClientState.TerritoryChanged += ResetmarkedObject;
     }
 
-    public unsafe override void Uninit()
+    public override unsafe void Uninit()
     {
         LocalMarkingHook?.Dispose();
         Service.ClientState.TerritoryChanged -= ResetmarkedObject;
-        foreach (var i in markIcon.Values)
+        foreach (var i in _markIcon.Values)
         {
             i?.Dispose();
         }
@@ -61,13 +61,13 @@ public class MarkInPartyList : DailyModuleBase
 
     public override unsafe void OverlayUI()
     {
-        if (markedObject.Count != 0)
+        if (_markedObject.Count != 0)
         {
         }
-        else if (needClear)
+        else if (_needClear)
         {
             ResetPartyMemberList();
-            needClear = false;
+            _needClear = false;
             return;
         }
         else
@@ -86,9 +86,9 @@ public class MarkInPartyList : DailyModuleBase
         ImGuiHelpers.ForceNextWindowMainViewport();
         ImGui.SetNextWindowPos(ImGui.GetMainViewport().Pos);
         ImGui.SetNextWindowSize(ImGui.GetMainViewport().Size);
-        if (ImGui.Begin("##MarkOverlayWindow", flags))
+        if (ImGui.Begin("##MarkOverlayWindow", Flags))
         {
-            foreach (var icon in markedObject)
+            foreach (var icon in _markedObject)
             {
                 DrawOnPartyList(icon.Value, icon.Key, partylist, ImGui.GetWindowDrawList());
             }
@@ -98,7 +98,7 @@ public class MarkInPartyList : DailyModuleBase
     }
     private unsafe void ResetmarkedObject(ushort obj)
     {
-        markedObject.Clear();
+        _markedObject.Clear();
         ResetPartyMemberList();
     }
 
@@ -142,7 +142,7 @@ public class MarkInPartyList : DailyModuleBase
         Vector2 iconPos = new Vector2(pPartyList->X + pPartyMemberNode->AtkResNode.X * pPartyList->Scale + pIconNode->X * pPartyList->Scale + pIconNode->Width * pPartyList->Scale / 2,
                                         pPartyList->Y + partyAlign + pPartyMemberNode->AtkResNode.Y * pPartyList->Scale + pIconNode->Y * pPartyList->Scale + pIconNode->Height * pPartyList->Scale / 2);
         iconPos += iconOffset;
-        drawList.AddImage(this.markIcon[markIcon].ImGuiHandle, iconPos, iconPos + iconSize);
+        drawList.AddImage(this._markIcon[markIcon].ImGuiHandle, iconPos, iconPos + iconSize);
     }
 
     private unsafe void ModifyPartyMemberNumber(AtkUnitBase* pPartyList, bool visible)
@@ -178,10 +178,10 @@ public class MarkInPartyList : DailyModuleBase
         var icon = Enum.Parse<MarkIcon>(Enum.GetName(markType) ?? string.Empty);
         if (objectId == 0xE000_0000 || objectId == 0xE00_0000)
         {
-            markedObject.Remove(icon);
-            if (markedObject.Count == 0)
+            _markedObject.Remove(icon);
+            if (_markedObject.Count == 0)
             {
-                needClear = true;
+                _needClear = true;
             }
             return;
         }
@@ -204,12 +204,12 @@ public class MarkInPartyList : DailyModuleBase
                 var charData = *(PartyListCharInfo*)pCharData;
                 if (objectId > 0 && objectId == charData.ObjectID)
                 {
-                    if (markedObject.ContainsValue(i))
+                    if (_markedObject.ContainsValue(i))
                     {
-                        markedObject.Remove(markedObject.First(x => x.Value == i).Key);
+                        _markedObject.Remove(_markedObject.First(x => x.Value == i).Key);
                     }
-                    needClear = false;
-                    markedObject[icon] = i;
+                    _needClear = false;
+                    _markedObject[icon] = i;
                     return;
                 }
             }
