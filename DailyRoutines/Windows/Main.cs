@@ -16,6 +16,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.ManagedFontAtlas;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
@@ -27,8 +28,6 @@ namespace DailyRoutines.Windows;
 
 public class Main : Window, IDisposable
 {
-    public static ImFontPtr InterfaceFont { get; set; }
-
     public class ModuleInfo
     {
         public Type             Module          { get; set; } = null!;
@@ -83,37 +82,35 @@ public class Main : Window, IDisposable
 
 
         RefreshModuleInfo();
+        FontHelper.RefreshUIFont();
         MainSettings.Init();
     }
 
-    public override void PreDraw()
+    public override void OnOpen()
     {
-        InterfaceFont = FontHelper.GetFont(Service.Config.InterfaceFontSize);
-        ImGui.PushFont(InterfaceFont);
+        FontHelper.RefreshUIFont();
     }
 
     public override void Draw()
     {
-        try
+        using (FontHelper.UIFont.Push())
         {
-            DrawLeftTabComponent();
+            try
+            {
+                DrawLeftTabComponent();
 
-            ImGui.SameLine();
-            ImGui.BeginGroup();
-            DrawUpperTabComponent();
+                ImGui.SameLine();
+                ImGui.BeginGroup();
+                DrawUpperTabComponent();
 
-            DrawRightTabComponent();
-            ImGui.EndGroup();
+                DrawRightTabComponent();
+                ImGui.EndGroup();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
-        catch (Exception)
-        {
-            // ignored
-        }
-    }
-
-    public override void PostDraw()
-    {
-        ImGui.PopFont();
     }
 
     #region 左侧
@@ -1058,6 +1055,8 @@ public class MainSettings
         {
             Service.Config.InterfaceFontSize = fontTemp;
             Service.Config.Save();
+
+            FontHelper.RefreshUIFont();
         }
 
         // 默认页面
