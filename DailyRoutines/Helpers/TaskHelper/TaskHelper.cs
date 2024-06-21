@@ -25,7 +25,7 @@ public partial class TaskHelper : IDisposable
     public  int                        NumQueuedTasks  => Queues.Sum(q => q.Tasks.Count) + (CurrentTask == null ? 0 : 1);
     public  bool                       IsBusy          => CurrentTask != null || Queues.Any(q => q.Tasks.Count > 0);
     public  int                        MaxTasks        { get; private set; }
-    public  bool                       AbortOnTimeout  { get; set; } = false;
+    public  bool                       AbortOnTimeout  { get; set; } = true;
     public  long                       AbortAt         { get; private set; }
     public  bool                       ShowDebug       { get; set; } = false;
     public  int                        TimeLimitMS     { get; set; } = 10000;
@@ -70,13 +70,14 @@ public partial class TaskHelper : IDisposable
                         {
                             if (CurrentTask.AbortOnTimeout)
                             {
-                                LogTimeout("已清理所有剩余任务 (原因: 等待超时)");
+                                NotifyHelper.Warning($"任务 {CurrentTask.Name ?? CurrentTask.Action.GetMethodInfo().Name} 执行时间过长，正在终止所有任务。");
                                 foreach (var queue in Queues)
                                     queue.Tasks.Clear();
+
+                                throw new TimeoutException($"任务 {CurrentTask.Name ?? CurrentTask.Action.GetMethodInfo().Name} 执行时间过长");
                             }
 
-                            throw new TimeoutException(
-                                $"任务 {CurrentTask.Name ?? CurrentTask.Action.GetMethodInfo().Name} 执行时间过长");
+                            NotifyHelper.Warning($"任务 {CurrentTask.Name ?? CurrentTask.Action.GetMethodInfo().Name} 执行时间过长，但设置为不终止其他任务。");
                         }
                         break;
 
