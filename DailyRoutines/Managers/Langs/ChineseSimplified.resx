@@ -698,12 +698,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoShareRetainersGilsEvenlyTitle" xml:space="preserve">
     <value>自动平均雇员金币</value>
   </data>
-  <data name="AutoSkipPraetoriumDescription" xml:space="preserve">
-    <value>自动跳过神兵要塞帝国南方堡、最终决战天幕魔导城和究极神兵破坏作战的过场动画</value>
-  </data>
-  <data name="AutoSkipPraetoriumTitle" xml:space="preserve">
-    <value>自动跳过主随过场动画</value>
-  </data>
   <data name="AutoSubmarineCollect-FailGettingSubmarineInfo" xml:space="preserve">
     <value>获取潜水艇信息失败, 请重试</value>
   </data>
@@ -2222,5 +2216,11 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoCheckFoodUsage-NoZoneSelectHelp" xml:space="preserve">
     <value>如未选择区域, 则代表所有区域都生效</value>
+  </data>
+  <data name="AutoSkipDutyCutsceneDescription" xml:space="preserve">
+    <value>自动跳过所有副本的过场动画, 包括但不限于一般副本、主随、出海垂钓、水晶冲突等</value>
+  </data>
+  <data name="AutoSkipDutyCutsceneTitle" xml:space="preserve">
+    <value>自动跳过副本过场动画</value>
   </data>
 </root>
