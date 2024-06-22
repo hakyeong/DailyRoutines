@@ -108,7 +108,7 @@ public unsafe class FastPrismBoxSearch : DailyModuleBase
         {
             foreach (var job in AllJobs)
                 if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(62100 + (job.Key == 0 ? 44 : job.Key)).ImGuiHandle,
-                                                    ImGuiHelpers.ScaledVector2(20f), job.Value,
+                                                    ScaledVector2(20f), job.Value,
                                                     ClassJobInput == (int)job.Key))
                     ClassJobInput = (int)job.Key;
 

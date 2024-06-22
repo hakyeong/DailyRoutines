@@ -37,7 +37,7 @@ public unsafe class AutoSplitStacks : DailyModuleBase
     };
 
     private const string Command = "/pdrsplit";
-    private static readonly Vector2 CheckboxSize = ImGuiHelpers.ScaledVector2(20f);
+    private static readonly Vector2 CheckboxSize = ScaledVector2(20f);
 
     private static Config ModuleConfig = null!;
 
@@ -135,7 +135,7 @@ public unsafe class AutoSplitStacks : DailyModuleBase
                     foreach (var (itemName, item) in _ItemNames)
                     {
                         var icon = ImageHelper.GetIcon(item.Icon).ImGuiHandle;
-                        if (ImGuiOm.SelectableImageWithText(icon, ImGuiHelpers.ScaledVector2(24),
+                        if (ImGuiOm.SelectableImageWithText(icon, ScaledVector2(24),
                                                             itemName, item == SelectedItem))
                             SelectedItem = item;
                     }
@@ -195,7 +195,7 @@ public unsafe class AutoSplitStacks : DailyModuleBase
                 ImGui.TableNextColumn();
                 var icon = ImageHelper.GetIcon(LuminaCache.GetRow<Item>(group.ItemID).Icon);
                 var name = LuminaCache.GetRow<Item>(group.ItemID).Name.RawString;
-                ImGuiOm.TextImage(name, icon.ImGuiHandle, ImGuiHelpers.ScaledVector2(24f));
+                ImGuiOm.TextImage(name, icon.ImGuiHandle, ScaledVector2(24f));
 
                 ImGui.TableNextColumn();
                 ImGuiOm.Selectable(group.Amount.ToString());

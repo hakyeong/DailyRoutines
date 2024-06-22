@@ -49,12 +49,12 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
 
         ImGui.EndGroup();
 
-        ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin() - ImGuiHelpers.ScaledVector2(2f),
-                                          ImGui.GetItemRectMax() + ImGuiHelpers.ScaledVector2(2f),
+        ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin() - ScaledVector2(2f),
+                                          ImGui.GetItemRectMax() + ScaledVector2(2f),
                                           ImGui.ColorConvertFloat4ToU32(ImGuiColors.DalamudWhite), 2f,
                                           ImDrawFlags.RoundCornersAll, 3f);
 
-        ImGuiHelpers.ScaledDummy(5f);
+        ScaledDummy(5f);
 
         if (ImGui.Checkbox(Service.Lang.GetText("AutoAdjustScreenBrightness-DisableInCutscene"),
                            ref ModuleConfig.DisableInCutscene))

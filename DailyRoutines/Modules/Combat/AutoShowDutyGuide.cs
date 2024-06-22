@@ -101,7 +101,7 @@ public class AutoShowDutyGuide : DailyModuleBase
 
     public override void OverlayUI()
     {
-        if (ImGuiOm.SelectableImageWithText(NoviceIcon.ImGuiHandle, ImGuiHelpers.ScaledVector2(24f),
+        if (ImGuiOm.SelectableImageWithText(NoviceIcon.ImGuiHandle, ScaledVector2(24f),
                                             Service.Lang.GetText("AutoShowDutyGuide-Source"), false))
             Util.OpenLink($"https://ff14.org/duty/{CurrentDuty}.htm");
 

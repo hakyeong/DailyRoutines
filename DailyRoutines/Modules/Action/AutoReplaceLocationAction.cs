@@ -36,7 +36,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
 
     private static string ContentSearchInput = string.Empty;
 
-    private static Vector2 CheckboxSize = ImGuiHelpers.ScaledVector2(20f);
+    private static Vector2 CheckboxSize = ScaledVector2(20f);
 
     public override void Init()
     {
@@ -107,7 +107,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
 
                 ImGui.TableNextColumn();
                 ImGuiOm.TextImage(action.Name.RawString, ImageHelper.GetIcon(action.Icon).ImGuiHandle,
-                                  ImGuiHelpers.ScaledVector2(20f));
+                                  ScaledVector2(20f));
             }
 
             foreach (var actionPair in ModuleConfig.EnabledPetActions)
@@ -126,7 +126,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
 
                 ImGui.TableNextColumn();
                 ImGuiOm.TextImage(action.Name.RawString, ImageHelper.GetIcon((uint)action.Icon).ImGuiHandle,
-                                  ImGuiHelpers.ScaledVector2(20f));
+                                  ScaledVector2(20f));
             }
 
             ImGui.EndTable();

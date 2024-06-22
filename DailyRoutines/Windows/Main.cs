@@ -113,13 +113,13 @@ public class Main : Window, IDisposable
         if (ImGui.BeginChild("LeftTabComponentSize", LeftTabComponentSize, false, ChildFlags | ImGuiWindowFlags.NoScrollWithMouse))
         {
             ImGui.BeginGroup();
-            ImGuiHelpers.ScaledDummy(1f, 16f);
+            ScaledDummy(1f, 16f);
             DrawLogoComponent();
 
-            ImGuiHelpers.ScaledDummy(1f, 8f);
+            ScaledDummy(1f, 8f);
             DrawContactComponent();
 
-            ImGuiHelpers.ScaledDummy(1f, 16f);
+            ScaledDummy(1f, 16f);
             DrawCategoriesComponent();
 
             ImGui.EndGroup();
@@ -135,7 +135,7 @@ public class Main : Window, IDisposable
         ImGui.BeginGroup();
 
         ImGuiHelpers.CenterCursorFor(72f * GlobalFontScale);
-        ImGui.Image(PresetData.Icon.ImGuiHandle, ImGuiHelpers.ScaledVector2(72f));
+        ImGui.Image(PresetData.Icon.ImGuiHandle, ScaledVector2(72f));
 
         using (FontHelper.UIFont140.Push())
         {
@@ -226,7 +226,7 @@ public class Main : Window, IDisposable
             }
             ImGui.PopStyleColor(3);
 
-            ImGuiHelpers.ScaledDummy(1f, 12f);
+            ScaledDummy(1f, 12f);
 
             foreach (var category in Enum.GetValues<ModuleCategories>())
             {
@@ -261,7 +261,7 @@ public class Main : Window, IDisposable
         {
             if (ImGui.BeginChild("ChildUpRight", UpperTabComponentSize, false, ChildFlags | ImGuiWindowFlags.NoScrollWithMouse))
             {
-                ImGuiHelpers.ScaledDummy(1f, 8f);
+                ScaledDummy(1f, 8f);
 
                 var startCursorPos = ImGui.GetCursorPos();
                 var emptyString = string.Empty;
@@ -355,7 +355,7 @@ public class Main : Window, IDisposable
     private static void DrawHomePage()
     {
         ImGui.BeginGroup();
-        ImGui.Image(PresetData.Icon.ImGuiHandle, ImGuiHelpers.ScaledVector2(72f));
+        ImGui.Image(PresetData.Icon.ImGuiHandle, ScaledVector2(72f));
 
         ImGui.SameLine();
         ImGui.BeginGroup();
@@ -377,7 +377,7 @@ public class Main : Window, IDisposable
                            ImGui.GetCursorStartPos().Y));
         DrawHomePage_GreetingComponent();
 
-        ImGuiHelpers.ScaledDummy(1f, 36f);
+        ScaledDummy(1f, 36f);
 
         ImGuiHelpers.CenterCursorFor(HomePageMainInfoSize.X);
         ImGui.BeginGroup();
@@ -385,22 +385,22 @@ public class Main : Window, IDisposable
             ImGui.BeginGroup();
             ImageCarousel.Draw();
 
-            ImGuiHelpers.ScaledDummy(1f, 4f);
+            ScaledDummy(1f, 4f);
 
             DrawHomePage_GameCalendarsComponent();
             ImGui.EndGroup();
 
             ImGui.SameLine();
-            ImGuiHelpers.ScaledDummy(4f, 1f);
+            ScaledDummy(4f, 1f);
 
             ImGui.SameLine();
             ImGui.BeginGroup();
 
-            ImGuiHelpers.ScaledDummy(1f, 8f);
+            ScaledDummy(1f, 8f);
 
             DrawHomePage_PluginInfoComponent();
 
-            ImGuiHelpers.ScaledDummy(1f, 8f);
+            ScaledDummy(1f, 8f);
 
             DrawHomePage_ChangelogComponent();
             ImGui.EndGroup();
@@ -582,7 +582,7 @@ public class Main : Window, IDisposable
 
     private static void DrawModuleUI(ModuleInfo moduleInfo, bool fromSearch)
     {
-        ImGuiHelpers.ScaledDummy(1f, 4f);
+        ScaledDummy(1f, 4f);
 
         if (!Service.Config.ModuleEnabled.TryGetValue(moduleInfo.ModuleName, out var isModuleEnabled)) return;
         if (!Service.ModuleManager.Modules.TryGetValue(moduleInfo.Module, out var moduleInstance)) return;
@@ -637,7 +637,7 @@ public class Main : Window, IDisposable
         else
             ImGui.Text(moduleInfo.Title);
 
-        ImGuiHelpers.ScaledDummy(1f, 4f);
+        ScaledDummy(1f, 4f);
 
         ImGui.SetCursorPosX(origCursorPosX);
         ImGuiOm.TextDisabledWrapped(moduleInfo.Description);
@@ -716,7 +716,7 @@ public class Main : Window, IDisposable
                 }
 
                 ImGui.Separator();
-                ImGuiHelpers.ScaledDummy(1f);
+                ScaledDummy(1f);
 
                 var isFavorite = Service.Config.ModuleFavorites.Contains(moduleInfo.Module.Name);
                 if (ImGui.Selectable($"    {(isFavorite ? "\u2605 " : "")}{Service.Lang.GetText("Favorite")}", isFavorite, ImGuiSelectableFlags.DontClosePopups))
@@ -1261,7 +1261,7 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
     public float                                ChangeInterval { get; set; } = 5.0f;
     public Vector2                              ChildSize      { get; set; }
 
-    public readonly Vector2 CurrentImageSize = ImGuiHelpers.ScaledVector2(375, 200);
+    public readonly Vector2 CurrentImageSize = ScaledVector2(375, 200);
 
     private int currentIndex;
     private double lastImageChangeTime;

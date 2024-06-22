@@ -172,7 +172,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
 
                     ImGui.SameLine();
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 2.5f);
-                    ImGui.Image(ImageHelper.GetIcon(result.Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(20f));
+                    ImGui.Image(ImageHelper.GetIcon(result.Icon).ImGuiHandle, ScaledVector2(20f));
 
                     ImGui.SameLine();
                     ImGui.Text($"{result.Name.ExtractText()}");
@@ -188,7 +188,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
                         var statusResult = PresetData.Statuses[status];
                         ImGui.SameLine();
                         ImGui.Image(Service.Texture.GetIcon(statusResult.Icon).ImGuiHandle,
-                                    ImGuiHelpers.ScaledVector2(24f));
+                                    ScaledVector2(24f));
 
                         ImGuiOm.TooltipHover(statusResult.Name.ExtractText());
                     }

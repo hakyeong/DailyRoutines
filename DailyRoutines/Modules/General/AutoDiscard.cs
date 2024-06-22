@@ -475,7 +475,7 @@ public unsafe class AutoDiscard : DailyModuleBase
             foreach (var item in group.Items.TakeLast(15))
             {
                 ImGui.Image(ImageHelper.GetIcon(LuminaCache.GetRow<Item>(item).Icon).ImGuiHandle,
-                            ImGuiHelpers.ScaledVector2(20f));
+                            ScaledVector2(20f));
 
                 ImGui.SameLine();
             }
@@ -508,7 +508,7 @@ public unsafe class AutoDiscard : DailyModuleBase
                                                               StringComparison.OrdinalIgnoreCase)) continue;
 
                     if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(specificItem.Icon).ImGuiHandle,
-                                                        ImGuiHelpers.ScaledVector2(24f), specificItem.Name.RawString,
+                                                        ScaledVector2(24f), specificItem.Name.RawString,
                                                         false, ImGuiSelectableFlags.DontClosePopups))
                         group.Items.Remove(specificItem.RowId);
                 }
@@ -546,7 +546,7 @@ public unsafe class AutoDiscard : DailyModuleBase
                 ImGui.Separator();
                 foreach (var (itemName, item) in _ItemNames)
                     if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(item.Icon).ImGuiHandle,
-                                                        ImGuiHelpers.ScaledVector2(24f), itemName,
+                                                        ScaledVector2(24f), itemName,
                                                         group.Items.Contains(item.RowId),
                                                         ImGuiSelectableFlags.DontClosePopups))
                     {

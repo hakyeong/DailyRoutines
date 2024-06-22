@@ -107,7 +107,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
         ImGui.SameLine();
         ImGui.BeginGroup();
 
-        ImGuiHelpers.ScaledDummy(3f);
+        ScaledDummy(3f);
 
         ImGuiOm.DisableZoneWithHelp(() =>
                                     {
@@ -119,7 +119,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
                                                        ? Service.Lang.GetText("AutoLeveQuests-ObtainHelp")
                                                        : $"{Marshal.PtrToStringUTF8((nint)LeveMete->Name)} ({LeveMete->DataID})");
 
-                                        ImGuiHelpers.ScaledDummy(2f);
+                                        ScaledDummy(2f);
 
                                         if (ImGui.Button(Service.Lang.GetText("AutoLeveQuests-ObtainLeveClient")))
                                             LeveReceiver = TargetSystem.Instance()->Target;
@@ -135,13 +135,13 @@ public unsafe class AutoLeveQuests : DailyModuleBase
                                     ],
                                     Service.Lang.GetText("DisableZoneHeader"));
 
-        ImGuiHelpers.ScaledDummy(5f);
+        ScaledDummy(5f);
 
         ImGui.BeginGroup();
         ImGuiOm.DisableZoneWithHelp(() =>
         {
             if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Play, Service.Lang.GetText("Start"),
-                                                   ImGuiHelpers.ScaledVector2(167f, 45f)))
+                                                   ScaledVector2(167f, 45f)))
             {
                 Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", AlwaysYes);
                 Service.ExecuteCommandManager.Register(OnPreExecuteCommand);
@@ -158,7 +158,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
 
         ImGui.SameLine();
         if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Pause, Service.Lang.GetText("Stop"),
-                                               ImGuiHelpers.ScaledVector2(167f, 45f)))
+                                               ScaledVector2(167f, 45f)))
         {
             TaskHelper.Abort();
             Service.AddonLifecycle.UnregisterListener(AlwaysYes);

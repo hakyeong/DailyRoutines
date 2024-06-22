@@ -27,7 +27,15 @@ public static class Widgets
     public static SeString DailyRoutinesPrefix => dailyRoutinesPrefix.Value;
     public static float    GlobalFontScale     => Service.Config.InterfaceFontSize / 12f;
 
-    private static Vector2 CheckboxSize = ImGuiHelpers.ScaledVector2(20f);
+    private static Vector2 CheckboxSize = ScaledVector2(20f);
+
+    public static Vector2 ScaledVector2(float x) => new Vector2(x) * GlobalFontScale;
+
+    public static Vector2 ScaledVector2(float x, float y) => new Vector2(x, y) * GlobalFontScale;
+
+    public static void ScaledDummy(float x) => ImGui.Dummy(new Vector2(x) * GlobalFontScale);
+
+    public static void ScaledDummy(float x, float y) => ImGui.Dummy(new Vector2(x, y) * GlobalFontScale);
 
     public static SeString WithDRPrefix(string text) 
         => new SeStringBuilder().Append(DRPrefix).Append($" {text}").Build();
@@ -103,7 +111,7 @@ public static class Widgets
         if (ImGui.IsItemClicked())
             ImGui.OpenPopup("###ContentSelectPopup");
 
-        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(450f, 400f));
+        ImGui.SetNextWindowSize(ScaledVector2(450f, 400f));
         if (ImGui.BeginPopup("###ContentSelectPopup"))
         {
             ImGui.SetNextItemWidth(-1f);
@@ -149,7 +157,7 @@ public static class Widgets
 
                     ImGui.TableNextColumn();
                     ImGui.Image(ImageHelper.GetIcon(contentPair.Value.ContentType.Value.Icon).ImGuiHandle,
-                                ImGuiHelpers.ScaledVector2(20f));
+                                ScaledVector2(20f));
 
                     ImGui.TableNextColumn();
                     ImGui.Text(contentPair.Value.ClassJobLevelRequired.ToString());
@@ -186,7 +194,7 @@ public static class Widgets
         if (ImGui.IsItemClicked())
             ImGui.OpenPopup("###ContentSelectPopup");
 
-        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(450f, 400f));
+        ImGui.SetNextWindowSize(ScaledVector2(450f, 400f));
         if (ImGui.BeginPopup("###ContentSelectPopup"))
         {
             ImGui.SetNextItemWidth(-1f);
@@ -236,7 +244,7 @@ public static class Widgets
 
                     ImGui.TableNextColumn();
                     ImGui.Image(ImageHelper.GetIcon(contentPair.Value.ContentType.Value.Icon).ImGuiHandle,
-                                ImGuiHelpers.ScaledVector2(20f));
+                                ScaledVector2(20f));
 
                     ImGui.TableNextColumn();
                     ImGui.Text(contentPair.Value.ClassJobLevelRequired.ToString());
@@ -273,7 +281,7 @@ public static class Widgets
         if (ImGui.IsItemClicked())
             ImGui.OpenPopup("###ZoneSelectPopup");
 
-        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(450f, 400f));
+        ImGui.SetNextWindowSize(ScaledVector2(450f, 400f));
         if (ImGui.BeginPopup("###ZoneSelectPopup"))
         {
             ImGui.SetNextItemWidth(-1f);
@@ -341,7 +349,7 @@ public static class Widgets
         if (ImGui.IsItemClicked())
             ImGui.OpenPopup("###JobSelectPopup");
 
-        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(450f, 400f));
+        ImGui.SetNextWindowSize(ScaledVector2(450f, 400f));
         if (ImGui.BeginPopup("###JobSelectPopup"))
         {
             ImGui.SetNextItemWidth(-1f);
@@ -384,7 +392,7 @@ public static class Widgets
                     ImGui.EndDisabled();
 
                     ImGui.TableNextColumn();
-                    if (ImGuiOm.SelectableImageWithText(jobIcon.ImGuiHandle, ImGuiHelpers.ScaledVector2(20f), jobName, state, 
+                    if (ImGuiOm.SelectableImageWithText(jobIcon.ImGuiHandle, ScaledVector2(20f), jobName, state, 
                                                         ImGuiSelectableFlags.DontClosePopups))
                     {
                         if (job.RowId == 0)
@@ -425,7 +433,7 @@ public static class Widgets
         if (ImGui.IsItemClicked())
             ImGui.OpenPopup("###ActionSelectPopup");
 
-        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(350f, 400f));
+        ImGui.SetNextWindowSize(ScaledVector2(350f, 400f));
         if (ImGui.BeginPopup("###ActionSelectPopup"))
         {
             ImGui.SetNextItemWidth(-1f);
@@ -474,7 +482,7 @@ public static class Widgets
 
                     ImGui.TableNextColumn();
                     if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(actionPair.Value.Icon).ImGuiHandle,
-                                                        ImGuiHelpers.ScaledVector2(20f), actionName, false,
+                                                        ScaledVector2(20f), actionName, false,
                                                         ImGuiSelectableFlags.DontClosePopups |
                                                         ImGuiSelectableFlags.SpanAllColumns))
                     {
@@ -506,7 +514,7 @@ public static class Widgets
         if (ImGui.IsItemClicked())
             ImGui.OpenPopup("###MountSelectPopup");
 
-        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(250f, 400f));
+        ImGui.SetNextWindowSize(ScaledVector2(250f, 400f));
         if (ImGui.BeginPopup("###MountSelectPopup"))
         {
             ImGui.SetNextItemWidth(-1f);
@@ -519,7 +527,7 @@ public static class Widgets
             if (ImGui.BeginTable("###MountSelectTable", 3, ImGuiTableFlags.Borders, tableSize))
             {
                 ImGui.TableSetupColumn("RadioButton", ImGuiTableColumnFlags.WidthFixed, 20f * GlobalFontScale);
-                ImGui.TableSetupColumn("Icon", ImGuiTableColumnFlags.WidthFixed, ImGuiHelpers.ScaledVector2(20f).X);
+                ImGui.TableSetupColumn("Icon", ImGuiTableColumnFlags.WidthFixed, ScaledVector2(20f).X);
                 ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 200f * GlobalFontScale);
 
                 ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
@@ -543,7 +551,7 @@ public static class Widgets
                     ImGui.RadioButton("", selectedMount == mountPair.Value);
 
                     ImGui.TableNextColumn();
-                    ImGui.Image(ImageHelper.GetIcon(mountPair.Value.Icon).ImGuiHandle, ImGuiHelpers.ScaledVector2(20f));
+                    ImGui.Image(ImageHelper.GetIcon(mountPair.Value.Icon).ImGuiHandle, ScaledVector2(20f));
 
                     ImGui.TableNextColumn();
                     if (ImGui.Selectable(mountName, false,
@@ -576,7 +584,7 @@ public static class Widgets
         if (ImGui.IsItemClicked())
             ImGui.OpenPopup("###SelectPopup");
 
-        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(450f, 400f));
+        ImGui.SetNextWindowSize(ScaledVector2(450f, 400f));
         if (ImGui.BeginPopup("###SelectPopup"))
         {
             ImGui.SetNextItemWidth(-1f);
@@ -652,7 +660,7 @@ public static class Widgets
         if (ImGui.IsItemClicked())
             ImGui.OpenPopup("###SelectPopup");
 
-        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(450f, 400f));
+        ImGui.SetNextWindowSize(ScaledVector2(450f, 400f));
         if (ImGui.BeginPopup("###SelectPopup"))
         {
             ImGui.SetNextItemWidth(-1f);

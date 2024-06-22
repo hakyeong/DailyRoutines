@@ -40,7 +40,7 @@ public unsafe class CustomizeGameObject : DailyModuleBase
     private static string ValueEditInput = string.Empty;
     private static bool ScaleVFXEditInput;
 
-    private static Vector2 CheckboxSize = ImGuiHelpers.ScaledVector2(20f);
+    private static Vector2 CheckboxSize = ScaledVector2(20f);
 
     private static readonly Dictionary<nint, CustomizeHistoryEntry> CustomizeHistory = [];
 
@@ -60,7 +60,7 @@ public unsafe class CustomizeGameObject : DailyModuleBase
     {
         TargetInfoPreviewUI();
 
-        var tableSize = (ImGui.GetContentRegionAvail() - ImGuiHelpers.ScaledVector2(100f)) with { Y = 0 };
+        var tableSize = (ImGui.GetContentRegionAvail() - ScaledVector2(100f)) with { Y = 0 };
         if (ImGui.BeginTable("###ConfigTable", 7, ImGuiTableFlags.BordersInner, tableSize))
         {
             ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
@@ -82,7 +82,7 @@ public unsafe class CustomizeGameObject : DailyModuleBase
                 CustomizePresetEditorUI(ref TypeInput, ref ValueInput, ref ScaleInput, ref ScaleVFXInput,
                                         ref NoteInput);
 
-                ImGuiHelpers.ScaledDummy(1f);
+                ScaledDummy(1f);
 
                 var buttonSize = new Vector2(ImGui.GetContentRegionAvail().X,
                                              24f * GlobalFontScale);

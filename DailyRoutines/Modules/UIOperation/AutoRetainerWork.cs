@@ -80,8 +80,8 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
     public override void Init()
     {
-        ChildSizeLeft = ImGuiHelpers.ScaledVector2(200, 350);
-        ChildSizeRight = ImGuiHelpers.ScaledVector2(450, 350);
+        ChildSizeLeft = ScaledVector2(200, 350);
+        ChildSizeRight = ScaledVector2(450, 350);
 
         ItemsSellPrice ??= LuminaCache.Get<Item>()
                                       .Where(x => !string.IsNullOrEmpty(x.Name.RawString) && x.PriceLow != 0)
@@ -239,7 +239,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 ImGui.Separator();
                 foreach (var (itemName, item) in _ItemNames)
                     if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(item.Icon).ImGuiHandle,
-                                                        ImGuiHelpers.ScaledVector2(24f), itemName,
+                                                        ScaledVector2(24f), itemName,
                                                         item.RowId == NewConfigItemID,
                                                         ImGuiSelectableFlags.DontClosePopups))
                         NewConfigItemID = item.RowId;
@@ -317,7 +317,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
         if (ImGui.BeginChild("ItemConfigEditorChild", ChildSizeRight, true))
         {
             // 物品基本信息展示
-            ImGui.Image(itemLogo.ImGuiHandle, ImGuiHelpers.ScaledVector2(32));
+            ImGui.Image(itemLogo.ImGuiHandle, ScaledVector2(32));
 
             ImGui.SameLine();
             ImGui.SetWindowFontScale(1.3f * GlobalFontScale);
@@ -381,7 +381,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
             ImGui.EndGroup();
 
-            ImGui.Dummy(ImGuiHelpers.ScaledVector2(10f));
+            ImGui.Dummy(ScaledVector2(10f));
 
             // 最低可接受价格
             var originalMin = itemConfig.PriceMinimum;
@@ -447,7 +447,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 SaveConfig(ModuleConfig);
             }
 
-            ImGui.Dummy(ImGuiHelpers.ScaledVector2(10f));
+            ImGui.Dummy(ScaledVector2(10f));
 
             // 意外情况
             ImGui.BeginGroup();

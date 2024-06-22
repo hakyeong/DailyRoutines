@@ -69,7 +69,7 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
     };
 
     private static readonly Dictionary<uint, IDalamudTextureWrap> ZoneTextures = [];
-    private static readonly Vector2 FateProgressUISize = ImGuiHelpers.ScaledVector2(333.5f, 112f);
+    private static readonly Vector2 FateProgressUISize = ScaledVector2(333.5f, 112f);
 
     private static IDalamudTextureWrap? BicolorGemIcon;
     private static int BicolorGemAmount;
@@ -128,7 +128,7 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
                                { X = ImGui.GetWindowSize().X - BicolorGemComponentSize.X - (ImGui.GetStyle().ItemSpacing.X * 2) });
         ImGui.BeginGroup();
 
-        ImGui.Image(BicolorGemIcon.ImGuiHandle, ImGuiHelpers.ScaledVector2(24f));
+        ImGui.Image(BicolorGemIcon.ImGuiHandle, ScaledVector2(24f));
 
         ImGui.SameLine();
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 2f);
@@ -197,8 +197,8 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
         var originalCursorPos = ImGui.GetCursorPos();
         if (ZoneTextures.TryGetValue(bgCounter, out var textureWarp))
         {
-            ImGui.SetCursorPos(originalCursorPos - ImGuiHelpers.ScaledVector2(10f, 4));
-            ImGui.Image(textureWarp.ImGuiHandle, ImGui.GetWindowSize() + ImGuiHelpers.ScaledVector2(10f, 4f));
+            ImGui.SetCursorPos(originalCursorPos - ScaledVector2(10f, 4));
+            ImGui.Image(textureWarp.ImGuiHandle, ImGui.GetWindowSize() + ScaledVector2(10f, 4f));
         }
         ImGui.SetCursorPos(originalCursorPos);
     }

@@ -90,7 +90,7 @@ public unsafe class AutoNotifySPPlayers : DailyModuleBase
                 {
                     ImGui.PushID($"{statusPair.Value.Name.RawString}_{statusPair.Value.RowId}");
                     if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(statusPair.Value.Icon).ImGuiHandle,
-                                                        ImGuiHelpers.ScaledVector2(20f),
+                                                        ScaledVector2(20f),
                                                         statusPair.Value.Name.RawString,
                                                         SelectedOnlineStatus.Contains(statusPair.Key),
                                                         ImGuiSelectableFlags.DontClosePopups))

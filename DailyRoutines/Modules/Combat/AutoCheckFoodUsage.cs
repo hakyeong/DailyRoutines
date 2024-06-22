@@ -34,7 +34,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
     private static bool SelectItemIsHQ = true;
     private static string ZoneSearch = string.Empty;
 
-    private static Vector2 CheckboxSize = ImGuiHelpers.ScaledVector2(20f);
+    private static Vector2 CheckboxSize = ScaledVector2(20f);
 
     public override void Init()
     {
@@ -86,7 +86,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
 
         ImGui.Unindent();
 
-        var tableSize = (ImGui.GetContentRegionAvail() - ImGuiHelpers.ScaledVector2(100f)) with { Y = 0 };
+        var tableSize = (ImGui.GetContentRegionAvail() - ScaledVector2(100f)) with { Y = 0 };
         if (ImGui.BeginTable("FoodPreset", 4, ImGuiTableFlags.Borders, tableSize))
         {
             ImGui.TableSetupColumn("添加", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
@@ -118,7 +118,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
                     {
                         var icon = ImageHelper.GetIcon(x.Icon, SelectItemIsHQ ? ITextureProvider.IconFlags.ItemHighQuality : ITextureProvider.IconFlags.None);
 
-                        if (ImGuiOm.SelectableImageWithText(icon.ImGuiHandle, ImGuiHelpers.ScaledVector2(20f),
+                        if (ImGuiOm.SelectableImageWithText(icon.ImGuiHandle, ScaledVector2(20f),
                                                             x.Name, x.RowId == SelectedItem,
                                                             ImGuiSelectableFlags.DontClosePopups))
                         {

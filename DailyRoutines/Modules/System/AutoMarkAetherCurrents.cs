@@ -215,7 +215,7 @@ public unsafe class AutoMarkAetherCurrents : DailyModuleBase
         ImGui.EndGroup();
 
         ImGui.SameLine();
-        ImGui.Dummy(ImGuiHelpers.ScaledVector2(3f));
+        ImGui.Dummy(ScaledVector2(3f));
 
         ImGui.SameLine();
         ImGui.BeginGroup();

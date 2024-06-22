@@ -56,7 +56,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
         if (InstalledIME.Count <= 1)
             ImGui.TextColored(ImGuiColors.DalamudOrange, Service.Lang.GetText("AutoSwitchIMEWhenInput-InadequateIMEHelp"));
 
-        var tableSize = ((ImGui.GetContentRegionAvail() / 2) - ImGuiHelpers.ScaledVector2(20f)) with { Y = 0 };
+        var tableSize = ((ImGui.GetContentRegionAvail() / 2) - ScaledVector2(20f)) with { Y = 0 };
         if (ImGui.BeginTable("IMESelectTable", 4, ImGuiTableFlags.Borders, tableSize))
         {
             ImGui.TableSetupColumn("单选框", ImGuiTableColumnFlags.WidthFixed, 20f * GlobalFontScale);

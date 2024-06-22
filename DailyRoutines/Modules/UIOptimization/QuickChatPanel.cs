@@ -658,7 +658,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                                                        ? ITextureProvider.IconFlags.ItemHighQuality
                                                        : ITextureProvider.IconFlags.None).ImGuiHandle;
 
-                    if (ImGuiOm.SelectableImageWithText(icon, ImGuiHelpers.ScaledVector2(24f), itemName, false))
+                    if (ImGuiOm.SelectableImageWithText(icon, ScaledVector2(24f), itemName, false))
                         Service.Chat.Print(new SeStringBuilder().AddItemLink(item.RowId, isConflictKeyHolding).Build());
                 }
 

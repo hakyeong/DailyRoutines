@@ -51,7 +51,7 @@ public class AutoMJIGather : DailyModuleBase
     private static Dictionary<string, uint> GatheringItemsIcon = [];
     private static List<Vector3> DataCollectWaypoints = [];
 
-    private static Vector2 CheckboxSize = ImGuiHelpers.ScaledVector2(20f);
+    private static Vector2 CheckboxSize = ScaledVector2(20f);
 
     public override void Init()
     {
@@ -139,7 +139,7 @@ public class AutoMJIGather : DailyModuleBase
 
         ImGui.Spacing();
 
-        var tableSize = ((ImGui.GetContentRegionAvail() / 3) + ImGuiHelpers.ScaledVector2(50f)) with { Y = 0 };
+        var tableSize = ((ImGui.GetContentRegionAvail() / 3) + ScaledVector2(50f)) with { Y = 0 };
         if (ImGui.BeginTable("GatherPointsTable1", 3, ImGuiTableFlags.Borders, tableSize))
         {
             ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
@@ -171,7 +171,7 @@ public class AutoMJIGather : DailyModuleBase
                 ImGui.EndDisabled();
 
                 ImGui.TableNextColumn();
-                ImGui.Image(gatherPoint.MapIcon.Value.ImGuiHandle, ImGuiHelpers.ScaledVector2(20f));
+                ImGui.Image(gatherPoint.MapIcon.Value.ImGuiHandle, ScaledVector2(20f));
 
                 ImGui.SameLine();
                 if (ImGui.Selectable(gatherPoint.Name, isEnabled, ImGuiSelectableFlags.SpanAllColumns))
@@ -219,7 +219,7 @@ public class AutoMJIGather : DailyModuleBase
                 ImGui.EndDisabled();
 
                 ImGui.TableNextColumn();
-                ImGui.Image(gatherPoint.MapIcon.Value.ImGuiHandle, ImGuiHelpers.ScaledVector2(20f));
+                ImGui.Image(gatherPoint.MapIcon.Value.ImGuiHandle, ScaledVector2(20f));
 
                 ImGui.SameLine();
                 if (ImGui.Selectable(gatherPoint.Name, isEnabled, ImGuiSelectableFlags.SpanAllColumns))
