@@ -57,6 +57,7 @@ public class FontHelper
             var task = CreateFontHandle(size);
             fontHandleTasks[size] = task;
             await task;
+            fontHandleTasks.TryRemove(size, out _);
         }
     }
 
@@ -130,12 +131,14 @@ public class FontHelper
 
     #region Lazy
 
-    private static Lazy<IFontAtlas> fontAtlas = new(() => Service.PluginInterface.UiBuilder.CreateFontAtlas(FontAtlasAutoRebuildMode.OnNewFrame));
+    private static readonly Lazy<IFontAtlas> fontAtlas =
+        new(() => Service.PluginInterface.UiBuilder.CreateFontAtlas(FontAtlasAutoRebuildMode.Async));
 
-    private static Lazy<ushort[]> fontRange = new(() => BuildRange(null, ImGui.GetIO().Fonts.GetGlyphRangesChineseFull(),
-                                                                   ImGui.GetIO().Fonts.GetGlyphRangesDefault()));
+    private static readonly Lazy<ushort[]> fontRange = new(() => BuildRange(
+                                                               null, ImGui.GetIO().Fonts.GetGlyphRangesChineseFull(),
+                                                               ImGui.GetIO().Fonts.GetGlyphRangesDefault()));
 
-    private static Lazy<IFontHandle> defaultFont = new(() => Service.PluginInterface.UiBuilder.DefaultFontHandle);
+    private static readonly Lazy<IFontHandle> defaultFont = new(() => Service.PluginInterface.UiBuilder.DefaultFontHandle);
 
     #endregion
 }

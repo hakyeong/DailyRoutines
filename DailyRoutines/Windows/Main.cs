@@ -16,7 +16,6 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
-using Dalamud.Interface.ManagedFontAtlas;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
@@ -1056,6 +1055,12 @@ public class MainSettings
             Service.Config.Save();
         }
 
+        if (FontHelper.IsAnyFontOnBuilding())
+        {
+            ImGui.SameLine();
+            ImGui.TextColored(ImGuiColors.DalamudOrange, "字体重建中...");
+        }
+
         // 默认页面
         ImGuiOm.TextIcon(FontAwesomeIcon.Home, Service.Lang.GetText("Settings-DefaultHomePage"));
 
@@ -1108,6 +1113,9 @@ public class MainSettings
             await GetGameNews();
             TotalDownloadCounts = await GetTotalDownloadsAsync();
             LatestVersionInfo = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
+
+            for (var i = 0.6f; i < 1.6f; i += 0.2f)
+                FontHelper.GetUIFont(i);
         });
     }
 
