@@ -49,7 +49,7 @@ public unsafe class AutoPunchingMachine : DailyModuleBase
             return true;
         });
 
-        TaskHelper.DelayNext(300);
+        TaskHelper.DelayNext(400);
         TaskHelper.Enqueue(() =>
         {
             var agent = AgentModule.Instance()->GetAgentByInternalId(AgentId.GoldSaucerMiniGame);
