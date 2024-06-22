@@ -1,24 +1,32 @@
-using System;
-using ClickLib;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
-using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
-using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoCACTitle", "AutoCACDescription", ModuleCategories.金碟)]
-public class AutoPunchingMachine : DailyModuleBase
+public unsafe class AutoPunchingMachine : DailyModuleBase
 {
+    private delegate nint AgentMiniGameReceiveEventDelegate(AgentInterface* agent, nint a2, nint a3, uint a4, int a5);
+    [Signature("48 89 74 24 ?? 48 89 7C 24 ?? 41 56 48 83 EC ?? 48 8B F9 45 8B D9")]
+    private static AgentMiniGameReceiveEventDelegate? AgentMiniGameReceiveEvent;
+
+    private delegate void GameSuccessDelegate(AgentInterface* agent, int a2);
+    [Signature("E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? BA ?? ?? ?? ?? 49 8B CE E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 41 80 BE ?? ?? ?? ?? ?? 0F 84")]
+    private static GameSuccessDelegate? GameSuccess;
+
     public override void Init()
     {
-        TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
+        Service.Hook.InitializeFromAttributes(this);
+
+        TaskHelper ??= new TaskHelper();
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "PunchingMachine", OnAddonSetup);
     }
 
@@ -28,43 +36,36 @@ public class AutoPunchingMachine : DailyModuleBase
     {
         if (InterruptByConflictKey()) return;
 
-        TaskHelper.Enqueue(WaitSelectStringAddon);
-        TaskHelper.Enqueue(ClickGameButton);
-    }
+        TaskHelper.Enqueue(() =>
+        {
+            if (!args.Addon.ToAtkUnitBase()->IsVisible) return false;
 
-    private unsafe bool? WaitSelectStringAddon()
-    {
-        if (InterruptByConflictKey()) return true;
+            var agent = AgentModule.Instance()->GetAgentByInternalId(AgentId.GoldSaucerMiniGame);
+            var a2 = 1;
+            var a3 = 0;
+            const uint a4 = 1U;
+            const int a5 = 2;
+            AgentMiniGameReceiveEvent(agent, (nint)(&a2), (nint)(&a3), a4, a5);
+            return true;
+        });
 
-        return TryGetAddonByName<AddonSelectString>("SelectString", out var addon) &&
-               IsAddonAndNodesReady(&addon->AtkUnitBase) && Click.TrySendClick("select_string1");
-    }
-
-    private unsafe bool? ClickGameButton()
-    {
-        if (InterruptByConflictKey()) return true;
-
-        if (!TryGetAddonByName<AtkUnitBase>("PunchingMachine", out var addon) || !IsAddonAndNodesReady(addon))
-            return false;
-
-        var button = addon->GetButtonNodeById(23);
-        if (button == null || !button->IsEnabled) return false;
-
-        addon->IsVisible = false;
-
-        ClickPunchingMachine.Using((nint)addon).Play(new Random().Next(1700, 1999));
+        TaskHelper.DelayNext(300);
+        TaskHelper.Enqueue(() =>
+        {
+            var agent = AgentModule.Instance()->GetAgentByInternalId(AgentId.GoldSaucerMiniGame);
+            GameSuccess(agent, 16);
+        });
 
         TaskHelper.Enqueue(StartAnotherRound);
-        return true;
     }
 
-    private unsafe bool? StartAnotherRound()
+    private bool? StartAnotherRound()
     {
         if (InterruptByConflictKey()) return true;
 
         if (Flags.OccupiedInEvent) return false;
         var machineTarget = Service.Target.PreviousTarget;
-        var machine = machineTarget.Name.ExtractText().Contains("重击伽美什") ? (GameObject*)machineTarget.Address : null;
+        var machine = machineTarget.Name.TextValue.Contains("重击伽美什") ? (GameObject*)machineTarget.Address : null;
 
         if (machine != null)
         {
