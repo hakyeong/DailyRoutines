@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using DailyRoutines.Managers;
-using Dalamud.Interface.GameFonts;
 using Dalamud.Interface.ManagedFontAtlas;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
@@ -12,44 +14,83 @@ namespace DailyRoutines.Helpers;
 
 public class FontHelper
 {
-    public static IFontAtlas  FontAtlas => fontAtlas.Value;
-    public static IFontHandle Icon      => Service.PluginInterface.UiBuilder.IconFontHandle;
+    public static IFontAtlas  FontAtlas   => fontAtlas.Value;
+    public static IFontHandle DefaultFont => defaultFont.Value;
+    public static ushort[]    FontRange   => fontRange.Value;
+    public static IFontHandle Icon        => Service.PluginInterface.UiBuilder.IconFontHandle;
 
-    public static IFontHandle UIFont { get; set; } = null!;
-    private static float OldFontSize { get; set; }
+    private static readonly ConcurrentQueue<float> creationQueue = [];
+    private static readonly ConcurrentDictionary<float, IFontHandle> fontHandles = [];
+    private static readonly ConcurrentDictionary<float, Task<IFontHandle>> fontHandleTasks = [];
 
-    private static IFontHandle ConstructFontHandle(GameFontFamilyAndSize fontInfo)
-        => FontAtlas.NewGameFontHandle(new GameFontStyle(fontInfo));
+    public static IFontHandle UIFont    => GetUIFont(1.0f);
+    public static IFontHandle UIFont160 => GetUIFont(1.6f);
+    public static IFontHandle UIFont140 => GetUIFont(1.4f);
+    public static IFontHandle UIFont120 => GetUIFont(1.2f);
+    public static IFontHandle UIFont80  => GetUIFont(0.8f);
+    public static IFontHandle UIFont60  => GetUIFont(0.6f);
 
-    public static void RefreshUIFont()
+    public static IFontHandle GetUIFont(float scale)
     {
-        if (OldFontSize == Service.Config.InterfaceFontSize) return;
-        OldFontSize = Service.Config.InterfaceFontSize;
-
-        string path;
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        var actualSize = Service.Config.InterfaceFontSize * scale;
+        if (!fontHandles.TryGetValue(actualSize, out var handle))
         {
-            path = Path.Join("C:\\Windows\\Fonts", "msyh.ttc");
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            path = "/System/Library/Fonts/PingFang.ttc";
-        }
-        else
-        {
-            throw new PlatformNotSupportedException("不支持的操作系统");
-        }
-
-        UIFont = FontAtlas.NewDelegateFontHandle(e =>
-        {
-            e.OnPreBuild(tk => tk.AddFontFromFile(path, new()
+            if (!fontHandleTasks.TryGetValue(actualSize, out _))
             {
-                SizePt = Service.Config.InterfaceFontSize,
-                PixelSnapH = true,
-                GlyphRanges = BuildRange(null, [ImGui.GetIO().Fonts.GetGlyphRangesChineseFull(), ImGui.GetIO().Fonts.GetGlyphRangesDefault()]),
-            }));
+                if (!creationQueue.Contains(actualSize))
+                {
+                    creationQueue.Enqueue(actualSize);
+                    _ = ProcessFontCreationQueueAsync();
+                }
+            }
+
+            return DefaultFont;
+        }
+
+        return handle;
+    }
+
+    private static async Task ProcessFontCreationQueueAsync()
+    {
+        while (creationQueue.TryDequeue(out var size))
+        {
+            var task = CreateFontHandle(size);
+            fontHandleTasks[size] = task;
+            await task;
+        }
+    }
+
+    private static Task<IFontHandle> CreateFontHandle(float size)
+    {
+        var path = GetFontPath();
+        var task = Task.Run(() =>
+        {
+            var handle = FontAtlas.NewDelegateFontHandle(e =>
+            {
+                e.OnPreBuild(tk => tk.AddFontFromFile(path, new()
+                {
+                    SizePt = size,
+                    PixelSnapH = true,
+                    GlyphRanges = FontRange,
+                }));
+            });
+
+            fontHandles[size] = handle;
+            return handle;
         });
+
+        return task;
+    }
+
+    private static string GetFontPath()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return Path.Join("C:\\Windows\\Fonts", "msyh.ttc");
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            return "/System/Library/Fonts/PingFang.ttc";
+
+        throw new PlatformNotSupportedException("不支持的操作系统");
     }
 
     public static unsafe ushort[] BuildRange(IReadOnlyList<ushort>? chars, params nint[] ranges)
@@ -72,6 +113,7 @@ public class FontHelper
 
         for (ushort i = 'A'; i <= 'Z'; i++)
             builder.AddChar(i);
+
         for (ushort i = 'a'; i <= 'z'; i++)
             builder.AddChar(i);
 
@@ -86,49 +128,14 @@ public class FontHelper
         return builder.BuildRangesToArray();
     }
 
-    public static unsafe ImFontPtr GetFontPtr(float size, float scale = 0)
-    {
-        var style = new GameFontStyle(GameFontStyle.GetRecommendedFamilyAndSize(GameFontFamily.Axis, size));
-        var handle = FontAtlas.NewGameFontHandle(style);
-
-        try
-        {
-            var font = handle.Lock().ImFont;
-
-            if ((nint)font.NativePtr == nint.Zero)
-            {
-                return ImGui.GetFont();
-            }
-
-            font.Scale = scale == 0 ? size / font.FontSize : scale;
-            return font;
-        }
-        catch
-        {
-            return ImGui.GetFont();
-        }
-    }
-
-    public static IFontHandle GetFontHandle(float size, float scale = 0)
-    {
-        var style = new GameFontStyle(GameFontFamily.Axis, size);
-        var handle = FontAtlas.NewGameFontHandle(style);
-        
-        return handle;
-    }
-
     #region Lazy
 
-    private static Lazy<IFontAtlas> fontAtlas =
-        new(() => Service.PluginInterface.UiBuilder.CreateFontAtlas(FontAtlasAutoRebuildMode.OnNewFrame));
+    private static Lazy<IFontAtlas> fontAtlas = new(() => Service.PluginInterface.UiBuilder.CreateFontAtlas(FontAtlasAutoRebuildMode.OnNewFrame));
 
-    private static Lazy<IFontHandle> axis96 = new(() => ConstructFontHandle(GameFontFamilyAndSize.Axis96));
+    private static Lazy<ushort[]> fontRange = new(() => BuildRange(null, ImGui.GetIO().Fonts.GetGlyphRangesChineseFull(),
+                                                                   ImGui.GetIO().Fonts.GetGlyphRangesDefault()));
 
-    private static Lazy<IFontHandle> axis12 = new(() => ConstructFontHandle(GameFontFamilyAndSize.Axis12));
-
-    private static Lazy<IFontHandle> axis14 = new(() => ConstructFontHandle(GameFontFamilyAndSize.Axis14));
-
-    private static Lazy<IFontHandle> axis18 = new(() => ConstructFontHandle(GameFontFamilyAndSize.Axis18));
+    private static Lazy<IFontHandle> defaultFont = new(() => Service.PluginInterface.UiBuilder.DefaultFontHandle);
 
     #endregion
 }

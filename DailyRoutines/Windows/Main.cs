@@ -80,15 +80,8 @@ public class Main : Window, IDisposable
                 "Daily Routines - 主界面 (本插件不對國際服提供支持 / This Plugin ONLY Provides Help For CN Client)###DailyRoutines-Main";
         }
 
-
         RefreshModuleInfo();
-        FontHelper.RefreshUIFont();
         MainSettings.Init();
-    }
-
-    public override void OnOpen()
-    {
-        FontHelper.RefreshUIFont();
     }
 
     public override void Draw()
@@ -144,16 +137,16 @@ public class Main : Window, IDisposable
         ImGuiHelpers.CenterCursorFor(72f * ImGuiHelpers.GlobalScale);
         ImGui.Image(PresetData.Icon.ImGuiHandle, ImGuiHelpers.ScaledVector2(72f));
 
-        ImGui.SetWindowFontScale(1.4f);
+        using (FontHelper.UIFont140.Push())
+        {
+            ImGuiHelpers.CenterCursorForText("Daily");
+            ImGuiOm.Text("Daily");
 
-        ImGuiHelpers.CenterCursorForText("Daily");
-        ImGuiOm.Text("Daily");
+            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (8f * ImGuiHelpers.GlobalScale));
+            ImGuiHelpers.CenterCursorForText("Routines");
+            ImGuiOm.Text("Routines");
+        }
 
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (8f * ImGuiHelpers.GlobalScale));
-        ImGuiHelpers.CenterCursorForText("Routines");
-        ImGuiOm.Text("Routines");
-
-        ImGui.SetWindowFontScale(1f);
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (4f * ImGuiHelpers.GlobalScale));
         ImGuiHelpers.CenterCursorForText($"[{Plugin.Version}]");
         if (Plugin.Version < MainSettings.LatestVersionInfo.Version)
@@ -211,49 +204,50 @@ public class Main : Window, IDisposable
 
     private static void DrawCategoriesComponent()
     {
-        ImGuiHelpers.CenterCursorFor(CategoriesComponentSize.X);
-
-        var selectedModule = ModuleCategories.无;
-        if (SelectedTab > 100)
-            selectedModule = (ModuleCategories)(SelectedTab % 100);
-
-        ImGui.BeginGroup();
-        ImGui.SetWindowFontScale(1.1f);
-
-        var buttonSize = new Vector2(156f * ImGuiHelpers.GlobalScale, ImGui.CalcTextSize("你好").Y);
-
-        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
-        ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
-        ImGui.PushStyleColor(ImGuiCol.Button, SelectedTab == 3 ? ImGui.ColorConvertFloat4ToU32(ImGuiColors.TankBlue) : ImGui.GetColorU32(ImGuiCol.ChildBg));
-        if (ImGuiOm.ButtonIconWithText(FontAwesomeIcon.None, Service.Lang.GetText("Favorite"), buttonSize))
+        using (FontHelper.UIFont120.Push())
         {
-            SearchString = string.Empty;
-            SelectedTab = 3;
-        }
-        ImGui.PopStyleColor(3);
+            ImGuiHelpers.CenterCursorFor(CategoriesComponentSize.X);
 
-        ImGuiHelpers.ScaledDummy(1f, 12f);
+            var selectedModule = ModuleCategories.无;
+            if (SelectedTab > 100)
+                selectedModule = (ModuleCategories)(SelectedTab % 100);
 
-        foreach (var category in Enum.GetValues<ModuleCategories>())
-        {
-            if (category == ModuleCategories.无) continue;
+            ImGui.BeginGroup();
+
+            var buttonSize = new Vector2(156f * ImGuiHelpers.GlobalScale, ImGui.CalcTextSize("你好").Y);
 
             ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
             ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
-            ImGui.PushStyleColor(ImGuiCol.Button, selectedModule == category ? ImGui.ColorConvertFloat4ToU32(ImGuiColors.TankBlue) : ImGui.GetColorU32(ImGuiCol.ChildBg));
-
-            if (ImGuiOm.ButtonIconWithText(FontAwesomeIcon.None, category.ToString(), buttonSize))
+            ImGui.PushStyleColor(ImGuiCol.Button, SelectedTab == 3 ? ImGui.ColorConvertFloat4ToU32(ImGuiColors.TankBlue) : ImGui.GetColorU32(ImGuiCol.ChildBg));
+            if (ImGuiOm.ButtonIconWithText(FontAwesomeIcon.None, Service.Lang.GetText("Favorite"), buttonSize))
             {
                 SearchString = string.Empty;
-                SelectedTab = 100 + (int)category;
+                SelectedTab = 3;
             }
-
             ImGui.PopStyleColor(3);
-        }
-        ImGui.SetWindowFontScale(1f);
-        ImGui.EndGroup();
 
-        CategoriesComponentSize = ImGui.GetItemRectSize();
+            ImGuiHelpers.ScaledDummy(1f, 12f);
+
+            foreach (var category in Enum.GetValues<ModuleCategories>())
+            {
+                if (category == ModuleCategories.无) continue;
+
+                ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
+                ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
+                ImGui.PushStyleColor(ImGuiCol.Button, selectedModule == category ? ImGui.ColorConvertFloat4ToU32(ImGuiColors.TankBlue) : ImGui.GetColorU32(ImGuiCol.ChildBg));
+
+                if (ImGuiOm.ButtonIconWithText(FontAwesomeIcon.None, category.ToString(), buttonSize))
+                {
+                    SearchString = string.Empty;
+                    SelectedTab = 100 + (int)category;
+                }
+
+                ImGui.PopStyleColor(3);
+            }
+            ImGui.EndGroup();
+
+            CategoriesComponentSize = ImGui.GetItemRectSize();
+        }
     }
 
     #endregion
@@ -263,57 +257,58 @@ public class Main : Window, IDisposable
     private static void DrawUpperTabComponent()
     {
         UpperTabComponentSize.X = ImGui.GetContentRegionAvail().X;
-        if (ImGui.BeginChild("ChildUpRight", UpperTabComponentSize, false, ChildFlags | ImGuiWindowFlags.NoScrollWithMouse))
+        using (FontHelper.UIFont120.Push())
         {
-            ImGui.SetWindowFontScale(1.2f);
-            ImGuiHelpers.ScaledDummy(1f, 8f);
+            if (ImGui.BeginChild("ChildUpRight", UpperTabComponentSize, false, ChildFlags | ImGuiWindowFlags.NoScrollWithMouse))
+            {
+                ImGuiHelpers.ScaledDummy(1f, 8f);
 
-            var startCursorPos = ImGui.GetCursorPos();
-            var emptyString = string.Empty;
+                var startCursorPos = ImGui.GetCursorPos();
+                var emptyString = string.Empty;
 
-            // 真的输入框
-            ImGui.SetCursorPos(startCursorPos with { X = startCursorPos.X + (36f * ImGuiHelpers.GlobalScale) });
-            ImGui.SetNextItemWidth(
-                ImGui.GetContentRegionAvail().X - (24f * ImGuiHelpers.GlobalScale) - (ImGui.GetStyle().ItemSpacing.X * 2));
-            ImGui.PushStyleColor(ImGuiCol.FrameBg, ImGui.GetColorU32(ImGuiCol.ChildBg));
-            ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudWhite);
-            ImGui.InputText("###Search", ref SearchString, 128);
-            ImGui.PopStyleColor(2);
+                // 真的输入框
+                ImGui.SetCursorPos(startCursorPos with { X = startCursorPos.X + (36f * ImGuiHelpers.GlobalScale) });
+                ImGui.SetNextItemWidth(
+                    ImGui.GetContentRegionAvail().X - (24f * ImGuiHelpers.GlobalScale) - (ImGui.GetStyle().ItemSpacing.X * 2));
+                ImGui.PushStyleColor(ImGuiCol.FrameBg, ImGui.GetColorU32(ImGuiCol.ChildBg));
+                ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudWhite);
+                ImGui.InputText("###Search", ref SearchString, 128);
+                ImGui.PopStyleColor(2);
 
-            // 假的输入框
-            ImGui.SetCursorPos(startCursorPos);
-            ImGui.SetNextItemWidth(
-                ImGui.GetContentRegionAvail().X - SettingsButtonSize.X - (ImGui.GetStyle().ItemSpacing.X * 2));
-            ImGui.BeginDisabled();
-            ImGui.InputText("###SearchDisplay", ref emptyString, 0, ImGuiInputTextFlags.ReadOnly);
-            ImGui.EndDisabled();
+                // 假的输入框
+                ImGui.SetCursorPos(startCursorPos);
+                ImGui.SetNextItemWidth(
+                    ImGui.GetContentRegionAvail().X - SettingsButtonSize.X - (ImGui.GetStyle().ItemSpacing.X * 2));
+                ImGui.BeginDisabled();
+                ImGui.InputText("###SearchDisplay", ref emptyString, 0, ImGuiInputTextFlags.ReadOnly);
+                ImGui.EndDisabled();
 
-            var inputHeight = ImGui.GetItemRectSize().Y;
+                var inputHeight = ImGui.GetItemRectSize().Y;
 
-            // 设置按钮
-            ImGui.SameLine();
-            ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.ChildBg));
-            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
-            ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
-            if (ImGuiOm.ButtonIcon("Settings", FontAwesomeIcon.Cog,
-                                   new(32f * ImGuiHelpers.GlobalScale, inputHeight), 
-                                   Service.Lang.GetText("Settings")))
-                SelectedTab = 1;
-            ImGui.PopStyleColor(3);
-            SettingsButtonSize = ImGui.GetItemRectSize();
+                // 设置按钮
+                ImGui.SameLine();
+                ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.ChildBg));
+                ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
+                ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
+                if (ImGuiOm.ButtonIcon("Settings", FontAwesomeIcon.Cog,
+                                       new(32f * ImGuiHelpers.GlobalScale, inputHeight),
+                                       Service.Lang.GetText("Settings")))
+                    SelectedTab = 1;
+                ImGui.PopStyleColor(3);
+                SettingsButtonSize = ImGui.GetItemRectSize();
 
-            UpperTabComponentSize.Y = ImGui.GetItemRectSize().Y * 2;
+                UpperTabComponentSize.Y = ImGui.GetItemRectSize().Y * 2;
 
-            // 搜素图标
-            ImGui.AlignTextToFramePadding();
-            ImGui.SameLine();
-            ImGui.SetCursorPos(new(startCursorPos.X + 8f * ImGuiHelpers.GlobalScale, startCursorPos.Y + 4f * ImGuiHelpers.GlobalScale));
+                // 搜素图标
+                ImGui.AlignTextToFramePadding();
+                ImGui.SameLine();
+                ImGui.SetCursorPos(new(startCursorPos.X + 8f * ImGuiHelpers.GlobalScale, startCursorPos.Y + 4f * ImGuiHelpers.GlobalScale));
 
-            using var font = ImRaii.PushFont(UiBuilder.IconFont);
-            ImGui.Text(FontAwesomeIcon.Search.ToIconString());
+                using var font = ImRaii.PushFont(UiBuilder.IconFont);
+                ImGui.Text(FontAwesomeIcon.Search.ToIconString());
 
-            ImGui.SetWindowFontScale(1f);
-            ImGui.EndChild();
+                ImGui.EndChild();
+            }
         }
     }
 
@@ -364,13 +359,15 @@ public class Main : Window, IDisposable
 
         ImGui.SameLine();
         ImGui.BeginGroup();
-        ImGui.SetWindowFontScale(1.6f);
-        ImGuiOm.Text("Daily Routines");
-        ImGui.SetWindowFontScale(0.9f);
+        using (FontHelper.UIFont160.Push())
+        {
+            ImGuiOm.Text("Daily Routines");
+        }
+
         ImGuiOm.Text("Help With Some Boring Tasks");
+
         ImGui.EndGroup();
 
-        ImGui.SetWindowFontScale(1f);
         ImGui.EndGroup();
 
         ImGui.Dummy(new(1));
@@ -417,28 +414,24 @@ public class Main : Window, IDisposable
         var world = Service.ClientState.LocalPlayer?.HomeWorld.GameData?.Name?.RawString ?? "以太空间";
         var name = Service.ClientState.LocalPlayer?.Name.TextValue ?? "光之战士";
 
-        ImGui.SetWindowFontScale(1.6f);
-        var greetingObject = ImGui.CalcTextSize($"{world}, {name}");
-        ImGui.SetWindowFontScale(1f);
-
-        if (ImGui.BeginChild("HomePage_Greeting", ChildGreetingSize, false, ChildFlags))
+        using (FontHelper.UIFont140.Push())
         {
-            ImGui.BeginGroup();
-            ImGui.SetWindowFontScale(1.2f);
-            var greetingText = $"{GetGreetingByTime()} !";
-            var greetingTextSize = ImGui.CalcTextSize(greetingText);
-            ImGui.SetCursorPosX(greetingObject.X - greetingTextSize.X - ImGui.GetStyle().ItemSpacing.X);
-            ImGui.Text(greetingText);
-            ImGui.SetWindowFontScale(1f);
+            var greetingObject = ImGui.CalcTextSize($"{world}, {name}");
+            if (ImGui.BeginChild("HomePage_Greeting", ChildGreetingSize, false, ChildFlags))
+            {
+                ImGui.BeginGroup();
+                var greetingText = $"{GetGreetingByTime()} !";
+                var greetingTextSize = ImGui.CalcTextSize(greetingText);
+                ImGui.SetCursorPosX(greetingObject.X - greetingTextSize.X - ImGui.GetStyle().ItemSpacing.X);
+                ImGui.Text(greetingText);
 
-            ImGui.SetWindowFontScale(1.6f);
-            ImGui.Text($"{world}, {name}");
-            ImGui.SetWindowFontScale(1f);
-            ImGui.EndGroup();
+                ImGui.Text($"{world}, {name}");
+                ImGui.EndGroup();
 
-            ChildGreetingSize = ImGui.GetItemRectSize();
+                ChildGreetingSize = ImGui.GetItemRectSize();
 
-            ImGui.EndChild();
+                ImGui.EndChild();
+            }
         }
     }
 
@@ -446,84 +439,86 @@ public class Main : Window, IDisposable
     {
         if (MainSettings.GameCalendars is not { Count: > 0 }) return;
 
-        ImGui.SetWindowFontScale(0.8f);
-        if (ImGui.BeginChild("HomePage_GameEvents", ChildGameCalendarsSize))
+        using (FontHelper.UIFont80.Push())
         {
-            ChildGameCalendarsSize.X = ImageCarousel.ChildSize.X;
-            ImGui.BeginGroup();
-            foreach (var activity in MainSettings.GameCalendars)
+            if (ImGui.BeginChild("HomePage_GameEvents", ChildGameCalendarsSize))
             {
-                if (Service.Config.IsHideOutdatedEvent && activity.State == 2) continue;
-                var statusStr = activity.State == 2 ? Service.Lang.GetText("GameCalendar-EventEnded") : "";
-                ImGui.PushStyleColor(ImGuiCol.Button, activity.Color);
-                ImGui.BeginDisabled(activity.State == 2);
-                if (ImGuiOm.ButtonCompact($"{activity.Url}", $"{activity.Name} {statusStr}"))
-                    Util.OpenLink($"{activity.Url}");
-
-                ImGui.EndDisabled();
-                ImGui.PopStyleColor();
-
-                if (ImGui.IsItemHovered())
+                ChildGameCalendarsSize.X = ImageCarousel.ChildSize.X;
+                ImGui.BeginGroup();
+                foreach (var activity in MainSettings.GameCalendars)
                 {
-                    ImGui.BeginTooltip();
-                    ImGui.TextColored(ImGuiColors.DalamudOrange, "距离");
+                    if (Service.Config.IsHideOutdatedEvent && activity.State == 2) continue;
+                    var statusStr = activity.State == 2 ? Service.Lang.GetText("GameCalendar-EventEnded") : "";
+                    ImGui.PushStyleColor(ImGuiCol.Button, activity.Color);
+                    ImGui.BeginDisabled(activity.State == 2);
+                    if (ImGuiOm.ButtonCompact($"{activity.Url}", $"{activity.Name} {statusStr}"))
+                        Util.OpenLink($"{activity.Url}");
 
-                    ImGui.SameLine();
-                    ImGui.TextColored(ImGuiColors.HealerGreen,
-                                      $"{(activity.State is 0 ? Service.Lang.GetText("End") : Service.Lang.GetText("Start"))}");
+                    ImGui.EndDisabled();
+                    ImGui.PopStyleColor();
 
-                    ImGui.SameLine();
-                    ImGui.TextColored(ImGuiColors.DalamudOrange, "还有: ");
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.BeginTooltip();
+                        ImGui.TextColored(ImGuiColors.DalamudOrange, "距离");
 
-                    ImGui.SameLine();
-                    ImGui.Text($"{activity.DaysLeft} 天");
+                        ImGui.SameLine();
+                        ImGui.TextColored(ImGuiColors.HealerGreen,
+                                          $"{(activity.State is 0 ? Service.Lang.GetText("End") : Service.Lang.GetText("Start"))}");
 
-                    ImGui.TextColored(ImGuiColors.DalamudOrange,
-                                      activity.State is 0
-                                          ? $"{Service.Lang.GetText("EndTime")}: "
-                                          : $"{Service.Lang.GetText("StartTime")}: ");
+                        ImGui.SameLine();
+                        ImGui.TextColored(ImGuiColors.DalamudOrange, "还有: ");
 
-                    ImGui.SameLine();
-                    ImGui.Text(activity.State is 0 ? $"{activity.EndTime}" : $"{activity.BeginTime}");
+                        ImGui.SameLine();
+                        ImGui.Text($"{activity.DaysLeft} 天");
 
-                    ImGui.EndTooltip();
+                        ImGui.TextColored(ImGuiColors.DalamudOrange,
+                                          activity.State is 0
+                                              ? $"{Service.Lang.GetText("EndTime")}: "
+                                              : $"{Service.Lang.GetText("StartTime")}: ");
+
+                        ImGui.SameLine();
+                        ImGui.Text(activity.State is 0 ? $"{activity.EndTime}" : $"{activity.BeginTime}");
+
+                        ImGui.EndTooltip();
+                    }
                 }
+                ImGui.EndGroup();
+                ChildGameCalendarsSize.Y = ImGui.GetItemRectSize().Y;
+                ImGui.EndChild();
             }
-            ImGui.EndGroup();
-            ChildGameCalendarsSize.Y = ImGui.GetItemRectSize().Y;
-            ImGui.EndChild();
         }
-        ImGui.SetWindowFontScale(1f);
     }
 
     private static void DrawHomePage_PluginInfoComponent()
     {
-        ImGui.SetWindowFontScale(1.1f);
-        ImGui.BeginGroup();
-        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("CurrentVersion")}:");
+        using (FontHelper.UIFont120.Push())
+        {
+            ImGui.BeginGroup();
+            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("CurrentVersion")}:");
 
-        ImGui.SameLine();
-        ImGui.TextColored(Plugin.Version < MainSettings.LatestVersionInfo.Version ? ImGuiColors.DPSRed : ImGuiColors.DalamudWhite, $"{Plugin.Version}");
+            ImGui.SameLine();
+            ImGui.TextColored(Plugin.Version < MainSettings.LatestVersionInfo.Version ? ImGuiColors.DPSRed : ImGuiColors.DalamudWhite, $"{Plugin.Version}");
 
-        if (Plugin.Version < MainSettings.LatestVersionInfo.Version)
-            ImGuiOm.TooltipHover(Service.Lang.GetText("LowVersionWarning"));
+            if (Plugin.Version < MainSettings.LatestVersionInfo.Version)
+                ImGuiOm.TooltipHover(Service.Lang.GetText("LowVersionWarning"));
 
-        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestVersion")}:");
+            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestVersion")}:");
 
-        ImGui.SameLine();
-        ImGui.Text($"{MainSettings.LatestVersionInfo.Version}");
+            ImGui.SameLine();
+            ImGui.Text($"{MainSettings.LatestVersionInfo.Version}");
 
-        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestDL")}:");
+            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestDL")}:");
 
-        ImGui.SameLine();
-        ImGui.Text($"{MainSettings.LatestVersionInfo.DownloadCount}");
+            ImGui.SameLine();
+            ImGui.Text($"{MainSettings.LatestVersionInfo.DownloadCount}");
 
-        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("TotalDL")}:");
+            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("TotalDL")}:");
 
-        ImGui.SameLine();
-        ImGui.Text($"{MainSettings.TotalDownloadCounts}");
-        ImGui.EndGroup();
-        ImGui.SetWindowFontScale(1f);
+            ImGui.SameLine();
+            ImGui.Text($"{MainSettings.TotalDownloadCounts}");
+            ImGui.EndGroup();
+        }
     }
 
     private static void DrawHomePage_ChangelogComponent()
@@ -554,7 +549,10 @@ public class Main : Window, IDisposable
 
     private static void DrawModules(IReadOnlyList<ModuleInfo> modules, bool isFromSearch = false)
     {
-        DrawModulesInternal(modules, isFromSearch);
+        using (FontHelper.UIFont80.Push())
+        {
+            DrawModulesInternal(modules, isFromSearch);
+        }
     }
 
     private static void DrawModulesInternal(IReadOnlyList<ModuleInfo> modules, bool isFromSearch = false)
@@ -688,55 +686,43 @@ public class Main : Window, IDisposable
     {
         if (ImGui.BeginPopupContextItem($"ContextMenu_{moduleInfo.Title}_{moduleInfo.Description}_{moduleInfo.Module.Name}"))
         {
-            ImGui.SetWindowFontScale(1.1f);
-            ImGui.Text($"{moduleInfo.Title}");
-
-            ImGui.SetWindowFontScale(0.9f);
-            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Settings-ModuleInfoCategory")}:");
-
-            ImGui.SameLine();
-            ImGui.Text($"{moduleInfo.Category}");
-
-            ImGui.SameLine();
-            ImGui.Text("/");
-
-            ImGui.SameLine();
-            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Settings-ModuleInfoAuthor")}:");
-
-            ImGui.SameLine();
-            ImGui.Text($"{moduleInfo.Author ?? "AtmoOmen"}");
-
-            if (OnlineStatsManager.ModuleUsageStats.TryGetValue(moduleInfo.Title, out var amount))
+            using (FontHelper.UIFont120.Push())
             {
-                ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Settings-EnabledAmount")}:");
+                ImGui.Text($"{moduleInfo.Title}");
+            }
+
+            using (FontHelper.UIFont80.Push())
+            {
+                ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Settings-ModuleInfoCategory")}:");
 
                 ImGui.SameLine();
-                ImGui.Text($"{amount + (Service.Config.ModuleEnabled[moduleInfo.Module.Name] ? 1 : 0)}");
-            }
-            ImGui.SetWindowFontScale(1f);
+                ImGui.Text($"{moduleInfo.Category}");
 
-            ImGui.Separator();
-            ImGuiHelpers.ScaledDummy(1f);
+                ImGui.SameLine();
+                ImGui.Text("/");
 
-            ImGui.SetWindowFontScale(0.9f);
-            var isFavorite = Service.Config.ModuleFavorites.Contains(moduleInfo.Module.Name);
-            if (ImGui.Selectable($"    {(isFavorite ? "\u2605 " : "")}{Service.Lang.GetText("Favorite")}", isFavorite, ImGuiSelectableFlags.DontClosePopups))
-            {
-                if (!Service.Config.ModuleFavorites.Remove(moduleInfo.Module.Name))
-                    Service.Config.ModuleFavorites.Add(moduleInfo.Module.Name);
+                ImGui.SameLine();
+                ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Settings-ModuleInfoAuthor")}:");
 
-                ModulesFavorite.Clear();
-                ModulesFavorite.AddRange(Modules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
-            }
+                ImGui.SameLine();
+                ImGui.Text($"{moduleInfo.Author ?? "AtmoOmen"}");
 
-            ImGui.Separator();
-
-            if (moduleInfo.PrecedingModule != null)
-            {
-                if (ImGui.Selectable($"    {Service.Lang.GetText("Settings-EnableAllPModules")}", isFavorite, ImGuiSelectableFlags.DontClosePopups))
+                if (OnlineStatsManager.ModuleUsageStats.TryGetValue(moduleInfo.Title, out var amount))
                 {
-                    foreach (var pModuleType in moduleInfo.Module.GetCustomAttribute<PrecedingModuleAttribute>().Modules)
-                        Service.ModuleManager.Load(pModuleType, true);
+                    ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Settings-EnabledAmount")}:");
+
+                    ImGui.SameLine();
+                    ImGui.Text($"{amount + (Service.Config.ModuleEnabled[moduleInfo.Module.Name] ? 1 : 0)}");
+                }
+
+                ImGui.Separator();
+                ImGuiHelpers.ScaledDummy(1f);
+
+                var isFavorite = Service.Config.ModuleFavorites.Contains(moduleInfo.Module.Name);
+                if (ImGui.Selectable($"    {(isFavorite ? "\u2605 " : "")}{Service.Lang.GetText("Favorite")}", isFavorite, ImGuiSelectableFlags.DontClosePopups))
+                {
+                    if (!Service.Config.ModuleFavorites.Remove(moduleInfo.Module.Name))
+                        Service.Config.ModuleFavorites.Add(moduleInfo.Module.Name);
 
                     ModulesFavorite.Clear();
                     ModulesFavorite.AddRange(Modules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
@@ -744,56 +730,69 @@ public class Main : Window, IDisposable
 
                 ImGui.Separator();
 
-                if (ImGui.Selectable($"    {Service.Lang.GetText("Settings-DisableAllPModules")}", isFavorite, ImGuiSelectableFlags.DontClosePopups))
+                if (moduleInfo.PrecedingModule != null)
                 {
-                    foreach (var pModuleType in moduleInfo.Module.GetCustomAttribute<PrecedingModuleAttribute>().Modules)
-                        Service.ModuleManager.Unload(pModuleType, true);
+                    if (ImGui.Selectable($"    {Service.Lang.GetText("Settings-EnableAllPModules")}", isFavorite, ImGuiSelectableFlags.DontClosePopups))
+                    {
+                        foreach (var pModuleType in moduleInfo.Module.GetCustomAttribute<PrecedingModuleAttribute>().Modules)
+                            Service.ModuleManager.Load(pModuleType, true);
 
-                    ModulesFavorite.Clear();
-                    ModulesFavorite.AddRange(Modules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
+                        ModulesFavorite.Clear();
+                        ModulesFavorite.AddRange(Modules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
+                    }
+
+                    ImGui.Separator();
+
+                    if (ImGui.Selectable($"    {Service.Lang.GetText("Settings-DisableAllPModules")}", isFavorite, ImGuiSelectableFlags.DontClosePopups))
+                    {
+                        foreach (var pModuleType in moduleInfo.Module.GetCustomAttribute<PrecedingModuleAttribute>().Modules)
+                            Service.ModuleManager.Unload(pModuleType, true);
+
+                        ModulesFavorite.Clear();
+                        ModulesFavorite.AddRange(Modules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
+                    }
+
+                    ImGui.Separator();
                 }
 
-                ImGui.Separator();
-            }
-
-            if (ImGuiOm.Selectable($"    {Service.Lang.GetText("Settings-ResetModule")}"))
-            {
-                Task.Run(() =>
+                if (ImGuiOm.Selectable($"    {Service.Lang.GetText("Settings-ResetModule")}"))
                 {
-                    if (!Service.Config.ModuleEnabled.TryGetValue(moduleInfo.Module.Name, out var isModuleEnabled))
-                        return;
+                    Task.Run(() =>
+                    {
+                        if (!Service.Config.ModuleEnabled.TryGetValue(moduleInfo.Module.Name, out var isModuleEnabled))
+                            return;
 
-                    var module = Service.ModuleManager.Modules[moduleInfo.Module];
-                    if (isModuleEnabled) Service.ModuleManager.Unload(module);
+                        var module = Service.ModuleManager.Modules[moduleInfo.Module];
+                        if (isModuleEnabled) Service.ModuleManager.Unload(module);
 
-                    if (moduleInfo.WithConfig)
-                        File.Delete(Path.Join(Service.PluginInterface.ConfigDirectory.FullName, $"{moduleInfo.Module.Name}.json"));
+                        if (moduleInfo.WithConfig)
+                            File.Delete(Path.Join(Service.PluginInterface.ConfigDirectory.FullName, $"{moduleInfo.Module.Name}.json"));
 
-                    if (isModuleEnabled) Service.ModuleManager.Load(module);
+                        if (isModuleEnabled) Service.ModuleManager.Load(module);
 
-                    NotifyHelper.NotificationSuccess(Service.Lang.GetText("Settings-ResetModuleSuccessNotice", moduleInfo.Title));
-                });
-            }
+                        NotifyHelper.NotificationSuccess(Service.Lang.GetText("Settings-ResetModuleSuccessNotice", moduleInfo.Title));
+                    });
+                }
 
-            if (moduleInfo.WithConfig)
-            {
-                ImGui.Separator();
-                if (ImGuiOm.Selectable($"    {Service.Lang.GetText("Settings-ModuleConfiguration")}"))
-                    OpenFileOrFolder
-                        (Path.Join(Service.PluginInterface.ConfigDirectory.FullName, $"{moduleInfo.Module.Name}.json"));
-            }
-
-            if (moduleInfo.WithConfigUI)
-            {
-                ImGui.Separator();
-                if (ImGuiOm.Selectable($"    {Service.Lang.GetText("Settings-ShowOverlayConfig")}"))
+                if (moduleInfo.WithConfig)
                 {
-                    var module = Service.ModuleManager.Modules[moduleInfo.Module];
-                    module.OverlayConfig ??= new(module);
-                    module.OverlayConfig.IsOpen ^= true;
+                    ImGui.Separator();
+                    if (ImGuiOm.Selectable($"    {Service.Lang.GetText("Settings-ModuleConfiguration")}"))
+                        OpenFileOrFolder
+                            (Path.Join(Service.PluginInterface.ConfigDirectory.FullName, $"{moduleInfo.Module.Name}.json"));
+                }
+
+                if (moduleInfo.WithConfigUI)
+                {
+                    ImGui.Separator();
+                    if (ImGuiOm.Selectable($"    {Service.Lang.GetText("Settings-ShowOverlayConfig")}"))
+                    {
+                        var module = Service.ModuleManager.Modules[moduleInfo.Module];
+                        module.OverlayConfig ??= new(module);
+                        module.OverlayConfig.IsOpen ^= true;
+                    }
                 }
             }
-            ImGui.SetWindowFontScale(1f);
 
             ImGui.EndPopup();
         }
@@ -1055,8 +1054,6 @@ public class MainSettings
         {
             Service.Config.InterfaceFontSize = fontTemp;
             Service.Config.Save();
-
-            FontHelper.RefreshUIFont();
         }
 
         // 默认页面
