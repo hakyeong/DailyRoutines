@@ -1055,12 +1055,6 @@ public class MainSettings
             Service.Config.Save();
         }
 
-        if (FontHelper.IsAnyFontOnBuilding())
-        {
-            ImGui.SameLine();
-            ImGui.TextColored(ImGuiColors.DalamudOrange, "字体重建中...");
-        }
-
         // 默认页面
         ImGuiOm.TextIcon(FontAwesomeIcon.Home, Service.Lang.GetText("Settings-DefaultHomePage"));
 
