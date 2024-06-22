@@ -17,8 +17,8 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("MarkInPartyListTitle", "PartyFinderFilterDescription", ModuleCategories.界面优化)]
-public unsafe class MarkInPartyList : DailyModuleBase
+[ModuleDescription("MarkerInPartyListTitle", "MarkerInPartyListDescription", ModuleCategories.战斗)]
+public unsafe class MarkerInPartyList : DailyModuleBase
 {
     public override string Author => "status102";
 
@@ -31,22 +31,39 @@ public unsafe class MarkInPartyList : DailyModuleBase
                                            ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoBackground |
                                            ImGuiWindowFlags.NoNav;
 
-    private static Vector2 PartyListIconOffset = new(0, 0);
-    private static float PartyListIconScale = 1f;
+    private static Config ModuleConfig = null!;
+
     private static Dictionary<MarkIcon, IDalamudTextureWrap> _markIcon = [];
     private static readonly Dictionary<MarkIcon, int> _markedObject = new(8);
     private static bool _needClear;
 
     public override void Init()
     {
+        ModuleConfig = LoadConfig<Config>() ?? new();
+
         _markIcon = Enum.GetValues<MarkIcon>().ToDictionary(x => x, x => ImageHelper.GetIcon((uint)x)!);
 
         Service.Hook.InitializeFromAttributes(this);
         LocalMarkingHook?.Enable();
         Service.ClientState.TerritoryChanged += ResetmarkedObject;
+
+        Overlay ??= new(this);
+        Overlay.IsOpen = true;
+        Overlay.Flags = Flags;
     }
 
-    public override void ConfigUI() { }
+    public override void ConfigUI()
+    {
+        ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+        ImGui.InputFloat2(Service.Lang.GetText("MarkerInPartyList-IconOffset"), ref ModuleConfig.PartyListIconOffset, "%.1f");
+        if (ImGui.IsItemDeactivatedAfterEdit())
+            SaveConfig(ModuleConfig);
+
+        ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+        ImGui.InputFloat(Service.Lang.GetText("MarkerInPartyList-IconScale"), ref ModuleConfig.PartyListIconScale, 0, 0, "%.1f");
+        if (ImGui.IsItemDeactivatedAfterEdit())
+            SaveConfig(ModuleConfig);
+    }
 
     public override void OverlayUI()
     {
@@ -115,8 +132,8 @@ public unsafe class MarkInPartyList : DailyModuleBase
             return;
 
         //	Note: sub-nodes don't scale, so we have to account for the addon's scale.
-        var iconOffset = (new Vector2(5, -5) + PartyListIconOffset) * pPartyList->Scale;
-        var iconSize = new Vector2(pIconNode->Width / 2, pIconNode->Height / 2) * PartyListIconScale * 0.9f *
+        var iconOffset = (new Vector2(5, -5) + ModuleConfig.PartyListIconOffset) * pPartyList->Scale;
+        var iconSize = new Vector2(pIconNode->Width / 2, pIconNode->Height / 2) * ModuleConfig.PartyListIconScale * 0.9f *
                        pPartyList->Scale;
 
         var iconPos = new Vector2(
@@ -192,7 +209,7 @@ public unsafe class MarkInPartyList : DailyModuleBase
         }
     }
 
-    private nint DetourLocalMarkingFunc(nint manager, uint markingType, nint objectId, nint a4)
+    private static nint DetourLocalMarkingFunc(nint manager, uint markingType, nint objectId, nint a4)
     {
         ProcMarkIconSetted((MarkType)markingType, (uint)objectId);
 
@@ -206,73 +223,80 @@ public unsafe class MarkInPartyList : DailyModuleBase
 
         base.Uninit();
     }
-}
 
-[StructLayout(LayoutKind.Explicit, Size = 0x20)]
-internal struct PartyListCharInfo
-{
-    [FieldOffset(0x00)]
-    internal IntPtr ObjectAddress;
-
-    [FieldOffset(0x08)]
-    internal IntPtr ObjectNameAddress;
-
-    [FieldOffset(0x10)]
-    internal ulong ContentID;
-
-    [FieldOffset(0x18)]
-    internal uint ObjectID;
-
-    [FieldOffset(0x1C)]
-    internal uint Unknown;
-
-    internal string GetName()
+    private class Config : ModuleConfiguration
     {
-        if (ObjectAddress == IntPtr.Zero || ObjectNameAddress == IntPtr.Zero)
-            return "";
-
-        return Marshal.PtrToStringUTF8(ObjectNameAddress) ?? "";
+        public Vector2 PartyListIconOffset = new(0, 0);
+        public float PartyListIconScale = 1f;
     }
-}
 
-public enum MarkType : byte
-{
-    Attack1 = 0,
-    Attack2,
-    Attack3,
-    Attack4,
-    Attack5,
-    Bind1,
-    Bind2,
-    Bind3,
-    Stop1,
-    Stop2,
-    Square,
-    Circle,
-    Cross,
-    Triangle,
-    Attack6,
-    Attack7,
-    Attack8,
-}
 
-public enum MarkIcon : uint
-{
-    Attack1 = 61201,
-    Attack2,
-    Attack3,
-    Attack4,
-    Attack5,
-    Attack6,
-    Attack7,
-    Attack8,
-    Bind1 = 61211,
-    Bind2,
-    Bind3,
-    Stop1 = 61221,
-    Stop2,
-    Square = 61231,
-    Circle,
-    Cross,
-    Triangle,
+    [StructLayout(LayoutKind.Explicit, Size = 0x20)]
+    internal struct PartyListCharInfo
+    {
+        [FieldOffset(0x00)]
+        internal IntPtr ObjectAddress;
+
+        [FieldOffset(0x08)]
+        internal IntPtr ObjectNameAddress;
+
+        [FieldOffset(0x10)]
+        internal ulong ContentID;
+
+        [FieldOffset(0x18)]
+        internal uint ObjectID;
+
+        [FieldOffset(0x1C)]
+        internal uint Unknown;
+
+        internal string GetName()
+        {
+            if (ObjectAddress == IntPtr.Zero || ObjectNameAddress == IntPtr.Zero)
+                return "";
+
+            return Marshal.PtrToStringUTF8(ObjectNameAddress) ?? "";
+        }
+    }
+
+    public enum MarkType : byte
+    {
+        Attack1 = 0,
+        Attack2,
+        Attack3,
+        Attack4,
+        Attack5,
+        Bind1,
+        Bind2,
+        Bind3,
+        Stop1,
+        Stop2,
+        Square,
+        Circle,
+        Cross,
+        Triangle,
+        Attack6,
+        Attack7,
+        Attack8,
+    }
+
+    public enum MarkIcon : uint
+    {
+        Attack1 = 61201,
+        Attack2,
+        Attack3,
+        Attack4,
+        Attack5,
+        Attack6,
+        Attack7,
+        Attack8,
+        Bind1 = 61211,
+        Bind2,
+        Bind3,
+        Stop1 = 61221,
+        Stop2,
+        Square = 61231,
+        Circle,
+        Cross,
+        Triangle,
+    }
 }

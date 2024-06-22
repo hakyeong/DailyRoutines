@@ -1992,7 +1992,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>招募过滤器</value>
   </data>
   <data name="PartyFinderFilterDescription" xml:space="preserve">
-    <value>头标同时在小队列表人名前显示，显示头标期间将隐藏小队列表中的队员序号</value>
+    <value>启用并配置完成后, 根据正则过滤指定招募人或描述的招募, 并自动过滤重复招募</value>
   </data>
   <data name="PartyFinderFilter-WorkTheoryHelp" xml:space="preserve">
     <value>过滤规则:
@@ -2003,9 +2003,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="PartyFinderFilter-RegexError" xml:space="preserve">
     <value>表达式非法</value>
-  </data>
-  <data name="MarkInPartyListTitle" xml:space="preserve">
-    <value>头标进小队列表</value>
   </data>
   <data name="Food" xml:space="preserve">
     <value>食物</value>
@@ -2222,5 +2219,18 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoSkipDutyCutsceneTitle" xml:space="preserve">
     <value>自动跳过副本过场动画</value>
+  </data>
+  <data name="MarkerInPartyList-IconOffset" xml:space="preserve">
+    <value>图标偏移</value>
+  </data>
+  <data name="MarkerInPartyList-IconScale" xml:space="preserve">
+    <value>图标缩放</value>
+  </data>
+  <data name="MarkerInPartyListDescription" xml:space="preserve">
+    <value>启用后, 令目标标记同时显示在小队列表的用户名前
+(显示目标标记时将隐藏列表中的队员序号)</value>
+  </data>
+  <data name="MarkerInPartyListTitle" xml:space="preserve">
+    <value>小队列表显示目标标记</value>
   </data>
 </root>

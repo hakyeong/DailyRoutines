@@ -549,7 +549,7 @@ public class Main : Window, IDisposable
 
     private static void DrawModules(IReadOnlyList<ModuleInfo> modules, bool isFromSearch = false)
     {
-        using (FontHelper.UIFont80.Push())
+        using (FontHelper.GetUIFont(0.9f).Push())
         {
             DrawModulesInternal(modules, isFromSearch);
         }
