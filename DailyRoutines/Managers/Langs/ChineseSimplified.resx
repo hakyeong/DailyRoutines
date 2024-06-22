@@ -2233,4 +2233,12 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="MarkerInPartyListTitle" xml:space="preserve">
     <value>小队列表显示目标标记</value>
   </data>
+  <data name="AutoPreventDuplicateStatus-OverlapThreshold" xml:space="preserve">
+    <value>覆盖时间阈值 (秒)</value>
+  </data>
+  <data name="AutoPreventDuplicateStatus-OverlapThresholdHelp" xml:space="preserve">
+    <value>相关状态效果剩余时间
+高于阈值时, 禁止使用技能覆盖
+低于阈值时, 允许使用技能覆盖</value>
+  </data>
 </root>

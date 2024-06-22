@@ -4,7 +4,7 @@ using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Objects.Types;
-using Dalamud.Interface.Utility;
+using Dalamud.Interface.Colors;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
 
@@ -120,30 +120,28 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
         { 18317, new(18317, DetectType.Target, [148], []) },
     };
 
-    private static Dictionary<uint, bool> ConfigEnabledActions = [];
+    private static Config ModuleConfig = null!;
 
     public override void Init()
     {
-        AddConfig("EnabledActions", new Dictionary<uint, bool>());
-        ConfigEnabledActions = GetConfig<Dictionary<uint, bool>>("EnabledActions");
+        ModuleConfig = LoadConfig<Config>() ?? new();
 
-        DuplicateActions.Keys.Except(ConfigEnabledActions.Keys).ToList()
-                        .ForEach(key => ConfigEnabledActions[key] = true);
+        DuplicateActions.Keys.Except(ModuleConfig.EnabledActions.Keys).ToList()
+                        .ForEach(key => ModuleConfig.EnabledActions[key] = true);
 
-        ConfigEnabledActions.Keys.Except(DuplicateActions.Keys).ToList()
-                            .ForEach(key => ConfigEnabledActions.Remove(key));
+        ModuleConfig.EnabledActions.Keys.Except(DuplicateActions.Keys).ToList()
+                    .ForEach(key => ModuleConfig.EnabledActions.Remove(key));
 
-        UpdateConfig("EnabledActions", ConfigEnabledActions);
+        SaveConfig(ModuleConfig);
 
         Service.UseActionManager.Register(OnPreUseAction);
     }
 
     public override void ConfigUI()
     {
-        if (ImGui.BeginCombo("###ActionEnabledCombo",
+        if (ImGui.BeginCombo("###ActionEnabledCombo", 
                              Service.Lang.GetText("AutoPreventDuplicateStatus-EnabledActionAmount",
-                                                  ConfigEnabledActions.Count(x => x.Value)),
-                             ImGuiComboFlags.HeightLarge))
+                                                  ModuleConfig.EnabledActions.Count(x => x.Value)), ImGuiComboFlags.HeightLarge))
         {
             if (ImGui.BeginTable("###ActionTable", 3, ImGuiTableFlags.Borders))
             {
@@ -160,22 +158,18 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
                     if (!PresetData.PlayerActions.TryGetValue(info.Key, out var result)) continue;
                     ImGui.TableNextRow();
                     ImGui.TableNextColumn();
-                    var isActionEnabled = ConfigEnabledActions[info.Key];
+                    var isActionEnabled = ModuleConfig.EnabledActions[info.Key];
                     if (ImGui.Checkbox($"###Is{info.Key}Enabled", ref isActionEnabled))
                     {
-                        ConfigEnabledActions[info.Key] ^= true;
-                        UpdateConfig("EnabledActions", ConfigEnabledActions);
+                        ModuleConfig.EnabledActions[info.Key] ^= true;
+                        SaveConfig(ModuleConfig);
                     }
 
                     ImGui.SameLine();
                     ImGui.Spacing();
 
                     ImGui.SameLine();
-                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 2.5f);
-                    ImGui.Image(ImageHelper.GetIcon(result.Icon).ImGuiHandle, ScaledVector2(20f));
-
-                    ImGui.SameLine();
-                    ImGui.Text($"{result.Name.ExtractText()}");
+                    ImGuiOm.TextImage(result.Name.RawString, ImageHelper.GetIcon(result.Icon).ImGuiHandle, ScaledVector2(20f));
 
                     ImGui.TableNextColumn();
                     ImGui.Text($"    {DetectTypeLoc[info.Value.DetectType]}    ");
@@ -199,6 +193,19 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
 
             ImGui.EndCombo();
         }
+
+        ScaledDummy(2f);
+
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoPreventDuplicateStatus-OverlapThreshold")}:");
+
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(150f * GlobalFontScale);
+        ImGui.InputFloat("###OverlapThreshold", ref ModuleConfig.OverlapThreshold, 0, 0, "%.1f");
+        if (ImGui.IsItemDeactivatedAfterEdit())
+            SaveConfig(ModuleConfig);
+
+        ImGuiOm.HelpMarker(Service.Lang.GetText("AutoPreventDuplicateStatus-OverlapThresholdHelp"));
     }
 
     private static void OnPreUseAction(
@@ -206,7 +213,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
         ref uint queueState, ref uint a6)
     {
         if (actionType != ActionType.Action || !DuplicateActions.TryGetValue(actionID, out var info) ||
-            !ConfigEnabledActions[actionID]) return;
+            !ModuleConfig.EnabledActions[actionID]) return;
 
         if (actionID is 7551 or 7538 &&
             Service.Target.Target is not BattleChara { IsCasting: true, IsCastInterruptible: true } chara)
@@ -254,7 +261,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
                 var statusIndex = statusManager->GetStatusIndex(status);
                 if (statusIndex != -1 &&
                     (PresetData.Statuses[status].IsPermanent ||
-                     statusManager->StatusSpan[statusIndex].RemainingTime > 3.5))
+                     statusManager->StatusSpan[statusIndex].RemainingTime > ModuleConfig.OverlapThreshold))
                 {
                     isPrevented = true;
                     return;
@@ -278,4 +285,10 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
     }
 
     private sealed record DuplicateActionInfo(uint ActionID, DetectType DetectType, uint[] StatusID, uint[] SecondStatusID);
+
+    private class Config : ModuleConfiguration
+    {
+        public Dictionary<uint, bool> EnabledActions = [];
+        public float OverlapThreshold = 3.5f;
+    }
 }
