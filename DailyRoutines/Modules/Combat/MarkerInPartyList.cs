@@ -12,6 +12,7 @@ using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -121,15 +122,13 @@ public unsafe class MarkerInPartyList : DailyModuleBase
                                    ? (AtkComponentNode*)pPartyList->UldManager.NodeList[partyMemberNodeIndex]
                                    : null;
 
-        if (pPartyMemberNode is null)
-            return;
+        if (pPartyMemberNode is null) return;
 
         var pIconNode = pPartyMemberNode->Component->UldManager.NodeListSize > iconNodeIndex
                             ? pPartyMemberNode->Component->UldManager.NodeList[iconNodeIndex]
                             : null;
 
-        if (pIconNode is null)
-            return;
+        if (pIconNode is null) return;
 
         //	Note: sub-nodes don't scale, so we have to account for the addon's scale.
         var iconOffset = (new Vector2(5, -5) + ModuleConfig.PartyListIconOffset) * pPartyList->Scale;
@@ -188,7 +187,7 @@ public unsafe class MarkerInPartyList : DailyModuleBase
 
         if (Framework.Instance() is null) return;
 
-        var pAgentHUD = Framework.Instance()->GetUiModule()->GetAgentModule()->GetAgentHUD();
+        var pAgentHUD = AgentHUD.Instance();
         if (GroupManager.Instance()->MemberCount > 0)
         {
             for (var i = 0; i < 8; ++i)
