@@ -24,10 +24,10 @@ public unsafe class InstantLogout : DailyModuleBase
 
     private static nint ExecuteLogoutCommandDetour(uint* a1, nint a2, nint a3)
     {
-        if (*(a1 + 32) > 0)
-            SendLogout();
-        else
+        if (*(a1 + 32) == 0)
             ChatHelper.Instance.SendMessage("/xlkill");
+        else
+            SendLogout();
 
         return nint.Zero;
     }
