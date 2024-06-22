@@ -8,14 +8,9 @@ using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
-using Dalamud.Interface.Internal;
-using Dalamud.Interface.Utility;
 using ImGuiNET;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
-using static System.ComponentModel.Design.ObjectSelectorEditor;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using static FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentHousingPlant;
 using Action = Lumina.Excel.GeneratedSheets.Action;
 
 namespace DailyRoutines.Infos;
@@ -37,9 +32,10 @@ public static class Widgets
 
     public static void ScaledDummy(float x, float y) => ImGui.Dummy(new Vector2(x, y) * GlobalFontScale);
 
-    public static SeString WithDRPrefix(string text) 
+    public static SeString WithDRPrefix(string text)
         => new SeStringBuilder().Append(DRPrefix).Append($" {text}").Build();
-    public static SeString WithDRPrefix(SeString text) 
+
+    public static SeString WithDRPrefix(SeString text)
         => new SeStringBuilder().Append(DRPrefix).Append(" ").Append(text).Build();
 
     public static void PreviewImageWithHelpText(
@@ -62,6 +58,7 @@ public static class Widgets
                 ImGui.Image(imageHandle.ImGuiHandle, imageSize == default ? imageHandle.Size : imageSize);
             else
                 ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
+
             ImGui.EndTooltip();
         }
     }
@@ -239,7 +236,9 @@ public static class Widgets
 
                     ImGui.TableNextColumn();
                     var state = selected.Contains(contentPair.Key);
+                    ImGui.BeginDisabled();
                     ImGui.Checkbox("", ref state);
+                    ImGui.EndDisabled();
                     CheckboxSize = ImGui.GetItemRectSize();
 
                     ImGui.TableNextColumn();
@@ -392,7 +391,7 @@ public static class Widgets
                     ImGui.EndDisabled();
 
                     ImGui.TableNextColumn();
-                    if (ImGuiOm.SelectableImageWithText(jobIcon.ImGuiHandle, ScaledVector2(20f), jobName, state, 
+                    if (ImGuiOm.SelectableImageWithText(jobIcon.ImGuiHandle, ScaledVector2(20f), jobName, state,
                                                         ImGuiSelectableFlags.DontClosePopups))
                     {
                         if (job.RowId == 0)
@@ -573,9 +572,10 @@ public static class Widgets
         return selectState;
     }
 
-    public static bool MultiSelectCombo<T>(Dictionary<uint, T> sourceData, ref HashSet<uint> selectedItems, ref string searchInput,
-                                       (string Header, ImGuiTableColumnFlags Flags, float Weight)[] headerFuncs, 
-                                       Func<T, System.Action>[] displayFuncs, bool disableCheckbox = false) where T : ExcelRow
+    public static bool MultiSelectCombo<T>(
+        Dictionary<uint, T> sourceData, ref HashSet<uint> selectedItems, ref string searchInput,
+        (string Header, ImGuiTableColumnFlags Flags, float Weight)[] headerFuncs,
+        Func<T, System.Action>[] displayFuncs, bool disableCheckbox = false) where T : ExcelRow
     {
         var selectState = false;
         if (ImGui.BeginCombo("###SelectCombo", $"当前已选中 {selectedItems.Count} 项", ImGuiComboFlags.HeightLarge))
@@ -614,8 +614,9 @@ public static class Widgets
                 var data = sourceData.OrderByDescending(x => selectedItemsCopy.Contains(x.Key));
                 foreach (var (rowId, item) in data)
                 {
-                    if (!string.IsNullOrWhiteSpace(searchInput) && 
-                        !displayFuncs.Any(func => func(item).ToString().Contains(searchInputCopy, StringComparison.OrdinalIgnoreCase)))
+                    if (!string.IsNullOrWhiteSpace(searchInput) &&
+                        !displayFuncs.Any(func => func(item).ToString()
+                                                            .Contains(searchInputCopy, StringComparison.OrdinalIgnoreCase)))
                         continue;
 
                     ImGui.TableNextRow();
@@ -629,6 +630,7 @@ public static class Widgets
 
                         selectState = true;
                     }
+
                     CheckboxSize = ImGui.GetItemRectSize();
                     ImGui.EndDisabled();
 
@@ -648,9 +650,10 @@ public static class Widgets
         return selectState;
     }
 
-    public static bool SingleSelectCombo<T>(Dictionary<uint, T> sourceData, ref uint selectedItem, ref string searchInput, Func<T, string> previewFunc,
-                                       (string Header, ImGuiTableColumnFlags Flags, float Weight)[] headerFuncs,
-                                       Func<T, System.Action>[] displayFuncs, bool disableCheckbox = false) where T : ExcelRow
+    public static bool SingleSelectCombo<T>(
+        Dictionary<uint, T> sourceData, ref uint selectedItem, ref string searchInput, Func<T, string> previewFunc,
+        (string Header, ImGuiTableColumnFlags Flags, float Weight)[] headerFuncs,
+        Func<T, System.Action>[] displayFuncs, bool disableCheckbox = false) where T : ExcelRow
     {
         var selectState = false;
         var comboLabel = selectedItem != 0 ? previewFunc(sourceData[selectedItem]) : "请选择...";
@@ -688,7 +691,8 @@ public static class Widgets
                 foreach (var (rowId, item) in data)
                 {
                     if (!string.IsNullOrWhiteSpace(searchInput) &&
-                        !displayFuncs.Any(func => func(item).ToString().Contains(searchInputCopy, StringComparison.OrdinalIgnoreCase)))
+                        !displayFuncs.Any(func => func(item).ToString()
+                                                            .Contains(searchInputCopy, StringComparison.OrdinalIgnoreCase)))
                         continue;
 
                     ImGui.TableNextRow();
@@ -700,6 +704,7 @@ public static class Widgets
                         selectedItem = rowId;
                         selectState = true;
                     }
+
                     CheckboxSize = ImGui.GetItemRectSize();
                     ImGui.EndDisabled();
 
