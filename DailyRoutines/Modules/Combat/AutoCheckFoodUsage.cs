@@ -207,6 +207,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
                     preset.Zones = zones;
                     SaveConfig(ModuleConfig);
                 }
+                ImGuiOm.TooltipHover(Service.Lang.GetText("AutoCheckFoodUsage-NoZoneSelectHelp"));
                 ImGui.PopID();
 
                 ImGui.TableNextColumn();

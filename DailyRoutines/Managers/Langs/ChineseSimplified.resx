@@ -1998,7 +1998,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>招募过滤器</value>
   </data>
   <data name="PartyFinderFilterDescription" xml:space="preserve">
-    <value>启用并配置完成后, 根据正则过滤指定招募人或描述的招募, 并自动过滤重复招募</value>
+    <value>头标同时在小队列表人名前显示，显示头标期间将隐藏小队列表中的队员序号</value>
   </data>
   <data name="PartyFinderFilter-WorkTheoryHelp" xml:space="preserve">
     <value>过滤规则:
@@ -2012,9 +2012,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="MarkInPartyListTitle" xml:space="preserve">
     <value>头标进小队列表</value>
-  </data>
-  <data name="PartyFinderFilterDescription" xml:space="preserve">
-    <value>头标同时在小队列表人名前显示，显示头标期间将隐藏小队列表中的队员序号</value>
   </data>
   <data name="Food" xml:space="preserve">
     <value>食物</value>
@@ -2222,5 +2219,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="AutoLeaveDuty-ForceToLeave" xml:space="preserve">
     <value>强制退本</value>
+  </data>
+  <data name="AutoCheckFoodUsage-NoZoneSelectHelp" xml:space="preserve">
+    <value>如未选择区域, 则代表所有区域都生效</value>
   </data>
 </root>
