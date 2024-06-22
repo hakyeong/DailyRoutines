@@ -30,7 +30,7 @@ public class PFPageSizeCustomize : DailyModuleBase
 
     public override void ConfigUI()
     {
-        ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(100f * GlobalFontScale);
         if (ImGui.InputInt(Service.Lang.GetText("PFPageSizeCustomize-DisplayAmount"), ref ConfigDisplayAmount, 10, 10,
                            ImGuiInputTextFlags.EnterReturnsTrue))
         {

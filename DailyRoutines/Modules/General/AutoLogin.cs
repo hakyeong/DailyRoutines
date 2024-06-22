@@ -85,7 +85,7 @@ public unsafe class AutoLogin : DailyModuleBase
         ImGui.Text($"{Service.Lang.GetText("AutoLogin-LoginInfos")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(200f * GlobalFontScale);
         if (ImGui.BeginCombo("###LoginInfosCombo",
                              Service.Lang.GetText("AutoLogin-SavedLoginInfosAmount", ModuleConfig.LoginInfos.Count),
                              ImGuiComboFlags.HeightLarge))
@@ -96,7 +96,7 @@ public unsafe class AutoLogin : DailyModuleBase
             ImGui.Text($"{Service.Lang.GetText("AutoLogin-ServerName")}:");
 
             ImGui.SameLine();
-            ImGui.SetNextItemWidth(120f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(120f * GlobalFontScale);
             CNWorldSelectCombo(ref SelectedWorld, ref WorldSearchInput);
 
             // 选择当前服务器
@@ -111,7 +111,7 @@ public unsafe class AutoLogin : DailyModuleBase
             ImGui.Text($"{Service.Lang.GetText("AutoLogin-CharacterIndex")}:");
 
             ImGui.SameLine();
-            ImGui.SetNextItemWidth(120f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(120f * GlobalFontScale);
             if (ImGui.InputInt("##AutoLogin-EnterCharaIndex", ref SelectedCharaIndex, 0, 0,
                                ImGuiInputTextFlags.EnterReturnsTrue))
                 SelectedCharaIndex = Math.Clamp(SelectedCharaIndex, 0, 8);
@@ -192,7 +192,7 @@ public unsafe class AutoLogin : DailyModuleBase
         ImGui.Text($"{Service.Lang.GetText("AutoLogin-BehaviourMode")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(100f * GlobalFontScale);
         if (ImGui.BeginCombo("###BehaviourModeCombo", BehaviourModeLoc[ModuleConfig.Mode]))
         {
             foreach (var mode in BehaviourModeLoc)

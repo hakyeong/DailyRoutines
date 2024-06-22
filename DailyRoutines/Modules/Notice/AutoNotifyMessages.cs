@@ -83,7 +83,7 @@ public class AutoNotifyMessages : DailyModuleBase
         if (ImGui.Checkbox(Service.Lang.GetText("AutoNotifyMessages-BlockOwnMessages"), ref ConfigBlockOwnMessages))
             UpdateConfig("BlockOwnMessages", ConfigBlockOwnMessages);
 
-        ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(300f * GlobalFontScale);
         if (ImGui.BeginCombo("###SelectChatTypesCombo",
                              Service.Lang.GetText("AutoNotifyMessages-SelectedTypesAmount", ConfigValidChatTypes.Count),
                              ImGuiComboFlags.HeightLarge))

@@ -27,7 +27,7 @@ public unsafe class CustomizeSightDistance : DailyModuleBase
         ImGui.Text($"{Service.Lang.GetText("CustomizeSightDistance-MaxDistanceInput")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(80f * GlobalFontScale);
         if (ImGui.InputFloat("###MaxDistanceInput", ref ConfigMaxDistance, 0, 0,
                              ConfigMaxDistance.ToString(CultureInfo.InvariantCulture),
                              ImGuiInputTextFlags.EnterReturnsTrue))

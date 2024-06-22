@@ -206,8 +206,8 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
     private static void DisplayZoneName(TerritoryType zoneSheetRow)
     {
         ImGui.SetWindowFontScale(1.05f);
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (8f * ImGuiHelpers.GlobalScale));
-        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (4f * ImGuiHelpers.GlobalScale));
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (8f * GlobalFontScale));
+        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (4f * GlobalFontScale));
         ImGui.Text(zoneSheetRow.ExtractPlaceName());
     }
 
@@ -216,7 +216,7 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
         ImGui.SetWindowFontScale(0.8f);
         var text = fateProgress > 6 ? $"{fateProgress - 6}/60" : $"{fateProgress}/6";
         ImGui.SetCursorPosY(ImGui.GetContentRegionMax().Y - ImGui.CalcTextSize(text).Y);
-        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (4f * ImGuiHelpers.GlobalScale));
+        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (4f * GlobalFontScale));
         ImGui.Text(text);
 
         DisplayFinalProgress(fateProgress);

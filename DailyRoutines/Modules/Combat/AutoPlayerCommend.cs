@@ -49,7 +49,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
         ImGui.Text($"{Service.Lang.GetText("AutoPlayerCommend-BlacklistPlayers")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(200f * GlobalFontScale);
         if (ImGui.BeginCombo("###BlacklistPlayerInfoCombo",
                              Service.Lang.GetText("AutoPlayerCommend-BlacklistPlayersAmount",
                                                   ModuleConfig.BlacklistPlayers.Count), ImGuiComboFlags.HeightLarge))
@@ -59,14 +59,14 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
             ImGui.Text($"{Service.Lang.GetText("AutoPlayerCommend-World")}:");
 
             ImGui.SameLine();
-            ImGui.SetNextItemWidth(120f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(120f * GlobalFontScale);
             CNWorldSelectCombo(ref SelectedWorld, ref WorldSearchInput);
 
             ImGui.AlignTextToFramePadding();
             ImGui.Text($"{Service.Lang.GetText("AutoPlayerCommend-PlayerName")}:");
 
             ImGui.SameLine();
-            ImGui.SetNextItemWidth(120f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(120f * GlobalFontScale);
             ImGui.InputText("###PlayerNameInput", ref PlayerNameInput, 100);
             ImGui.EndGroup();
 
@@ -122,7 +122,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
         ImGui.Text($"{Service.Lang.GetText("AutoPlayerCommend-BlacklistContents")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(200f * GlobalFontScale);
 
         if (ImGui.BeginCombo("###BlacklistContentsCombo",
                              Service.Lang.GetText("AutoPlayerCommend-BlacklistContentsAmount",
@@ -132,7 +132,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
             ImGui.Text($"{Service.Lang.GetText("AutoPlayerCommend-Content")}:");
 
             ImGui.SameLine();
-            ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(200f * GlobalFontScale);
             ContentSelectCombo(ref SelectedContent, ref ContentSearchInput);
 
             ImGui.SameLine();

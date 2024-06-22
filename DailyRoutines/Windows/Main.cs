@@ -124,7 +124,7 @@ public class Main : Window, IDisposable
 
             ImGui.EndGroup();
 
-            LeftTabComponentSize.X = Math.Max(ImGui.GetItemRectSize().X, 200f * ImGuiHelpers.GlobalScale);
+            LeftTabComponentSize.X = Math.Max(ImGui.GetItemRectSize().X, 200f * GlobalFontScale);
             ImGui.EndChild();
         }
     }
@@ -134,7 +134,7 @@ public class Main : Window, IDisposable
         ImGuiHelpers.CenterCursorFor(LogoComponentSize.X);
         ImGui.BeginGroup();
 
-        ImGuiHelpers.CenterCursorFor(72f * ImGuiHelpers.GlobalScale);
+        ImGuiHelpers.CenterCursorFor(72f * GlobalFontScale);
         ImGui.Image(PresetData.Icon.ImGuiHandle, ImGuiHelpers.ScaledVector2(72f));
 
         using (FontHelper.UIFont140.Push())
@@ -142,12 +142,12 @@ public class Main : Window, IDisposable
             ImGuiHelpers.CenterCursorForText("Daily");
             ImGuiOm.Text("Daily");
 
-            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (8f * ImGuiHelpers.GlobalScale));
+            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (8f * GlobalFontScale));
             ImGuiHelpers.CenterCursorForText("Routines");
             ImGuiOm.Text("Routines");
         }
 
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (4f * ImGuiHelpers.GlobalScale));
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (4f * GlobalFontScale));
         ImGuiHelpers.CenterCursorForText($"[{Plugin.Version}]");
         if (Plugin.Version < MainSettings.LatestVersionInfo.Version)
         {
@@ -214,7 +214,7 @@ public class Main : Window, IDisposable
 
             ImGui.BeginGroup();
 
-            var buttonSize = new Vector2(156f * ImGuiHelpers.GlobalScale, ImGui.CalcTextSize("你好").Y);
+            var buttonSize = new Vector2(156f * GlobalFontScale, ImGui.CalcTextSize("你好").Y);
 
             ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
             ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
@@ -267,9 +267,9 @@ public class Main : Window, IDisposable
                 var emptyString = string.Empty;
 
                 // 真的输入框
-                ImGui.SetCursorPos(startCursorPos with { X = startCursorPos.X + (36f * ImGuiHelpers.GlobalScale) });
+                ImGui.SetCursorPos(startCursorPos with { X = startCursorPos.X + (36f * GlobalFontScale) });
                 ImGui.SetNextItemWidth(
-                    ImGui.GetContentRegionAvail().X - (24f * ImGuiHelpers.GlobalScale) - (ImGui.GetStyle().ItemSpacing.X * 2));
+                    ImGui.GetContentRegionAvail().X - (24f * GlobalFontScale) - (ImGui.GetStyle().ItemSpacing.X * 2));
                 ImGui.PushStyleColor(ImGuiCol.FrameBg, ImGui.GetColorU32(ImGuiCol.ChildBg));
                 ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudWhite);
                 ImGui.InputText("###Search", ref SearchString, 128);
@@ -291,7 +291,7 @@ public class Main : Window, IDisposable
                 ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
                 ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
                 if (ImGuiOm.ButtonIcon("Settings", FontAwesomeIcon.Cog,
-                                       new(32f * ImGuiHelpers.GlobalScale, inputHeight),
+                                       new(32f * GlobalFontScale, inputHeight),
                                        Service.Lang.GetText("Settings")))
                     SelectedTab = 1;
                 ImGui.PopStyleColor(3);
@@ -302,7 +302,7 @@ public class Main : Window, IDisposable
                 // 搜素图标
                 ImGui.AlignTextToFramePadding();
                 ImGui.SameLine();
-                ImGui.SetCursorPos(new(startCursorPos.X + 8f * ImGuiHelpers.GlobalScale, startCursorPos.Y + 4f * ImGuiHelpers.GlobalScale));
+                ImGui.SetCursorPos(new(startCursorPos.X + 8f * GlobalFontScale, startCursorPos.Y + 4f * GlobalFontScale));
 
                 using var font = ImRaii.PushFont(UiBuilder.IconFont);
                 ImGui.Text(FontAwesomeIcon.Search.ToIconString());
@@ -610,7 +610,7 @@ public class Main : Window, IDisposable
         if (isWithAuthor)
         {
             ImGui.SameLine();
-            var spacing = isWithAuthor && isModuleEnabled ? 20f * ImGuiHelpers.GlobalScale : -20f * ImGuiHelpers.GlobalScale;
+            var spacing = isWithAuthor && isModuleEnabled ? 20f * GlobalFontScale : -20f * GlobalFontScale;
             ImGui.SetCursorPosX(origCursorPosX + ImGui.CalcTextSize(moduleInfo.Title).X +
                                 (ImGui.GetStyle().ItemSpacing.X * 8) + spacing);
 
@@ -941,7 +941,7 @@ public class MainSettings
 
         ImGui.SameLine();
         ImGui.BeginDisabled();
-        ImGui.SetNextItemWidth(180f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(180f * GlobalFontScale);
         if (ImGui.BeginCombo("##LanguagesList", "简体中文")) ImGui.EndCombo();
         ImGui.EndDisabled();
 
@@ -962,7 +962,7 @@ public class MainSettings
         ImGuiOm.TextIcon(FontAwesomeIcon.Keyboard, Service.Lang.GetText("ConflictKey"));
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(150f * GlobalFontScale);
         if (ImGui.BeginCombo("##GlobalConflictHotkey", Service.Config.ConflictKey.ToString()))
         {
             ImGui.SetNextItemWidth(-1f);
@@ -1035,7 +1035,7 @@ public class MainSettings
 
         ImGui.SameLine();
         var enableTTS = Service.Config.EnableTTS;
-        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(150f * GlobalFontScale);
         if (ImGui.Checkbox("###EnableTTS", ref enableTTS))
         {
             Service.Config.EnableTTS = enableTTS;
@@ -1047,7 +1047,7 @@ public class MainSettings
 
         ImGui.SameLine();
         var fontTemp = Service.Config.InterfaceFontSize;
-        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(150f * GlobalFontScale);
         if (ImGui.InputFloat("###InterfaceFontInput", ref fontTemp, 0, 0, "%.1f"))
             fontTemp = Math.Max(fontTemp, 8);
         if (ImGui.IsItemDeactivatedAfterEdit())
@@ -1065,7 +1065,7 @@ public class MainSettings
                                 ((ModuleCategories)(defaultHomePage % 100)).ToString() : 
                                 PagesInfo[defaultHomePage];
 
-        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(150f * GlobalFontScale);
         if (ImGui.BeginCombo("###DefaultHomePageSelectCombo", previewString))
         {
             foreach (var buttonInfo in PagesInfo)
@@ -1302,9 +1302,9 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
             if (ImGui.IsItemClicked())
                 Util.OpenLink(news.Url);
 
-            ImGui.Indent(2f * ImGuiHelpers.GlobalScale);
+            ImGui.Indent(2f * GlobalFontScale);
             ImGui.TextWrapped(news.Title);
-            ImGui.Unindent(2f * ImGuiHelpers.GlobalScale);
+            ImGui.Unindent(2f * GlobalFontScale);
 
             ImGui.EndChild();
         }

@@ -70,7 +70,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoReplaceLocationAction-AdjustDistance")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(80f * GlobalFontScale);
         ImGui.InputFloat("###AdjustDistanceInput", ref ModuleConfig.AdjustDistance, 0, 0, "%.1f");
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);
@@ -81,7 +81,7 @@ public class AutoReplaceLocationAction : DailyModuleBase
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoReplaceLocationAction-BlacklistContents")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(200f * GlobalFontScale);
         if (ContentSelectCombo(ref ModuleConfig.BlacklistContent, ref ContentSearchInput)) SaveConfig(ModuleConfig);
 
         var tableSize = new Vector2(ImGui.GetContentRegionAvail().X / 3, 0);

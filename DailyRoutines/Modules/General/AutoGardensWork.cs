@@ -75,7 +75,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoGardensWork-Seed")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(150f * GlobalFontScale);
         if (ImGui.BeginCombo("###Seeds",
                              ModuleConfig.SelectedSeed == 0
                                  ? string.Empty
@@ -105,7 +105,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoGardensWork-Soil")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(150f * GlobalFontScale);
         if (ImGui.BeginCombo("###Soils",
                              ModuleConfig.SelectedSoil == 0
                                  ? string.Empty
@@ -148,7 +148,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoGardensWork-Fertilizer")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(150f * GlobalFontScale);
         if (ImGui.BeginCombo("###Fertilizer",
                              ModuleConfig.SelectedFertilizer == 0
                                  ? string.Empty
@@ -185,12 +185,12 @@ public unsafe class AutoGardensWork : DailyModuleBase
         ImGui.Spacing();
 
         ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("Stop"), groupSize with { X = 80f * ImGuiHelpers.GlobalScale }))
+        if (ImGui.Button(Service.Lang.GetText("Stop"), groupSize with { X = 80f * GlobalFontScale }))
             TaskHelper.Abort();
 
         ImGui.SameLine();
         if (ImGui.Button(Service.Lang.GetText("AutoGardensWork-ObtainGardensAround"),
-                         groupSize with { X = 100f * ImGuiHelpers.GlobalScale }))
+                         groupSize with { X = 100f * GlobalFontScale }))
             ObtainGardensAround();
 
         ImGui.EndGroup();
@@ -244,7 +244,7 @@ public unsafe class AutoGardensWork : DailyModuleBase
                     ImGui.InputText("###GardenRenameInput", ref GardenRenameInput, 128);
                     ImGui.EndGroup();
 
-                    var buttonSize = ImGui.GetItemRectSize() with { Y = 24f * ImGuiHelpers.GlobalScale };
+                    var buttonSize = ImGui.GetItemRectSize() with { Y = 24f * GlobalFontScale };
 
                     ImGui.Spacing();
                     if (ImGui.Button(Service.Lang.GetText("AutoGardensWork-ConfirmRename"), buttonSize))

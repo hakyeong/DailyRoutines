@@ -144,7 +144,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         ImGui.Text($"{Service.Lang.GetText("FastObjectInteract-FontScale")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(80f * GlobalFontScale);
         ImGui.InputFloat("###FontScaleInput", ref ModuleConfig.FontScale, 0f, 0f,
                          ModuleConfig.FontScale.ToString(CultureInfo.InvariantCulture));
 
@@ -158,7 +158,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         ImGui.Text($"{Service.Lang.GetText("FastObjectInteract-MinButtonWidth")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(80f * GlobalFontScale);
         ImGui.InputFloat("###MinButtonWidthInput", ref ModuleConfig.MinButtonWidth, 0, 0,
                          ModuleConfig.MinButtonWidth.ToString(CultureInfo.InvariantCulture));
 
@@ -172,7 +172,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         ImGui.Text($"{Service.Lang.GetText("FastObjectInteract-MaxDisplayAmount")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(80f * GlobalFontScale);
         ImGui.InputInt("###MaxDisplayAmountInput", ref ModuleConfig.MaxDisplayAmount, 0, 0);
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
@@ -184,7 +184,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         ImGui.Text($"{Service.Lang.GetText("FastObjectInteract-SelectedObjectKinds")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(300f * GlobalFontScale);
         if (ImGui.BeginCombo("###ObjectKindsSelection",
                              Service.Lang.GetText("FastObjectInteract-SelectedObjectKindsAmount", ModuleConfig.SelectedKinds.Count),
                              ImGuiComboFlags.HeightLarge))
@@ -210,12 +210,12 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         ImGui.Text($"{Service.Lang.GetText("FastObjectInteract-BlacklistKeysList")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(300f * GlobalFontScale);
         if (ImGui.BeginCombo("###BlacklistObjectsSelection",
                              Service.Lang.GetText("FastObjectInteract-BlacklistKeysListAmount",
                                                   ModuleConfig.BlacklistKeys.Count), ImGuiComboFlags.HeightLarge))
         {
-            ImGui.SetNextItemWidth(250f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(250f * GlobalFontScale);
             ImGui.InputTextWithHint("###BlacklistKeyInput",
                                     $"{Service.Lang.GetText("FastObjectInteract-BlacklistKeysListInputHelp")}",
                                     ref BlacklistKeyInput, 100);

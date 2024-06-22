@@ -40,7 +40,7 @@ public class AutoJumboCactpot : DailyModuleBase
 
     public override void ConfigUI()
     {
-        ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(100f * GlobalFontScale);
         if (ImGui.BeginCombo(Service.Lang.GetText("AutoJumboCactpot-NumberMode"), NumberModeLoc[NumberMode]))
         {
             foreach (var modePair in NumberModeLoc)
@@ -56,7 +56,7 @@ public class AutoJumboCactpot : DailyModuleBase
         if (NumberMode == Mode.Fixed)
         {
             ImGui.SameLine();
-            ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(100f * GlobalFontScale);
             ImGui.InputInt(Service.Lang.GetText("AutoJumboCactpot-FixedNumber"), ref FixedNumber, 0, 0);
 
             if (ImGui.IsItemDeactivatedAfterEdit())

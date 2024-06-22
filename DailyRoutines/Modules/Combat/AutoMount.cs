@@ -50,7 +50,7 @@ public unsafe class AutoMount : DailyModuleBase
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoMount-SelecteMount")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(150f * GlobalFontScale);
         if (MountSelectCombo(ref SelectedMount, ref MountSearchInput))
         {
             ModuleConfig.SelectedMount = SelectedMount.RowId;

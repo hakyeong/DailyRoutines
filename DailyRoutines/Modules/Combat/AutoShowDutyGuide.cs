@@ -61,7 +61,7 @@ public class AutoShowDutyGuide : DailyModuleBase
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("WorkTheory")}:");
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoShowDutyGuide-TheoryHelp"), 30f);
 
-        ImGui.SetNextItemWidth(80f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(80f * GlobalFontScale);
         ImGui.InputFloat(Service.Lang.GetText("AutoShowDutyGuide-FontScale"), ref ModuleConfig.FontScale);
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);

@@ -55,12 +55,12 @@ public unsafe class MarkerInPartyList : DailyModuleBase
 
     public override void ConfigUI()
     {
-        ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(200f * GlobalFontScale);
         ImGui.InputFloat2(Service.Lang.GetText("MarkerInPartyList-IconOffset"), ref ModuleConfig.PartyListIconOffset, "%.1f");
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);
 
-        ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(200f * GlobalFontScale);
         ImGui.InputFloat(Service.Lang.GetText("MarkerInPartyList-IconScale"), ref ModuleConfig.PartyListIconScale, 0, 0, "%.1f");
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);

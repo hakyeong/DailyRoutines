@@ -211,7 +211,7 @@ public unsafe class Debug() : Window("Daily Routines - 调试窗口###DailyRouti
 
             ImGui.Checkbox("显示日志###Execute Command Manager", ref DebugConfig.ShowExecuteCommandLog);
 
-            ImGui.PushItemWidth(70f * ImGuiHelpers.GlobalScale);
+            ImGui.PushItemWidth(70f * GlobalFontScale);
             ImGui.InputInt("Command", ref ExecuteCommandManual.commmand, 0, 0);
 
             ImGui.InputInt("P1", ref ExecuteCommandManual.p1, 0, 0);

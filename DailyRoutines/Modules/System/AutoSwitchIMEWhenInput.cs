@@ -59,7 +59,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
         var tableSize = ((ImGui.GetContentRegionAvail() / 2) - ImGuiHelpers.ScaledVector2(20f)) with { Y = 0 };
         if (ImGui.BeginTable("IMESelectTable", 4, ImGuiTableFlags.Borders, tableSize))
         {
-            ImGui.TableSetupColumn("单选框", ImGuiTableColumnFlags.WidthFixed, 20f * ImGuiHelpers.GlobalScale);
+            ImGui.TableSetupColumn("单选框", ImGuiTableColumnFlags.WidthFixed, 20f * GlobalFontScale);
             ImGui.TableSetupColumn("布局", ImGuiTableColumnFlags.None, 40);
             ImGui.TableSetupColumn("模式", ImGuiTableColumnFlags.None, 20);
             ImGui.TableSetupColumn("句式", ImGuiTableColumnFlags.None, 20);
@@ -84,7 +84,7 @@ public unsafe class AutoSwitchIMEWhenInput : DailyModuleBase
                 ImGui.TableNextRow();
 
                 ImGui.TableNextColumn();
-                ImGui.PushItemWidth(20f * ImGuiHelpers.GlobalScale);
+                ImGui.PushItemWidth(20f * GlobalFontScale);
                 if (ImGui.RadioButton($"##{ime.Name}-{ime.Mode}-{ime.Sentence}", ime.Equals(ModuleConfig.SavedIME)))
                 {
                     ModuleConfig.SavedIME = ime;

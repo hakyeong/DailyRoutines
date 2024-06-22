@@ -50,7 +50,7 @@ public class AutoLeaveDuty : DailyModuleBase
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("AutoLeaveDuty-BlacklistContents")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(250f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(250f * GlobalFontScale);
         if (ContentSelectCombo(ref ModuleConfig.BlacklistContents, ref ContentSearchInput))
             SaveConfig(ModuleConfig);
 

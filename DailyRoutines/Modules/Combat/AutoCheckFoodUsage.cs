@@ -73,7 +73,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
         ImGui.Indent();
         ImGui.Dummy(Vector2.One);
 
-        ImGui.SetNextItemWidth(50f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(50f * GlobalFontScale);
         ImGui.InputInt(Service.Lang.GetText("AutoCheckFoodUsage-RefreshThreshold"), ref ModuleConfig.RefreshThreshold, 0, 0);
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);
@@ -111,7 +111,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
                 ImGui.Text($"{Service.Lang.GetText("Food")}:");
 
                 ImGui.SameLine();
-                ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+                ImGui.SetNextItemWidth(200f * GlobalFontScale);
                 SingleSelectCombo(PresetData.Food, ref SelectedItem, ref SelectItemSearch, x => $"{x.Name.RawString} ({x.RowId})",
                     [new("物品", ImGuiTableColumnFlags.WidthStretch, 0)],
                     [x => () =>

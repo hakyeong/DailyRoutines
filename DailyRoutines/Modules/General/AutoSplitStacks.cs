@@ -114,7 +114,7 @@ public unsafe class AutoSplitStacks : DailyModuleBase
                 ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Item")}:");
 
                 ImGui.SameLine();
-                ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+                ImGui.SetNextItemWidth(200f * GlobalFontScale);
                 if (ImGui.BeginCombo("###ItemSelectCombo", SelectedItem == null ? "" : SelectedItem.Name.RawString))
                 {
                     ImGui.SetNextItemWidth(-1f);
@@ -147,7 +147,7 @@ public unsafe class AutoSplitStacks : DailyModuleBase
                 ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Amount")}:");
 
                 ImGui.SameLine();
-                ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+                ImGui.SetNextItemWidth(200f * GlobalFontScale);
                 if (ImGui.InputInt("###SplitAmountInput", ref SplitAmountInput, 0, 0))
                     SplitAmountInput = Math.Clamp(SplitAmountInput, 1, 998);
 
@@ -208,7 +208,7 @@ public unsafe class AutoSplitStacks : DailyModuleBase
                     ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Amount")}:");
 
                     ImGui.SameLine();
-                    ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+                    ImGui.SetNextItemWidth(150f * GlobalFontScale);
                     ImGui.InputInt($"###{group.ItemID}AmountEdit", ref SplitAmountInput, 0, 0);
                     if (ImGui.IsItemDeactivatedAfterEdit())
                     {
@@ -251,7 +251,7 @@ public unsafe class AutoSplitStacks : DailyModuleBase
         {
             ImGui.Text($"{Service.Lang.GetText("AutoSplitStacks-PleaseInputSplitAmount")}:");
 
-            ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(150f * GlobalFontScale);
             if (ImGui.InputInt("###FastSplitAmountInput", ref SplitAmountInput, 0, 0))
                 SplitAmountInput = Math.Clamp(SplitAmountInput, 1, 998);
 

@@ -393,7 +393,7 @@ public unsafe class AutoDiscard : DailyModuleBase
 
         if (ImGui.BeginPopup("AddNewGroupPopup", ImGuiWindowFlags.AlwaysAutoResize))
         {
-            ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(200f * GlobalFontScale);
             ImGui.InputTextWithHint("###NewGroupNameInput",
                                     Service.Lang.GetText("AutoDiscard-AddNewGroupInputNameHelp"), ref NewGroupNameInput,
                                     100);
@@ -432,7 +432,7 @@ public unsafe class AutoDiscard : DailyModuleBase
 
         if (ImGui.BeginPopup("EditGroupPopup", ImGuiWindowFlags.AlwaysAutoResize))
         {
-            ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(200f * GlobalFontScale);
             ImGui.InputTextWithHint("###EditGroupNameInput",
                                     Service.Lang.GetText("AutoDiscard-AddNewGroupInputNameHelp"),
                                     ref EditGroupNameInput, 100);
@@ -492,7 +492,7 @@ public unsafe class AutoDiscard : DailyModuleBase
 
         if (ImGui.BeginPopup("ItemsEdit"))
         {
-            var leftChildSize = new Vector2(200 * ImGuiHelpers.GlobalScale, 300 * ImGuiHelpers.GlobalScale);
+            var leftChildSize = new Vector2(200 * GlobalFontScale, 300 * GlobalFontScale);
             if (ImGui.BeginChild("SelectedItemChild", leftChildSize, true))
             {
                 ImGui.SetNextItemWidth(-1f);

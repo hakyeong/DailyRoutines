@@ -61,14 +61,14 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
             SaveConfig(ModuleConfig);
 
         ImGui.BeginGroup();
-        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(150f * GlobalFontScale);
         ImGui.SliderInt($"{Service.Lang.GetText("AutoAdjustScreenBrightness-Threshold")} (%)",
                         ref ModuleConfig.BrightnessThreshold, -10, 100);
 
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);
 
-        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(150f * GlobalFontScale);
         ImGui.SliderInt($"{Service.Lang.GetText("AutoAdjustScreenBrightness-ThresholdContent")} (%)",
                         ref ModuleConfig.BrightnessThresholdContent, -10, 100);
 
@@ -79,7 +79,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
 
         ImGuiOm.TooltipHover(Service.Lang.GetText("AutoAdjustScreenBrightness-ThresholdHelp"));
 
-        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(150f * GlobalFontScale);
         ImGui.SliderInt($"{Service.Lang.GetText("AutoAdjustScreenBrightness-AdjustSpeed")} (%)",
                         ref ModuleConfig.AdjustSpeed, 1, 200);
 
@@ -88,7 +88,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
 
         ImGuiOm.TooltipHover(Service.Lang.GetText("AutoAdjustScreenBrightness-AdjustSpeedHelp"));
 
-        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(150f * GlobalFontScale);
         ImGui.SliderInt($"{Service.Lang.GetText("AutoAdjustScreenBrightness-BrightnessMin")} (%)",
                         ref ModuleConfig.BrightnessMin, -10, 110);
 
@@ -97,7 +97,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase
 
         ImGuiOm.TooltipHover(Service.Lang.GetText("AutoAdjustScreenBrightness-BrightnessMinHelp"));
 
-        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(150f * GlobalFontScale);
         ImGui.SliderInt($"{Service.Lang.GetText("AutoAdjustScreenBrightness-BrightnessOriginal")} (%)",
                         ref OriginalBrightness, -10, 110);
 

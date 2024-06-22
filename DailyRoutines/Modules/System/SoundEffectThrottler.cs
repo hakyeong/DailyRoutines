@@ -27,7 +27,7 @@ public class SoundEffectThrottler : DailyModuleBase
 
     public override void ConfigUI()
     {
-        ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(100f * GlobalFontScale);
         ImGui.InputInt(Service.Lang.GetText("SoundEffectThrottler-Throttle"), ref ModuleConfig.Throttle, 0, 0);
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
@@ -37,7 +37,7 @@ public class SoundEffectThrottler : DailyModuleBase
 
         ImGuiOm.HelpMarker(Service.Lang.GetText("SoundEffectThrottler-ThrottleHelp", ModuleConfig.Throttle));
 
-        ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(100f * GlobalFontScale);
         ImGui.SliderInt(Service.Lang.GetText("SoundEffectThrottler-Volume"), ref ModuleConfig.Volume, 1, 3);
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);

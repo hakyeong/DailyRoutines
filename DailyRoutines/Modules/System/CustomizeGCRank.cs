@@ -30,7 +30,7 @@ public unsafe class CustomizeGCRank : DailyModuleBase
 
     public override void ConfigUI()
     {
-        ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(200f * GlobalFontScale);
         ImGui.SliderInt(Service.Lang.GetText("CustomizeGCRank-GCRank"), ref CustomRank, 1, 19);
 
         if (ImGui.IsItemDeactivatedAfterEdit())

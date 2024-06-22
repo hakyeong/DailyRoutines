@@ -85,7 +85,7 @@ public unsafe class CustomizeGameObject : DailyModuleBase
                 ImGuiHelpers.ScaledDummy(1f);
 
                 var buttonSize = new Vector2(ImGui.GetContentRegionAvail().X,
-                                             24f * ImGuiHelpers.GlobalScale);
+                                             24f * GlobalFontScale);
                 if (ImGui.Button(Service.Lang.GetText("Add"), buttonSize))
                 {
                     if (ScaleInput > 0 && !string.IsNullOrWhiteSpace(ValueInput))
@@ -260,7 +260,7 @@ public unsafe class CustomizeGameObject : DailyModuleBase
         if (ImGui.BeginTable("CustomizeTable", 2, ImGuiTableFlags.None))
         {
             ImGui.TableSetupColumn("Label", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("真得五个字").X);
-            ImGui.TableSetupColumn("Input", ImGuiTableColumnFlags.WidthFixed, 300f * ImGuiHelpers.GlobalScale);
+            ImGui.TableSetupColumn("Input", ImGuiTableColumnFlags.WidthFixed, 300f * GlobalFontScale);
 
             // 类型
             ImGui.TableNextRow();

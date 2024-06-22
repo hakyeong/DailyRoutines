@@ -207,7 +207,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
             if (ImGui.BeginPopup("AddNewPreset"))
             {
-                ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+                ImGui.SetNextItemWidth(150f * GlobalFontScale);
                 ImGui.InputTextWithHint("###GameItemSearchInput", Service.Lang.GetText("PleaseSearch"),
                                         ref ItemSearchInput, 100);
 
@@ -320,12 +320,12 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             ImGui.Image(itemLogo.ImGuiHandle, ImGuiHelpers.ScaledVector2(32));
 
             ImGui.SameLine();
-            ImGui.SetWindowFontScale(1.3f * ImGuiHelpers.GlobalScale);
+            ImGui.SetWindowFontScale(1.3f * GlobalFontScale);
             ImGui.Text(itemName);
 
             ImGui.SameLine();
-            ImGui.SetWindowFontScale(1.01f * ImGuiHelpers.GlobalScale);
-            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (6f * ImGuiHelpers.GlobalScale));
+            ImGui.SetWindowFontScale(1.01f * GlobalFontScale);
+            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (6f * GlobalFontScale));
             ImGui.Text(itemConfig.IsHQ ? $"({Service.Lang.GetText("HQ")})" : "");
             ImGui.SetWindowFontScale(1f);
 
@@ -352,7 +352,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             if (itemConfig.AdjustBehavior == AdjustBehavior.固定值)
             {
                 var originalValue = itemConfig.AdjustValues[AdjustBehavior.固定值];
-                ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
+                ImGui.SetNextItemWidth(100f * GlobalFontScale);
                 ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-ValueReduction"), ref originalValue);
 
                 if (ImGui.IsItemDeactivatedAfterEdit())
@@ -367,7 +367,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             if (itemConfig.AdjustBehavior == AdjustBehavior.百分比)
             {
                 var originalValue = itemConfig.AdjustValues[AdjustBehavior.百分比];
-                ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
+                ImGui.SetNextItemWidth(100f * GlobalFontScale);
                 ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-PercentageReduction"), ref originalValue);
 
                 if (ImGui.IsItemDeactivatedAfterEdit())
@@ -385,7 +385,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
             // 最低可接受价格
             var originalMin = itemConfig.PriceMinimum;
-            ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(150f * GlobalFontScale);
             ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-PriceMinimum"), ref originalMin);
 
             if (ImGui.IsItemDeactivatedAfterEdit())
@@ -407,7 +407,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
             // 最高可接受价格
             var originalMax = itemConfig.PriceMaximum;
-            ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(150f * GlobalFontScale);
             ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-PriceMaximum"), ref originalMax);
 
             if (ImGui.IsItemDeactivatedAfterEdit())
@@ -418,7 +418,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
             // 预期价格
             var originalExpected = itemConfig.PriceExpected;
-            ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(150f * GlobalFontScale);
             ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-PriceExpected"), ref originalExpected);
 
             if (ImGui.IsItemDeactivatedAfterEdit())
@@ -437,7 +437,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
             // 可接受降价值
             var originalPriceReducion = itemConfig.PriceMaxReduction;
-            ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(150f * GlobalFontScale);
             ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-PriceMaxReduction"),
                            ref originalPriceReducion);
 
@@ -451,7 +451,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
             // 意外情况
             ImGui.BeginGroup();
-            ImGui.SetNextItemWidth(180f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(180f * GlobalFontScale);
             if (ImGui.BeginCombo("###AddNewLogicConditionCombo", CondtionInput.ToString(), ImGuiComboFlags.HeightLarge))
             {
                 foreach (AbortCondition condition in Enum.GetValues(typeof(AbortCondition)))
@@ -473,7 +473,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 ImGui.EndCombo();
             }
 
-            ImGui.SetNextItemWidth(180f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(180f * GlobalFontScale);
             if (ImGui.BeginCombo("###AddNewLogicBehaviorCombo", BehaviorInput.ToString(), ImGuiComboFlags.HeightLarge))
             {
                 foreach (AbortBehavior behavior in Enum.GetValues(typeof(AbortBehavior)))
@@ -502,7 +502,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             {
                 // 条件处理 (键)
                 var origConditionStr = logic.Key.ToString();
-                ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+                ImGui.SetNextItemWidth(200f * GlobalFontScale);
                 ImGui.InputText($"###Condition_{origConditionStr}", ref origConditionStr, 100,
                                 ImGuiInputTextFlags.ReadOnly);
 
@@ -538,7 +538,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 // 行为处理 (值)
                 ImGui.SameLine();
                 var origBehaviorStr = logic.Value.ToString();
-                ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+                ImGui.SetNextItemWidth(150f * GlobalFontScale);
                 ImGui.InputText($"###Behavior_{origBehaviorStr}", ref origBehaviorStr, 100,
                                 ImGuiInputTextFlags.ReadOnly);
 
@@ -579,7 +579,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
         ImGui.SetWindowPos(pos);
 
-        ImGui.Dummy(new(200f * ImGuiHelpers.GlobalScale, 0f));
+        ImGui.Dummy(new(200f * GlobalFontScale, 0f));
 
         ImGui.BeginDisabled(TaskHelper.IsBusy || activeAddon != RetainerList);
 
@@ -672,13 +672,13 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             ImGui.PopID();
             ImGui.EndDisabled();
 
-            ImGui.Dummy(new(6f * ImGuiHelpers.GlobalScale));
+            ImGui.Dummy(new(6f * GlobalFontScale));
 
             if (ImGui.Checkbox(Service.Lang.GetText("AutoRetainerPriceAdjust-SendProcessMessage"),
                                ref ModuleConfig.SendProcessMessage))
                 SaveConfig(ModuleConfig);
 
-            ImGui.SetNextItemWidth(50f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(50f * GlobalFontScale);
             ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-OperationDelay"),
                            ref ModuleConfig.OperationDelay, 0, 0);
 

@@ -64,7 +64,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
             ImGui.Text($"{Service.Lang.GetText("Key")}:");
 
             ImGui.SameLine();
-            ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(300f * GlobalFontScale);
             ImGui.InputText("###KeyInput", ref KeyInput, 96);
 
 
@@ -72,7 +72,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
             ImGui.Text($"{Service.Lang.GetText("Value")}:");
 
             ImGui.SameLine();
-            ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
+            ImGui.SetNextItemWidth(300f * GlobalFontScale);
             ImGui.InputText("###ValueInput", ref ValueInput, 96);
 
             ImGui.AlignTextToFramePadding();
@@ -109,7 +109,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
 
             if (ImGui.BeginTable("###CustomizeInterfaceTextTable", 4, ImGuiTableFlags.Borders))
             {
-                ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, 20 * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupColumn("启用", ImGuiTableColumnFlags.WidthFixed, 20 * GlobalFontScale);
                 ImGui.TableSetupColumn("键", ImGuiTableColumnFlags.WidthStretch, 50);
                 ImGui.TableSetupColumn("值", ImGuiTableColumnFlags.WidthStretch, 50);
                 ImGui.TableSetupColumn("匹配模式", ImGuiTableColumnFlags.WidthStretch, 15);
@@ -150,7 +150,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
                         ImGui.Text($"{Service.Lang.GetText("Key")}:");
 
                         ImGui.SameLine();
-                        ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
+                        ImGui.SetNextItemWidth(300f * GlobalFontScale);
                         ImGui.InputText("###KeyEditInput", ref KeyEditInput, 96);
 
                         if (ImGui.IsItemDeactivatedAfterEdit() && !string.IsNullOrWhiteSpace(KeyEditInput))
@@ -188,7 +188,7 @@ public unsafe class CustomizeInterfaceText : DailyModuleBase
                         ImGui.Text($"{Service.Lang.GetText("Value")}:");
 
                         ImGui.SameLine();
-                        ImGui.SetNextItemWidth(300f * ImGuiHelpers.GlobalScale);
+                        ImGui.SetNextItemWidth(300f * GlobalFontScale);
                         ImGui.InputText("###ValueEditInput", ref ValueEditInput, 96);
 
                         if (ImGui.IsItemDeactivatedAfterEdit())

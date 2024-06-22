@@ -128,7 +128,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
         // 右半边
         ImGui.BeginGroup();
-        ImGui.SetNextItemWidth(240f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(240f * GlobalFontScale);
         if (ImGui.BeginCombo("###MessagesCombo",
                              Service.Lang.GetText("QuickChatPanel-SavedMessagesAmountText",
                                                   ModuleConfig.SavedMessages.Count)))
@@ -163,7 +163,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             ImGui.EndCombo();
         }
 
-        ImGui.SetNextItemWidth(240f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(240f * GlobalFontScale);
         if (ImGui.BeginCombo("###MacroCombo",
                              Service.Lang.GetText("QuickChatPanel-SavedMacrosAmountText", ModuleConfig.SavedMacros.Count),
                              ImGuiComboFlags.HeightLargest))
@@ -176,7 +176,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             ImGui.EndCombo();
         }
 
-        ImGui.SetNextItemWidth(240f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(240f * GlobalFontScale);
         if (ImGui.BeginCombo("###SoundEffectNoteEditCombo", "", ImGuiComboFlags.HeightLarge))
         {
             foreach (var seNote in ModuleConfig.SoundEffectNotes)
@@ -190,7 +190,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
                 var note = seNote.Value;
                 ImGui.SameLine();
-                ImGui.SetNextItemWidth(200f * ImGuiHelpers.GlobalScale);
+                ImGui.SetNextItemWidth(200f * GlobalFontScale);
                 if (ImGui.InputText("", ref note, 32))
                     ModuleConfig.SoundEffectNotes[seNote.Key] = note;
 
@@ -205,12 +205,12 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
         ImGui.Spacing();
 
-        ImGui.SetNextItemWidth(150f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(150f * GlobalFontScale);
         ImGui.InputFloat2("###ButtonOffsetInput", ref ModuleConfig.ButtonOffset, "%.1f");
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);
 
-        ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(100f * GlobalFontScale);
         var intConfigButtonSize = (int)ModuleConfig.ButtonSize;
         ImGui.InputInt("###ButtonSizeInput", ref intConfigButtonSize, 0, 0);
         if (ImGui.IsItemDeactivatedAfterEdit())
@@ -219,7 +219,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             SaveConfig(ModuleConfig);
         }
 
-        ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(100f * GlobalFontScale);
         ImGui.InputInt("###ButtonIconInput", ref ModuleConfig.ButtonIcon, 0, 0);
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
@@ -234,7 +234,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
         ImGui.Spacing();
 
-        ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(100f * GlobalFontScale);
         ImGui.InputFloat("###FontScaleInput", ref ModuleConfig.FontScale, 0, 0, "%.1f");
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
@@ -242,7 +242,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             SaveConfig(ModuleConfig);
         }
 
-        ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(100f * GlobalFontScale);
         ImGui.InputFloat("###OverlayHeightInput", ref ModuleConfig.OverlayHeight, 0, 0, "%.1f");
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
@@ -250,7 +250,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             SaveConfig(ModuleConfig);
         }
 
-        ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(100f * GlobalFontScale);
         if (ImGui.BeginCombo("###OverlayMacroDisplayModeCombo", MacroDisplayModeLoc[ModuleConfig.OverlayMacroDisplayMode]))
         {
             foreach (MacroDisplayMode mode in Enum.GetValues(typeof(MacroDisplayMode)))
@@ -269,7 +269,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
         void DrawMacroChild(bool isIndividual)
         {
-            var childSize = new Vector2(200 * ImGuiHelpers.GlobalScale, 300 * ImGuiHelpers.GlobalScale);
+            var childSize = new Vector2(200 * GlobalFontScale, 300 * GlobalFontScale);
             var module = RaptureMacroModule.Instance();
             if (ImGui.BeginChild($"{(isIndividual ? "Individual" : "Shared")}MacroSelectChild", childSize))
             {
@@ -427,7 +427,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
     {
         if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-Messages")))
         {
-            var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
+            var maxTextWidth = 300f * GlobalFontScale;
             if (ImGui.BeginChild("MessagesChild", ImGui.GetContentRegionAvail(), false))
             {
                 ImGui.SetWindowFontScale(ModuleConfig.FontScale);
@@ -479,7 +479,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             }
 
             ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
-                                    ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
+                                    ModuleConfig.OverlayHeight * GlobalFontScale));
 
             ImGui.EndTabItem();
         }
@@ -489,7 +489,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
     {
         if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-Macro")))
         {
-            var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
+            var maxTextWidth = 300f * GlobalFontScale;
             if (ImGui.BeginChild("MacroChild", ImGui.GetContentRegionAvail(), false))
             {
                 ImGui.SetWindowFontScale(ModuleConfig.FontScale);
@@ -579,7 +579,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             }
 
             ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
-                                    ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
+                                    ModuleConfig.OverlayHeight * GlobalFontScale));
 
             ImGui.EndTabItem();
         }
@@ -589,7 +589,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
     {
         if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-SystemSound")))
         {
-            var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
+            var maxTextWidth = 300f * GlobalFontScale;
             if (ImGui.BeginChild("SystemSoundChild"))
             {
                 ImGui.SetWindowFontScale(ModuleConfig.FontScale);
@@ -615,7 +615,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             }
 
             ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
-                                    ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
+                                    ModuleConfig.OverlayHeight * GlobalFontScale));
 
             ImGui.EndTabItem();
         }
@@ -625,7 +625,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
     {
         if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-GameItems")))
         {
-            var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
+            var maxTextWidth = 300f * GlobalFontScale;
             if (ImGui.BeginChild("GameItemChild", ImGui.GetContentRegionAvail(), false))
             {
                 ImGui.SetWindowFontScale(ModuleConfig.FontScale);
@@ -662,7 +662,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
                         Service.Chat.Print(new SeStringBuilder().AddItemLink(item.RowId, isConflictKeyHolding).Build());
                 }
 
-                maxTextWidth = ImGui.CalcTextSize(longestText).X + (200f * ImGuiHelpers.GlobalScale);
+                maxTextWidth = ImGui.CalcTextSize(longestText).X + (200f * GlobalFontScale);
                 maxTextWidth = Math.Max(TwentyCharsSize.X, maxTextWidth);
 
                 ImGui.SetWindowFontScale(1f);
@@ -671,7 +671,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             }
 
             ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
-                                    ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
+                                    ModuleConfig.OverlayHeight * GlobalFontScale));
 
             ImGui.EndTabItem();
         }
@@ -681,7 +681,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
     {
         if (ImGui.BeginTabItem(Service.Lang.GetText("QuickChatPanel-SpecialIconChar")))
         {
-            var maxTextWidth = 300f * ImGuiHelpers.GlobalScale;
+            var maxTextWidth = 300f * GlobalFontScale;
             if (ImGui.BeginChild("SeIconChild", ImGui.GetContentRegionAvail(), false))
             {
                 ImGui.SetWindowFontScale(ModuleConfig.FontScale);
@@ -714,7 +714,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             }
 
             ImGui.SetWindowSize(new(Math.Max(DefaultOverlayWidth, maxTextWidth),
-                                    ModuleConfig.OverlayHeight * ImGuiHelpers.GlobalScale));
+                                    ModuleConfig.OverlayHeight * GlobalFontScale));
 
             ImGui.EndTabItem();
         }

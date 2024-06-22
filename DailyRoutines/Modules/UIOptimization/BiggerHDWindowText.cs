@@ -46,7 +46,7 @@ public unsafe class BiggerHDWindowText : DailyModuleBase
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("BiggerHDWindowText-FontScale")}:");
 
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(100f * ImGuiHelpers.GlobalScale);
+        ImGui.SetNextItemWidth(100f * GlobalFontScale);
         ImGui.InputFloat("###FontScaleInput", ref FontScale, 0, 0, "%.1f");
         if (ImGui.IsItemDeactivatedAfterEdit())
         {

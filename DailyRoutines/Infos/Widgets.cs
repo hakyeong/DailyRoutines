@@ -22,9 +22,10 @@ namespace DailyRoutines.Infos;
 
 public static class Widgets
 {
-    public static SeString RPrefix => rPrefix.Value;
-    public static SeString DRPrefix => drPrefix.Value;
+    public static SeString RPrefix             => rPrefix.Value;
+    public static SeString DRPrefix            => drPrefix.Value;
     public static SeString DailyRoutinesPrefix => dailyRoutinesPrefix.Value;
+    public static float    GlobalFontScale     => Service.Config.InterfaceFontSize / 12f;
 
     private static Vector2 CheckboxSize = ImGuiHelpers.ScaledVector2(20f);
 
@@ -114,8 +115,8 @@ public static class Widgets
             var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
             if (ImGui.BeginTable("###ContentSelectTable", 5, ImGuiTableFlags.Borders, tableSize))
             {
-                ImGui.TableSetupColumn("RadioButton", ImGuiTableColumnFlags.WidthFixed, 20f * ImGuiHelpers.GlobalScale);
-                ImGui.TableSetupColumn("Icon", ImGuiTableColumnFlags.WidthFixed, 20f * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupColumn("RadioButton", ImGuiTableColumnFlags.WidthFixed, 20f * GlobalFontScale);
+                ImGui.TableSetupColumn("Icon", ImGuiTableColumnFlags.WidthFixed, 20f * GlobalFontScale);
                 ImGui.TableSetupColumn("Level", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("123").X);
                 ImGui.TableSetupColumn("DutyName", ImGuiTableColumnFlags.WidthStretch, 40);
                 ImGui.TableSetupColumn("PlaceName", ImGuiTableColumnFlags.WidthStretch, 40);
@@ -198,7 +199,7 @@ public static class Widgets
             if (ImGui.BeginTable("###ContentSelectTable", 5, ImGuiTableFlags.Borders, tableSize))
             {
                 ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, CheckboxSize.X);
-                ImGui.TableSetupColumn("Icon", ImGuiTableColumnFlags.WidthFixed, 20f * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupColumn("Icon", ImGuiTableColumnFlags.WidthFixed, 20f * GlobalFontScale);
                 ImGui.TableSetupColumn("Level", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("123").X);
                 ImGui.TableSetupColumn("DutyName", ImGuiTableColumnFlags.WidthStretch, 40);
                 ImGui.TableSetupColumn("PlaceName", ImGuiTableColumnFlags.WidthStretch, 40);
@@ -436,8 +437,8 @@ public static class Widgets
             var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
             if (ImGui.BeginTable("###ActionSelectTable", 4, ImGuiTableFlags.Borders, tableSize))
             {
-                ImGui.TableSetupColumn("RadioButton", ImGuiTableColumnFlags.WidthFixed, 20f * ImGuiHelpers.GlobalScale);
-                ImGui.TableSetupColumn("Job", ImGuiTableColumnFlags.WidthFixed, 70f * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupColumn("RadioButton", ImGuiTableColumnFlags.WidthFixed, 20f * GlobalFontScale);
+                ImGui.TableSetupColumn("Job", ImGuiTableColumnFlags.WidthFixed, 70f * GlobalFontScale);
                 ImGui.TableSetupColumn("Level", ImGuiTableColumnFlags.WidthFixed, ImGui.CalcTextSize("1234").X);
                 ImGui.TableSetupColumn("Action", ImGuiTableColumnFlags.WidthStretch, 50);
 
@@ -517,9 +518,9 @@ public static class Widgets
             var tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
             if (ImGui.BeginTable("###MountSelectTable", 3, ImGuiTableFlags.Borders, tableSize))
             {
-                ImGui.TableSetupColumn("RadioButton", ImGuiTableColumnFlags.WidthFixed, 20f * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupColumn("RadioButton", ImGuiTableColumnFlags.WidthFixed, 20f * GlobalFontScale);
                 ImGui.TableSetupColumn("Icon", ImGuiTableColumnFlags.WidthFixed, ImGuiHelpers.ScaledVector2(20f).X);
-                ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 200f * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 200f * GlobalFontScale);
 
                 ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
                 ImGui.TableNextColumn();
