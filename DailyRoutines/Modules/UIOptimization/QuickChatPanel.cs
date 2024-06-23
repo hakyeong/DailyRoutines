@@ -13,8 +13,6 @@ using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
-using Dalamud.Interface.Utility;
-using Dalamud.Interface.Utility.Raii;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -123,8 +121,10 @@ public unsafe class QuickChatPanel : DailyModuleBase
         ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("QuickChatPanel-OverlayHeight")}:");
 
         ImGui.AlignTextToFramePadding();
-        ImGui.TextColored(ImGuiColors.DalamudOrange,
-                          $"{Service.Lang.GetText("QuickChatPanel-OverlayMacroDisplayMode")}:");
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("QuickChatPanel-OverlayPosOffset")}:");
+
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("QuickChatPanel-OverlayMacroDisplayMode")}:");
 
         ImGui.EndGroup();
 
@@ -238,6 +238,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
         ImGui.Spacing();
 
+        // 字体缩放
         ImGui.SetNextItemWidth(100f * GlobalFontScale);
         ImGui.InputFloat("###FontScaleInput", ref ModuleConfig.FontScale, 0, 0, "%.1f");
         if (ImGui.IsItemDeactivatedAfterEdit())
@@ -246,6 +247,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             SaveConfig(ModuleConfig);
         }
 
+        // 窗口高度
         ImGui.SetNextItemWidth(100f * GlobalFontScale);
         ImGui.InputFloat("###OverlayHeightInput", ref ModuleConfig.OverlayHeight, 0, 0, "%.1f");
         if (ImGui.IsItemDeactivatedAfterEdit())
@@ -258,6 +260,12 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 MinimumSize = new(1, ModuleConfig.OverlayHeight),
             };
         }
+
+        // 窗口位置偏移
+        ImGui.SetNextItemWidth(150f * GlobalFontScale);
+        ImGui.InputFloat2("###OverlayPosOffsetInput", ref ModuleConfig.OverlayOffset, "%.1f");
+        if (ImGui.IsItemDeactivatedAfterEdit())
+            SaveConfig(ModuleConfig);
 
         ImGui.SetNextItemWidth(100f * GlobalFontScale);
         if (ImGui.BeginCombo("###OverlayMacroDisplayModeCombo", MacroDisplayModeLoc[ModuleConfig.OverlayMacroDisplayMode]))
@@ -358,7 +366,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             var buttonPos = new Vector2(textInputNode->X + textInputNode->Width, textInputNode->ScreenY) +
                             ModuleConfig.ButtonOffset;
 
-            ImGui.SetWindowPos(buttonPos with { Y = buttonPos.Y - ImGui.GetWindowSize().Y - 16f });
+            ImGui.SetWindowPos(buttonPos with { Y = buttonPos.Y - ImGui.GetWindowSize().Y - 16f } + ModuleConfig.OverlayOffset);
 
             TwentyCharsSize = ImGui.CalcTextSize("我也不知道要说什么但是真得要凑齐二十几个汉字");
 
@@ -681,25 +689,27 @@ public unsafe class QuickChatPanel : DailyModuleBase
             var maxTextWidth = 300f * GlobalFontScale;
             if (ImGui.BeginChild("SeIconChild", ImGui.GetContentRegionAvail(), false))
             {
-                ImGui.BeginGroup();
-                for (var i = 0; i < SeIconChars.Length; i++)
+                using (FontHelper.DefaultFont.Push())
                 {
-                    var icon = SeIconChars[i];
-
-                    if (ImGui.Button($"{icon}", new(48 * ModuleConfig.FontScale)))
-                        ImGui.SetClipboardText(icon.ToString());
-
-                    ImGuiOm.TooltipHover($"0x{(int)icon:X4}");
-
-                    if ((i + 1) % 7 != 0) ImGui.SameLine();
-                    else
+                    ImGui.BeginGroup();
+                    for (var i = 0; i < SeIconChars.Length; i++)
                     {
-                        ImGui.SameLine();
-                        ImGui.Dummy(new(20 * ModuleConfig.FontScale));
-                    }
-                }
+                        var icon = SeIconChars[i];
 
-                ImGui.EndGroup();
+                        if (ImGui.Button($"{icon}", new(96 * ModuleConfig.FontScale)))
+                            ImGui.SetClipboardText(icon.ToString());
+
+                        ImGuiOm.TooltipHover($"0x{(int)icon:X4}");
+
+                        if ((i + 1) % 7 != 0) ImGui.SameLine();
+                        else
+                        {
+                            ImGui.SameLine();
+                            ImGui.Dummy(new(20 * ModuleConfig.FontScale));
+                        }
+                    }
+                    ImGui.EndGroup();
+                }
 
                 maxTextWidth = ImGui.GetItemRectSize().X;
                 maxTextWidth = Math.Max(TwentyCharsSize.X, maxTextWidth);
@@ -877,6 +887,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
         public ushort ButtonSize = 48;
         public float FontScale = 1.5f;
         public float OverlayHeight = 250f;
+        public Vector2 OverlayOffset = new(0);
         public MacroDisplayMode OverlayMacroDisplayMode = MacroDisplayMode.Buttons;
     }
 }

@@ -2241,4 +2241,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
 高于阈值时, 禁止使用技能覆盖
 低于阈值时, 允许使用技能覆盖</value>
   </data>
+  <data name="QuickChatPanel-OverlayPosOffset" xml:space="preserve">
+    <value>窗口位置偏移</value>
+  </data>
 </root>
