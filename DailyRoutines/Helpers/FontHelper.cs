@@ -6,6 +6,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DailyRoutines.Managers;
+using Dalamud.Game.Text;
+using Dalamud.Interface;
+using Dalamud.Interface.GameFonts;
 using Dalamud.Interface.ManagedFontAtlas;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
@@ -68,7 +71,6 @@ public class FontHelper
 
         return handle;
     }
-
 
     private static async Task ProcessFontCreationQueueAsync()
     {
@@ -146,6 +148,10 @@ public class FontHelper
             builder.AddChar((char)i);
 
         builder.AddChar('⓪');
+
+        foreach (var seIconChar in Enum.GetValues<SeIconChar>())
+            builder.AddChar((char)seIconChar);
+
         return builder.BuildRangesToArray();
     }
 
@@ -158,7 +164,7 @@ public class FontHelper
                                                                null, ImGui.GetIO().Fonts.GetGlyphRangesChineseFull(),
                                                                ImGui.GetIO().Fonts.GetGlyphRangesDefault()));
 
-    private static readonly Lazy<IFontHandle> defaultFont = new(() => Service.PluginInterface.UiBuilder.DefaultFontHandle);
+    private static readonly Lazy<IFontHandle> defaultFont = new(() => FontAtlas.NewGameFontHandle(new(GameFontFamilyAndSize.Axis18)));
 
     #endregion
 }
