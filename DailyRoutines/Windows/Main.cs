@@ -121,7 +121,7 @@ public class Main : Window, IDisposable
                 DrawCategoriesComponent();
             }
 
-            width = Math.Max(ImGui.GetItemRectSize().X, 200f * GlobalFontScale);
+            width = Math.Max(ImGui.GetItemRectSize().X, 250f * GlobalFontScale);
         }
 
         LeftTabComponentSize.X = width;
@@ -531,7 +531,7 @@ public class Main : Window, IDisposable
             ImageHelper.TryGetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/AfdianSponsor.jpg",
                                     out var imageWarpper1);
 
-        var childSize = ImageCarousel.CurrentImageSize + (ImGui.GetStyle().ItemSpacing * 2);
+        var childSize = ImageCarousel.CurrentImageSize + (ImGui.GetStyle().ItemSpacing * 2) + new Vector2(50f) * GlobalFontScale;
         using (ImRaii.Child("HomePage_ChangelogComponent", childSize, false, ChildFlags | ImGuiWindowFlags.NoScrollWithMouse))
         {
             if (imageState0)
