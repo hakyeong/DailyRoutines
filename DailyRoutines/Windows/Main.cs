@@ -104,7 +104,9 @@ public class Main : Window, IDisposable
     #region 左侧
     private static void DrawLeftTabComponent()
     {
+        float width;
         LeftTabComponentSize.Y = ImGui.GetContentRegionAvail().Y;
+
         using (ImRaii.Child("LeftTabComponentSize", LeftTabComponentSize, false, ChildFlags | ImGuiWindowFlags.NoScrollWithMouse))
         {
             using (ImRaii.Group())
@@ -119,8 +121,10 @@ public class Main : Window, IDisposable
                 DrawCategoriesComponent();
             }
 
-            LeftTabComponentSize.X = Math.Max(ImGui.GetItemRectSize().X, 200f * GlobalFontScale);
+            width = Math.Max(ImGui.GetItemRectSize().X, 200f * GlobalFontScale);
         }
+
+        LeftTabComponentSize.X = width;
     }
 
     private static void DrawLogoComponent()
@@ -167,7 +171,6 @@ public class Main : Window, IDisposable
     private static void DrawContactComponent()
     {
         ImGuiHelpers.CenterCursorFor(ContactComponentSize.X);
-
         using (ImRaii.Group())
         {
             ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.ChildBg));
@@ -248,9 +251,10 @@ public class Main : Window, IDisposable
 
     private static void DrawUpperTabComponent()
     {
-        UpperTabComponentSize.X = ImGui.GetContentRegionAvail().X;
         using (FontHelper.UIFont120.Push())
         {
+            float height;
+            UpperTabComponentSize.X = ImGui.GetContentRegionAvail().X;
             using (ImRaii.Child("ChildUpRight", UpperTabComponentSize, false, ChildFlags | ImGuiWindowFlags.NoScrollWithMouse))
             {
                 ScaledDummy(1f, 8f);
@@ -291,7 +295,7 @@ public class Main : Window, IDisposable
                 ImGui.PopStyleColor(3);
                 SettingsButtonSize = ImGui.GetItemRectSize();
 
-                UpperTabComponentSize.Y = ImGui.GetItemRectSize().Y * 2;
+                height = ImGui.GetItemRectSize().Y * 2;
 
                 // 搜素图标
                 ImGui.AlignTextToFramePadding();
@@ -301,6 +305,7 @@ public class Main : Window, IDisposable
                 using var font = ImRaii.PushFont(UiBuilder.IconFont);
                 ImGui.Text(FontAwesomeIcon.Search.ToIconString());
             }
+            UpperTabComponentSize.Y = height;
         }
     }
 
@@ -408,6 +413,7 @@ public class Main : Window, IDisposable
         using (FontHelper.UIFont140.Push())
         {
             var greetingObject = ImGui.CalcTextSize($"{GreetingPlace}, {GreetingName}");
+            Vector2 size;
             using (ImRaii.Child("HomePage_Greeting", ChildGreetingSize, false, ChildFlags))
             {
                 using (ImRaii.Group())
@@ -418,9 +424,11 @@ public class Main : Window, IDisposable
 
                     ImGui.Text($"{GreetingPlace}, {GreetingName}");
                 }
-                
-                ChildGreetingSize = ImGui.GetItemRectSize();
+
+                size = ImGui.GetItemRectSize();
             }
+
+            ChildGreetingSize = size;
         }
     }
 
@@ -431,6 +439,7 @@ public class Main : Window, IDisposable
         using (FontHelper.UIFont80.Push())
         {
             ChildGameCalendarsSize.X = ImageCarousel.ChildSize.X;
+            float height;
             using (ImRaii.Child("HomePage_GameEvents", ChildGameCalendarsSize))
             {
                 using (ImRaii.Group())
@@ -474,8 +483,9 @@ public class Main : Window, IDisposable
                         }
                     }
                 }
-                ChildGameCalendarsSize.Y = ImGui.GetItemRectSize().Y;
+                height = ImGui.GetItemRectSize().Y;
             }
+            ChildGameCalendarsSize.Y = height;
         }
     }
 
