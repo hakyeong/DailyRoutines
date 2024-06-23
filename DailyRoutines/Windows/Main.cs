@@ -524,21 +524,42 @@ public class Main : Window, IDisposable
     {
         var imageState0 = 
             ImageHelper.TryGetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/Changelog.png", 
-                                    out var imageWarpper);
+                                    out var imageWarpper0);
 
-        var childSize = ImageCarousel.CurrentImageSize + ImGui.GetStyle().ItemSpacing * 2;
+        var imageState1 =
+            ImageHelper.TryGetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/AfdianSponsor.jpg",
+                                    out var imageWarpper1);
+
+        var childSize = ImageCarousel.CurrentImageSize + (ImGui.GetStyle().ItemSpacing * 2);
         if (ImGui.BeginChild("HomePage_ChangelogComponent", childSize, false, ChildFlags | ImGuiWindowFlags.NoScrollWithMouse))
         {
             if (imageState0)
                 if (ImGui.CollapsingHeader(
                         Service.Lang.GetText("Changelog", MainSettings.LatestVersionInfo.PublishTime.ToShortDateString())))
                 {
-                    ImGui.Image(imageWarpper.ImGuiHandle, ImageCarousel.CurrentImageSize);
-                    if (ImGui.IsItemHovered())
+                    ImGui.Image(imageWarpper0.ImGuiHandle, ImageCarousel.CurrentImageSize);
+                    if (ImGui.IsItemHovered()) ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+                    if (ImGui.IsItemClicked()) ImGui.OpenPopup("ChangelogPopup");
+
+                    if (ImGui.BeginPopup("ChangelogPopup"))
                     {
-                        ImGui.BeginTooltip();
-                        ImGui.Image(imageWarpper.ImGuiHandle, imageWarpper.Size * 0.8f);
-                        ImGui.EndTooltip();
+                        ImGui.Image(imageWarpper0.ImGuiHandle, imageWarpper0.Size * 0.8f);
+                        ImGui.EndPopup();
+                    }
+                }
+
+            if (imageState1)
+                if (ImGui.CollapsingHeader("爱发电赞助感谢 (2024/05)"))
+                {
+                    ImGui.Image(imageWarpper1.ImGuiHandle, ImageCarousel.CurrentImageSize 
+                                    with { Y = ImageCarousel.CurrentImageSize.Y + (400f * GlobalFontScale) });
+                    if (ImGui.IsItemHovered()) ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+                    if (ImGui.IsItemClicked()) ImGui.OpenPopup("SponsorPopup");
+
+                    if (ImGui.BeginPopup("SponsorPopup"))
+                    {
+                        ImGui.Image(imageWarpper1.ImGuiHandle, imageWarpper1.Size * 0.4f);
+                        ImGui.EndPopup();
                     }
                 }
 
@@ -1282,7 +1303,7 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
         var itemSpacing = ImGui.GetStyle().ItemSpacing;
         ChildSize = new Vector2(CurrentImageSize.X + (2 * itemSpacing.X), CurrentImageSize.Y + (singleCharSize.Y * 2));
 
-        if (ImGui.BeginChild("NewsImageCarousel", ChildSize, false, ImGuiWindowFlags.NoScrollbar))
+        if (ImGui.BeginChild("NewsImageCarousel", ChildSize, false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
         {
             var news = News[currentIndex];
             if (ImageHelper.TryGetImage(news.HomeImagePath, out var imageHandle))
