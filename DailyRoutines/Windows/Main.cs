@@ -62,6 +62,9 @@ public class Main : Window, IDisposable
     private static Vector2 HomePageMainInfoSize;
 
     private static int SelectedTab;
+    private static string GreetingText = string.Empty;
+    private static string GreetingName = string.Empty;
+    private static string GreetingPlace = string.Empty;
     internal static string SearchString = string.Empty;
 
     public Main() : base("Daily Routines - 主界面###DailyRoutines-Main")
@@ -90,11 +93,11 @@ public class Main : Window, IDisposable
             DrawLeftTabComponent();
 
             ImGui.SameLine();
-            ImGui.BeginGroup();
-            DrawUpperTabComponent();
-
-            DrawRightTabComponent();
-            ImGui.EndGroup();
+            using (ImRaii.Group())
+            {
+                DrawUpperTabComponent();
+                DrawRightTabComponent();
+            }
         }
     }
 
@@ -102,55 +105,53 @@ public class Main : Window, IDisposable
     private static void DrawLeftTabComponent()
     {
         LeftTabComponentSize.Y = ImGui.GetContentRegionAvail().Y;
-        if (ImGui.BeginChild("LeftTabComponentSize", LeftTabComponentSize, false, ChildFlags | ImGuiWindowFlags.NoScrollWithMouse))
+        using (ImRaii.Child("LeftTabComponentSize", LeftTabComponentSize, false, ChildFlags | ImGuiWindowFlags.NoScrollWithMouse))
         {
-            ImGui.BeginGroup();
-            ScaledDummy(1f, 16f);
-            DrawLogoComponent();
+            using (ImRaii.Group())
+            {
+                ScaledDummy(1f, 16f);
+                DrawLogoComponent();
 
-            ScaledDummy(1f, 8f);
-            DrawContactComponent();
+                ScaledDummy(1f, 8f);
+                DrawContactComponent();
 
-            ScaledDummy(1f, 16f);
-            DrawCategoriesComponent();
-
-            ImGui.EndGroup();
+                ScaledDummy(1f, 16f);
+                DrawCategoriesComponent();
+            }
 
             LeftTabComponentSize.X = Math.Max(ImGui.GetItemRectSize().X, 200f * GlobalFontScale);
-            ImGui.EndChild();
         }
     }
 
     private static void DrawLogoComponent()
     {
         ImGuiHelpers.CenterCursorFor(LogoComponentSize.X);
-        ImGui.BeginGroup();
-
-        ImGuiHelpers.CenterCursorFor(72f * GlobalFontScale);
-        ImGui.Image(PresetData.Icon.ImGuiHandle, ScaledVector2(72f));
-
-        using (FontHelper.UIFont140.Push())
+        using (ImRaii.Group())
         {
-            ImGuiHelpers.CenterCursorForText("Daily");
-            ImGuiOm.Text("Daily");
+            ImGuiHelpers.CenterCursorFor(72f * GlobalFontScale);
+            ImGui.Image(PresetData.Icon.ImGuiHandle, ScaledVector2(72f));
 
-            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (8f * GlobalFontScale));
-            ImGuiHelpers.CenterCursorForText("Routines");
-            ImGuiOm.Text("Routines");
+            using (FontHelper.UIFont140.Push())
+            {
+                ImGuiHelpers.CenterCursorForText("Daily");
+                ImGuiOm.Text("Daily");
+
+                ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (8f * GlobalFontScale));
+                ImGuiHelpers.CenterCursorForText("Routines");
+                ImGuiOm.Text("Routines");
+            }
+
+            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (4f * GlobalFontScale));
+            ImGuiHelpers.CenterCursorForText($"[{Plugin.Version}]");
+            if (Plugin.Version < MainSettings.LatestVersionInfo.Version)
+            {
+                ImGui.TextColored(ImGuiColors.DPSRed, $"[{Plugin.Version}]");
+                ImGuiOm.TooltipHover(Service.Lang.GetText("LowVersionWarning"));
+            }
+            else
+                ImGuiOm.TextDisabledWrapped($"[{Plugin.Version}]");
         }
-
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - (4f * GlobalFontScale));
-        ImGuiHelpers.CenterCursorForText($"[{Plugin.Version}]");
-        if (Plugin.Version < MainSettings.LatestVersionInfo.Version)
-        {
-            ImGui.TextColored(ImGuiColors.DPSRed, $"[{Plugin.Version}]");
-            ImGuiOm.TooltipHover(Service.Lang.GetText("LowVersionWarning"));
-        }
-        else
-            ImGuiOm.TextDisabledWrapped($"[{Plugin.Version}]");
-
-        ImGui.EndGroup();
-
+        
         if (ImGui.IsItemHovered())
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
 
@@ -167,30 +168,30 @@ public class Main : Window, IDisposable
     {
         ImGuiHelpers.CenterCursorFor(ContactComponentSize.X);
 
-        ImGui.BeginGroup();
-        ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.ChildBg));
-        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
-        ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
+        using (ImRaii.Group())
+        {
+            ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.ChildBg));
+            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
+            ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
 
-        if (ImGuiOm.ButtonIcon("GitHub", FontAwesomeIcon.CodePullRequest, "GitHub"))
-            Util.OpenLink("https://github.com/AtmoOmen/DailyRoutines");
+            if (ImGuiOm.ButtonIcon("GitHub", FontAwesomeIcon.CodePullRequest, "GitHub"))
+                Util.OpenLink("https://github.com/AtmoOmen/DailyRoutines");
 
-        ImGui.SameLine();
-        if (ImGuiOm.ButtonIcon("Bilibili", FontAwesomeIcon.PlayCircle, "Bilibili"))
-            Util.OpenLink("https://space.bilibili.com/22008977");
+            ImGui.SameLine();
+            if (ImGuiOm.ButtonIcon("Bilibili", FontAwesomeIcon.PlayCircle, "Bilibili"))
+                Util.OpenLink("https://space.bilibili.com/22008977");
 
-        ImGui.SameLine();
-        if (ImGuiOm.ButtonIcon("QQ 群", FontAwesomeIcon.Comments, "QQ 群"))
-            Util.OpenLink("https://qm.qq.com/q/QlImB8pn2");
+            ImGui.SameLine();
+            if (ImGuiOm.ButtonIcon("QQ 群", FontAwesomeIcon.Comments, "QQ 群"))
+                Util.OpenLink("https://qm.qq.com/q/QlImB8pn2");
 
-        ImGui.SameLine();
-        if (ImGuiOm.ButtonIcon("爱发电", FontAwesomeIcon.Donate, "爱发电"))
-            Util.OpenLink("https://afdian.net/a/AtmoOmen");
-        ImGuiOm.TooltipHover(Service.Lang.GetText("DonateHelp"));
+            ImGui.SameLine();
+            if (ImGuiOm.ButtonIcon("爱发电", FontAwesomeIcon.Donate, "爱发电"))
+                Util.OpenLink("https://afdian.net/a/AtmoOmen");
+            ImGuiOm.TooltipHover(Service.Lang.GetText("DonateHelp"));
 
-        ImGui.PopStyleColor(3);
-        ImGui.EndGroup();
-
+            ImGui.PopStyleColor(3);
+        }
         ContactComponentSize = ImGui.GetItemRectSize();
     }
 
@@ -204,40 +205,39 @@ public class Main : Window, IDisposable
             if (SelectedTab > 100)
                 selectedModule = (ModuleCategories)(SelectedTab % 100);
 
-            ImGui.BeginGroup();
-
-            var buttonSize = new Vector2(156f * GlobalFontScale, ImGui.CalcTextSize("你好").Y);
-
-            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
-            ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
-            ImGui.PushStyleColor(ImGuiCol.Button, SelectedTab == 3 ? ImGui.ColorConvertFloat4ToU32(ImGuiColors.TankBlue) : ImGui.GetColorU32(ImGuiCol.ChildBg));
-            if (ImGuiOm.ButtonIconWithText(FontAwesomeIcon.None, Service.Lang.GetText("Favorite"), buttonSize))
+            using (ImRaii.Group())
             {
-                SearchString = string.Empty;
-                SelectedTab = 3;
-            }
-            ImGui.PopStyleColor(3);
-
-            ScaledDummy(1f, 12f);
-
-            foreach (var category in Enum.GetValues<ModuleCategories>())
-            {
-                if (category == ModuleCategories.无) continue;
+                var buttonSize = new Vector2(156f * GlobalFontScale, ImGui.CalcTextSize("你好").Y);
 
                 ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
                 ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
-                ImGui.PushStyleColor(ImGuiCol.Button, selectedModule == category ? ImGui.ColorConvertFloat4ToU32(ImGuiColors.TankBlue) : ImGui.GetColorU32(ImGuiCol.ChildBg));
-
-                if (ImGuiOm.ButtonIconWithText(FontAwesomeIcon.None, category.ToString(), buttonSize))
+                ImGui.PushStyleColor(ImGuiCol.Button, SelectedTab == 3 ? ImGui.ColorConvertFloat4ToU32(ImGuiColors.TankBlue) : ImGui.GetColorU32(ImGuiCol.ChildBg));
+                if (ImGuiOm.ButtonIconWithText(FontAwesomeIcon.None, Service.Lang.GetText("Favorite"), buttonSize))
                 {
                     SearchString = string.Empty;
-                    SelectedTab = 100 + (int)category;
+                    SelectedTab = 3;
                 }
-
                 ImGui.PopStyleColor(3);
-            }
-            ImGui.EndGroup();
 
+                ScaledDummy(1f, 12f);
+
+                foreach (var category in Enum.GetValues<ModuleCategories>())
+                {
+                    if (category == ModuleCategories.无) continue;
+
+                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
+                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
+                    ImGui.PushStyleColor(ImGuiCol.Button, selectedModule == category ? ImGui.ColorConvertFloat4ToU32(ImGuiColors.TankBlue) : ImGui.GetColorU32(ImGuiCol.ChildBg));
+
+                    if (ImGuiOm.ButtonIconWithText(FontAwesomeIcon.None, category.ToString(), buttonSize))
+                    {
+                        SearchString = string.Empty;
+                        SelectedTab = 100 + (int)category;
+                    }
+
+                    ImGui.PopStyleColor(3);
+                }
+            }
             CategoriesComponentSize = ImGui.GetItemRectSize();
         }
     }
@@ -251,7 +251,7 @@ public class Main : Window, IDisposable
         UpperTabComponentSize.X = ImGui.GetContentRegionAvail().X;
         using (FontHelper.UIFont120.Push())
         {
-            if (ImGui.BeginChild("ChildUpRight", UpperTabComponentSize, false, ChildFlags | ImGuiWindowFlags.NoScrollWithMouse))
+            using (ImRaii.Child("ChildUpRight", UpperTabComponentSize, false, ChildFlags | ImGuiWindowFlags.NoScrollWithMouse))
             {
                 ScaledDummy(1f, 8f);
 
@@ -282,7 +282,7 @@ public class Main : Window, IDisposable
                 ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
                 ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
                 if (ImGui.Button($"{FontAwesomeIcon.Cog.ToIconString()}###Settings",
-                                       new(32f * GlobalFontScale, inputHeight)))
+                                 new(32f * GlobalFontScale, inputHeight)))
                 {
                     SelectedTab = 1;
                     SearchString = string.Empty;
@@ -300,8 +300,6 @@ public class Main : Window, IDisposable
 
                 using var font = ImRaii.PushFont(UiBuilder.IconFont);
                 ImGui.Text(FontAwesomeIcon.Search.ToIconString());
-
-                ImGui.EndChild();
             }
         }
     }
@@ -312,8 +310,9 @@ public class Main : Window, IDisposable
     private static void DrawRightTabComponent()
     {
         RightTabComponentSize = ImGui.GetContentRegionAvail();
-        if (ImGui.BeginChild("RightTabComponentChild", RightTabComponentSize, false, ChildFlags | 
-                                 (SelectedTab == 0 ? ImGuiWindowFlags.NoScrollWithMouse : ImGuiWindowFlags.None)))
+        if (ImRaii.Child("RightTabComponentChild", RightTabComponentSize, false, ChildFlags | (SelectedTab == 0
+                                                                                         ? ImGuiWindowFlags.NoScrollWithMouse
+                                                                                         : ImGuiWindowFlags.None)))
         {
             // 0 - 主页; 1 - 设置; 2 - 搜索; 3 - 收藏
             // 大于 100 - 模块分类
@@ -323,7 +322,7 @@ public class Main : Window, IDisposable
                 DrawModules(Modules, true);
                 return;
             }
-            
+
             switch (SelectedTab)
             {
                 case 0:
@@ -341,90 +340,86 @@ public class Main : Window, IDisposable
                         DrawModules(modules);
                     break;
             }
-
-            ImGui.EndChild();
         }
     }
 
     private static void DrawHomePage()
     {
-        ImGui.BeginGroup();
-        ImGui.Image(PresetData.Icon.ImGuiHandle, ScaledVector2(72f));
-
-        ImGui.SameLine();
-        ImGui.BeginGroup();
-        using (FontHelper.UIFont160.Push())
+        ImGui.SetScrollHereY();
+        using (ImRaii.Group())
         {
-            ImGuiOm.Text("Daily Routines");
+            ImGui.Image(PresetData.Icon.ImGuiHandle, ScaledVector2(72f));
+
+            ImGui.SameLine();
+            using (ImRaii.Group())
+            {
+                using (FontHelper.UIFont160.Push())
+                    ImGuiOm.Text("Daily Routines");
+
+                ImGuiOm.Text("Help With Some Boring Tasks");
+            }
         }
-
-        ImGuiOm.Text("Help With Some Boring Tasks");
-
-        ImGui.EndGroup();
-
-        ImGui.EndGroup();
-
-        ImGui.Dummy(new(1));
+        
+        ScaledDummy(1f);
 
         ImGui.SameLine();
-        ImGui.SetCursorPos(new(ImGui.GetContentRegionAvail().X - ChildGreetingSize.X,
-                           ImGui.GetCursorStartPos().Y));
+        ImGui.SetCursorPos(new(ImGui.GetContentRegionAvail().X - ChildGreetingSize.X, ImGui.GetCursorStartPos().Y));
         DrawHomePage_GreetingComponent();
 
         ScaledDummy(1f, 36f);
 
-        ImGuiHelpers.CenterCursorFor(HomePageMainInfoSize.X);
-        ImGui.BeginGroup();
+        ImGui.SetCursorPosX((int)((ImGui.GetContentRegionAvail().X - HomePageMainInfoSize.X) / 2f));
+        using (ImRaii.Group())
         {
-            ImGui.BeginGroup();
-            ImageCarousel.Draw();
+            using (ImRaii.Group())
+            {
+                ImageCarousel.Draw();
 
-            ScaledDummy(1f, 4f);
-
-            DrawHomePage_GameCalendarsComponent();
-            ImGui.EndGroup();
-
+                ScaledDummy(1f, 4f);
+                DrawHomePage_GameCalendarsComponent();
+            }
+            
             ImGui.SameLine();
             ScaledDummy(4f, 1f);
 
             ImGui.SameLine();
-            ImGui.BeginGroup();
 
-            ScaledDummy(1f, 8f);
+            using (ImRaii.Group())
+            {
+                ScaledDummy(1f, 8f);
+                DrawHomePage_PluginInfoComponent();
 
-            DrawHomePage_PluginInfoComponent();
-
-            ScaledDummy(1f, 8f);
-
-            DrawHomePage_ChangelogComponent();
-            ImGui.EndGroup();
+                ScaledDummy(1f, 8f);
+                DrawHomePage_ChangelogComponent();
+            }
         }
-        ImGui.EndGroup();
         HomePageMainInfoSize = ImGui.GetItemRectSize();
     }
 
     private static void DrawHomePage_GreetingComponent()
     {
-        var world = Service.ClientState.LocalPlayer?.HomeWorld.GameData?.Name?.RawString ?? "以太空间";
-        var name = Service.ClientState.LocalPlayer?.Name.TextValue ?? "光之战士";
+        if (Throttler.Throttle("Main-HomePage-GetGreetingText", 10000))
+        {
+            GreetingPlace = Service.ClientState.LocalPlayer?.HomeWorld.GameData?.Name?.RawString ?? "以太空间";
+            GreetingName = Service.ClientState.LocalPlayer?.Name.TextValue ?? "光之战士";
+            GreetingText = GetGreetingByTime();
+        }
 
         using (FontHelper.UIFont140.Push())
         {
-            var greetingObject = ImGui.CalcTextSize($"{world}, {name}");
-            if (ImGui.BeginChild("HomePage_Greeting", ChildGreetingSize, false, ChildFlags))
+            var greetingObject = ImGui.CalcTextSize($"{GreetingPlace}, {GreetingName}");
+            using (ImRaii.Child("HomePage_Greeting", ChildGreetingSize, false, ChildFlags))
             {
-                ImGui.BeginGroup();
-                var greetingText = $"{GetGreetingByTime()} !";
-                var greetingTextSize = ImGui.CalcTextSize(greetingText);
-                ImGui.SetCursorPosX(greetingObject.X - greetingTextSize.X - ImGui.GetStyle().ItemSpacing.X);
-                ImGui.Text(greetingText);
+                using (ImRaii.Group())
+                {
+                    var greetingTextSize = ImGui.CalcTextSize(GreetingText);
+                    ImGui.SetCursorPosX(greetingObject.X - greetingTextSize.X - ImGui.GetStyle().ItemSpacing.X);
+                    ImGui.Text(GreetingText);
 
-                ImGui.Text($"{world}, {name}");
-                ImGui.EndGroup();
-
+                    ImGui.Text($"{GreetingPlace}, {GreetingName}");
+                }
+                
                 ChildGreetingSize = ImGui.GetItemRectSize();
-
-                ImGui.EndChild();
             }
         }
     }
@@ -435,51 +430,51 @@ public class Main : Window, IDisposable
 
         using (FontHelper.UIFont80.Push())
         {
-            if (ImGui.BeginChild("HomePage_GameEvents", ChildGameCalendarsSize))
+            ChildGameCalendarsSize.X = ImageCarousel.ChildSize.X;
+            using (ImRaii.Child("HomePage_GameEvents", ChildGameCalendarsSize))
             {
-                ChildGameCalendarsSize.X = ImageCarousel.ChildSize.X;
-                ImGui.BeginGroup();
-                foreach (var activity in MainSettings.GameCalendars)
+                using (ImRaii.Group())
                 {
-                    if (Service.Config.IsHideOutdatedEvent && activity.State == 2) continue;
-                    var statusStr = activity.State == 2 ? Service.Lang.GetText("GameCalendar-EventEnded") : "";
-                    ImGui.PushStyleColor(ImGuiCol.Button, activity.Color);
-                    ImGui.BeginDisabled(activity.State == 2);
-                    if (ImGuiOm.ButtonCompact($"{activity.Url}", $"{activity.Name} {statusStr}"))
-                        Util.OpenLink($"{activity.Url}");
-
-                    ImGui.EndDisabled();
-                    ImGui.PopStyleColor();
-
-                    if (ImGui.IsItemHovered())
+                    foreach (var activity in MainSettings.GameCalendars)
                     {
-                        ImGui.BeginTooltip();
-                        ImGui.TextColored(ImGuiColors.DalamudOrange, "距离");
+                        if (Service.Config.IsHideOutdatedEvent && activity.State == 2) continue;
+                        var statusStr = activity.State == 2 ? Service.Lang.GetText("GameCalendar-EventEnded") : "";
+                        ImGui.PushStyleColor(ImGuiCol.Button, activity.Color);
+                        ImGui.BeginDisabled(activity.State == 2);
+                        if (ImGuiOm.ButtonCompact($"{activity.Name}{activity.Url}", $"{activity.Name} {statusStr}"))
+                            Util.OpenLink($"{activity.Url}");
 
-                        ImGui.SameLine();
-                        ImGui.TextColored(ImGuiColors.HealerGreen,
-                                          $"{(activity.State is 0 ? Service.Lang.GetText("End") : Service.Lang.GetText("Start"))}");
+                        ImGui.EndDisabled();
+                        ImGui.PopStyleColor();
 
-                        ImGui.SameLine();
-                        ImGui.TextColored(ImGuiColors.DalamudOrange, "还有: ");
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.BeginTooltip();
+                            ImGui.TextColored(ImGuiColors.DalamudOrange, "距离");
 
-                        ImGui.SameLine();
-                        ImGui.Text($"{activity.DaysLeft} 天");
+                            ImGui.SameLine();
+                            ImGui.TextColored(ImGuiColors.HealerGreen,
+                                              $"{(activity.State is 0 ? Service.Lang.GetText("End") : Service.Lang.GetText("Start"))}");
 
-                        ImGui.TextColored(ImGuiColors.DalamudOrange,
-                                          activity.State is 0
-                                              ? $"{Service.Lang.GetText("EndTime")}: "
-                                              : $"{Service.Lang.GetText("StartTime")}: ");
+                            ImGui.SameLine();
+                            ImGui.TextColored(ImGuiColors.DalamudOrange, "还有: ");
 
-                        ImGui.SameLine();
-                        ImGui.Text(activity.State is 0 ? $"{activity.EndTime}" : $"{activity.BeginTime}");
+                            ImGui.SameLine();
+                            ImGui.Text($"{activity.DaysLeft} 天");
 
-                        ImGui.EndTooltip();
+                            ImGui.TextColored(ImGuiColors.DalamudOrange,
+                                              activity.State is 0
+                                                  ? $"{Service.Lang.GetText("EndTime")}: "
+                                                  : $"{Service.Lang.GetText("StartTime")}: ");
+
+                            ImGui.SameLine();
+                            ImGui.Text(activity.State is 0 ? $"{activity.EndTime}" : $"{activity.BeginTime}");
+
+                            ImGui.EndTooltip();
+                        }
                     }
                 }
-                ImGui.EndGroup();
                 ChildGameCalendarsSize.Y = ImGui.GetItemRectSize().Y;
-                ImGui.EndChild();
             }
         }
     }
@@ -488,30 +483,31 @@ public class Main : Window, IDisposable
     {
         using (FontHelper.UIFont120.Push())
         {
-            ImGui.BeginGroup();
-            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("CurrentVersion")}:");
+            using (ImRaii.Group())
+            {
+                ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("CurrentVersion")}:");
 
-            ImGui.SameLine();
-            ImGui.TextColored(Plugin.Version < MainSettings.LatestVersionInfo.Version ? ImGuiColors.DPSRed : ImGuiColors.DalamudWhite, $"{Plugin.Version}");
+                ImGui.SameLine();
+                ImGui.TextColored(Plugin.Version < MainSettings.LatestVersionInfo.Version ? ImGuiColors.DPSRed : ImGuiColors.DalamudWhite, $"{Plugin.Version}");
 
-            if (Plugin.Version < MainSettings.LatestVersionInfo.Version)
-                ImGuiOm.TooltipHover(Service.Lang.GetText("LowVersionWarning"));
+                if (Plugin.Version < MainSettings.LatestVersionInfo.Version)
+                    ImGuiOm.TooltipHover(Service.Lang.GetText("LowVersionWarning"));
 
-            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestVersion")}:");
+                ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestVersion")}:");
 
-            ImGui.SameLine();
-            ImGui.Text($"{MainSettings.LatestVersionInfo.Version}");
+                ImGui.SameLine();
+                ImGui.Text($"{MainSettings.LatestVersionInfo.Version}");
 
-            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestDL")}:");
+                ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("LatestDL")}:");
 
-            ImGui.SameLine();
-            ImGui.Text($"{MainSettings.LatestVersionInfo.DownloadCount}");
+                ImGui.SameLine();
+                ImGui.Text($"{MainSettings.LatestVersionInfo.DownloadCount}");
 
-            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("TotalDL")}:");
+                ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("TotalDL")}:");
 
-            ImGui.SameLine();
-            ImGui.Text($"{MainSettings.TotalDownloadCounts}");
-            ImGui.EndGroup();
+                ImGui.SameLine();
+                ImGui.Text($"{MainSettings.TotalDownloadCounts}");
+            }
         }
     }
 
@@ -526,7 +522,7 @@ public class Main : Window, IDisposable
                                     out var imageWarpper1);
 
         var childSize = ImageCarousel.CurrentImageSize + (ImGui.GetStyle().ItemSpacing * 2);
-        if (ImGui.BeginChild("HomePage_ChangelogComponent", childSize, false, ChildFlags | ImGuiWindowFlags.NoScrollWithMouse))
+        using (ImRaii.Child("HomePage_ChangelogComponent", childSize, false, ChildFlags | ImGuiWindowFlags.NoScrollWithMouse))
         {
             if (imageState0)
                 if (ImGui.CollapsingHeader(
@@ -536,29 +532,24 @@ public class Main : Window, IDisposable
                     if (ImGui.IsItemHovered()) ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
                     if (ImGui.IsItemClicked()) ImGui.OpenPopup("ChangelogPopup");
 
-                    if (ImGui.BeginPopup("ChangelogPopup"))
-                    {
+                    using var popup = ImRaii.Popup("ChangelogPopup");
+                    if (popup.Success)
                         ImGui.Image(imageWarpper0.ImGuiHandle, imageWarpper0.Size * 0.8f);
-                        ImGui.EndPopup();
-                    }
                 }
 
             if (imageState1)
                 if (ImGui.CollapsingHeader($"{Service.Lang.GetText("Settings-AfdianSponsor")} (2024/05)"))
                 {
-                    ImGui.Image(imageWarpper1.ImGuiHandle, ImageCarousel.CurrentImageSize 
-                                    with { Y = ImageCarousel.CurrentImageSize.Y + (400f * GlobalFontScale) });
+                    ImGui.Image(imageWarpper1.ImGuiHandle, ImageCarousel.CurrentImageSize
+                                    with
+                                    { Y = ImageCarousel.CurrentImageSize.Y + (400f * GlobalFontScale) });
                     if (ImGui.IsItemHovered()) ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
                     if (ImGui.IsItemClicked()) ImGui.OpenPopup("SponsorPopup");
 
-                    if (ImGui.BeginPopup("SponsorPopup"))
-                    {
+                    using var popup = ImRaii.Popup("SponsorPopup");
+                    if (popup.Success)
                         ImGui.Image(imageWarpper1.ImGuiHandle, imageWarpper1.Size * 0.4f);
-                        ImGui.EndPopup();
-                    }
                 }
-
-            ImGui.EndChild();
         }
     }
 
@@ -633,9 +624,8 @@ public class Main : Window, IDisposable
                 if (CollapsingHeader(moduleInfo.Title))
                 {
                     ImGui.SetCursorPosX(origCursorPosX);
-                    ImGui.BeginGroup();
-                    moduleInstance.ConfigUI();
-                    ImGui.EndGroup();
+                    using (ImRaii.Group())
+                        moduleInstance.ConfigUI();
                 }
             }
             else
@@ -650,31 +640,32 @@ public class Main : Window, IDisposable
         ImGuiOm.TextDisabledWrapped(moduleInfo.Description);
 
         ImGui.SetCursorPosX(origCursorPosX);
-        ImGui.BeginGroup();
-        if (moduleInfo.PrecedingModule is { Length: > 0 })
+        using (ImRaii.Group())
         {
-            ImGuiOm.TextDisabledWrapped($"({Service.Lang.GetText("PrecedingModules")}:");
-            for (var i = 0; i < moduleInfo.PrecedingModule.Length; i++)
+            if (moduleInfo.PrecedingModule is { Length: > 0 })
             {
-                var pModule = moduleInfo.PrecedingModule[i];
-
-                ImGui.SameLine();
-                ImGui.TextColored(ImGuiColors.DalamudYellow, pModule);
-
-                if (ImGui.IsItemClicked())
-                    SearchString = pModule;
-
-                if (i < moduleInfo.PrecedingModule.Length - 1)
+                ImGuiOm.TextDisabledWrapped($"({Service.Lang.GetText("PrecedingModules")}:");
+                for (var i = 0; i < moduleInfo.PrecedingModule.Length; i++)
                 {
-                    ImGui.SameLine();
-                    ImGui.TextDisabled("/");
-                }
-            }
+                    var pModule = moduleInfo.PrecedingModule[i];
 
-            ImGui.SameLine(0, 0);
-            ImGuiOm.TextDisabledWrapped(")");
+                    ImGui.SameLine();
+                    ImGui.TextColored(ImGuiColors.DalamudYellow, pModule);
+
+                    if (ImGui.IsItemClicked())
+                        SearchString = pModule;
+
+                    if (i < moduleInfo.PrecedingModule.Length - 1)
+                    {
+                        ImGui.SameLine();
+                        ImGui.TextDisabled("/");
+                    }
+                }
+
+                ImGui.SameLine(0, 0);
+                ImGuiOm.TextDisabledWrapped(")");
+            }
         }
-        ImGui.EndGroup();
 
         return;
 
@@ -691,45 +682,58 @@ public class Main : Window, IDisposable
 
     private static void DrawModuleContextMenu(ModuleInfo moduleInfo)
     {
-        if (ImGui.BeginPopupContextItem($"ContextMenu_{moduleInfo.Title}_{moduleInfo.Description}_{moduleInfo.Module.Name}"))
+        using var popup = ImRaii.ContextPopupItem($"ContextMenu_{moduleInfo.Title}_{moduleInfo.Description}_{moduleInfo.Module.Name}");
+        if (!popup.Success) return;
+        using (FontHelper.UIFont120.Push())
         {
-            using (FontHelper.UIFont120.Push())
+            ImGui.Text($"{moduleInfo.Title}");
+        }
+
+        using (FontHelper.UIFont80.Push())
+        {
+            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Settings-ModuleInfoCategory")}:");
+
+            ImGui.SameLine();
+            ImGui.Text($"{moduleInfo.Category}");
+
+            ImGui.SameLine();
+            ImGui.Text("/");
+
+            ImGui.SameLine();
+            ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Settings-ModuleInfoAuthor")}:");
+
+            ImGui.SameLine();
+            ImGui.Text($"{moduleInfo.Author ?? "AtmoOmen"}");
+
+            if (OnlineStatsManager.ModuleUsageStats.TryGetValue(moduleInfo.Title, out var amount))
             {
-                ImGui.Text($"{moduleInfo.Title}");
+                ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Settings-EnabledAmount")}:");
+
+                ImGui.SameLine();
+                ImGui.Text($"{amount + (Service.Config.ModuleEnabled[moduleInfo.Module.Name] ? 1 : 0)}");
             }
 
-            using (FontHelper.UIFont80.Push())
+            ImGui.Separator();
+            ScaledDummy(1f);
+
+            var isFavorite = Service.Config.ModuleFavorites.Contains(moduleInfo.Module.Name);
+            if (ImGui.Selectable($"    {(isFavorite ? "\u2605 " : "")}{Service.Lang.GetText("Favorite")}", isFavorite, ImGuiSelectableFlags.DontClosePopups))
             {
-                ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Settings-ModuleInfoCategory")}:");
+                if (!Service.Config.ModuleFavorites.Remove(moduleInfo.Module.Name))
+                    Service.Config.ModuleFavorites.Add(moduleInfo.Module.Name);
 
-                ImGui.SameLine();
-                ImGui.Text($"{moduleInfo.Category}");
+                ModulesFavorite.Clear();
+                ModulesFavorite.AddRange(Modules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
+            }
 
-                ImGui.SameLine();
-                ImGui.Text("/");
+            ImGui.Separator();
 
-                ImGui.SameLine();
-                ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Settings-ModuleInfoAuthor")}:");
-
-                ImGui.SameLine();
-                ImGui.Text($"{moduleInfo.Author ?? "AtmoOmen"}");
-
-                if (OnlineStatsManager.ModuleUsageStats.TryGetValue(moduleInfo.Title, out var amount))
+            if (moduleInfo.PrecedingModule != null)
+            {
+                if (ImGui.Selectable($"    {Service.Lang.GetText("Settings-EnableAllPModules")}", isFavorite, ImGuiSelectableFlags.DontClosePopups))
                 {
-                    ImGui.TextColored(ImGuiColors.DalamudOrange, $"{Service.Lang.GetText("Settings-EnabledAmount")}:");
-
-                    ImGui.SameLine();
-                    ImGui.Text($"{amount + (Service.Config.ModuleEnabled[moduleInfo.Module.Name] ? 1 : 0)}");
-                }
-
-                ImGui.Separator();
-                ScaledDummy(1f);
-
-                var isFavorite = Service.Config.ModuleFavorites.Contains(moduleInfo.Module.Name);
-                if (ImGui.Selectable($"    {(isFavorite ? "\u2605 " : "")}{Service.Lang.GetText("Favorite")}", isFavorite, ImGuiSelectableFlags.DontClosePopups))
-                {
-                    if (!Service.Config.ModuleFavorites.Remove(moduleInfo.Module.Name))
-                        Service.Config.ModuleFavorites.Add(moduleInfo.Module.Name);
+                    foreach (var pModuleType in moduleInfo.Module.GetCustomAttribute<PrecedingModuleAttribute>().Modules)
+                        Service.ModuleManager.Load(pModuleType, true);
 
                     ModulesFavorite.Clear();
                     ModulesFavorite.AddRange(Modules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
@@ -737,71 +741,55 @@ public class Main : Window, IDisposable
 
                 ImGui.Separator();
 
-                if (moduleInfo.PrecedingModule != null)
+                if (ImGui.Selectable($"    {Service.Lang.GetText("Settings-DisableAllPModules")}", isFavorite, ImGuiSelectableFlags.DontClosePopups))
                 {
-                    if (ImGui.Selectable($"    {Service.Lang.GetText("Settings-EnableAllPModules")}", isFavorite, ImGuiSelectableFlags.DontClosePopups))
-                    {
-                        foreach (var pModuleType in moduleInfo.Module.GetCustomAttribute<PrecedingModuleAttribute>().Modules)
-                            Service.ModuleManager.Load(pModuleType, true);
+                    foreach (var pModuleType in moduleInfo.Module.GetCustomAttribute<PrecedingModuleAttribute>().Modules)
+                        Service.ModuleManager.Unload(pModuleType, true);
 
-                        ModulesFavorite.Clear();
-                        ModulesFavorite.AddRange(Modules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
-                    }
-
-                    ImGui.Separator();
-
-                    if (ImGui.Selectable($"    {Service.Lang.GetText("Settings-DisableAllPModules")}", isFavorite, ImGuiSelectableFlags.DontClosePopups))
-                    {
-                        foreach (var pModuleType in moduleInfo.Module.GetCustomAttribute<PrecedingModuleAttribute>().Modules)
-                            Service.ModuleManager.Unload(pModuleType, true);
-
-                        ModulesFavorite.Clear();
-                        ModulesFavorite.AddRange(Modules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
-                    }
-
-                    ImGui.Separator();
+                    ModulesFavorite.Clear();
+                    ModulesFavorite.AddRange(Modules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
                 }
 
-                if (ImGuiOm.Selectable($"    {Service.Lang.GetText("Settings-ResetModule")}"))
-                {
-                    Task.Run(() =>
-                    {
-                        if (!Service.Config.ModuleEnabled.TryGetValue(moduleInfo.Module.Name, out var isModuleEnabled))
-                            return;
-
-                        var module = Service.ModuleManager.Modules[moduleInfo.Module];
-                        if (isModuleEnabled) Service.ModuleManager.Unload(module);
-
-                        if (moduleInfo.WithConfig)
-                            File.Delete(Path.Join(Service.PluginInterface.ConfigDirectory.FullName, $"{moduleInfo.Module.Name}.json"));
-
-                        if (isModuleEnabled) Service.ModuleManager.Load(module);
-
-                        NotifyHelper.NotificationSuccess(Service.Lang.GetText("Settings-ResetModuleSuccessNotice", moduleInfo.Title));
-                    });
-                }
-
-                if (moduleInfo.WithConfig)
-                {
-                    ImGui.Separator();
-                    if (ImGuiOm.Selectable($"    {Service.Lang.GetText("Settings-ModuleConfiguration")}"))
-                        OpenFileOrFolder
-                            (Path.Join(Service.PluginInterface.ConfigDirectory.FullName, $"{moduleInfo.Module.Name}.json"));
-                }
-
-                if (moduleInfo.WithConfigUI)
-                {
-                    ImGui.Separator();
-                    if (ImGuiOm.Selectable($"    {Service.Lang.GetText("Settings-ShowOverlayConfig")}"))
-                    {
-                        var module = Service.ModuleManager.Modules[moduleInfo.Module];
-                        module.OverlayConfig ??= new(module);
-                        module.OverlayConfig.IsOpen ^= true;
-                    }
-                }
+                ImGui.Separator();
             }
 
-            ImGui.EndPopup();
+            if (ImGuiOm.Selectable($"    {Service.Lang.GetText("Settings-ResetModule")}"))
+            {
+                Task.Run(() =>
+                {
+                    if (!Service.Config.ModuleEnabled.TryGetValue(moduleInfo.Module.Name, out var isModuleEnabled))
+                        return;
+
+                    var module = Service.ModuleManager.Modules[moduleInfo.Module];
+                    if (isModuleEnabled) Service.ModuleManager.Unload(module);
+
+                    if (moduleInfo.WithConfig)
+                        File.Delete(Path.Join(Service.PluginInterface.ConfigDirectory.FullName, $"{moduleInfo.Module.Name}.json"));
+
+                    if (isModuleEnabled) Service.ModuleManager.Load(module);
+
+                    NotifyHelper.NotificationSuccess(Service.Lang.GetText("Settings-ResetModuleSuccessNotice", moduleInfo.Title));
+                });
+            }
+
+            if (moduleInfo.WithConfig)
+            {
+                ImGui.Separator();
+                if (ImGuiOm.Selectable($"    {Service.Lang.GetText("Settings-ModuleConfiguration")}"))
+                    OpenFileOrFolder
+                        (Path.Join(Service.PluginInterface.ConfigDirectory.FullName, $"{moduleInfo.Module.Name}.json"));
+            }
+
+            if (moduleInfo.WithConfigUI)
+            {
+                ImGui.Separator();
+                if (ImGuiOm.Selectable($"    {Service.Lang.GetText("Settings-ShowOverlayConfig")}"))
+                {
+                    var module = Service.ModuleManager.Modules[moduleInfo.Module];
+                    module.OverlayConfig ??= new(module);
+                    module.OverlayConfig.IsOpen ^= true;
+                }
+            }
         }
     }
     #endregion
@@ -949,7 +937,7 @@ public class MainSettings
         ImGui.SameLine();
         ImGui.BeginDisabled();
         ImGui.SetNextItemWidth(180f * GlobalFontScale);
-        if (ImGui.BeginCombo("##LanguagesList", "简体中文")) ImGui.EndCombo();
+        using (ImRaii.Combo("##LanguagesList", "简体中文")) { }
         ImGui.EndDisabled();
 
         ImGui.Spacing();
@@ -970,28 +958,29 @@ public class MainSettings
 
         ImGui.SameLine();
         ImGui.SetNextItemWidth(150f * GlobalFontScale);
-        if (ImGui.BeginCombo("##GlobalConflictHotkey", Service.Config.ConflictKey.ToString()))
+        using (var combo = ImRaii.Combo("##GlobalConflictHotkey", Service.Config.ConflictKey.ToString()))
         {
-            ImGui.SetNextItemWidth(-1f);
-            ImGui.InputTextWithHint("##ConflictKeySearchBar", $"{Service.Lang.GetText("PleaseSearch")}...",
-                                    ref ConflictKeySearchString, 20);
-
-            ImGui.Separator();
-
-            var validKeys = Service.KeyState.GetValidVirtualKeys();
-            foreach (var keyToSelect in validKeys)
+            if (combo.Success)
             {
-                if (!string.IsNullOrWhiteSpace(ConflictKeySearchString) && !keyToSelect.GetFancyName()
-                        .Contains(ConflictKeySearchString, StringComparison.OrdinalIgnoreCase)) continue;
+                ImGui.SetNextItemWidth(-1f);
+                ImGui.InputTextWithHint("##ConflictKeySearchBar", $"{Service.Lang.GetText("PleaseSearch")}...",
+                                        ref ConflictKeySearchString, 20);
 
-                if (ImGui.Selectable(keyToSelect.GetFancyName()))
+                ImGui.Separator();
+
+                var validKeys = Service.KeyState.GetValidVirtualKeys();
+                foreach (var keyToSelect in validKeys)
                 {
-                    Service.Config.ConflictKey = keyToSelect;
-                    Service.Config.Save();
+                    if (!string.IsNullOrWhiteSpace(ConflictKeySearchString) && !keyToSelect.GetFancyName()
+                            .Contains(ConflictKeySearchString, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    if (ImGui.Selectable(keyToSelect.GetFancyName()))
+                    {
+                        Service.Config.ConflictKey = keyToSelect;
+                        Service.Config.Save();
+                    }
                 }
             }
-
-            ImGui.EndCombo();
         }
         ImGuiOm.TooltipHover(Service.Lang.GetText("ConflictKeyHelp"));
 
@@ -1073,29 +1062,30 @@ public class MainSettings
                                 PagesInfo[defaultHomePage];
 
         ImGui.SetNextItemWidth(150f * GlobalFontScale);
-        if (ImGui.BeginCombo("###DefaultHomePageSelectCombo", previewString))
+        using (var combo = ImRaii.Combo("###DefaultHomePageSelectCombo", previewString))
         {
-            foreach (var buttonInfo in PagesInfo)
+            if (combo.Success)
             {
-                if (ImGuiOm.Selectable(buttonInfo.Value))
+                foreach (var buttonInfo in PagesInfo)
                 {
-                    Service.Config.DefaultHomePage = buttonInfo.Key;
-                    Service.Config.Save();
+                    if (ImGuiOm.Selectable(buttonInfo.Value))
+                    {
+                        Service.Config.DefaultHomePage = buttonInfo.Key;
+                        Service.Config.Save();
+                    }
+                }
+
+                foreach (var buttonInfo in Enum.GetValues<ModuleCategories>())
+                {
+                    if (buttonInfo == ModuleCategories.无) continue;
+
+                    if (ImGuiOm.Selectable(buttonInfo.ToString()))
+                    {
+                        Service.Config.DefaultHomePage = (int)buttonInfo + 100;
+                        Service.Config.Save();
+                    }
                 }
             }
-
-            foreach (var buttonInfo in Enum.GetValues<ModuleCategories>())
-            {
-                if (buttonInfo == ModuleCategories.无) continue;
-
-                if (ImGuiOm.Selectable(buttonInfo.ToString()))
-                {
-                    Service.Config.DefaultHomePage = (int)buttonInfo + 100;
-                    Service.Config.Save();
-                }
-            }
-
-            ImGui.EndCombo();
         }
     }
 
@@ -1111,11 +1101,13 @@ public class MainSettings
         Task.Run(async () =>
         {
             ImageHelper.GetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/Changelog.png");
+            ImageHelper.GetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/AfdianSponsor.jpg");
             await GetGameCalendar();
             await GetGameNews();
             TotalDownloadCounts = await GetTotalDownloadsAsync();
             LatestVersionInfo = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
 
+            FontHelper.GetUIFont(0.9f);
             for (var i = 0.6f; i < 1.6f; i += 0.2f)
                 FontHelper.GetUIFont(i);
         });
@@ -1274,23 +1266,23 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
     public readonly Vector2 CurrentImageSize = ScaledVector2(375, 200);
 
     private int currentIndex;
-    private double lastImageChangeTime;
+    private long lastImageChangeTime;
 
     public void Draw()
     {
         if (News.Count == 0) return;
 
-        if (ImGui.GetTime() - lastImageChangeTime > ChangeInterval)
+        if (Environment.TickCount64 - lastImageChangeTime > ChangeInterval * 1000)
         {
             currentIndex = (currentIndex + 1) % News.Count;
-            lastImageChangeTime = ImGui.GetTime();
+            lastImageChangeTime = Environment.TickCount64;
         }
 
         var singleCharSize = ImGui.CalcTextSize("测");
         var itemSpacing = ImGui.GetStyle().ItemSpacing;
         ChildSize = new Vector2(CurrentImageSize.X + (2 * itemSpacing.X), CurrentImageSize.Y + (singleCharSize.Y * 2.5f));
 
-        if (ImGui.BeginChild("NewsImageCarousel", ChildSize, false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
+        using (ImRaii.Child("NewsImageCarousel", ChildSize, false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
         {
             var news = News[currentIndex];
             if (ImageHelper.TryGetImage(news.HomeImagePath, out var imageHandle))
@@ -1299,10 +1291,9 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
             }
             else
             {
-                if (ImGui.BeginChild("ImageNotLoadChild", CurrentImageSize))
+                using (ImRaii.Child("ImageNotLoadChild", CurrentImageSize))
                 {
                     ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
-                    ImGui.EndChild();
                 }
             }
 
@@ -1315,8 +1306,6 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
             ImGui.Indent(2f * GlobalFontScale);
             ImGui.TextWrapped(news.Title);
             ImGui.Unindent(2f * GlobalFontScale);
-
-            ImGui.EndChild();
         }
     }
 }
