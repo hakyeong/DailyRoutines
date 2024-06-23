@@ -78,6 +78,10 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
 
     public override void ConfigUI()
     {
+        ConflictKeyText();
+
+        ImGui.Spacing();
+
         if (ImGui.Checkbox(Service.Lang.GetText("AutoSubmarineCollect-AddCommand", Command), ref ModuleConfig.AddCommand))
         {
             SaveConfig(ModuleConfig);
@@ -192,6 +196,7 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
     private bool? TeleportToHouseEntry()
     {
         if (!Throttler.Throttle("TeleportToHouseEntry")) return false;
+        if (InterruptByConflictKey()) return true;
         if (Flags.BetweenAreas) return false;
         if (Service.ClientState.TerritoryType != WorkshopTerritory) return false;
 
@@ -222,9 +227,10 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
         return true;
     }
 
-    private static bool? TeleportToRoomSelect()
+    private bool? TeleportToRoomSelect()
     {
         if (!Throttler.Throttle("TeleportToRoomSelect")) return false;
+        if (InterruptByConflictKey()) return true;
         if (!HousingManager.Instance()->IsInside()) return false;
 
         var localPlayer = Service.ClientState.LocalPlayer;
@@ -244,9 +250,10 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
         return ClickHelper.SelectString("移动到部队工房");
     }
 
-    private static bool? TeleportToPanel()
+    private bool? TeleportToPanel()
     {
         if (!Throttler.Throttle("TeleportToPanel")) return false;
+        if (InterruptByConflictKey()) return true;
         if (Flags.BetweenAreas) return false;
 
         var localPlayer = Service.ClientState.LocalPlayer;
@@ -268,6 +275,8 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
 
     private bool? GetSubmarineInfos()
     {
+        if (InterruptByConflictKey()) return true;
+
         // 还在看动画
         if (Service.Condition[ConditionFlag.OccupiedInCutSceneEvent] ||
             Service.Condition[ConditionFlag.WatchingCutscene78]) return false;
@@ -319,13 +328,14 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
 
     private bool? CommenceSubmarineVoyage()
     {
+        if (InterruptByConflictKey()) return true;
         if (AirShipExplorationDetail == null || !IsAddonAndNodesReady(AirShipExplorationDetail)) return false;
 
         Callback(AirShipExplorationDetail, true, 0);
         AirShipExplorationDetail->Close(true);
 
         TaskHelper.Abort();
-        TaskHelper.DelayNext(3000);
+        TaskHelper.DelayNext(2000);
         TaskHelper.Enqueue(GetSubmarineInfos);
 
         return false;
@@ -374,7 +384,7 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
 
     private static bool? RepairSubmarines()
     {
-        if (!Throttler.Throttle("AutoSubmarineCollect-Repair", 100)) return false;
+        if (!Throttler.Throttle("AutoSubmarineCollect-Repair", 200)) return false;
         if (SelectYesno != null) return false;
         if (CompanyCraftSupply == null || !IsAddonAndNodesReady(CompanyCraftSupply)) return false;
 
