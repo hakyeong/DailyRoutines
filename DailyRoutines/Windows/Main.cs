@@ -87,21 +87,14 @@ public class Main : Window, IDisposable
     {
         using (FontHelper.UIFont.Push())
         {
-            try
-            {
-                DrawLeftTabComponent();
+            DrawLeftTabComponent();
 
-                ImGui.SameLine();
-                ImGui.BeginGroup();
-                DrawUpperTabComponent();
+            ImGui.SameLine();
+            ImGui.BeginGroup();
+            DrawUpperTabComponent();
 
-                DrawRightTabComponent();
-                ImGui.EndGroup();
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
+            DrawRightTabComponent();
+            ImGui.EndGroup();
         }
     }
 
@@ -587,15 +580,7 @@ public class Main : Window, IDisposable
                 !module.Module.Name.Contains(SearchString.Trim(), StringComparison.OrdinalIgnoreCase)) continue;
 
             ImGui.PushID($"{module.Category}-{module.Description}-{module.Title}-{module.Module}");
-            try
-            {
-                DrawModuleUI(module, isFromSearch);
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
-
+            DrawModuleUI(module, isFromSearch);
             ImGui.PopID();
 
             if (i < modules.Count - 1) ImGui.Separator();
@@ -1303,7 +1288,7 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
 
         var singleCharSize = ImGui.CalcTextSize("测");
         var itemSpacing = ImGui.GetStyle().ItemSpacing;
-        ChildSize = new Vector2(CurrentImageSize.X + (2 * itemSpacing.X), CurrentImageSize.Y + (singleCharSize.Y * 2));
+        ChildSize = new Vector2(CurrentImageSize.X + (2 * itemSpacing.X), CurrentImageSize.Y + (singleCharSize.Y * 2.5f));
 
         if (ImGui.BeginChild("NewsImageCarousel", ChildSize, false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
         {
