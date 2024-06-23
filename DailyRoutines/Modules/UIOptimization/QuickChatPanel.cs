@@ -421,7 +421,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
             SpecialIconCharTabItem();
 
             ImGui.SameLine();
-            if (ImGuiOm.ButtonIcon("OpenQuickChatPanelSettings", FontAwesomeIcon.Cog))
+            if (ImGui.Button($"{FontAwesomeIcon.Cog.ToIconString()}###OpenQuickChatPanelSettings"))
             {
                 WindowManager.Main.IsOpen ^= true;
                 if (WindowManager.Main.IsOpen)
@@ -689,27 +689,24 @@ public unsafe class QuickChatPanel : DailyModuleBase
             var maxTextWidth = 300f * GlobalFontScale;
             if (ImGui.BeginChild("SeIconChild", ImGui.GetContentRegionAvail(), false))
             {
-                using (FontHelper.DefaultFont.Push())
+                ImGui.BeginGroup();
+                for (var i = 0; i < SeIconChars.Length; i++)
                 {
-                    ImGui.BeginGroup();
-                    for (var i = 0; i < SeIconChars.Length; i++)
+                    var icon = SeIconChars[i];
+
+                    if (ImGui.Button($"{icon}", new(96 * ModuleConfig.FontScale)))
+                        ImGui.SetClipboardText(icon.ToString());
+
+                    ImGuiOm.TooltipHover($"0x{(int)icon:X4}");
+
+                    if ((i + 1) % 7 != 0) ImGui.SameLine();
+                    else
                     {
-                        var icon = SeIconChars[i];
-
-                        if (ImGui.Button($"{icon}", new(96 * ModuleConfig.FontScale)))
-                            ImGui.SetClipboardText(icon.ToString());
-
-                        ImGuiOm.TooltipHover($"0x{(int)icon:X4}");
-
-                        if ((i + 1) % 7 != 0) ImGui.SameLine();
-                        else
-                        {
-                            ImGui.SameLine();
-                            ImGui.Dummy(new(20 * ModuleConfig.FontScale));
-                        }
+                        ImGui.SameLine();
+                        ImGui.Dummy(new(20 * ModuleConfig.FontScale));
                     }
-                    ImGui.EndGroup();
                 }
+                ImGui.EndGroup();
 
                 maxTextWidth = ImGui.GetItemRectSize().X;
                 maxTextWidth = Math.Max(TwentyCharsSize.X, maxTextWidth);
