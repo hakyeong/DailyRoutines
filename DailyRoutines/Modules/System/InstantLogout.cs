@@ -96,12 +96,12 @@ public unsafe class InstantLogout : DailyModuleBase
         {
             for (var i = 0; i < 150; i++)
                 Marshal.WriteByte(Service.Condition.Address + i, 0);
-        }
 
-        foreach (var addon in RaptureAtkUnitManager.Instance()->AtkUnitManager.AllLoadedUnitsList.EntriesSpan)
-        {
-            if (addon.Value == null || !addon.Value->IsVisible) continue;
-            addon.Value->Close(true);
+            foreach (var addon in RaptureAtkUnitManager.Instance()->AtkUnitManager.AllLoadedUnitsList.EntriesSpan)
+            {
+                if (addon.Value == null || !addon.Value->IsVisible) continue;
+                addon.Value->Close(true);
+            }
         }
 
         SendLogout();
