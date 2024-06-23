@@ -60,10 +60,21 @@
     </ItemGroup>
 
     <ItemGroup>
+      <COMReference Include="WMPLib">
+        <VersionMinor>0</VersionMinor>
+        <VersionMajor>1</VersionMajor>
+        <Guid>6bf52a50-394a-11d3-b153-00c04f79faa6</Guid>
+        <Lcid>0</Lcid>
+        <WrapperTool>tlbimp</WrapperTool>
+        <Isolated>false</Isolated>
+        <EmbedInteropTypes>true</EmbedInteropTypes>
+      </COMReference>
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="DalamudPackager" Version="2.1.12" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
         <PackageReference Include="System.Management" Version="8.0.0" />
-        <PackageReference Include="System.Speech" Version="8.0.0" />
         <PackageReference Include="TinyPinyin" Version="1.1.0" />
     </ItemGroup>
 
