@@ -69,7 +69,7 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
     };
 
     private static readonly Dictionary<uint, IDalamudTextureWrap> ZoneTextures = [];
-    private static readonly Vector2 FateProgressUISize = ScaledVector2(333.5f, 112f);
+    private static readonly Vector2 FateProgressUISize = ScaledVector2(450f, 150);
 
     private static IDalamudTextureWrap? BicolorGemIcon;
     private static int BicolorGemAmount;
@@ -113,10 +113,13 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
 
     public override void OverlayUI()
     {
-        DrawBicolorGemComponent();
-        DrawFateProgressTabs();
+        using (FontHelper.UIFont120.Push())
+        {
+            DrawBicolorGemComponent();
+            DrawFateProgressTabs();
 
-        ImGui.Dummy(new(1));
+            ImGui.Dummy(new(1));
+        }
     }
 
     private static void DrawBicolorGemComponent()

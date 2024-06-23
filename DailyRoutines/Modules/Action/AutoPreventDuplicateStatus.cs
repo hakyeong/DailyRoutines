@@ -204,7 +204,7 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
         ImGui.InputFloat("###OverlapThreshold", ref ModuleConfig.OverlapThreshold, 0, 0, "%.1f");
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);
-
+        
         ImGuiOm.HelpMarker(Service.Lang.GetText("AutoPreventDuplicateStatus-OverlapThresholdHelp"));
     }
 

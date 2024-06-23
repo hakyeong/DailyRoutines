@@ -80,8 +80,8 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
     public override void Init()
     {
-        ChildSizeLeft = ScaledVector2(200, 350);
-        ChildSizeRight = ScaledVector2(450, 350);
+        ChildSizeLeft = ScaledVector2(200, 400);
+        ChildSizeRight = ScaledVector2(450, 400);
 
         ItemsSellPrice ??= LuminaCache.Get<Item>()
                                       .Where(x => !string.IsNullOrEmpty(x.Name.RawString) && x.PriceLow != 0)
@@ -292,6 +292,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
     private void ItemConfigEditor()
     {
+        ChildSizeRight.X = ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X;
         var itemConfig = SelectedItemConfig;
         if (itemConfig == null)
         {
@@ -320,14 +321,14 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             ImGui.Image(itemLogo.ImGuiHandle, ScaledVector2(32));
 
             ImGui.SameLine();
-            ImGui.SetWindowFontScale(1.3f * GlobalFontScale);
-            ImGui.Text(itemName);
+            using (FontHelper.UIFont140.Push())
+            {
+                ImGui.Text(itemName);
+            }
 
             ImGui.SameLine();
-            ImGui.SetWindowFontScale(1.01f * GlobalFontScale);
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (6f * GlobalFontScale));
             ImGui.Text(itemConfig.IsHQ ? $"({Service.Lang.GetText("HQ")})" : "");
-            ImGui.SetWindowFontScale(1f);
 
             ImGui.Separator();
 

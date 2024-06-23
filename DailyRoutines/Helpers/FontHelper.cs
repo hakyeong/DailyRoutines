@@ -50,6 +50,26 @@ public class FontHelper
         return handle;
     }
 
+    public static IFontHandle GetFont(float size)
+    {
+        if (!fontHandles.TryGetValue(size, out var handle))
+        {
+            if (!fontHandleTasks.TryGetValue(size, out _))
+            {
+                if (!creationQueue.Contains(size))
+                {
+                    creationQueue.Enqueue(size);
+                    _ = ProcessFontCreationQueueAsync();
+                }
+            }
+
+            return DefaultFont;
+        }
+
+        return handle;
+    }
+
+
     private static async Task ProcessFontCreationQueueAsync()
     {
         while (creationQueue.TryDequeue(out var size))

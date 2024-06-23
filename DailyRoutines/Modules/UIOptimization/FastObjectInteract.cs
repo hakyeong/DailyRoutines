@@ -271,51 +271,54 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     public override void OverlayUI()
     {
-        ObjectToSelect? instanceChangeObject = null;
-        ObjectToSelect? worldTravelObject = null;
-
-        ImGui.BeginGroup();
-        foreach (var objectToSelect in ObjectsToSelect.Values)
+        using (FontHelper.GetUIFont(ModuleConfig.FontScale).Push())
         {
-            if (objectToSelect.GameObject == nint.Zero) continue;
+            ObjectToSelect? instanceChangeObject = null;
+            ObjectToSelect? worldTravelObject = null;
 
-            if (IsInInstancedArea && objectToSelect.Kind == ObjectKind.Aetheryte)
+            ImGui.BeginGroup();
+            foreach (var objectToSelect in ObjectsToSelect.Values)
             {
-                var gameObj = (GameObject*)objectToSelect.GameObject;
-                if (Marshal.PtrToStringUTF8((nint)gameObj->Name) != AethernetShardName)
-                    instanceChangeObject = objectToSelect;
+                if (objectToSelect.GameObject == nint.Zero) continue;
+
+                if (IsInInstancedArea && objectToSelect.Kind == ObjectKind.Aetheryte)
+                {
+                    var gameObj = (GameObject*)objectToSelect.GameObject;
+                    if (Marshal.PtrToStringUTF8((nint)gameObj->Name) != AethernetShardName)
+                        instanceChangeObject = objectToSelect;
+                }
+
+                if (!IsOnWorldTravelling && WorldTravelValidZones.Contains(Service.ClientState.TerritoryType) &&
+                    objectToSelect.Kind == ObjectKind.Aetheryte)
+                {
+                    var gameObj = (GameObject*)objectToSelect.GameObject;
+                    if (Marshal.PtrToStringUTF8((nint)gameObj->Name) != AethernetShardName)
+                        worldTravelObject = objectToSelect;
+                }
+
+                if (ModuleConfig.AllowClickToTarget)
+                {
+                    if (objectToSelect.ButtonToTarget())
+                        SaveConfig(ModuleConfig);
+                }
+                else
+                {
+                    if (objectToSelect.ButtonNoTarget())
+                        SaveConfig(ModuleConfig);
+                }
             }
 
-            if (!IsOnWorldTravelling && WorldTravelValidZones.Contains(Service.ClientState.TerritoryType) &&
-                objectToSelect.Kind == ObjectKind.Aetheryte)
-            {
-                var gameObj = (GameObject*)objectToSelect.GameObject;
-                if (Marshal.PtrToStringUTF8((nint)gameObj->Name) != AethernetShardName)
-                    worldTravelObject = objectToSelect;
-            }
+            ImGui.EndGroup();
 
-            if (ModuleConfig.AllowClickToTarget)
-            {
-                if (objectToSelect.ButtonToTarget())
-                    SaveConfig(ModuleConfig);
-            }
-            else
-            {
-                if (objectToSelect.ButtonNoTarget())
-                    SaveConfig(ModuleConfig);
-            }
+            ImGui.SameLine();
+            if (instanceChangeObject != null)
+                InstanceZoneChangeWidget(instanceChangeObject);
+
+            if (worldTravelObject != null)
+                WorldChangeWidget(worldTravelObject);
+
+            WindowWidth = Math.Max(ModuleConfig.MinButtonWidth, ImGui.GetItemRectSize().X);
         }
-
-        ImGui.EndGroup();
-
-        ImGui.SameLine();
-        if (instanceChangeObject != null)
-            InstanceZoneChangeWidget(instanceChangeObject);
-
-        if (worldTravelObject != null)
-            WorldChangeWidget(worldTravelObject);
-
-        WindowWidth = Math.Max(ModuleConfig.MinButtonWidth, ImGui.GetItemRectSize().X);
     }
 
     private void OnUpdate(IFramework framework)
@@ -490,8 +493,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     public static bool ButtonCenterText(string id, string text)
     {
         ImGui.PushID(id);
-        ImGui.SetWindowFontScale(ModuleConfig.FontScale);
-
         var textSize = ImGui.CalcTextSize(text);
 
         var cursorPos = ImGui.GetCursorScreenPos();
@@ -502,8 +503,6 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
         ImGui.GetWindowDrawList()
              .AddText(new Vector2(cursorPos.X + ((buttonWidth - textSize.X) / 2), cursorPos.Y + padding.Y),
                       ImGui.GetColorU32(ImGuiCol.Text), text);
-
-        ImGui.SetWindowFontScale(1);
         ImGui.PopID();
 
         return result;

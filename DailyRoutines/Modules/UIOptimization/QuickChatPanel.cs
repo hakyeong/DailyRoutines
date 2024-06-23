@@ -82,6 +82,10 @@ public unsafe class QuickChatPanel : DailyModuleBase
         Overlay ??= new Overlay(this);
         Overlay.Flags |= ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollWithMouse;
         Overlay.Flags &= ~ImGuiWindowFlags.AlwaysAutoResize;
+        Overlay.SizeConstraints = new()
+        {
+            MinimumSize = new(1, ModuleConfig.OverlayHeight),
+        };
 
         TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 5000, ShowDebug = false };
     }
@@ -248,6 +252,11 @@ public unsafe class QuickChatPanel : DailyModuleBase
         {
             ModuleConfig.OverlayHeight = Math.Clamp(ModuleConfig.OverlayHeight, 100f, 10000f);
             SaveConfig(ModuleConfig);
+
+            Overlay.SizeConstraints = new()
+            {
+                MinimumSize = new(1, ModuleConfig.OverlayHeight),
+            };
         }
 
         ImGui.SetNextItemWidth(100f * GlobalFontScale);
@@ -338,50 +347,50 @@ public unsafe class QuickChatPanel : DailyModuleBase
         if (Service.ClientState.LocalPlayer == null ||
             AddonState.ChatLog == null || !AddonState.ChatLog->IsVisible ||
             AddonState.ChatLog->GetNodeById(5) == null)
-        {
             Overlay.IsOpen = false;
-            return;
-        }
     }
 
     public override void OverlayUI()
     {
-        var textInputNode = AddonState.ChatLog->GetNodeById(5);
-        var buttonPos = new Vector2(textInputNode->X + textInputNode->Width, textInputNode->ScreenY) +
-                        ModuleConfig.ButtonOffset;
-
-        ImGui.SetWindowPos(buttonPos with { Y = buttonPos.Y - ImGui.GetWindowSize().Y - 16f });
-
-        TwentyCharsSize = ImGui.CalcTextSize("我也不知道要说什么但是真得要凑齐二十几个汉字");
-
-        var isOpen = true;
-        ImGui.SetNextWindowPos(new(ImGui.GetWindowPos().X, ImGui.GetWindowPos().Y + ImGui.GetWindowHeight()));
-        ImGui.SetNextWindowSize(new(ImGui.GetWindowWidth(), TwentyCharsSize.Y * 1.8f));
-        if (ImGui.Begin("###QuickChatPanel-SendMessages", ref isOpen,
-                        ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollbar |
-                        ImGuiWindowFlags.NoScrollWithMouse))
+        using (FontHelper.GetUIFont(ModuleConfig.FontScale).Push())
         {
+            var textInputNode = AddonState.ChatLog->GetNodeById(5);
+            var buttonPos = new Vector2(textInputNode->X + textInputNode->Width, textInputNode->ScreenY) +
+                            ModuleConfig.ButtonOffset;
 
-            if (ImGuiOm.SelectableTextCentered(Service.Lang.GetText("QuickChatPanel-SendChatboxMessage")))
+            ImGui.SetWindowPos(buttonPos with { Y = buttonPos.Y - ImGui.GetWindowSize().Y - 16f });
+
+            TwentyCharsSize = ImGui.CalcTextSize("我也不知道要说什么但是真得要凑齐二十几个汉字");
+
+            var isOpen = true;
+            ImGui.SetNextWindowPos(new(ImGui.GetWindowPos().X, ImGui.GetWindowPos().Y + ImGui.GetWindowHeight()));
+            ImGui.SetNextWindowSize(new(ImGui.GetWindowWidth(), TwentyCharsSize.Y * 1.8f));
+            if (ImGui.Begin("###QuickChatPanel-SendMessages", ref isOpen,
+                            ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollbar |
+                            ImGuiWindowFlags.NoScrollWithMouse))
             {
-                var inputNode = (AtkComponentTextInput*)AddonState.ChatLog->GetComponentNodeById(5);
-                var text = inputNode->AtkComponentInputBase.UnkText1;
-                if (!string.IsNullOrWhiteSpace(text.ToString()))
+
+                if (ImGuiOm.SelectableTextCentered(Service.Lang.GetText("QuickChatPanel-SendChatboxMessage")))
                 {
-                    ChatHelper.Instance.SendMessageUnsafe(text.AsSpan().ToArray());
-                    inputNode->AtkComponentInputBase.UnkText1.Clear();
-                    inputNode->AtkComponentInputBase.UnkText2.Clear();
-                    inputNode->AtkComponentInputBase.AtkTextNode->SetText(string.Empty);
+                    var inputNode = (AtkComponentTextInput*)AddonState.ChatLog->GetComponentNodeById(5);
+                    var text = inputNode->AtkComponentInputBase.UnkText1;
+                    if (!string.IsNullOrWhiteSpace(text.ToString()))
+                    {
+                        ChatHelper.Instance.SendMessageUnsafe(text.AsSpan().ToArray());
+                        inputNode->AtkComponentInputBase.UnkText1.Clear();
+                        inputNode->AtkComponentInputBase.UnkText2.Clear();
+                        inputNode->AtkComponentInputBase.AtkTextNode->SetText(string.Empty);
+                    }
                 }
+                ImGui.End();
             }
-            ImGui.End();
+
+            ImGui.BeginGroup();
+            DrawOverlayContent();
+            ImGui.EndGroup();
+
+            ImGui.Separator();
         }
-
-        ImGui.BeginGroup();
-        DrawOverlayContent();
-        ImGui.EndGroup();
-
-        ImGui.Separator();
     }
 
     private void DrawOverlayContent()
@@ -430,7 +439,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
             var maxTextWidth = 300f * GlobalFontScale;
             if (ImGui.BeginChild("MessagesChild", ImGui.GetContentRegionAvail(), false))
             {
-                ImGui.SetWindowFontScale(ModuleConfig.FontScale);
                 for (var i = 0; i < ModuleConfig.SavedMessages.Count; i++)
                 {
                     var message = ModuleConfig.SavedMessages[i];
@@ -473,8 +481,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
                         ImGui.Separator();
                 }
 
-
-                ImGui.SetWindowFontScale(1f);
                 ImGui.EndChild();
             }
 
@@ -492,7 +498,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
             var maxTextWidth = 300f * GlobalFontScale;
             if (ImGui.BeginChild("MacroChild", ImGui.GetContentRegionAvail(), false))
             {
-                ImGui.SetWindowFontScale(ModuleConfig.FontScale);
                 ImGui.BeginGroup();
                 for (var i = 0; i < ModuleConfig.SavedMacros.Count; i++)
                 {
@@ -573,8 +578,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 ImGui.EndGroup();
                 maxTextWidth = ImGui.GetItemRectSize().X;
 
-                ImGui.SetWindowFontScale(1f);
-
                 ImGui.EndChild();
             }
 
@@ -592,7 +595,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
             var maxTextWidth = 300f * GlobalFontScale;
             if (ImGui.BeginChild("SystemSoundChild"))
             {
-                ImGui.SetWindowFontScale(ModuleConfig.FontScale);
                 ImGui.BeginGroup();
                 foreach (var seNote in ModuleConfig.SoundEffectNotes)
                 {
@@ -610,7 +612,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 ImGui.EndGroup();
                 maxTextWidth = ImGui.GetItemRectSize().X;
                 maxTextWidth = Math.Max(TwentyCharsSize.X, maxTextWidth);
-                ImGui.SetWindowFontScale(1f);
                 ImGui.EndChild();
             }
 
@@ -628,8 +629,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
             var maxTextWidth = 300f * GlobalFontScale;
             if (ImGui.BeginChild("GameItemChild", ImGui.GetContentRegionAvail(), false))
             {
-                ImGui.SetWindowFontScale(ModuleConfig.FontScale);
-
                 ImGui.SetNextItemWidth(-1f);
                 ImGui.InputTextWithHint("###GameItemSearchInput", Service.Lang.GetText("PleaseSearch"),
                                         ref ItemSearchInput, 100);
@@ -665,8 +664,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
                 maxTextWidth = ImGui.CalcTextSize(longestText).X + (200f * GlobalFontScale);
                 maxTextWidth = Math.Max(TwentyCharsSize.X, maxTextWidth);
 
-                ImGui.SetWindowFontScale(1f);
-
                 ImGui.EndChild();
             }
 
@@ -684,8 +681,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
             var maxTextWidth = 300f * GlobalFontScale;
             if (ImGui.BeginChild("SeIconChild", ImGui.GetContentRegionAvail(), false))
             {
-                ImGui.SetWindowFontScale(ModuleConfig.FontScale);
-
                 ImGui.BeginGroup();
                 for (var i = 0; i < SeIconChars.Length; i++)
                 {
@@ -708,7 +703,6 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
                 maxTextWidth = ImGui.GetItemRectSize().X;
                 maxTextWidth = Math.Max(TwentyCharsSize.X, maxTextWidth);
-                ImGui.SetWindowFontScale(1f);
 
                 ImGui.EndChild();
             }

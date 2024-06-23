@@ -9,8 +9,6 @@ using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Internal;
-using Dalamud.Interface.Utility;
-using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
 using ImGuiNET;
 
@@ -101,42 +99,42 @@ public class AutoShowDutyGuide : DailyModuleBase
 
     public override void OverlayUI()
     {
-        if (ImGuiOm.SelectableImageWithText(NoviceIcon.ImGuiHandle, ScaledVector2(24f),
-                                            Service.Lang.GetText("AutoShowDutyGuide-Source"), false))
-            Util.OpenLink($"https://ff14.org/duty/{CurrentDuty}.htm");
-
-        ImGui.Separator();
-
-        ImGui.PushTextWrapPos(ImGui.GetWindowWidth());
-        ImGui.SetWindowFontScale(ModuleConfig.FontScale);
-
-        if (!string.IsNullOrWhiteSpace(HintText))
+        using (FontHelper.GetUIFont(ModuleConfig.FontScale).Push())
         {
-            ImGui.SetWindowFontScale(ModuleConfig.FontScale * 0.8f);
-            ImGui.Text($"{Service.Lang.GetText("AutoShowDutyGuide-DutyExtraGuide")}:");
-            ImGui.SetWindowFontScale(ModuleConfig.FontScale);
-            ImGui.Text($"{HintText}");
+            if (ImGuiOm.SelectableImageWithText(NoviceIcon.ImGuiHandle, ScaledVector2(24f),
+                                                Service.Lang.GetText("AutoShowDutyGuide-Source"), false))
+                Util.OpenLink($"https://ff14.org/duty/{CurrentDuty}.htm");
+
             ImGui.Separator();
-        }
 
-        for (var i = 1; i < GuideText.Count; i++)
-        {
-            var text = GuideText[i];
-            ImGui.PushID($"DutyGuideLine-{i}");
-            ImGui.Text(text);
-            if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+            ImGui.PushTextWrapPos(ImGui.GetWindowWidth());
+            if (!string.IsNullOrWhiteSpace(HintText))
             {
-                ImGui.SetClipboardText(text);
-                NotifyHelper.NotificationSuccess(Service.Lang.GetText("AutoShowDutyGuide-CopyNotice"));
+                using (FontHelper.GetUIFont(ModuleConfig.FontScale * 0.8f).Push())
+                {
+                    ImGui.Text($"{Service.Lang.GetText("AutoShowDutyGuide-DutyExtraGuide")}:");
+                }
+                ImGui.Text($"{HintText}");
+                ImGui.Separator();
             }
 
-            ImGui.PopID();
+            for (var i = 1; i < GuideText.Count; i++)
+            {
+                var text = GuideText[i];
+                ImGui.PushID($"DutyGuideLine-{i}");
+                ImGui.Text(text);
+                if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                {
+                    ImGui.SetClipboardText(text);
+                    NotifyHelper.NotificationSuccess(Service.Lang.GetText("AutoShowDutyGuide-CopyNotice"));
+                }
 
-            ImGui.NewLine();
+                ImGui.PopID();
+
+                ImGui.NewLine();
+            }
+            ImGui.PopTextWrapPos();
         }
-
-        ImGui.SetWindowFontScale(1f);
-        ImGui.PopTextWrapPos();
     }
 
     private void OnZoneChange(ushort territory)
