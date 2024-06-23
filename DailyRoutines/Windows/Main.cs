@@ -551,7 +551,7 @@ public class Main : Window, IDisposable
                 }
 
             if (imageState1)
-                if (ImGui.CollapsingHeader("爱发电赞助感谢 (2024/05)"))
+                if (ImGui.CollapsingHeader($"{Service.Lang.GetText("Settings-AfdianSponsor")} (2024/05)"))
                 {
                     ImGui.Image(imageWarpper1.ImGuiHandle, ImageCarousel.CurrentImageSize 
                                     with { Y = ImageCarousel.CurrentImageSize.Y + (400f * GlobalFontScale) });
