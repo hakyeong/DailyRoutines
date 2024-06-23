@@ -483,16 +483,6 @@ public unsafe class AutoSubmarineCollect : DailyModuleBase
     }
     #endregion
 
-    public static (float xOffset, float zOffset) CalculateForwardMovement(double rotation, double distance)
-    {
-        var radians = (rotation - 0.5) * Math.PI;
-
-        var deltaX = distance * Math.Cos(radians);
-        var deltaZ = distance * Math.Sin(radians);
-
-        return ((float)deltaX, (float)deltaZ);
-    }
-
     public override void Uninit()
     {
         Service.CommandManager.RemoveSubCommand(Command);
