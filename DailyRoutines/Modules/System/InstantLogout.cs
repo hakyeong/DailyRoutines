@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
 using Dalamud.Interface.Colors;
 using Dalamud.Memory;
@@ -91,8 +92,11 @@ public unsafe class InstantLogout : DailyModuleBase
 
     private static void Logout()
     {
-        for (var i = 0; i < 150; i++)
-            Marshal.WriteByte(Service.Condition.Address + i, 0);
+        if (!Service.Condition[ConditionFlag.NormalConditions])
+        {
+            for (var i = 0; i < 150; i++)
+                Marshal.WriteByte(Service.Condition.Address + i, 0);
+        }
 
         foreach (var addon in RaptureAtkUnitManager.Instance()->AtkUnitManager.AllLoadedUnitsList.EntriesSpan)
         {
