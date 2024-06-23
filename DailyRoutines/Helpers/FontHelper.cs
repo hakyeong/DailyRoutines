@@ -90,12 +90,29 @@ public class FontHelper
         {
             var handle = FontAtlas.NewDelegateFontHandle(e =>
             {
-                e.OnPreBuild(tk => tk.AddFontFromFile(path, new()
+                e.OnPreBuild(tk =>
                 {
-                    SizePt = size,
-                    PixelSnapH = true,
-                    GlyphRanges = FontRange,
-                }));
+                    var fileFontPtr = tk.AddFontFromFile(path, new()
+                    {
+                        SizePt = size,
+                        PixelSnapH = true,
+                        GlyphRanges = FontRange,
+                    });
+
+                    var mixedFontPtr0 = tk.AddGameSymbol(new()
+                    {
+                        SizePt = size,
+                        PixelSnapH = true,
+                        MergeFont = fileFontPtr,
+                    });
+
+                    tk.AddFontAwesomeIconFont(new()
+                    {
+                        SizePt = size,
+                        PixelSnapH = true,
+                        MergeFont = mixedFontPtr0,
+                    });
+                });
             });
 
             fontHandles[size] = handle;
@@ -148,9 +165,6 @@ public class FontHelper
             builder.AddChar((char)i);
 
         builder.AddChar('⓪');
-
-        foreach (var seIconChar in Enum.GetValues<SeIconChar>())
-            builder.AddChar((char)seIconChar);
 
         return builder.BuildRangesToArray();
     }
