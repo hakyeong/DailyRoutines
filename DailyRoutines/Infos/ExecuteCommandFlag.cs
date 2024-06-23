@@ -170,6 +170,12 @@ public enum ExecuteCommandFlag
     RequestSaddleBag = 444,
 
     /// <summary>
+    /// 钓鱼
+    /// <para><c>param1</c>: 动作 (0 - 抛竿, 1 - 收杆, 2 - 提钩, 4 - 换饵)</para>
+    /// </summary>
+    Fish = 701,
+
+    /// <summary>
     /// 放弃任务投票
     /// </summary>
     VoteAbandon = 808,
