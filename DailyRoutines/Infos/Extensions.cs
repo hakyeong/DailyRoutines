@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Net;
 using System.Numerics;
 using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
@@ -70,4 +72,27 @@ public static class Extensions
 
     public static Vector3 ToVector3(this Vector2 vector2, float Y) 
         => new(vector2.X, Y, vector2.Y);
+
+    public static void SaveToBinaryFile(this WebResponse response, string filePath)
+    {
+        var buffer = new byte[1024];
+        using var rs = response.GetResponseStream();
+        using var fileStream = new FileStream(
+            filePath,
+            FileMode.OpenOrCreate,
+            FileAccess.Write,
+            FileShare.ReadWrite
+        );
+
+        while (true)
+        {
+            var count = rs.Read(buffer, 0, buffer.Length);
+            if (count <= 0)
+            {
+                break;
+            }
+
+            fileStream.Write(buffer, 0, count);
+        }
+    }
 }
