@@ -4,6 +4,7 @@ using System.IO;
 using System.Net.Http;
 using System.Security;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
@@ -15,6 +16,11 @@ public class TextToTalk : DailyNotificationBase
 {
     public override NotifyType NotifyType => NotifyType.TextToTalk;
 
+    private static readonly Dictionary<string, string> PhonemeReplacements = new()
+    {
+        { "茄", "加" },
+    };
+
     private static readonly HashSet<char> IllegalChars = ['\\', '/', '*', '>', '<', '?', '|', '\"', ':'];
 
     public override void Init() { }
@@ -23,9 +29,6 @@ public class TextToTalk : DailyNotificationBase
 
     public static async Task SpeakAsync(string text)
     {
-        foreach (var illegalChar in IllegalChars)
-            text = text.Replace(illegalChar, ' ');
-
         var url0 = $"https://tts.xivcdn.com/api/say?voice=yaoyao&text={text}&rate=0";
         var downloadedFilePath = Path.Combine(CacheDirectory, "tts.wav");
         var isDownloaded = await DownloadFileAsync(url0, downloadedFilePath);
@@ -47,17 +50,17 @@ public class TextToTalk : DailyNotificationBase
 
     public static async Task Speak(string text)
     {
+        text = SanitizeString(SecurityElement.Escape(text));
         var fileName = Convert.ToBase64String(Encoding.UTF8.GetBytes(text));
-        var downloadedFilePath = Path.Combine(CacheDirectory, $"{fileName}.wav");
-        if (File.Exists(downloadedFilePath))
+        var filePath = Path.Join(CacheDirectory, $"{fileName}.wav");
+        if (File.Exists(filePath))
         {
             var player = new PlayAudioHelper();
-            player.Play(downloadedFilePath);
+            player.Play(filePath);
             return;
         }
 
-        text = SecurityElement.Escape(text);
-        var ssml = AzureWSSynthesiser.CreateSSML(text, 100, 100, 200, "zh-CN-YunyangNeural", "general", 100, "Default");
+        var ssml = CreateSSML(text, 100, 100, 200, "zh-CN-YunyangNeural", "general", 100, "Default");
         var url = Encoding.UTF8.GetString(Convert.FromBase64String("aHR0cHM6Ly90dHNwcm8ueGl2Y2RuLmNvbS90dHMvdjE="));
         var httpClient = new HttpClient();
 
@@ -73,10 +76,10 @@ public class TextToTalk : DailyNotificationBase
 
         if (response.IsSuccessStatusCode)
         {
-            await using var fileStream = new FileStream(downloadedFilePath, FileMode.Create, FileAccess.Write);
+            await using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
             await response.Content.CopyToAsync(fileStream);
             var player = new PlayAudioHelper();
-            player.Play(downloadedFilePath);
+            player.Play(filePath);
         }
     }
 
@@ -110,34 +113,42 @@ public class TextToTalk : DailyNotificationBase
         return false;
     }
 
-    public override void Uninit() { }
-
-    private static class AzureWSSynthesiser
+    public static string SanitizeString(string text)
     {
-        public static string CreateSSML(
-            string text,
-            int speed,
-            int pitch,
-            int volume,
-            string voice,
-            string style = null,
-            int styleDegree = 100,
-            string role = null
-        )
-        {
-            var adjustedStyleDegree = Math.Max(1, styleDegree / 100.0f);
-            var styleAttributes = string.IsNullOrEmpty(style) ? "" : $" style=\"{style}\" styledegree=\"{adjustedStyleDegree}\"";
-            var roleAttribute = string.IsNullOrEmpty(role) ? "" : $" role=\"{role}\"";
+        foreach (var (word, phoneme) in PhonemeReplacements)
+            text = text.Replace(word, phoneme);
 
-            var expressAs = (!string.IsNullOrEmpty(style) || !string.IsNullOrEmpty(role))
-                                ? $"<mstts:express-as{styleAttributes}{roleAttribute}>{text}</mstts:express-as>"
-                                : text;
+        foreach (var illegalChar in IllegalChars)
+            text = text.Replace(illegalChar, ' ');
 
-            return $"<speak xmlns=\"http://www.w3.org/2001/10/synthesis\" xmlns:mstts=\"http://www.w3.org/2001/mstts\" version=\"1.0\" xml:lang=\"en-US\">" +
-                   $"<voice name=\"{voice}\">" +
-                   $"<prosody rate=\"{speed - 100}%\" pitch=\"{(pitch - 100) / 2}%\" volume=\"{Math.Clamp(volume, 1, 100)}\">" +
-                   expressAs +
-                   "</prosody></voice></speak>";
-        }
+        return text;
     }
+
+    public static string CreateSSML(
+        string text,
+        int speed,
+        int pitch,
+        int volume,
+        string voice,
+        string style = null,
+        int styleDegree = 100,
+        string role = null
+    )
+    {
+        var adjustedStyleDegree = Math.Max(1, styleDegree / 100.0f);
+        var styleAttributes = string.IsNullOrEmpty(style) ? "" : $" style=\"{style}\" styledegree=\"{adjustedStyleDegree}\"";
+        var roleAttribute = string.IsNullOrEmpty(role) ? "" : $" role=\"{role}\"";
+
+        var expressAs = (!string.IsNullOrEmpty(style) || !string.IsNullOrEmpty(role))
+                            ? $"<mstts:express-as{styleAttributes}{roleAttribute}>{text}</mstts:express-as>"
+                            : text;
+
+        return $"<speak xmlns=\"http://www.w3.org/2001/10/synthesis\" xmlns:mstts=\"http://www.w3.org/2001/mstts\" version=\"1.0\" xml:lang=\"en-US\">" +
+               $"<voice name=\"{voice}\">" +
+               $"<prosody rate=\"{speed - 100}%\" pitch=\"{(pitch - 100) / 2}%\" volume=\"{Math.Clamp(volume, 1, 100)}\">" +
+               expressAs +
+               "</prosody></voice></speak>";
+    }
+
+    public override void Uninit() { }
 }
