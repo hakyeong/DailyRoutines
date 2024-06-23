@@ -1,10 +1,14 @@
 using System;
+using System.Runtime.InteropServices;
 using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
 using Dalamud.Hooking;
+using Dalamud.Interface.Colors;
 using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using Action = System.Action;
 
@@ -36,6 +40,18 @@ public unsafe class InstantLogout : DailyModuleBase
         ProcessSendedChatHook.Enable();
     }
 
+    public override void ConfigUI()
+    {
+        ImGui.TextColored(ImGuiColors.DalamudOrange, Service.Lang.GetText("InstantLogout-ManualOperation"));
+        ImGui.Separator();
+
+        if (ImGui.Button(Service.Lang.GetText("InstantLogout-Logout"))) Logout();
+        
+
+        ImGui.SameLine();
+        if (ImGui.Button(Service.Lang.GetText("InstantLogout-Shutdown"))) Shutdown();
+    }
+
     private static nint SystemMenuExecuteDetour(AgentHUD* agentHud, int a2, uint a3, int a4, nint a5)
     {
         if (a2 is 1 && a4 is -1)
@@ -50,7 +66,7 @@ public unsafe class InstantLogout : DailyModuleBase
                     return 0;
             }
         }
-
+        
         var original = SystemMenuExecuteHook.Original(agentHud, a2, a3, a4, a5);
         return original;
     }
@@ -73,7 +89,19 @@ public unsafe class InstantLogout : DailyModuleBase
         if (message == command.Command.RawString || message == command.Alias.RawString) action();
     }
 
-    private static void Logout() => SendLogout();
+    private static void Logout()
+    {
+        for (var i = 0; i < 150; i++)
+            Marshal.WriteByte(Service.Condition.Address + i, 0);
+
+        foreach (var addon in RaptureAtkUnitManager.Instance()->AtkUnitManager.AllLoadedUnitsList.EntriesSpan)
+        {
+            if (addon.Value == null || !addon.Value->IsVisible) continue;
+            addon.Value->Close(true);
+        }
+
+        SendLogout();
+    }
 
     private static void Shutdown() => ChatHelper.Instance.SendMessage("/xlkill");
 }

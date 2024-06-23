@@ -2197,7 +2197,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>禁止地面类技能改变面向</value>
   </data>
   <data name="InstantLogoutDescription" xml:space="preserve">
-    <value>启用后, 解除游戏内所有的登出限制, 并在尝试登出时即刻返回至标题界面</value>
+    <value>启用后, 解除游戏内所有的 登出/退出 游戏限制, 并在尝试登出/退出时即刻返回至标题界面/退出游戏</value>
   </data>
   <data name="InstantLogoutTitle" xml:space="preserve">
     <value>即刻登出</value>
@@ -2243,6 +2243,15 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="QuickChatPanel-OverlayPosOffset" xml:space="preserve">
     <value>窗口位置偏移</value>
+  </data>
+  <data name="InstantLogout-Logout" xml:space="preserve">
+    <value>登出游戏</value>
+  </data>
+  <data name="InstantLogout-ManualOperation" xml:space="preserve">
+    <value>手动操作</value>
+  </data>
+  <data name="InstantLogout-Shutdown" xml:space="preserve">
+    <value>退出游戏</value>
   </data>
   <data name="Settings-AfdianSponsor" xml:space="preserve">
     <value>爱发电赞助感谢</value>
