@@ -1,14 +1,18 @@
 using System;
+using System.Buffers.Text;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Net.Http;
+using System.Security;
+using System.Text;
 using System.Threading.Tasks;
 using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
-using WMPLib;
 
 namespace DailyRoutines.Notifications;
 
+// Thanks FFCafe
 public class TextToTalk : DailyNotificationBase
 {
     public override NotifyType NotifyType => NotifyType.TextToTalk;
@@ -17,10 +21,7 @@ public class TextToTalk : DailyNotificationBase
 
     public override void Init() { }
 
-    public static void Speak(string content, bool cancelPrevious)
-    {
-        Task.Run(() => SpeakAsync(content));
-    }
+    public static void Speak(string content, bool cancelPrevious) { Task.Run(() => Speak(content)); }
 
     public static async Task SpeakAsync(string text)
     {
@@ -43,8 +44,41 @@ public class TextToTalk : DailyNotificationBase
             }
         }
         else
-        {
             NotifyHelper.Debug("Failed to download or verify the mp3 file.");
+    }
+
+    public static async Task Speak(string text)
+    {
+        var fileName = Convert.ToBase64String(Encoding.UTF8.GetBytes(text));
+        var downloadedFilePath = Path.Combine(CacheDirectory, $"{fileName}.wav");
+        if (File.Exists(downloadedFilePath))
+        {
+            var player = new PlayAudioHelper();
+            player.Play(downloadedFilePath);
+            return;
+        }
+
+        text = SecurityElement.Escape(text);
+        var ssml = AzureWSSynthesiser.CreateSSML(text, 100, 100, 200, "zh-CN-YunyangNeural", "general", 100, "Default");
+        var url = Encoding.UTF8.GetString(Convert.FromBase64String("aHR0cHM6Ly90dHNwcm8ueGl2Y2RuLmNvbS90dHMvdjE="));
+        var httpClient = new HttpClient();
+
+        httpClient.DefaultRequestHeaders.Add(Encoding.UTF8.GetString(Convert.FromBase64String("RkZDYWZlLUFjY2Vzcy1Ub2tlbg==")), Encoding.UTF8.GetString(Convert.FromBase64String("OWN1YTVzbjhjYjM4NWJ6YTI3Z2pnY2E1c2p4OHJ3Zm4=")));
+        httpClient.DefaultRequestHeaders.Add("Output-Format", "audio-24khz-48kbitrate-mono-mp3");
+        httpClient.DefaultRequestHeaders.Add("Voice-Variant", "zh-CN-YunyangNeural".ToLower());
+        httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+
+        var content = new ByteArrayContent(Encoding.UTF8.GetBytes(ssml));
+        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/ssml+xml");
+
+        var response = await httpClient.PostAsync(url, content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            await using var fileStream = new FileStream(downloadedFilePath, FileMode.Create, FileAccess.Write);
+            await response.Content.CopyToAsync(fileStream);
+            var player = new PlayAudioHelper();
+            player.Play(downloadedFilePath);
         }
     }
 
@@ -53,7 +87,8 @@ public class TextToTalk : DailyNotificationBase
         Directory.CreateDirectory(CacheDirectory);
 
         using var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
 
         try
         {
@@ -78,4 +113,33 @@ public class TextToTalk : DailyNotificationBase
     }
 
     public override void Uninit() { }
+
+    private static class AzureWSSynthesiser
+    {
+        public static string CreateSSML(
+            string text,
+            int speed,
+            int pitch,
+            int volume,
+            string voice,
+            string style = null,
+            int styleDegree = 100,
+            string role = null
+        )
+        {
+            var adjustedStyleDegree = Math.Max(1, styleDegree / 100.0f);
+            var styleAttributes = string.IsNullOrEmpty(style) ? "" : $" style=\"{style}\" styledegree=\"{adjustedStyleDegree}\"";
+            var roleAttribute = string.IsNullOrEmpty(role) ? "" : $" role=\"{role}\"";
+
+            var expressAs = (!string.IsNullOrEmpty(style) || !string.IsNullOrEmpty(role))
+                                ? $"<mstts:express-as{styleAttributes}{roleAttribute}>{text}</mstts:express-as>"
+                                : text;
+
+            return $"<speak xmlns=\"http://www.w3.org/2001/10/synthesis\" xmlns:mstts=\"http://www.w3.org/2001/mstts\" version=\"1.0\" xml:lang=\"en-US\">" +
+                   $"<voice name=\"{voice}\">" +
+                   $"<prosody rate=\"{speed - 100}%\" pitch=\"{(pitch - 100) / 2}%\" volume=\"{Math.Clamp(volume, 1, 100)}\">" +
+                   expressAs +
+                   "</prosody></voice></speak>";
+        }
+    }
 }
