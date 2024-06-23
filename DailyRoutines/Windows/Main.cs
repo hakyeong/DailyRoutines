@@ -276,9 +276,8 @@ public class Main : Window, IDisposable
 
                 // 假的输入框
                 ImGui.SetCursorPos(startCursorPos);
-                ImGui.SetNextItemWidth(
-                    ImGui.GetContentRegionAvail().X - SettingsButtonSize.X - (ImGui.GetStyle().ItemSpacing.X * 2));
                 ImGui.BeginDisabled();
+                ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - SettingsButtonSize.X - ImGui.GetStyle().ItemSpacing.X);
                 ImGui.InputText("###SearchDisplay", ref emptyString, 0, ImGuiInputTextFlags.ReadOnly);
                 ImGui.EndDisabled();
 
@@ -289,10 +288,13 @@ public class Main : Window, IDisposable
                 ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(ImGuiCol.ChildBg));
                 ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
                 ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
-                if (ImGuiOm.ButtonIcon("Settings", FontAwesomeIcon.Cog,
-                                       new(32f * GlobalFontScale, inputHeight),
-                                       Service.Lang.GetText("Settings")))
+                if (ImGui.Button($"{FontAwesomeIcon.Cog.ToIconString()}###Settings",
+                                       new(32f * GlobalFontScale, inputHeight)))
+                {
                     SelectedTab = 1;
+                    SearchString = string.Empty;
+                }
+                ImGuiOm.TooltipHover(Service.Lang.GetText("Settings"));
                 ImGui.PopStyleColor(3);
                 SettingsButtonSize = ImGui.GetItemRectSize();
 
