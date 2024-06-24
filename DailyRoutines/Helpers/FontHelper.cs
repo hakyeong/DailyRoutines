@@ -24,6 +24,8 @@ public class FontHelper
     private static readonly ConcurrentDictionary<float, IFontHandle> fontHandles = [];
     private static readonly ConcurrentDictionary<float, Task<IFontHandle>> fontHandleTasks = [];
 
+    public static bool   IsAnyFontBuilding => !fontHandleTasks.IsEmpty;
+
     public static IFontHandle UIFont    => GetUIFont(1.0f);
     public static IFontHandle UIFont160 => GetUIFont(1.6f);
     public static IFontHandle UIFont140 => GetUIFont(1.4f);
@@ -33,9 +35,10 @@ public class FontHelper
 
     public static IFontHandle GetUIFont(float scale)
     {
-        var actualSize = Service.Config.InterfaceFontSize * scale;
+        var actualSize = (float)Math.Round(Service.Config.InterfaceFontSize * scale, 1);
         if (!fontHandles.TryGetValue(actualSize, out var handle))
         {
+            NotifyHelper.Debug($"开始构建字体 (字号: {actualSize})");
             if (!fontHandleTasks.TryGetValue(actualSize, out _))
             {
                 if (!creationQueue.Contains(actualSize))
@@ -77,6 +80,7 @@ public class FontHelper
             var task = CreateFontHandle(size);
             fontHandleTasks[size] = task;
             await task;
+            await FontAtlas.BuildFontsAsync();
             fontHandleTasks.TryRemove(size, out _);
         }
     }
@@ -86,35 +90,43 @@ public class FontHelper
         var path = GetFontPath();
         var task = Task.Run(() =>
         {
-            var handle = FontAtlas.NewDelegateFontHandle(e =>
+            try
             {
-                e.OnPreBuild(tk =>
+                var handle = FontAtlas.NewDelegateFontHandle(e =>
                 {
-                    var fileFontPtr = tk.AddFontFromFile(path, new()
+                    e.OnPreBuild(tk =>
                     {
-                        SizePt = size,
-                        PixelSnapH = true,
-                        GlyphRanges = FontRange,
-                    });
+                        var fileFontPtr = tk.AddFontFromFile(path, new()
+                        {
+                            SizePt = size,
+                            PixelSnapH = true,
+                            GlyphRanges = FontRange,
+                        });
 
-                    var mixedFontPtr0 = tk.AddGameSymbol(new()
-                    {
-                        SizePt = size,
-                        PixelSnapH = true,
-                        MergeFont = fileFontPtr,
-                    });
+                        var mixedFontPtr0 = tk.AddGameSymbol(new()
+                        {
+                            SizePt = size,
+                            PixelSnapH = true,
+                            MergeFont = fileFontPtr,
+                        });
 
-                    tk.AddFontAwesomeIconFont(new()
-                    {
-                        SizePt = size,
-                        PixelSnapH = true,
-                        MergeFont = mixedFontPtr0,
+                        tk.AddFontAwesomeIconFont(new()
+                        {
+                            SizePt = size,
+                            PixelSnapH = true,
+                            MergeFont = mixedFontPtr0,
+                        });
                     });
                 });
-            });
 
-            fontHandles[size] = handle;
-            return handle;
+                fontHandles[size] = handle;
+                return handle;
+            }
+            catch (Exception ex)
+            {
+                NotifyHelper.Error($"Failed to create font handle for size {size}", ex);
+                throw;
+            }
         });
 
         return task;
@@ -170,7 +182,7 @@ public class FontHelper
     #region Lazy
 
     private static readonly Lazy<IFontAtlas> fontAtlas =
-        new(() => Service.PluginInterface.UiBuilder.CreateFontAtlas(FontAtlasAutoRebuildMode.Async));
+        new(() => Service.PluginInterface.UiBuilder.CreateFontAtlas(FontAtlasAutoRebuildMode.Disable));
 
     private static readonly Lazy<ushort[]> fontRange = new(() => BuildRange(
                                                                null, ImGui.GetIO().Fonts.GetGlyphRangesChineseFull(),

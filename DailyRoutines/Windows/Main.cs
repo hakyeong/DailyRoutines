@@ -46,7 +46,8 @@ public class Main : Window, IDisposable
 
     internal static ImageCarousel? ImageCarousel;
 
-    private const ImGuiWindowFlags ChildFlags = ImGuiWindowFlags.NoScrollbar;
+    private const ImGuiWindowFlags ChildFlags 
+        = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.ChildWindow | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking;
 
     private static Vector2 LeftTabComponentSize;
     private static Vector2 LogoComponentSize;
@@ -59,7 +60,6 @@ public class Main : Window, IDisposable
     private static Vector2 ChildGameCalendarsSize;
     private static Vector2 ChildGreetingSize;
     private static Vector2 ContactComponentSize;
-    private static Vector2 HomePageMainInfoSize;
 
     private static int SelectedTab;
     private static string GreetingText = string.Empty;
@@ -74,6 +74,8 @@ public class Main : Window, IDisposable
         {
             MinimumSize = new(650, 400),
         };
+
+        ForceMainWindow = true;
         SelectedTab = Service.Config.DefaultHomePage;
 
         if (Service.ClientState.ClientLanguage != (ClientLanguage)4)
@@ -88,6 +90,17 @@ public class Main : Window, IDisposable
 
     public override void Draw()
     {
+        if (FontHelper.IsAnyFontBuilding)
+        {
+            ImGui.SetWindowFontScale(3f);
+            var textSize = ImGui.CalcTextSize(Service.Lang.GetText("Settings-FontBuilding"));
+            var pos = new Vector2((ImGui.GetWindowWidth() - textSize.X) / 2f, (ImGui.GetWindowHeight() - textSize.Y) / 2f);
+            ImGui.SetCursorPos(pos);
+            ImGui.Text(Service.Lang.GetText("Settings-FontBuilding"));
+            ImGui.SetWindowFontScale(1f);
+            return;
+        }
+
         using (FontHelper.UIFont.Push())
         {
             DrawLeftTabComponent();
@@ -202,15 +215,14 @@ public class Main : Window, IDisposable
     {
         using (FontHelper.UIFont120.Push())
         {
-            ImGuiHelpers.CenterCursorFor(CategoriesComponentSize.X);
-
             var selectedModule = ModuleCategories.无;
             if (SelectedTab > 100)
                 selectedModule = (ModuleCategories)(SelectedTab % 100);
 
+            ImGuiHelpers.CenterCursorFor(CategoriesComponentSize.X);
             using (ImRaii.Group())
             {
-                var buttonSize = new Vector2(156f * GlobalFontScale, ImGui.CalcTextSize("你好").Y);
+                var buttonSize = new Vector2(180f * GlobalFontScale, ImGui.CalcTextSize("你好").Y);
 
                 ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
                 ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
@@ -315,7 +327,7 @@ public class Main : Window, IDisposable
     private static void DrawRightTabComponent()
     {
         RightTabComponentSize = ImGui.GetContentRegionAvail();
-        if (ImRaii.Child("RightTabComponentChild", RightTabComponentSize, false, ChildFlags | (SelectedTab == 0
+        using (ImRaii.Child("RightTabComponentChild", RightTabComponentSize, false, ChildFlags | (SelectedTab == 0
                                                                                          ? ImGuiWindowFlags.NoScrollWithMouse
                                                                                          : ImGuiWindowFlags.None)))
         {
@@ -373,7 +385,6 @@ public class Main : Window, IDisposable
 
         ScaledDummy(1f, 36f);
 
-        ImGui.SetCursorPosX((int)((ImGui.GetContentRegionAvail().X - HomePageMainInfoSize.X) / 2f));
         using (ImRaii.Group())
         {
             using (ImRaii.Group())
@@ -398,7 +409,6 @@ public class Main : Window, IDisposable
                 DrawHomePage_ChangelogComponent();
             }
         }
-        HomePageMainInfoSize = ImGui.GetItemRectSize();
     }
 
     private static void DrawHomePage_GreetingComponent()
@@ -1055,11 +1065,13 @@ public class MainSettings
         var fontTemp = Service.Config.InterfaceFontSize;
         ImGui.SetNextItemWidth(150f * GlobalFontScale);
         if (ImGui.InputFloat("###InterfaceFontInput", ref fontTemp, 0, 0, "%.1f"))
-            fontTemp = Math.Max(fontTemp, 8);
+            fontTemp = Math.Clamp(fontTemp, 8, 48);
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
             Service.Config.InterfaceFontSize = fontTemp;
             Service.Config.Save();
+
+            RebuildInterfaceFont();
         }
 
         // 默认页面
@@ -1117,10 +1129,15 @@ public class MainSettings
             TotalDownloadCounts = await GetTotalDownloadsAsync();
             LatestVersionInfo = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
 
-            FontHelper.GetUIFont(0.9f);
-            for (var i = 0.6f; i < 1.6f; i += 0.2f)
-                FontHelper.GetUIFont(i);
+            RebuildInterfaceFont();
         });
+    }
+
+    internal static void RebuildInterfaceFont()
+    {
+        FontHelper.GetUIFont(0.9f);
+        for (var i = 0.6f; i < 1.8f; i += 0.2f)
+            FontHelper.GetUIFont(i);
     }
 
     private static void OnLogin()
@@ -1278,10 +1295,8 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
     private int currentIndex;
     private long lastImageChangeTime;
 
-    public void Draw()
+    private void PreDraw()
     {
-        if (News.Count == 0) return;
-
         if (Environment.TickCount64 - lastImageChangeTime > ChangeInterval * 1000)
         {
             currentIndex = (currentIndex + 1) % News.Count;
@@ -1291,6 +1306,12 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
         var singleCharSize = ImGui.CalcTextSize("测");
         var itemSpacing = ImGui.GetStyle().ItemSpacing;
         ChildSize = new Vector2(CurrentImageSize.X + (2 * itemSpacing.X), CurrentImageSize.Y + (singleCharSize.Y * 2.5f));
+    }
+
+    public void Draw()
+    {
+        if (News.Count == 0) return;
+        PreDraw();
 
         using (ImRaii.Child("NewsImageCarousel", ChildSize, false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
         {
@@ -1301,10 +1322,7 @@ public class ImageCarousel(IReadOnlyList<MainSettings.GameNews> newsList)
             }
             else
             {
-                using (ImRaii.Child("ImageNotLoadChild", CurrentImageSize))
-                {
-                    ImGui.TextDisabled($"{Service.Lang.GetText("ImageLoading")}...");
-                }
+                ImGui.Dummy(CurrentImageSize);
             }
 
             if (ImGui.IsItemHovered())

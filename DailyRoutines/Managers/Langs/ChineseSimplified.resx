@@ -2256,4 +2256,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Settings-AfdianSponsor" xml:space="preserve">
     <value>爱发电赞助感谢</value>
   </data>
+  <data name="Settings-FontBuilding" xml:space="preserve">
+    <value>界面字体构建中...</value>
+  </data>
 </root>

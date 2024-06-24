@@ -41,7 +41,7 @@ public class PresetData
 
     private static readonly Lazy<IDalamudTextureWrap> icon =
         new(() => Service.Texture.GetTextureFromFile(
-                new(Path.Join(Service.PluginInterface.AssemblyLocation.DirectoryName, "Assets", "icon.png"))));
+                new(Path.Join(Service.PluginInterface.AssemblyLocation.DirectoryName, "Assets", "icon.png")), true));
 
     private static readonly Lazy<Dictionary<uint, ContentFinderCondition>> highEndContents =
         new(() => LuminaCache.Get<ContentFinderCondition>()
