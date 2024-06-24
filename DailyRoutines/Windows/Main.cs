@@ -46,8 +46,7 @@ public class Main : Window, IDisposable
 
     internal static ImageCarousel? ImageCarousel;
 
-    private const ImGuiWindowFlags ChildFlags 
-        = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.ChildWindow | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking;
+    private const ImGuiWindowFlags ChildFlags = ImGuiWindowFlags.NoScrollbar;
 
     private static Vector2 LeftTabComponentSize;
     private static Vector2 LogoComponentSize;
