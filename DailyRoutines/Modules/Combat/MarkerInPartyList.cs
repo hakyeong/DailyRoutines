@@ -10,9 +10,8 @@ using Dalamud.Hooking;
 using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
-using FFXIVClientStructs.FFXIV.Client.Game.Group;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -64,6 +63,12 @@ public unsafe class MarkerInPartyList : DailyModuleBase
         ImGui.InputFloat(Service.Lang.GetText("MarkerInPartyList-IconScale"), ref ModuleConfig.PartyListIconScale, 0, 0, "%.1f");
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);
+
+        if (ImGui.Checkbox(Service.Lang.GetText("MarkerInPartyList-HidePartyListIndexNumber"), ref ModuleConfig.HidePartyListIndexNumber))
+        { 
+            SaveConfig(ModuleConfig);
+            ResetPartyMemberList();
+        }
     }
 
     public override void OverlayUI()
@@ -114,21 +119,16 @@ public unsafe class MarkerInPartyList : DailyModuleBase
         if (listIndex is < 0 or > 7)
             return;
 
-        var partyMemberNodeIndex = 22 - listIndex;
-        const int iconNodeIndex = 4;
-        var partyAlign = pPartyList->UldManager.NodeList[3]->Y;
+        var partyMemberNodeIndex = 10 + listIndex;
+        var partyAlign = pPartyList->UldManager.SearchNodeById(2)->Y;
 
-        var pPartyMemberNode = pPartyList->UldManager.NodeListSize > partyMemberNodeIndex
-                                   ? (AtkComponentNode*)pPartyList->UldManager.NodeList[partyMemberNodeIndex]
-                                   : null;
+        var pPartyMemberNode = (AtkComponentNode*)pPartyList->UldManager.SearchNodeById((uint)partyMemberNodeIndex);
+        if (pPartyMemberNode is null)
+            return;
 
-        if (pPartyMemberNode is null) return;
-
-        var pIconNode = pPartyMemberNode->Component->UldManager.NodeListSize > iconNodeIndex
-                            ? pPartyMemberNode->Component->UldManager.NodeList[iconNodeIndex]
-                            : null;
-
-        if (pIconNode is null) return;
+        var pIconNode = pPartyMemberNode->Component->UldManager.SearchNodeById(19);
+        if (pIconNode is null)
+            return;
 
         //	Note: sub-nodes don't scale, so we have to account for the addon's scale.
         var iconOffset = (new Vector2(5, -5) + ModuleConfig.PartyListIconOffset) * pPartyList->Scale;
@@ -147,7 +147,7 @@ public unsafe class MarkerInPartyList : DailyModuleBase
 
     private static void ModifyPartyMemberNumber(AtkUnitBase* pPartyList, bool visible)
     {
-        if (pPartyList == null)
+        if (pPartyList is null || (!ModuleConfig.HidePartyListIndexNumber && !visible))
             return;
 
         var memberIdList = Enumerable.Range(10, 17).ToList();
@@ -180,16 +180,12 @@ public unsafe class MarkerInPartyList : DailyModuleBase
 
                 return;
             }
-            case < 0x1000_0000:
-            case > 0x2000_0000:
-                return;
         }
 
-        if (Framework.Instance() is null) return;
+        if (AgentHUD.Instance() is null || InfoProxyCrossRealm.Instance() is null)
+            return;
 
         var pAgentHUD = AgentHUD.Instance();
-        if (GroupManager.Instance()->MemberCount > 0)
-        {
             for (var i = 0; i < 8; ++i)
             {
                 var offset = i * Marshal.SizeOf<PartyListCharInfo>();
@@ -204,7 +200,28 @@ public unsafe class MarkerInPartyList : DailyModuleBase
                     _markedObject[icon] = i;
                     return;
                 }
+        }
+
+        if (InfoProxyCrossRealm.Instance()->IsCrossRealm > 0)
+        {
+            var pGroupMember = InfoProxyCrossRealm.GetMemberByObjectId(objectId);
+            if (pGroupMember is not null && pGroupMember->GroupIndex == 0)
+        {
+                if (_markedObject.ContainsValue(pGroupMember->MemberIndex))
+            {
+                    _markedObject.Remove(_markedObject.First(x => x.Value == pGroupMember->MemberIndex).Key);
+                }
+                _needClear = false;
+                _markedObject[icon] = pGroupMember->MemberIndex;
+                return;
             }
+
+        }
+
+        _markedObject.Remove(icon);
+        if (_markedObject.Count == 0)
+        {
+            _needClear = true;
         }
     }
 
@@ -227,6 +244,7 @@ public unsafe class MarkerInPartyList : DailyModuleBase
     {
         public Vector2 PartyListIconOffset = new(0, 0);
         public float PartyListIconScale = 1f;
+        public bool HidePartyListIndexNumber = true;
     }
 
 
