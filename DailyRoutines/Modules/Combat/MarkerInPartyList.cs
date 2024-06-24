@@ -64,6 +64,12 @@ public unsafe class MarkerInPartyList : DailyModuleBase
         ImGui.InputFloat(Service.Lang.GetText("MarkerInPartyList-IconScale"), ref ModuleConfig.PartyListIconScale, 0, 0, "%.1f");
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);
+
+        if(ImGui.Checkbox(Service.Lang.GetText("MarkerInPartyList-HidePartyListIndexNumber"), ref ModuleConfig.HidePartyListIndexNumber))
+        { 
+            SaveConfig(ModuleConfig);
+            ResetPartyMemberList();
+        }
     }
 
     public override void OverlayUI()
@@ -147,7 +153,7 @@ public unsafe class MarkerInPartyList : DailyModuleBase
 
     private static void ModifyPartyMemberNumber(AtkUnitBase* pPartyList, bool visible)
     {
-        if (pPartyList == null)
+        if (pPartyList is null || (!ModuleConfig.HidePartyListIndexNumber && !visible))
             return;
 
         var memberIdList = Enumerable.Range(10, 17).ToList();
@@ -239,6 +245,7 @@ public unsafe class MarkerInPartyList : DailyModuleBase
     {
         public Vector2 PartyListIconOffset = new(0, 0);
         public float PartyListIconScale = 1f;
+        public bool HidePartyListIndexNumber = true;
     }
 
 
