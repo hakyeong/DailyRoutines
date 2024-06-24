@@ -2259,4 +2259,23 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Settings-FontBuilding" xml:space="preserve">
     <value>界面字体构建中...</value>
   </data>
+  <data name="AutoFateSync-Delay" xml:space="preserve">
+    <value>延迟时间 (秒)</value>
+  </data>
+  <data name="AutoFateSync-DelayHelp" xml:space="preserve">
+    <value>若此项不为 0 , 则当进入危命任务范围达到设置时间后, 才进行等级同步</value>
+  </data>
+  <data name="AutoFateSync-IgnoreMounting" xml:space="preserve">
+    <value>忽略骑乘坐骑状态</value>
+  </data>
+  <data name="AutoFateSync-IgnoreMountingHelp" xml:space="preserve">
+    <value>启用后, 当骑乘坐骑时, 进入危命任务范围时将不会自动进行等级同步,
+但在危命任务范围内时, 下坐骑后仍然会自动进行等级同步</value>
+  </data>
+  <data name="AutoFateSyncDescription" xml:space="preserve">
+    <value>启用并配置完成后, 进入危命任务范围时自动等级同步</value>
+  </data>
+  <data name="AutoFateSyncTitle" xml:space="preserve">
+    <value>自动危命任务等级同步</value>
+  </data>
 </root>
