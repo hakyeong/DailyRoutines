@@ -51,7 +51,7 @@ public class ExecuteCommandManager : IDailyManager
     private static nint ExecuteCommandDetour(int command, int param1, int param2, int param3, int param4)
     {
         if (Debug.DebugConfig.ShowExecuteCommandLog)
-            Service.Log.Debug($"[Execute Command Manager]\n命令:{command} | p1:{param1} | p2:{param2} | p3:{param3} | p4:{param4}");
+            Service.Log.Debug($"[Execute Command Manager]\n命令:{(ExecuteCommandFlag)command}({command}) | p1:{param1} | p2:{param2} | p3:{param3} | p4:{param4}");
 
         var isPrevented = false;
         for (var i = 0; i < _lengthPre; i++)

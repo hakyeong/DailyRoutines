@@ -181,11 +181,17 @@ public enum ExecuteCommandFlag
     VoteAbandon = 808,
 
     /// <summary>
+    /// 进入 临危受命 范围
+    /// <para><c>param1</c>: FATE ID</para>
+    /// </summary>
+    FateEnter = 812,
+
+    /// <summary>
     /// 为 临危受命 等级同步
     /// <para><c>param1</c>: FATE ID</para>
     /// <para><c>param2</c>: 是否等级同步 (0 - 否, 1 - 是)</para>
     /// </summary>
-    FateLevelSync = 814,
+    FateLevelSync = 813,
 
     /// <summary>
     /// 离开副本
