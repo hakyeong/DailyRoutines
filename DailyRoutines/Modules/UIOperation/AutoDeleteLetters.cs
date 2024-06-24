@@ -2,7 +2,6 @@ using System.Numerics;
 using ClickLib;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
-using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
