@@ -188,8 +188,8 @@ public unsafe class MarkerInPartyList : DailyModuleBase
         if (Framework.Instance() is null) return;
 
         var pAgentHUD = AgentHUD.Instance();
-        if (GroupManager.Instance()->MemberCount > 0)
-        {
+        if (GroupManager.Instance()->MemberCount <= 0)
+            return;
             for (var i = 0; i < 8; ++i)
             {
                 var offset = i * Marshal.SizeOf<PartyListCharInfo>();
@@ -204,6 +204,18 @@ public unsafe class MarkerInPartyList : DailyModuleBase
                     _markedObject[icon] = i;
                     return;
                 }
+        }
+
+        for (var i = 0; i < 40; ++i)
+        {
+            if (objectId > 0 && objectId == pAgentHUD->RaidMemberIds[i])
+            {
+                if (_markedObject.ContainsValue(i))
+                    _markedObject.Remove(_markedObject.First(x => x.Value == i).Key);
+
+                _needClear = false;
+                _markedObject[icon] = i % 8;
+                return;
             }
         }
     }
