@@ -2280,4 +2280,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoFateSyncTitle" xml:space="preserve">
     <value>自动危命任务等级同步</value>
   </data>
+  <data name="BlockInputWhenFishingDescription" xml:space="preserve">
+    <value>抛竿期间, 禁止绝大部分无关按键输入游戏, 防止意外打断钓鱼进程</value>
+  </data>
+  <data name="BlockInputWhenFishingTitle" xml:space="preserve">
+    <value>抛竿期间禁止按键输入</value>
+  </data>
 </root>
