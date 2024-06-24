@@ -29,7 +29,7 @@ public unsafe class AutoNoviceNetwork : DailyModuleBase
         [FieldOffset(0)]
         public InfoProxyInterface InfoProxyInterface;
 
-        [FieldOffset(24)]
+        [FieldOffset(32)]
         public bool IsInNoviceNetwork;
 
         public static InfoProxyBeginner* Instance() => (InfoProxyBeginner*)InfoModule.Instance()->GetInfoProxyById((InfoProxyId)20);
