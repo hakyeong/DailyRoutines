@@ -27,13 +27,14 @@ public class AutoDrawACard : DailyModuleBase
         if (!PresetData.Contents.ContainsKey(zone) || Service.ClientState.IsPvP) return;
 
         TaskHelper.Abort();
-        TaskHelper.DelayNext(100);
+        TaskHelper.DelayNext(1000);
         TaskHelper.Enqueue(CheckCurrentJob);
     }
 
     private static unsafe bool? CheckCurrentJob()
     {
         if (Flags.BetweenAreas) return false;
+        if (!IsScreenReady()) return false;
 
         var player = Service.ClientState.LocalPlayer;
         if (player == null || player.ClassJob.Id == 0 || !player.IsTargetable) return false;
