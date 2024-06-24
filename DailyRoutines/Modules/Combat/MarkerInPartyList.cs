@@ -65,7 +65,7 @@ public unsafe class MarkerInPartyList : DailyModuleBase
         if (ImGui.IsItemDeactivatedAfterEdit())
             SaveConfig(ModuleConfig);
 
-        if(ImGui.Checkbox(Service.Lang.GetText("MarkerInPartyList-HidePartyListIndexNumber"), ref ModuleConfig.HidePartyListIndexNumber))
+        if (ImGui.Checkbox(Service.Lang.GetText("MarkerInPartyList-HidePartyListIndexNumber"), ref ModuleConfig.HidePartyListIndexNumber))
         { 
             SaveConfig(ModuleConfig);
             ResetPartyMemberList();
@@ -120,21 +120,16 @@ public unsafe class MarkerInPartyList : DailyModuleBase
         if (listIndex is < 0 or > 7)
             return;
 
-        var partyMemberNodeIndex = 22 - listIndex;
-        const int iconNodeIndex = 4;
-        var partyAlign = pPartyList->UldManager.NodeList[3]->Y;
+        var partyMemberNodeIndex = 10 + listIndex;
+        var partyAlign = pPartyList->UldManager.SearchNodeById(2)->Y;
 
-        var pPartyMemberNode = pPartyList->UldManager.NodeListSize > partyMemberNodeIndex
-                                   ? (AtkComponentNode*)pPartyList->UldManager.NodeList[partyMemberNodeIndex]
-                                   : null;
+        var pPartyMemberNode = (AtkComponentNode*)pPartyList->UldManager.SearchNodeById((uint)partyMemberNodeIndex);
+        if (pPartyMemberNode is null)
+            return;
 
-        if (pPartyMemberNode is null) return;
-
-        var pIconNode = pPartyMemberNode->Component->UldManager.NodeListSize > iconNodeIndex
-                            ? pPartyMemberNode->Component->UldManager.NodeList[iconNodeIndex]
-                            : null;
-
-        if (pIconNode is null) return;
+        var pIconNode = pPartyMemberNode->Component->UldManager.SearchNodeById(19);
+        if (pIconNode is null)
+            return;
 
         //	Note: sub-nodes don't scale, so we have to account for the addon's scale.
         var iconOffset = (new Vector2(5, -5) + ModuleConfig.PartyListIconOffset) * pPartyList->Scale;
