@@ -48,10 +48,40 @@ public class TextToTalk : DailyNotificationBase
             NotifyHelper.Debug("Failed to download or verify the mp3 file.");
     }
 
+    public static async Task<bool> DownloadFileAsync(string url, string filePath)
+    {
+        Directory.CreateDirectory(CacheDirectory);
+
+        using var httpClient = new HttpClient();
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+
+        try
+        {
+            using var response = await httpClient.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+
+            await using var contentStream = await response.Content.ReadAsStreamAsync();
+            if (contentStream.Length > 0)
+            {
+                await using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                await contentStream.CopyToAsync(fileStream);
+                return fileStream.Length > 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            Service.Log.Error(ex.Message);
+            return false;
+        }
+
+        return false;
+    }
+
     public static async Task Speak(string text)
     {
-        text = SanitizeString(SecurityElement.Escape(text));
-        var fileName = Convert.ToBase64String(Encoding.UTF8.GetBytes(text));
+        text = SanitizeString(text);
+        var fileName = Convert.ToBase64String(Encoding.UTF8.GetBytes(text)).Replace('+', '-').Replace('/', '_').TrimEnd('=');
         var filePath = Path.Join(CacheDirectory, $"{fileName}.wav");
         if (File.Exists(filePath))
         {
@@ -83,38 +113,11 @@ public class TextToTalk : DailyNotificationBase
         }
     }
 
-    public static async Task<bool> DownloadFileAsync(string url, string filePath)
-    {
-        Directory.CreateDirectory(CacheDirectory);
-
-        using var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
-
-        try
-        {
-            using var response = await httpClient.GetAsync(url);
-            response.EnsureSuccessStatusCode();
-
-            await using var contentStream = await response.Content.ReadAsStreamAsync();
-            if (contentStream.Length > 0)
-            {
-                await using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
-                await contentStream.CopyToAsync(fileStream);
-                return fileStream.Length > 0;
-            }
-        }
-        catch (Exception ex)
-        {
-            Service.Log.Error(ex.Message);
-            return false;
-        }
-
-        return false;
-    }
 
     public static string SanitizeString(string text)
     {
+        text = SecurityElement.Escape(text);
+
         foreach (var (word, phoneme) in PhonemeReplacements)
             text = text.Replace(word, phoneme);
 
