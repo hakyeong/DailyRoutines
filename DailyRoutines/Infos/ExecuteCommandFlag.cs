@@ -194,6 +194,12 @@ public enum ExecuteCommandFlag
     FateLevelSync = 813,
 
     /// <summary>
+    /// 临危受命 野怪生成
+    /// <para><c>param1</c>: Object ID</para>
+    /// </summary>
+    FateMobSpawn = 814,
+
+    /// <summary>
     /// 离开副本
     /// <para><c>param1</c>: 类型 (0 - 正常退本, 1 - 一段时间未操作)</para>
     /// </summary>
