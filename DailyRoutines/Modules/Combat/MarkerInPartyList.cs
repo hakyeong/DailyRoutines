@@ -10,9 +10,8 @@ using Dalamud.Hooking;
 using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
-using FFXIVClientStructs.FFXIV.Client.Game.Group;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -181,16 +180,12 @@ public unsafe class MarkerInPartyList : DailyModuleBase
 
                 return;
             }
-            case < 0x1000_0000:
-            case > 0x2000_0000:
-                return;
         }
 
-        if (Framework.Instance() is null) return;
+        if (AgentHUD.Instance() is null || InfoProxyCrossRealm.Instance() is null)
+            return;
 
         var pAgentHUD = AgentHUD.Instance();
-        if (GroupManager.Instance()->MemberCount <= 0)
-            return;
             for (var i = 0; i < 8; ++i)
             {
                 var offset = i * Marshal.SizeOf<PartyListCharInfo>();
@@ -207,17 +202,26 @@ public unsafe class MarkerInPartyList : DailyModuleBase
                 }
         }
 
-        for (var i = 0; i < 40; ++i)
+        if (InfoProxyCrossRealm.Instance()->IsCrossRealm > 0)
         {
-            if (objectId > 0 && objectId == pAgentHUD->RaidMemberIds[i])
+            var pGroupMember = InfoProxyCrossRealm.GetMemberByObjectId(objectId);
+            if (pGroupMember is not null && pGroupMember->GroupIndex == 0)
+        {
+                if (_markedObject.ContainsValue(pGroupMember->MemberIndex))
             {
-                if (_markedObject.ContainsValue(i))
-                    _markedObject.Remove(_markedObject.First(x => x.Value == i).Key);
-
+                    _markedObject.Remove(_markedObject.First(x => x.Value == pGroupMember->MemberIndex).Key);
+                }
                 _needClear = false;
-                _markedObject[icon] = i % 8;
+                _markedObject[icon] = pGroupMember->MemberIndex;
                 return;
             }
+
+        }
+
+        _markedObject.Remove(icon);
+        if (_markedObject.Count == 0)
+        {
+            _needClear = true;
         }
     }
 
