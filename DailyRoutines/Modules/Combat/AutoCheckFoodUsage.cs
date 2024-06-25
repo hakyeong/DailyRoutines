@@ -192,20 +192,24 @@ public class AutoCheckFoodUsage : DailyModuleBase
                 ImGui.SetNextItemWidth(-1f);
                 ImGui.PushID("ZonesSelectCombo");
                 if (MultiSelectCombo(PresetData.Zones, ref zones, ref ZoneSearch, 
-                                     [new("区域", ImGuiTableColumnFlags.WidthStretch, 0)], 
+                                     [  new("区域", ImGuiTableColumnFlags.WidthStretch, 0), 
+                                        new("副本", ImGuiTableColumnFlags.WidthStretch, 0)  ], 
                                      [x => () =>
                                      {
-                                         var contentName = x.ContentFinderCondition?.Value?.Name?.RawString ?? "";
-                                         if (ImGui.Selectable(
-                                                 $"{x.ExtractPlaceName()} {(string.IsNullOrWhiteSpace(contentName) ? "" : $"({contentName})")}",
-                                                 zones.Contains(x.RowId), 
-                                                 ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups))
+                                         if (ImGui.Selectable(x.ExtractPlaceName(), zones.Contains(x.RowId), 
+                                                              ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups))
                                          {
                                              if (!zones.Remove(x.RowId))
                                                  zones.Add(x.RowId);
                                              SaveConfig(ModuleConfig);
                                          }
-                                     }], [x => x.ExtractPlaceName(), x => x.ContentFinderCondition?.Value?.Name?.RawString ?? ""], true))
+                                     }, 
+                                     x => () =>
+                                     {
+                                         var contentName = x.ContentFinderCondition?.Value?.Name?.RawString ?? "";
+                                         ImGui.Text(contentName);
+                                     }], 
+                                     [x => x.ExtractPlaceName(), x => x.ContentFinderCondition?.Value?.Name?.RawString ?? ""], true))
                 {
                     preset.Zones = zones;
                     SaveConfig(ModuleConfig);

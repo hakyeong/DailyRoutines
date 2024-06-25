@@ -578,13 +578,13 @@ public static class Widgets
         Func<T, System.Action>[] displayFuncs, Func<T, string>[] searchFuncs, bool disableCheckbox = false) where T : ExcelRow
     {
         var selectState = false;
-        if (ImGui.BeginCombo("###SelectCombo", $"当前已选中 {selectedItems.Count} 项", ImGuiComboFlags.HeightLarge))
+        if (ImGui.BeginCombo("###SelectCombo", $"当前已选中 {selectedItems.Count} 项", ImGuiComboFlags.HeightLargest))
             ImGui.EndCombo();
 
         if (ImGui.IsItemClicked())
             ImGui.OpenPopup("###SelectPopup");
 
-        ImGui.SetNextWindowSize(ScaledVector2(450f, 400f));
+        ImGui.SetNextWindowSize(ScaledVector2(600f, 400f));
         if (ImGui.BeginPopup("###SelectPopup"))
         {
             ImGui.SetNextItemWidth(-1f);
@@ -656,13 +656,13 @@ public static class Widgets
     {
         var selectState = false;
         var comboLabel = selectedItem != 0 ? previewFunc(sourceData[selectedItem]) : "请选择...";
-        if (ImGui.BeginCombo("###SelectCombo", comboLabel, ImGuiComboFlags.HeightLarge))
+        if (ImGui.BeginCombo("###SelectCombo", comboLabel, ImGuiComboFlags.HeightLargest))
             ImGui.EndCombo();
 
         if (ImGui.IsItemClicked())
             ImGui.OpenPopup("###SelectPopup");
 
-        ImGui.SetNextWindowSize(ScaledVector2(450f, 400f));
+        ImGui.SetNextWindowSize(ScaledVector2(600f, 400f));
         if (ImGui.BeginPopup("###SelectPopup"))
         {
             ImGui.SetNextItemWidth(-1f);
