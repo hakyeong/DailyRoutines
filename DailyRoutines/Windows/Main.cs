@@ -779,8 +779,11 @@ public class Main : Window, IDisposable
                     foreach (var pModuleType in moduleInfo.Module.GetCustomAttribute<PrecedingModuleAttribute>().Modules)
                         Service.ModuleManager.Load(pModuleType, true);
 
-                    ModulesFavorite.Clear();
-                    ModulesFavorite.AddRange(Modules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
+                    Task.Run(() =>
+                    {
+                        ModulesFavorite.Clear();
+                        ModulesFavorite.AddRange(Modules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
+                    });
                 }
 
                 ImGui.Separator();
@@ -790,8 +793,11 @@ public class Main : Window, IDisposable
                     foreach (var pModuleType in moduleInfo.Module.GetCustomAttribute<PrecedingModuleAttribute>().Modules)
                         Service.ModuleManager.Unload(pModuleType, true);
 
-                    ModulesFavorite.Clear();
-                    ModulesFavorite.AddRange(Modules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
+                    Task.Run(() =>
+                    {
+                        ModulesFavorite.Clear();
+                        ModulesFavorite.AddRange(Modules.Where(x => Service.Config.ModuleFavorites.Contains(x.Module.Name)));
+                    });
                 }
 
                 ImGui.Separator();
