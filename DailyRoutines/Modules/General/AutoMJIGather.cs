@@ -14,7 +14,6 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Internal;
-using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -30,6 +29,7 @@ using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 
 namespace DailyRoutines.Modules;
 
+[PrecedingModule([typeof(AutoAntiAfk)])]
 [ModuleDescription("AutoMJIGatherTitle", "AutoMJIGatherDescription", ModuleCategories.一般)]
 public class AutoMJIGather : DailyModuleBase
 {
