@@ -222,27 +222,17 @@ public class Main : Window, IDisposable
             ImGuiHelpers.CenterCursorFor(CategoriesComponentSize.X);
             using (ImRaii.Group())
             {
-                var buttonSize = new Vector2(180f * GlobalFontScale, ImGui.CalcTextSize("你好").Y);
-
-                ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
-                ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
-                ImGui.PushStyleColor(ImGuiCol.Button, SelectedTab == 3 ? ImGui.ColorConvertFloat4ToU32(ImGuiColors.TankBlue) : ImGui.GetColorU32(ImGuiCol.ChildBg));
-                if (ImGuiOm.ButtonIconWithText(FontAwesomeIcon.None, Service.Lang.GetText("Favorite"), buttonSize))
+                if (DrawCategorySelectButton(Service.Lang.GetText("Favorite"), SelectedTab == 3))
                 {
                     SearchString = string.Empty;
                     SelectedTab = 3;
                 }
-                ImGui.PopStyleColor(3);
 
-                ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
-                ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
-                ImGui.PushStyleColor(ImGuiCol.Button, SelectedTab == 4 ? ImGui.ColorConvertFloat4ToU32(ImGuiColors.TankBlue) : ImGui.GetColorU32(ImGuiCol.ChildBg));
-                if (ImGuiOm.ButtonIconWithText(FontAwesomeIcon.None, Service.Lang.GetText("Enabled"), buttonSize))
+                if (DrawCategorySelectButton(Service.Lang.GetText("Enabled"), SelectedTab == 4))
                 {
                     SearchString = string.Empty;
                     SelectedTab = 4;
                 }
-                ImGui.PopStyleColor(3);
 
                 ScaledDummy(1f, 12f);
 
@@ -250,21 +240,29 @@ public class Main : Window, IDisposable
                 {
                     if (category == ModuleCategories.无) continue;
 
-                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
-                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
-                    ImGui.PushStyleColor(ImGuiCol.Button, selectedModule == category ? ImGui.ColorConvertFloat4ToU32(ImGuiColors.TankBlue) : ImGui.GetColorU32(ImGuiCol.ChildBg));
-
-                    if (ImGuiOm.ButtonIconWithText(FontAwesomeIcon.None, category.ToString(), buttonSize))
+                    if (DrawCategorySelectButton(category.ToString(), selectedModule == category))
                     {
                         SearchString = string.Empty;
                         SelectedTab = 100 + (int)category;
                     }
-
-                    ImGui.PopStyleColor(3);
                 }
             }
             CategoriesComponentSize = ImGui.GetItemRectSize();
         }
+    }
+
+    private static bool DrawCategorySelectButton(string text, bool condition)
+    {
+        var buttonSize = new Vector2(180f * GlobalFontScale, ImGui.CalcTextSize("你好").Y);
+
+        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGuiColors.ParsedBlue);
+        ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGuiColors.TankBlue);
+        ImGui.PushStyleColor(ImGuiCol.Button, 
+                             condition ? ImGui.ColorConvertFloat4ToU32(ImGuiColors.TankBlue) : ImGui.GetColorU32(ImGuiCol.ChildBg));
+        var button = ImGuiOm.ButtonIconWithText(FontAwesomeIcon.None, text, buttonSize);
+        ImGui.PopStyleColor(3);
+
+        return button;
     }
 
     #endregion
@@ -677,9 +675,11 @@ public class Main : Window, IDisposable
 
         ScaledDummy(1f, 4f);
 
+        // 模块描述
         ImGui.SetCursorPosX(origCursorPosX);
         ImGuiOm.TextDisabledWrapped(moduleInfo.Description);
 
+        // 前置模块
         ImGui.SetCursorPosX(origCursorPosX);
         using (ImRaii.Group())
         {
@@ -692,6 +692,9 @@ public class Main : Window, IDisposable
 
                     ImGui.SameLine();
                     ImGui.TextColored(ImGuiColors.DalamudYellow, pModule);
+
+                    if (ImGui.IsItemHovered())
+                        ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
 
                     if (ImGui.IsItemClicked())
                         SearchString = pModule;
