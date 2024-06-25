@@ -170,6 +170,23 @@ public enum ExecuteCommandFlag
     RequestSaddleBag = 444,
 
     /// <summary>
+    /// 更改闲置状态姿势
+    /// <para><c>param2</c>: 姿势索引</para>
+    /// </summary>
+    IdlePostureChange = 505,
+
+    /// <summary>
+    /// 进入闲置状态姿势
+    /// <para><c>param2</c>: 姿势索引</para>
+    /// </summary>
+    IdlePostureEnter = 506,
+
+    /// <summary>
+    /// 退出闲置状态姿势
+    /// </summary>
+    IdlePostureExit = 507,
+
+    /// <summary>
     /// 钓鱼
     /// <para><c>param1</c>: 动作 (0 - 抛竿, 1 - 收杆, 2 - 提钩, 4 - 换饵)</para>
     /// </summary>
@@ -235,9 +252,52 @@ public enum ExecuteCommandFlag
 
     /// <summary>
     /// 请求接近达成成就概览 (不含具体成就内容)
-    /// <para><c>param1</c>:未知, 固定为 1</para>
+    /// <para><c>param1</c>: 未知, 固定为 1</para>
     /// </summary>
     RequestNearCompletionAchievement = 1002,
+
+    /// <summary>
+    /// 请求抽选数据
+    /// <para><c>param1</c>: Territory Type</para>
+    /// <para><c>param2</c>: 地皮对应索引</para>
+    /// <code>
+    /// <![CDATA[
+    /// const int HousesPerArea = 60;
+    /// const int AreaOffset = 256;
+    /// 
+    /// // 第 1 区 第 41 号
+    /// var wardID = 0;
+    /// var districtOffset = wardID * AreaOffset;
+    /// var houseID = 40;
+    /// var position = districtOffset + houseID]]>
+    /// </code>
+    /// </summary>
+    RequestLotteryData = 1105,
+
+    /// <summary>
+    /// 请求门牌数据
+    /// <para><c>param1</c>: Territory Type</para>
+    /// <para><c>param2</c>: 地皮对应索引</para>
+    /// <code>
+    /// <![CDATA[
+    /// const int HousesPerArea = 60;
+    /// const int AreaOffset = 256;
+    /// 
+    /// // 第 1 区 第 41 号
+    /// var wardID = 0;
+    /// var districtOffset = wardID * AreaOffset;
+    /// var houseID = 40;
+    /// var position = districtOffset + houseID]]>
+    /// </code>
+    /// </summary>
+    RequestPlacardData = 1106,
+
+    /// <summary>
+    /// 请求住宅区数据
+    /// <para><c>param1</c>: Territory Type</para>
+    /// <para><c>param2</c>: 分区索引</para>
+    /// </summary>
+    RequestHousingAreaData = 1107,
 
     /// <summary>
     /// 移动到庭院门前
