@@ -56,6 +56,7 @@ public unsafe class AutoLogin : DailyModuleBase
 
         TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 10000, ShowDebug = false };
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "_TitleMenu", OnTitleMenu);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Logo", OnLogo);
 
         if (ModuleConfig.AddCommand)
             Service.CommandManager.AddCommand(Command, new(OnCommand)
@@ -291,6 +292,14 @@ public unsafe class AutoLogin : DailyModuleBase
             TaskHelper.Enqueue(SelectCharacterDefault, "SelectCharaDefault0");
     }
 
+    private static void OnLogo(AddonEvent type, AddonArgs args)
+    {
+        var addon = args.Addon.ToAtkUnitBase();
+
+        Callback(addon, true, 0);
+        addon->Hide(false, false, 1);
+    }
+
     private void SelectCharacterDefault()
     {
         foreach (var loginInfo in ModuleConfig.LoginInfos)
@@ -383,6 +392,7 @@ public unsafe class AutoLogin : DailyModuleBase
     public override void Uninit()
     {
         Service.AddonLifecycle.UnregisterListener(OnTitleMenu);
+        Service.AddonLifecycle.UnregisterListener(OnLogo);
         Service.CommandManager.RemoveCommand(Command);
         ResetStates();
         HasLoginOnce = false;
