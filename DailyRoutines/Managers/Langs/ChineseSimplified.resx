@@ -2301,4 +2301,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="FastRidePillionTitle" xml:space="preserve">
     <value>快速共同骑乘</value>
   </data>
+  <data name="Enabled" xml:space="preserve">
+    <value>已启用</value>
+  </data>
 </root>
