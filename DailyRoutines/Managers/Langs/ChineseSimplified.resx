@@ -2286,4 +2286,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Content" xml:space="preserve">
     <value>副本</value>
   </data>
+  <data name="AutoSkipLogoDescription" xml:space="preserve">
+    <value>自动跳过游戏开始时的 Logo 画面, 使客户端直接进入登录界面</value>
+  </data>
+  <data name="AutoSkipLogoTitle" xml:space="preserve">
+    <value>自动跳过 Logo 画面</value>
+  </data>
 </root>
