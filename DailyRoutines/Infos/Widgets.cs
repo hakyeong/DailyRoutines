@@ -575,7 +575,7 @@ public static class Widgets
     public static bool MultiSelectCombo<T>(
         Dictionary<uint, T> sourceData, ref HashSet<uint> selectedItems, ref string searchInput,
         (string Header, ImGuiTableColumnFlags Flags, float Weight)[] headerFuncs,
-        Func<T, System.Action>[] displayFuncs, bool disableCheckbox = false) where T : ExcelRow
+        Func<T, System.Action>[] displayFuncs, Func<T, string>[] searchFuncs, bool disableCheckbox = false) where T : ExcelRow
     {
         var selectState = false;
         if (ImGui.BeginCombo("###SelectCombo", $"当前已选中 {selectedItems.Count} 项", ImGuiComboFlags.HeightLarge))
@@ -615,8 +615,7 @@ public static class Widgets
                 foreach (var (rowId, item) in data)
                 {
                     if (!string.IsNullOrWhiteSpace(searchInput) &&
-                        !displayFuncs.Any(func => func(item).ToString()
-                                                            .Contains(searchInputCopy, StringComparison.OrdinalIgnoreCase)))
+                        !searchFuncs.Any(func => func(item).Contains(searchInputCopy, StringComparison.OrdinalIgnoreCase)))
                         continue;
 
                     ImGui.TableNextRow();
@@ -653,7 +652,7 @@ public static class Widgets
     public static bool SingleSelectCombo<T>(
         Dictionary<uint, T> sourceData, ref uint selectedItem, ref string searchInput, Func<T, string> previewFunc,
         (string Header, ImGuiTableColumnFlags Flags, float Weight)[] headerFuncs,
-        Func<T, System.Action>[] displayFuncs, bool disableCheckbox = false) where T : ExcelRow
+        Func<T, System.Action>[] displayFuncs, Func<T, string>[] searchFuncs, bool disableCheckbox = false) where T : ExcelRow
     {
         var selectState = false;
         var comboLabel = selectedItem != 0 ? previewFunc(sourceData[selectedItem]) : "请选择...";
@@ -691,8 +690,7 @@ public static class Widgets
                 foreach (var (rowId, item) in data)
                 {
                     if (!string.IsNullOrWhiteSpace(searchInput) &&
-                        !displayFuncs.Any(func => func(item).ToString()
-                                                            .Contains(searchInputCopy, StringComparison.OrdinalIgnoreCase)))
+                        !searchFuncs.Any(func => func(item).Contains(searchInputCopy, StringComparison.OrdinalIgnoreCase)))
                         continue;
 
                     ImGui.TableNextRow();
@@ -723,7 +721,6 @@ public static class Widgets
 
         return selectState;
     }
-
 
     public static void ConflictKeyText()
     {

@@ -124,7 +124,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
                         {
                             SelectedItem = SelectedItem == x.RowId ? 0 : x.RowId;
                         }
-                    }], true);
+                    }], [x => x.Name.RawString, x => x.RowId.ToString()], true);
 
                 ImGui.SameLine();
                 ImGui.Checkbox("HQ", ref SelectItemIsHQ);
@@ -195,14 +195,17 @@ public class AutoCheckFoodUsage : DailyModuleBase
                                      [new("区域", ImGuiTableColumnFlags.WidthStretch, 0)], 
                                      [x => () =>
                                      {
-                                         if (ImGui.Selectable(x.ExtractPlaceName(), zones.Contains(x.RowId), 
-                                                              ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups))
+                                         var contentName = x.ContentFinderCondition?.Value?.Name?.RawString ?? "";
+                                         if (ImGui.Selectable(
+                                                 $"{x.ExtractPlaceName()} {(string.IsNullOrWhiteSpace(contentName) ? "" : $"({contentName})")}",
+                                                 zones.Contains(x.RowId), 
+                                                 ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups))
                                          {
                                              if (!zones.Remove(x.RowId))
                                                  zones.Add(x.RowId);
                                              SaveConfig(ModuleConfig);
                                          }
-                                     }], true))
+                                     }], [x => x.ExtractPlaceName(), x => x.ContentFinderCondition?.Value?.Name?.RawString ?? ""], true))
                 {
                     preset.Zones = zones;
                     SaveConfig(ModuleConfig);
