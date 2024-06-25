@@ -5,7 +5,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using DailyRoutines.Managers;
-using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
@@ -17,37 +16,42 @@ public unsafe class AddonHelper
     public record PartInfo(ushort U, ushort V, ushort Width, ushort Height);
 
     private delegate byte FireCallbackDelegate(AtkUnitBase* Base, int valueCount, AtkValue* values, byte updateState);
-    [Signature("E8 ?? ?? ?? ?? 8B 4C 24 20 0F B6 D8")]
     private static FireCallbackDelegate? FireCallback;
 
     public delegate int GetAtkValueIntDelegate(nint address);
-    [Signature("E8 ?? ?? ?? ?? C6 45 ?? ?? 8D 48")]
     public static GetAtkValueIntDelegate? GetAtkValueInt;
 
     public delegate byte* GetAtkValueStringDelegate(nint address);
-    [Signature("E8 ?? ?? ?? ?? 33 D2 48 8D 8B ?? ?? ?? ?? 41 B8 ?? ?? ?? ?? 48 8B F8")]
     public static GetAtkValueStringDelegate? GetAtkValueString;
 
     public delegate uint GetAtkValueUIntDelegate(nint address);
-    [Signature("E8 ?? ?? ?? ?? 8B D0 EB ?? E8")]
     public static GetAtkValueUIntDelegate? GetAtkValueUInt;
 
     public delegate AtkUnitBase* GetAddonByNodeDelegate(nint atkstageInstance, AtkComponentNode* ownerNode);
-    [Signature("48 83 EC ?? 4C 8B D2 4C 8B D9 48 85 D2 75")]
     public static GetAddonByNodeDelegate? GetAddonByNode;
 
     public delegate void SetComponentButtonCheckedDelegate(AtkComponentButton* button, bool isChecked);
-    [Signature("E8 ?? ?? ?? ?? 0F B7 DD")]
     public static SetComponentButtonCheckedDelegate? SetComponentButtonChecked;
 
     public static readonly AtkValue ZeroAtkValue = new() { Type = 0, Int = 0 };
 
-    public void Init()
+    internal static void Init()
     {
-        Service.Hook.InitializeFromAttributes(this);
-    }
+        FireCallback ??= Marshal.GetDelegateForFunctionPointer<FireCallbackDelegate>(Service.SigScanner.ScanText("E8 ?? ?? ?? ?? 8B 4C 24 20 0F B6 D8"));
 
-    public static AddonHelper Instance() => new();
+        GetAtkValueInt ??= Marshal.GetDelegateForFunctionPointer<GetAtkValueIntDelegate>
+            (Service.SigScanner.ScanText("E8 ?? ?? ?? ?? C6 45 ?? ?? 8D 48"));
+
+        GetAtkValueString ??= Marshal.GetDelegateForFunctionPointer<GetAtkValueStringDelegate>(Service.SigScanner.ScanText("E8 ?? ?? ?? ?? 33 D2 48 8D 8B ?? ?? ?? ?? 41 B8 ?? ?? ?? ?? 48 8B F8"));
+
+        GetAtkValueUInt ??= Marshal.GetDelegateForFunctionPointer<GetAtkValueUIntDelegate>(Service.SigScanner.ScanText("E8 ?? ?? ?? ?? 8B D0 EB ?? E8"));
+
+        GetAddonByNode ??= Marshal.GetDelegateForFunctionPointer<GetAddonByNodeDelegate>
+            (Service.SigScanner.ScanText("48 83 EC ?? 4C 8B D2 4C 8B D9 48 85 D2 75"));
+
+        SetComponentButtonChecked ??= Marshal.GetDelegateForFunctionPointer<SetComponentButtonCheckedDelegate>
+            (Service.SigScanner.ScanText("E8 ?? ?? ?? ?? 0F B7 DD"));
+    }
 
     public static bool IsScreenReady()
     {
@@ -82,6 +86,7 @@ public unsafe class AddonHelper
     #region Callback
     public static void CallbackRaw(AtkUnitBase* Base, int valueCount, AtkValue* values, byte updateState = 0)
     {
+        if (FireCallback == null) Init();
         FireCallback(Base, valueCount, values, updateState);
     }
 
@@ -458,5 +463,5 @@ public unsafe class AddonHelper
         FreeTextNode(node);
     }
     #endregion
-    
+
 }
