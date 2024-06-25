@@ -1115,6 +1115,7 @@ public class MainSettings
         ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("Settings-TipMessage0")}:");
         ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage1"));
         ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage2"));
+        ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage3"));
     }
 
     internal static void ObtainNecessityInfo()
