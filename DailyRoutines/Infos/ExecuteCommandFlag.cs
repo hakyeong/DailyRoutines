@@ -46,6 +46,13 @@ public enum ExecuteCommandFlag
     CancelCast = 105,
 
     /// <summary>
+    /// 共同骑乘
+    /// <para><c>param1</c>: 目标 ID</para>
+    /// <para><c>param2</c>: 位置索引</para>
+    /// </summary>
+    RidePillion = 106,
+
+    /// <summary>
     /// 收起时尚配饰
     /// </summary>
     WithdrawParasol = 109,
