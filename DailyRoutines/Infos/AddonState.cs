@@ -21,6 +21,7 @@ public static unsafe class AddonState
     public static AtkUnitBase* NowLoading               => GetAddonByName("NowLoading");
     public static AtkUnitBase* FadeMiddle               => GetAddonByName("FadeMiddle");
     public static AtkUnitBase* FadeBack                 => GetAddonByName("FadeBack");
+    public static AtkUnitBase* Logo                     => GetAddonByName("Logo");
     public static AtkUnitBase* LetterList               => GetAddonByName("LetterList");
     public static AtkUnitBase* ContextMenu              => GetAddonByName("ContextMenu");
     public static AtkUnitBase* CharacterInspect         => GetAddonByName("CharacterInspect");

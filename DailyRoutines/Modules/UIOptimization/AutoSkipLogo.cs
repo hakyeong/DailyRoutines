@@ -9,12 +9,14 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoSkipLogoTitle", "AutoSkipLogoDescription", ModuleCategories.界面优化)]
 public class AutoSkipLogo : DailyModuleBase
 {
-    public override void Init()
+    public override unsafe void Init()
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Logo", OnLogo);
+        if (AddonState.Logo != null && IsAddonAndNodesReady(AddonState.Logo))
+            OnLogo(AddonEvent.PostSetup, null);
     }
 
-    private static unsafe void OnLogo(AddonEvent type, AddonArgs args)
+    private static unsafe void OnLogo(AddonEvent type, AddonArgs? args)
     {
         var addon = args.Addon.ToAtkUnitBase();
 
