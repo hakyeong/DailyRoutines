@@ -19,10 +19,6 @@ public class MemoryPatch
             Ptr = ptr;
             OverrideBytes = patch;
         }
-        else
-        {
-            NotifyHelper.Error($"初始化 MemoryPatch 失败: 未找到签名 {signature} 对应的内存地址");
-        }
     }
 
     public void Set(bool isEnabled)
