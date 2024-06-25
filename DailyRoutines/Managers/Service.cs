@@ -24,7 +24,7 @@ public class Service
 
         // Helpers/Infos 初始化
         Click.Initialize();
-        AddonHelper.Init();
+        AddonHelper.Instance().Init();
         FieldMarkerHelper.Init();
 
         foreach (var property in typeof(Service).GetProperties(BindingFlags.Static | BindingFlags.Public)
