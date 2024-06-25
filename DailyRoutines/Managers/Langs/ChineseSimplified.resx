@@ -2295,4 +2295,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Settings-TipMessage3" xml:space="preserve">
     <value>3. 如遇游戏崩溃, 请先自查所安装的其他插件与软件, 进行任何反馈前务必先确认相关情况能在 仅 开启了 Daily Routines 的情况下被稳定复现</value>
   </data>
+  <data name="FastRidePillionDescription" xml:space="preserve">
+    <value>启用后, 当右键正在骑乘多人坐骑的队友时, 自动进行共同骑乘</value>
+  </data>
+  <data name="FastRidePillionTitle" xml:space="preserve">
+    <value>快速共同骑乘</value>
+  </data>
 </root>
