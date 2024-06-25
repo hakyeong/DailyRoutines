@@ -12,9 +12,4 @@ public class DisableGroundActionAutoFace : DailyModuleBase
     {
         GroundActionAutoFacePatch.Set(true);
     }
-
-    public override void Uninit()
-    {
-        GroundActionAutoFacePatch.Set(false);
-    }
 }
