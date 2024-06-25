@@ -129,7 +129,7 @@ public unsafe class AutoPlayerCommend : DailyModuleBase
                                                   ModuleConfig.BlacklistContents.Count)))
         {
             ImGui.AlignTextToFramePadding();
-            ImGui.Text($"{Service.Lang.GetText("AutoPlayerCommend-Content")}:");
+            ImGui.Text($"{Service.Lang.GetText("Content")}:");
 
             ImGui.SameLine();
             ImGui.SetNextItemWidth(200f * GlobalFontScale);

@@ -1273,9 +1273,6 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoPlayerCommend-BlacklistPlayersAmount" xml:space="preserve">
     <value>已存在 {0} 条玩家数据</value>
   </data>
-  <data name="AutoPlayerCommend-Content" xml:space="preserve">
-    <value>副本</value>
-  </data>
   <data name="AutoPlayerCommend-PlayerName" xml:space="preserve">
     <value>玩家名</value>
   </data>
@@ -2285,5 +2282,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   </data>
   <data name="BlockInputWhenFishingTitle" xml:space="preserve">
     <value>抛竿期间禁止按键输入</value>
+  </data>
+  <data name="Content" xml:space="preserve">
+    <value>副本</value>
   </data>
 </root>
