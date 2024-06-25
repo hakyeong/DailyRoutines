@@ -17,6 +17,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
+[PrecedingModule([typeof(AutoSkipLogo)])]
 [ModuleDescription("AutoLoginTitle", "AutoLoginDescription", ModuleCategories.一般)]
 public unsafe class AutoLogin : DailyModuleBase
 {
