@@ -774,7 +774,7 @@ public class Main : Window, IDisposable
 
             if (moduleInfo.PrecedingModule != null)
             {
-                if (ImGui.Selectable($"    {Service.Lang.GetText("Settings-EnableAllPModules")}", isFavorite, ImGuiSelectableFlags.DontClosePopups))
+                if (ImGui.Selectable($"    {Service.Lang.GetText("Settings-EnableAllPModules")}", false, ImGuiSelectableFlags.DontClosePopups))
                 {
                     foreach (var pModuleType in moduleInfo.Module.GetCustomAttribute<PrecedingModuleAttribute>().Modules)
                         Service.ModuleManager.Load(pModuleType, true);
@@ -785,7 +785,7 @@ public class Main : Window, IDisposable
 
                 ImGui.Separator();
 
-                if (ImGui.Selectable($"    {Service.Lang.GetText("Settings-DisableAllPModules")}", isFavorite, ImGuiSelectableFlags.DontClosePopups))
+                if (ImGui.Selectable($"    {Service.Lang.GetText("Settings-DisableAllPModules")}", false, ImGuiSelectableFlags.DontClosePopups))
                 {
                     foreach (var pModuleType in moduleInfo.Module.GetCustomAttribute<PrecedingModuleAttribute>().Modules)
                         Service.ModuleManager.Unload(pModuleType, true);
