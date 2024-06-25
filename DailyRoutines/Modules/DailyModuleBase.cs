@@ -341,11 +341,6 @@ public abstract class DailyModuleBase
                                     .Where(f => f.FieldType.IsGenericType && f.FieldType.GetGenericTypeDefinition() == typeof(Hook<>))
                                     .ToList();
 
-        var patchFields = derivedInstance.GetFields(BindingFlags.Instance | BindingFlags.NonPublic |
-                                                    BindingFlags.Public | BindingFlags.Static)
-                                         .Where(f => f.FieldType == typeof(MemoryPatch))
-                                         .ToList();
-
         var frameworkMethods = derivedInstance.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
                                      .Where(m => m.ReturnType == typeof(void) &&
                                                  m.GetParameters().Length == 1 &&
@@ -363,12 +358,6 @@ public abstract class DailyModuleBase
                 field.SetValue(this, null);
             }
         });
-
-        foreach (var patchField in patchFields)
-        {
-            var patchInstance = (MemoryPatch?)patchField.GetValue(this);
-            patchInstance?.Set(false);
-        }
 
         foreach (var method in frameworkMethods)
             Service.FrameworkManager.Unregister(method);
