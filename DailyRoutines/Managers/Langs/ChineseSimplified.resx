@@ -2304,4 +2304,7 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Enabled" xml:space="preserve">
     <value>已启用</value>
   </data>
+  <data name="AutoRetainerWork-CreateNewBaseOnExisted" xml:space="preserve">
+    <value>以此为基础创建新配置</value>
+  </data>
 </root>

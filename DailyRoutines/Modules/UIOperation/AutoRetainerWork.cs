@@ -9,7 +9,6 @@ using System.Windows.Forms;
 using ClickLib;
 using ClickLib.Clicks;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Infos.Clicks;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
@@ -20,7 +19,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Hooking;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
-using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Memory;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
@@ -188,7 +187,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
     private void ItemConfigSelector()
     {
-        if (ImGui.BeginChild("ItemConfigSelectorChild", ChildSizeLeft, true))
+        using (ImRaii.Child("ItemConfigSelectorChild", ChildSizeLeft, true))
         {
             if (ImGuiOm.ButtonIcon("AddNewConfig", FontAwesomeIcon.Plus, Service.Lang.GetText("Add")))
                 ImGui.OpenPopup("AddNewPreset");
@@ -205,52 +204,52 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 }
             }
 
-            if (ImGui.BeginPopup("AddNewPreset"))
+            using (var popup0 = ImRaii.Popup("AddNewPreset"))
             {
-                ImGui.SetNextItemWidth(150f * GlobalFontScale);
-                ImGui.InputTextWithHint("###GameItemSearchInput", Service.Lang.GetText("PleaseSearch"),
-                                        ref ItemSearchInput, 100);
-
-                if (ImGui.IsItemDeactivatedAfterEdit())
+                if (popup0.Success)
                 {
-                    if (!string.IsNullOrWhiteSpace(ItemSearchInput) && ItemSearchInput.Length > 1)
+                    ImGui.SetNextItemWidth(150f * GlobalFontScale);
+                    ImGui.InputTextWithHint("###GameItemSearchInput", Service.Lang.GetText("PleaseSearch"),
+                                            ref ItemSearchInput, 100);
+
+                    if (ImGui.IsItemDeactivatedAfterEdit())
                     {
-                        _ItemNames = ItemNames
-                                     .Where(x => x.Key.Contains(ItemSearchInput, StringComparison.OrdinalIgnoreCase))
-                                     .ToDictionary(x => x.Key, x => x.Value);
+                        if (!string.IsNullOrWhiteSpace(ItemSearchInput) && ItemSearchInput.Length > 1)
+                        {
+                            _ItemNames = ItemNames
+                                         .Where(x => x.Key.Contains(ItemSearchInput, StringComparison.OrdinalIgnoreCase))
+                                         .ToDictionary(x => x.Key, x => x.Value);
+                        }
                     }
-                }
 
-                ImGui.SameLine();
-                ImGui.Checkbox("HQ", ref NewConfigItemHQ);
+                    ImGui.SameLine();
+                    ImGui.Checkbox("HQ", ref NewConfigItemHQ);
 
-                ImGui.SameLine();
-                if (ImGui.Button(Service.Lang.GetText("Confirm")))
-                {
-                    var newConfigStr = new ItemKey(NewConfigItemID, NewConfigItemHQ).ToString();
-                    var newConfig = new ItemConfig(NewConfigItemID, NewConfigItemHQ);
-                    if (ModuleConfig.ItemConfigs.TryAdd(newConfigStr, newConfig))
+                    ImGui.SameLine();
+                    if (ImGui.Button(Service.Lang.GetText("Confirm")))
                     {
-                        SaveConfig(ModuleConfig);
-                        ImGui.CloseCurrentPopup();
+                        var newConfigStr = new ItemKey(NewConfigItemID, NewConfigItemHQ).ToString();
+                        var newConfig = new ItemConfig(NewConfigItemID, NewConfigItemHQ);
+                        if (ModuleConfig.ItemConfigs.TryAdd(newConfigStr, newConfig))
+                        {
+                            SaveConfig(ModuleConfig);
+                            ImGui.CloseCurrentPopup();
+                        }
                     }
+
+                    ImGui.Separator();
+                    foreach (var (itemName, item) in _ItemNames)
+                        if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(item.Icon).ImGuiHandle,
+                                                            ScaledVector2(24f), itemName,
+                                                            item.RowId == NewConfigItemID,
+                                                            ImGuiSelectableFlags.DontClosePopups))
+                            NewConfigItemID = item.RowId;
                 }
-
-                ImGui.Separator();
-                foreach (var (itemName, item) in _ItemNames)
-                    if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(item.Icon).ImGuiHandle,
-                                                        ScaledVector2(24f), itemName,
-                                                        item.RowId == NewConfigItemID,
-                                                        ImGuiSelectableFlags.DontClosePopups))
-                        NewConfigItemID = item.RowId;
-
-                ImGui.EndPopup();
             }
 
             ImGui.SetNextItemWidth(-1f);
             ImGui.SameLine();
-            ImGui.InputTextWithHint("###PresetSearchInput", Service.Lang.GetText("PleaseSearch"), ref PresetSearchInput,
-                                    100);
+            ImGui.InputTextWithHint("###PresetSearchInput", Service.Lang.GetText("PleaseSearch"), ref PresetSearchInput, 100);
 
             ImGui.Separator();
 
@@ -263,30 +262,91 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 if (ImGui.Selectable($"{itemConfig.Value.ItemName} {(itemConfig.Value.IsHQ ? "(HQ)" : "")}"))
                     SelectedItemConfig = itemConfig.Value;
 
-                if (ImGui.BeginPopupContextItem($"{itemConfig.Value}_{itemConfig.Key}_{itemConfig.Value.ItemID}"))
+                var isOpenPopup = false;
+                using (var popup1 = ImRaii.ContextPopupItem($"{itemConfig.Value}_{itemConfig.Key}_{itemConfig.Value.ItemID}"))
                 {
-                    if (ImGui.Selectable(Service.Lang.GetText("AutoRetainerPriceAdjust-ExportToClipboard")))
-                        ExportItemConfigToClipboard(itemConfig.Value);
-
-                    if (itemConfig.Value.ItemID != 0)
+                    if (popup1.Success)
                     {
-                        if (ImGui.Selectable(Service.Lang.GetText("Delete")))
-                        {
-                            ModuleConfig.ItemConfigs.Remove(itemConfig.Key);
-                            SaveConfig(ModuleConfig);
+                        if (ImGui.MenuItem(Service.Lang.GetText("AutoRetainerPriceAdjust-ExportToClipboard")))
+                            ExportItemConfigToClipboard(itemConfig.Value);
 
-                            SelectedItemConfig = null;
+                        if (ImGui.MenuItem(Service.Lang.GetText("AutoRetainerWork-CreateNewBaseOnExisted")))
+                            isOpenPopup = true;
+
+                        if (itemConfig.Value.ItemID != 0)
+                        {
+                            if (ImGui.MenuItem(Service.Lang.GetText("Delete")))
+                            {
+                                ModuleConfig.ItemConfigs.Remove(itemConfig.Key);
+                                SaveConfig(ModuleConfig);
+
+                                SelectedItemConfig = null;
+                            }
                         }
                     }
+                }
 
-                    ImGui.EndPopup();
+                if (isOpenPopup)
+                    ImGui.OpenPopup($"AddNewPresetBasedOnExisted_{itemConfig.Key}");
+
+                using (var popup2 = ImRaii.Popup($"AddNewPresetBasedOnExisted_{itemConfig.Key}"))
+                {
+                    if (popup2.Success)
+                    {
+                        ImGui.SetNextItemWidth(150f * GlobalFontScale);
+                        ImGui.InputTextWithHint("###GameItemSearchInput", Service.Lang.GetText("PleaseSearch"),
+                                                ref ItemSearchInput, 100);
+
+                        if (ImGui.IsItemDeactivatedAfterEdit())
+                        {
+                            if (!string.IsNullOrWhiteSpace(ItemSearchInput) && ItemSearchInput.Length > 1)
+                            {
+                                _ItemNames = ItemNames
+                                             .Where(x => x.Key.Contains(ItemSearchInput, StringComparison.OrdinalIgnoreCase))
+                                             .ToDictionary(x => x.Key, x => x.Value);
+                            }
+                        }
+
+                        ImGui.SameLine();
+                        ImGui.Checkbox("HQ", ref NewConfigItemHQ);
+
+                        ImGui.SameLine();
+                        if (ImGui.Button(Service.Lang.GetText("Confirm")))
+                        {
+                            var newConfigStr = new ItemKey(NewConfigItemID, NewConfigItemHQ).ToString();
+                            var newConfig = new ItemConfig
+                            {
+                                ItemID = NewConfigItemID,
+                                IsHQ = NewConfigItemHQ,
+                                ItemName = LuminaCache.GetRow<Item>(NewConfigItemID).Name.RawString,
+                                AbortLogic = itemConfig.Value.AbortLogic,
+                                AdjustBehavior = itemConfig.Value.AdjustBehavior,
+                                AdjustValues = itemConfig.Value.AdjustValues,
+                                PriceExpected = itemConfig.Value.PriceExpected,
+                                PriceMaximum = itemConfig.Value.PriceMaximum,
+                                PriceMaxReduction = itemConfig.Value.PriceMaxReduction,
+                                PriceMinimum = itemConfig.Value.PriceMinimum,
+                            };
+                            if (ModuleConfig.ItemConfigs.TryAdd(newConfigStr, newConfig))
+                            {
+                                SaveConfig(ModuleConfig);
+                                ImGui.CloseCurrentPopup();
+                            }
+                        }
+
+                        ImGui.Separator();
+                        foreach (var (itemName, item) in _ItemNames)
+                            if (ImGuiOm.SelectableImageWithText(ImageHelper.GetIcon(item.Icon).ImGuiHandle,
+                                                                ScaledVector2(24f), itemName,
+                                                                item.RowId == NewConfigItemID,
+                                                                ImGuiSelectableFlags.DontClosePopups))
+                                NewConfigItemID = item.RowId;
+                    }
                 }
 
                 if (itemConfig.Value is { ItemID: 0, IsHQ: true })
                     ImGui.Separator();
             }
-
-            ImGui.EndChild();
         }
     }
 
@@ -310,15 +370,14 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
         var itemLogo = ImageHelper.GetIcon(
             itemConfig.ItemID == 0 ? 65002 : (uint)item.Icon,
-            itemConfig.IsHQ ? ITextureProvider.IconFlags.ItemHighQuality : ITextureProvider.IconFlags.None);
+            itemConfig.IsHQ ? ITextureProvider.IconFlags.ItemHighQuality : ITextureProvider.IconFlags.HiRes);
 
         var itemBuyingPrice = itemConfig.ItemID == 0 ? 1 : item.PriceLow;
 
-
-        if (ImGui.BeginChild("ItemConfigEditorChild", ChildSizeRight, true))
+        using (ImRaii.Child("ItemConfigEditorChild", ChildSizeRight, true))
         {
             // 物品基本信息展示
-            ImGui.Image(itemLogo.ImGuiHandle, ScaledVector2(32));
+            ImGui.Image(itemLogo.ImGuiHandle, ScaledVector2(48f));
 
             ImGui.SameLine();
             using (FontHelper.UIFont140.Push())
@@ -334,59 +393,57 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
             // 改价逻辑配置
             var radioButtonHeight = 24f;
-            ImGui.BeginGroup();
-            foreach (AdjustBehavior behavior in Enum.GetValues(typeof(AdjustBehavior)))
+            using (ImRaii.Group())
             {
-                if (ImGui.RadioButton(behavior.ToString(), behavior == itemConfig.AdjustBehavior))
+                foreach (AdjustBehavior behavior in Enum.GetValues(typeof(AdjustBehavior)))
                 {
-                    itemConfig.AdjustBehavior = behavior;
-                    SaveConfig(ModuleConfig);
+                    if (ImGui.RadioButton(behavior.ToString(), behavior == itemConfig.AdjustBehavior))
+                    {
+                        itemConfig.AdjustBehavior = behavior;
+                        SaveConfig(ModuleConfig);
+                    }
+
+                    radioButtonHeight = ImGui.GetItemRectSize().Y;
                 }
-
-                radioButtonHeight = ImGui.GetItemRectSize().Y;
             }
-
-            ImGui.EndGroup();
 
             ImGui.SameLine();
-            ImGui.BeginGroup();
-            if (itemConfig.AdjustBehavior == AdjustBehavior.固定值)
+            using (ImRaii.Group())
             {
-                var originalValue = itemConfig.AdjustValues[AdjustBehavior.固定值];
-                ImGui.SetNextItemWidth(100f * GlobalFontScale);
-                ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-ValueReduction"), ref originalValue);
-
-                if (ImGui.IsItemDeactivatedAfterEdit())
+                if (itemConfig.AdjustBehavior == AdjustBehavior.固定值)
                 {
-                    itemConfig.AdjustValues[AdjustBehavior.固定值] = originalValue;
-                    SaveConfig(ModuleConfig);
+                    var originalValue = itemConfig.AdjustValues[AdjustBehavior.固定值];
+                    ImGui.SetNextItemWidth(100f * GlobalFontScale);
+                    ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-ValueReduction"), ref originalValue);
+
+                    if (ImGui.IsItemDeactivatedAfterEdit())
+                    {
+                        itemConfig.AdjustValues[AdjustBehavior.固定值] = originalValue;
+                        SaveConfig(ModuleConfig);
+                    }
                 }
-            }
-            else
-                ImGui.Dummy(new(radioButtonHeight));
+                else ImGui.Dummy(new(radioButtonHeight));
 
-            if (itemConfig.AdjustBehavior == AdjustBehavior.百分比)
-            {
-                var originalValue = itemConfig.AdjustValues[AdjustBehavior.百分比];
-                ImGui.SetNextItemWidth(100f * GlobalFontScale);
-                ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-PercentageReduction"), ref originalValue);
-
-                if (ImGui.IsItemDeactivatedAfterEdit())
+                if (itemConfig.AdjustBehavior == AdjustBehavior.百分比)
                 {
-                    itemConfig.AdjustValues[AdjustBehavior.百分比] = Math.Clamp(originalValue, -99, 99);
-                    SaveConfig(ModuleConfig);
-                }
-            }
-            else
-                ImGui.Dummy(new(radioButtonHeight));
+                    var originalValue = itemConfig.AdjustValues[AdjustBehavior.百分比];
+                    ImGui.SetNextItemWidth(100f * GlobalFontScale);
+                    ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-PercentageReduction"), ref originalValue);
 
-            ImGui.EndGroup();
+                    if (ImGui.IsItemDeactivatedAfterEdit())
+                    {
+                        itemConfig.AdjustValues[AdjustBehavior.百分比] = Math.Clamp(originalValue, -99, 99);
+                        SaveConfig(ModuleConfig);
+                    }
+                }
+                else ImGui.Dummy(new(radioButtonHeight));
+            }
 
             ImGui.Dummy(ScaledVector2(10f));
 
             // 最低可接受价格
             var originalMin = itemConfig.PriceMinimum;
-            ImGui.SetNextItemWidth(150f * GlobalFontScale);
+            ImGui.SetNextItemWidth(200f * GlobalFontScale);
             ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-PriceMinimum"), ref originalMin);
 
             if (ImGui.IsItemDeactivatedAfterEdit())
@@ -396,21 +453,20 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             }
 
             ImGui.SameLine();
-            ImGui.BeginDisabled(itemConfig.ItemID == 0);
-            if (ImGuiOm.ButtonIcon("ObtainBuyingPrice", FontAwesomeIcon.Store,
-                                   Service.Lang.GetText("AutoRetainerPriceAdjust-ObtainBuyingPrice")))
+            using (ImRaii.Disabled(itemConfig.ItemID == 0))
             {
-                itemConfig.PriceMinimum = Math.Max(1, (int)itemBuyingPrice);
-                SaveConfig(ModuleConfig);
+                if (ImGuiOm.ButtonIcon("ObtainBuyingPrice", FontAwesomeIcon.Store,
+                                       Service.Lang.GetText("AutoRetainerPriceAdjust-ObtainBuyingPrice")))
+                {
+                    itemConfig.PriceMinimum = Math.Max(1, (int)itemBuyingPrice);
+                    SaveConfig(ModuleConfig);
+                }
             }
-
-            ImGui.EndDisabled();
 
             // 最高可接受价格
             var originalMax = itemConfig.PriceMaximum;
-            ImGui.SetNextItemWidth(150f * GlobalFontScale);
+            ImGui.SetNextItemWidth(200f * GlobalFontScale);
             ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-PriceMaximum"), ref originalMax);
-
             if (ImGui.IsItemDeactivatedAfterEdit())
             {
                 itemConfig.PriceMaximum = Math.Min(int.MaxValue, originalMax);
@@ -419,9 +475,8 @@ public unsafe class AutoRetainerWork : DailyModuleBase
 
             // 预期价格
             var originalExpected = itemConfig.PriceExpected;
-            ImGui.SetNextItemWidth(150f * GlobalFontScale);
+            ImGui.SetNextItemWidth(200f * GlobalFontScale);
             ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-PriceExpected"), ref originalExpected);
-
             if (ImGui.IsItemDeactivatedAfterEdit())
             {
                 itemConfig.PriceExpected = Math.Max(originalMin + 1, originalExpected);
@@ -429,19 +484,17 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             }
 
             ImGui.SameLine();
-            ImGui.BeginDisabled(itemConfig.ItemID == 0);
-            if (ImGuiOm.ButtonIcon("OpenUniversalis", FontAwesomeIcon.Globe,
-                                   Service.Lang.GetText("AutoRetainerPriceAdjust-OpenUniversalis")))
-                Util.OpenLink($"https://universalis.app/market/{itemConfig.ItemID}");
-
-            ImGui.EndDisabled();
+            using (ImRaii.Disabled(itemConfig.ItemID == 0))
+            {
+                if (ImGuiOm.ButtonIcon("OpenUniversalis", FontAwesomeIcon.Globe,
+                                       Service.Lang.GetText("AutoRetainerPriceAdjust-OpenUniversalis")))
+                    Util.OpenLink($"https://universalis.app/market/{itemConfig.ItemID}");
+            }
 
             // 可接受降价值
             var originalPriceReducion = itemConfig.PriceMaxReduction;
-            ImGui.SetNextItemWidth(150f * GlobalFontScale);
-            ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-PriceMaxReduction"),
-                           ref originalPriceReducion);
-
+            ImGui.SetNextItemWidth(200f * GlobalFontScale);
+            ImGui.InputInt(Service.Lang.GetText("AutoRetainerPriceAdjust-PriceMaxReduction"), ref originalPriceReducion);
             if (ImGui.IsItemDeactivatedAfterEdit())
             {
                 itemConfig.PriceMaxReduction = Math.Max(0, originalPriceReducion);
@@ -451,44 +504,47 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             ImGui.Dummy(ScaledVector2(10f));
 
             // 意外情况
-            ImGui.BeginGroup();
-            ImGui.SetNextItemWidth(180f * GlobalFontScale);
-            if (ImGui.BeginCombo("###AddNewLogicConditionCombo", CondtionInput.ToString(), ImGuiComboFlags.HeightLarge))
+            using (ImRaii.Group())
             {
-                foreach (AbortCondition condition in Enum.GetValues(typeof(AbortCondition)))
+                ImGui.SetNextItemWidth(250f * GlobalFontScale);
+                if (ImGui.BeginCombo("###AddNewLogicConditionCombo", CondtionInput.ToString(), ImGuiComboFlags.HeightLarge))
                 {
-                    if (condition == AbortCondition.无) continue;
-                    if (ImGui.Selectable(condition.ToString(), CondtionInput.HasFlag(condition),
-                                         ImGuiSelectableFlags.DontClosePopups))
+                    foreach (AbortCondition condition in Enum.GetValues(typeof(AbortCondition)))
                     {
-                        var combinedCondition = CondtionInput;
-                        if (CondtionInput.HasFlag(condition))
-                            combinedCondition &= ~condition;
-                        else
-                            combinedCondition |= condition;
+                        if (condition == AbortCondition.无) continue;
+                        if (ImGui.Selectable(condition.ToString(), CondtionInput.HasFlag(condition),
+                                             ImGuiSelectableFlags.DontClosePopups))
+                        {
+                            var combinedCondition = CondtionInput;
+                            if (CondtionInput.HasFlag(condition))
+                                combinedCondition &= ~condition;
+                            else
+                                combinedCondition |= condition;
 
-                        CondtionInput = combinedCondition;
+                            CondtionInput = combinedCondition;
+                        }
                     }
+
+                    ImGui.EndCombo();
                 }
 
-                ImGui.EndCombo();
+                ImGui.SetNextItemWidth(250f * GlobalFontScale);
+                if (ImGui.BeginCombo("###AddNewLogicBehaviorCombo", BehaviorInput.ToString(), ImGuiComboFlags.HeightLarge))
+                {
+                    foreach (AbortBehavior behavior in Enum.GetValues(typeof(AbortBehavior)))
+                        if (ImGui.Selectable(behavior.ToString(), BehaviorInput == behavior,
+                                             ImGuiSelectableFlags.DontClosePopups))
+                            BehaviorInput = behavior;
+
+                    ImGui.EndCombo();
+                }
             }
 
-            ImGui.SetNextItemWidth(180f * GlobalFontScale);
-            if (ImGui.BeginCombo("###AddNewLogicBehaviorCombo", BehaviorInput.ToString(), ImGuiComboFlags.HeightLarge))
-            {
-                foreach (AbortBehavior behavior in Enum.GetValues(typeof(AbortBehavior)))
-                    if (ImGui.Selectable(behavior.ToString(), BehaviorInput == behavior,
-                                         ImGuiSelectableFlags.DontClosePopups))
-                        BehaviorInput = behavior;
-
-                ImGui.EndCombo();
-            }
-
-            ImGui.EndGroup();
+            var groupSize0 = ImGui.GetItemRectSize();
 
             ImGui.SameLine();
-            if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Plus, Service.Lang.GetText("Add")))
+            if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Plus, Service.Lang.GetText("Add"), 
+                                                   new(ImGui.CalcTextSize("三个字").X, groupSize0.Y)))
             {
                 if (CondtionInput != AbortCondition.无)
                 {
@@ -503,7 +559,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             {
                 // 条件处理 (键)
                 var origConditionStr = logic.Key.ToString();
-                ImGui.SetNextItemWidth(200f * GlobalFontScale);
+                ImGui.SetNextItemWidth(300f * GlobalFontScale);
                 ImGui.InputText($"###Condition_{origConditionStr}", ref origConditionStr, 100,
                                 ImGuiInputTextFlags.ReadOnly);
 
@@ -539,7 +595,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 // 行为处理 (值)
                 ImGui.SameLine();
                 var origBehaviorStr = logic.Value.ToString();
-                ImGui.SetNextItemWidth(150f * GlobalFontScale);
+                ImGui.SetNextItemWidth(300f * GlobalFontScale);
                 ImGui.InputText($"###Behavior_{origBehaviorStr}", ref origBehaviorStr, 100,
                                 ImGuiInputTextFlags.ReadOnly);
 
@@ -559,12 +615,9 @@ public unsafe class AutoRetainerWork : DailyModuleBase
                 }
 
                 ImGui.SameLine();
-                if (ImGuiOm.ButtonIcon($"Delete_{logic.Key}_{logic.Value}", FontAwesomeIcon.TrashAlt,
-                                       Service.Lang.GetText("Delete")))
+                if (ImGuiOm.ButtonIcon($"Delete_{logic.Key}_{logic.Value}", FontAwesomeIcon.TrashAlt, Service.Lang.GetText("Delete")))
                     itemConfig.AbortLogic.Remove(logic.Key);
             }
-
-            ImGui.EndChild();
         }
     }
 
