@@ -271,7 +271,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
 
     public override void OverlayUI()
     {
-        using (FontHelper.GetUIFont(ModuleConfig.FontScale).Push())
+        using (FontManager.GetUIFont(ModuleConfig.FontScale).Push())
         {
             ObjectToSelect? instanceChangeObject = null;
             ObjectToSelect? worldTravelObject = null;

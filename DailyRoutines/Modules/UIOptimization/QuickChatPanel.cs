@@ -360,7 +360,7 @@ public unsafe class QuickChatPanel : DailyModuleBase
 
     public override void OverlayUI()
     {
-        using (FontHelper.GetUIFont(ModuleConfig.FontScale).Push())
+        using (FontManager.GetUIFont(ModuleConfig.FontScale).Push())
         {
             var textInputNode = AddonState.ChatLog->GetNodeById(5);
             var buttonPos = new Vector2(textInputNode->X + textInputNode->Width, textInputNode->ScreenY) +

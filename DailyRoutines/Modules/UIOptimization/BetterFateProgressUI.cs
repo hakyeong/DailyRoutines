@@ -113,7 +113,7 @@ public unsafe class BetterFateProgressUI : DailyModuleBase
 
     public override void OverlayUI()
     {
-        using (FontHelper.UIFont120.Push())
+        using (FontManager.UIFont120.Push())
         {
             DrawBicolorGemComponent();
             DrawFateProgressTabs();

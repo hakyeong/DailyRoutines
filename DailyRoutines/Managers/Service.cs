@@ -114,6 +114,7 @@ public class Service
 
     public static DalamudPluginInterface PluginInterface       { get; private set; } = null!;
     public static Configuration          Config                { get; private set; } = null!;
+    public static FontManager            FontManager           { get; private set; } = new();
     public static LanguageManager        Lang                  { get; private set; } = new();
     public static WindowManager          WindowManager         { get; private set; } = new();
     public static UseActionManager       UseActionManager      { get; private set; } = new();

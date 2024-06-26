@@ -170,7 +170,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
             LeveAllowancesDisplay = *(byte*)Service.SigScanner.GetStaticAddressFromSig(LeveAllowancesSig);
 
         var text = Service.Lang.GetText("AutoLeveQuests-CurrentLeveAllowances", LeveAllowancesDisplay);
-        using (FontHelper.UIFont160.Push())
+        using (FontManager.UIFont160.Push())
         {
             ImGui.Text(text);
         }

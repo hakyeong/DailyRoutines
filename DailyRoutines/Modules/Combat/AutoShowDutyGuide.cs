@@ -99,7 +99,7 @@ public class AutoShowDutyGuide : DailyModuleBase
 
     public override void OverlayUI()
     {
-        using (FontHelper.GetUIFont(ModuleConfig.FontScale).Push())
+        using (FontManager.GetUIFont(ModuleConfig.FontScale).Push())
         {
             if (ImGuiOm.SelectableImageWithText(NoviceIcon.ImGuiHandle, ScaledVector2(24f),
                                                 Service.Lang.GetText("AutoShowDutyGuide-Source"), false))
@@ -110,7 +110,7 @@ public class AutoShowDutyGuide : DailyModuleBase
             ImGui.PushTextWrapPos(ImGui.GetWindowWidth());
             if (!string.IsNullOrWhiteSpace(HintText))
             {
-                using (FontHelper.GetUIFont(ModuleConfig.FontScale * 0.8f).Push())
+                using (FontManager.GetUIFont(ModuleConfig.FontScale * 0.8f).Push())
                 {
                     ImGui.Text($"{Service.Lang.GetText("AutoShowDutyGuide-DutyExtraGuide")}:");
                 }

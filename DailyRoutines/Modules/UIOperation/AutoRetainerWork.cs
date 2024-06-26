@@ -380,7 +380,7 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             ImGui.Image(itemLogo.ImGuiHandle, ScaledVector2(48f));
 
             ImGui.SameLine();
-            using (FontHelper.UIFont140.Push())
+            using (FontManager.UIFont140.Push())
             {
                 ImGui.Text(itemName);
             }
