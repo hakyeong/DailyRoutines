@@ -2,19 +2,19 @@ using System;
 using System.Numerics;
 using System.Timers;
 using DailyRoutines.Helpers;
+using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using Dalamud.Interface.Utility;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Timer = System.Timers.Timer;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoRefreshPartyFinderTitle", "AutoRefreshPartyFinderDescription",
-                   ModuleCategories.界面操作)]
+[ModuleDescription("AutoRefreshPartyFinderTitle", "AutoRefreshPartyFinderDescription", ModuleCategories.界面操作)]
 public class AutoRefreshPartyFinder : DailyModuleBase
 {
     private static int ConfigRefreshInterval = 10; // 秒
@@ -23,7 +23,8 @@ public class AutoRefreshPartyFinder : DailyModuleBase
     private static Vector2 WindowPos = new(1000);
 
     private static Timer? PFRefreshTimer;
-    private static int cooldown;
+    private static int RefreshTimes;
+    private static int Cooldown;
 
     public override void Init()
     {
@@ -38,7 +39,7 @@ public class AutoRefreshPartyFinder : DailyModuleBase
         PFRefreshTimer ??= new Timer(1000);
         PFRefreshTimer.AutoReset = true;
         PFRefreshTimer.Elapsed += OnRefreshTimer;
-        cooldown = ConfigRefreshInterval;
+        Cooldown = ConfigRefreshInterval;
 
         if (Service.Gui.GetAddonByName("LookingForGroup") != nint.Zero)
             OnAddonPF(AddonEvent.PostSetup, null);
@@ -56,28 +57,28 @@ public class AutoRefreshPartyFinder : DailyModuleBase
         var refreshButton = addon->GetButtonNodeById(47)->AtkComponentBase.AtkResNode;
         if (addon == null || refreshButton == null) return;
 
-        Overlay.Position = WindowPos;
+        ImGui.SetWindowPos(WindowPos);
 
         ImGui.BeginGroup();
         ImGui.SetNextItemWidth(50f * GlobalFontScale);
-        ImGui.InputInt("##input", ref ConfigRefreshInterval, 0, 0);
+        ImGui.InputInt("##RefreshIntervalInput", ref ConfigRefreshInterval, 0, 0);
 
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
             ConfigRefreshInterval = Math.Max(1, ConfigRefreshInterval);
             UpdateConfig("RefreshInterval", ConfigRefreshInterval);
-            cooldown = ConfigRefreshInterval;
+            Cooldown = ConfigRefreshInterval;
 
             PFRefreshTimer.Stop();
-            if (Service.Gui.GetAddonByName("LookingForGroup") != nint.Zero)
+            if (AddonState.LookingForGroup != null)
             {
                 PFRefreshTimer.Start();
-                cooldown = ConfigRefreshInterval;
+                Cooldown = ConfigRefreshInterval;
             }
         }
 
         ImGui.SameLine();
-        ImGui.Text(Service.Lang.GetText("AutoRefreshPartyFinder-RefreshInterval", cooldown));
+        ImGui.Text(Service.Lang.GetText("AutoRefreshPartyFinder-RefreshInterval", Cooldown));
 
         ImGui.SameLine();
         if (ImGui.Checkbox(Service.Lang.GetText("AutoRefreshPartyFinder-OnlyInactive"), ref ConfigOnlyInactive))
@@ -97,14 +98,15 @@ public class AutoRefreshPartyFinder : DailyModuleBase
         switch (type)
         {
             case AddonEvent.PostSetup:
-                cooldown = ConfigRefreshInterval;
+                Cooldown = ConfigRefreshInterval;
+                RefreshTimes = 0;
                 PFRefreshTimer.Restart();
                 Overlay.IsOpen = true;
                 break;
             case AddonEvent.PostRefresh:
                 if (ConfigOnlyInactive)
                 {
-                    cooldown = ConfigRefreshInterval;
+                    Cooldown = ConfigRefreshInterval;
                     PFRefreshTimer.Restart();
                 }
 
@@ -124,7 +126,7 @@ public class AutoRefreshPartyFinder : DailyModuleBase
                 PFRefreshTimer.Stop();
                 break;
             case AddonEvent.PreFinalize:
-                cooldown = ConfigRefreshInterval;
+                Cooldown = ConfigRefreshInterval;
                 PFRefreshTimer.Restart();
                 break;
         }
@@ -132,16 +134,28 @@ public class AutoRefreshPartyFinder : DailyModuleBase
 
     private static unsafe void OnRefreshTimer(object? sender, ElapsedEventArgs e)
     {
-        if (cooldown > 1)
+        if (Cooldown > 1)
         {
-            cooldown--;
+            Cooldown--;
             return;
         }
 
-        cooldown = ConfigRefreshInterval;
-        if (TryGetAddonByName<AtkUnitBase>("LookingForGroup", out var addon) && IsAddonAndNodesReady(addon))
+        Cooldown = ConfigRefreshInterval;
+        if (AddonState.LookingForGroup != null && IsAddonAndNodesReady(AddonState.LookingForGroup))
         {
-            AddonHelper.Callback(addon, true, 17);
+            AgentHelper.SendEvent(AgentId.LookingForGroup, 1, 17);
+            RefreshTimes++;
+
+            if (RefreshTimes > 10)
+            {
+                AddonState.LookingForGroup->Close(true);
+                Service.Framework.RunOnTick(() =>
+                {
+                    var agent = AgentModule.Instance()->GetAgentByInternalId(AgentId.LookingForGroup);
+                    if (agent == null) return;
+                    agent->Show();
+                }, TimeSpan.FromMilliseconds(100));
+            }
             return;
         }
 

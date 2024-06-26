@@ -24,6 +24,7 @@ public static unsafe class AddonState
     public static AtkUnitBase* Logo                     => GetAddonByName("Logo");
     public static AtkUnitBase* LetterList               => GetAddonByName("LetterList");
     public static AtkUnitBase* ContextMenu              => GetAddonByName("ContextMenu");
+    public static AtkUnitBase* LookingForGroup          => GetAddonByName("LookingForGroup");
     public static AtkUnitBase* CharacterInspect         => GetAddonByName("CharacterInspect");
     public static AtkUnitBase* CharaSelectListMenu      => GetAddonByName("_CharaSelectListMenu");
     public static AtkUnitBase* CollectablesShop         => GetAddonByName("CollectablesShop");
