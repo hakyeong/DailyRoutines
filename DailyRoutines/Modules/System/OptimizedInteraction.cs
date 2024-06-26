@@ -39,6 +39,10 @@ public unsafe class OptimizedInteraction : DailyModuleBase
                DetourName = nameof(IsPlayerOnJumpingDetour))]
     private static Hook<IsPlayerOnJumpingDelegate>? IsPlayerOnJumping1Hook;
 
+    [Signature("E8 ?? ?? ?? ?? 84 C0 74 ?? 48 85 DB 74 ?? 48 8B 03 48 8B CB FF 50",
+               DetourName = nameof(IsPlayerOnJumpingDetour))]
+    private static Hook<IsPlayerOnJumpingDelegate>? IsPlayerOnJumping2Hook;
+
     // 检查目标距离 / 高低
     private delegate bool CheckTargetPositionDelegate(nint a1, nint a2, nint a3, byte a4, byte a5);
     [Signature("40 53 57 41 56 48 83 EC ?? 48 8B 02", DetourName = nameof(CheckTargetPositionDetour))]
@@ -49,6 +53,12 @@ public unsafe class OptimizedInteraction : DailyModuleBase
     [Signature("E8 ?? ?? ?? ?? 84 C0 74 ?? 48 8B CB E8 ?? ?? ?? ?? 48 3B C7", DetourName = nameof(EventCanceledDetour))]
     private static Hook<EventCanceledDelegate>? EventCanceledHook;
 
+    // 检查目标距离
+    private delegate float CheckTargetDistanceDelegate(GameObject* localPlayer, GameObject* target);
+    [Signature("E8 ?? ?? ?? ?? 0F 2F 05 ?? ?? ?? ?? 76 ?? 48 8B 03 48 8B CB FF 50 ?? 48 8B C8 BA ?? ?? ?? ?? E8 ?? ?? ?? ?? EB", 
+               DetourName = nameof(CheckTargetDistanceDetour))]
+    private static Hook<CheckTargetDistanceDelegate>? CheckTargetDistanceHook;
+
     public override void Init()
     {
         Service.Hook.InitializeFromAttributes(this);
@@ -57,38 +67,23 @@ public unsafe class OptimizedInteraction : DailyModuleBase
         InteractCheck0Hook.Enable();
         IsPlayerOnJumping0Hook.Enable();
         IsPlayerOnJumping1Hook.Enable();
+        IsPlayerOnJumping2Hook.Enable();
         CheckTargetPositionHook.Enable();
         EventCanceledHook.Enable();
+        CheckTargetDistanceHook.Enable();
     }
 
-    private static bool CameraObjectBlockedDetour(nint a1, nint a2, nint a3)
-    {
-        // var original = CameraObjectBlockedHook.Original(a1, a2, a3);
-        return true;
-    }
+    private static bool CameraObjectBlockedDetour(nint a1, nint a2, nint a3) => true;
 
-    private static bool IsObjectInViewRangeHookDetour(TargetSystem* system, GameObject* gameObject)
-    {
-        // var original = IsObjectInViewRangeHook.Original(system, gameObject);
-        return true;
-    }
+    private static bool IsObjectInViewRangeHookDetour(TargetSystem* system, GameObject* gameObject) => true;
 
-    private static bool InteractCheck0Detour(nint a1, nint a2, nint a3, nint a4, bool a5)
-    {
-        // var original = InteractCheck0Hook.Original(a1, a2, a3, a4, false);
-        return true;
-    }
+    private static bool InteractCheck0Detour(nint a1, nint a2, nint a3, nint a4, bool a5) => true;
 
     private static bool IsPlayerOnJumpingDetour(nint a1) => false;
 
-    private static bool CheckTargetPositionDetour(nint a1, nint a2, nint a3, byte a4, byte a5)
-    {
-        // var original = CheckTargetPositionHook.Original(a1, a2, a3, a4, a5);
-        return true;
-    }
+    private static bool CheckTargetPositionDetour(nint a1, nint a2, nint a3, byte a4, byte a5) => true;
 
-    private static bool EventCanceledDetour(EventFramework* framework)
-    {
-        return false;
-    }
+    private static bool EventCanceledDetour(EventFramework* framework) => false;
+
+    private static float CheckTargetDistanceDetour(GameObject* localPlayer, GameObject* target) => 0f;
 }
