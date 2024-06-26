@@ -2,6 +2,7 @@ using DailyRoutines.Managers;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 
 namespace DailyRoutines.Modules;
@@ -11,14 +12,12 @@ public unsafe class OptimizedInteraction : DailyModuleBase
 {
     // 当前位置无法进行该操作
     private delegate bool CameraObjectBlockedDelegate(nint a1, nint a2, nint a3);
-
     [Signature("E8 ?? ?? ?? ?? 84 C0 75 ?? B9 ?? ?? ?? ?? E8 ?? ?? ?? ?? EB ?? 40 B7",
                DetourName = nameof(CameraObjectBlockedDetour))]
     private static Hook<CameraObjectBlockedDelegate>? CameraObjectBlockedHook;
 
     // 目标处于视野之外
     private delegate bool IsObjectInViewRangeDelegate(TargetSystem* system, GameObject* gameObject);
-
     [Signature(
         "E8 ?? ?? ?? ?? 84 C0 75 ?? 48 8B 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B C8 48 8B 10 FF 52 ?? 48 8B C8 BA ?? ?? ?? ?? E8 ?? ?? ?? ?? E9",
         DetourName = nameof(IsObjectInViewRangeHookDetour))]
@@ -26,7 +25,6 @@ public unsafe class OptimizedInteraction : DailyModuleBase
 
     // 跳跃中无法进行该操作 / 飞行中无法进行该操作
     private delegate bool InteractCheck0Delegate(nint a1, nint a2, nint a3, nint a4, bool a5);
-
     [Signature("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 49 8B 00 49 8B C8", DetourName = nameof(InteractCheck0Detour))]
     private static Hook<InteractCheck0Delegate>? InteractCheck0Hook;
 
@@ -43,9 +41,13 @@ public unsafe class OptimizedInteraction : DailyModuleBase
 
     // 检查目标距离 / 高低
     private delegate bool CheckTargetPositionDelegate(nint a1, nint a2, nint a3, byte a4, byte a5);
-
     [Signature("40 53 57 41 56 48 83 EC ?? 48 8B 02", DetourName = nameof(CheckTargetPositionDetour))]
     private static Hook<CheckTargetPositionDelegate>? CheckTargetPositionHook;
+
+    // 剧情被中断
+    private delegate bool EventCanceledDelegate(EventFramework* framework);
+    [Signature("E8 ?? ?? ?? ?? 84 C0 74 ?? 48 8B CB E8 ?? ?? ?? ?? 48 3B C7", DetourName = nameof(EventCanceledDetour))]
+    private static Hook<EventCanceledDelegate>? EventCanceledHook;
 
     public override void Init()
     {
@@ -56,6 +58,7 @@ public unsafe class OptimizedInteraction : DailyModuleBase
         IsPlayerOnJumping0Hook.Enable();
         IsPlayerOnJumping1Hook.Enable();
         CheckTargetPositionHook.Enable();
+        EventCanceledHook.Enable();
     }
 
     private static bool CameraObjectBlockedDetour(nint a1, nint a2, nint a3)
@@ -82,5 +85,10 @@ public unsafe class OptimizedInteraction : DailyModuleBase
     {
         // var original = CheckTargetPositionHook.Original(a1, a2, a3, a4, a5);
         return true;
+    }
+
+    private static bool EventCanceledDetour(EventFramework* framework)
+    {
+        return false;
     }
 }
