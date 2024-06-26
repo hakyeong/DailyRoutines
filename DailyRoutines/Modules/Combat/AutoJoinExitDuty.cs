@@ -35,15 +35,21 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
 
     private void OnCommand(string command, string arguments)
     {
+        if (Service.PartyList.Length > 0)
+        {
+            NotifyHelper.NotificationError(Service.Lang.GetText("AutoJoinExitDuty-AlreadyInParty"));
+            return;
+        }
+
         if (Flags.BoundByDuty)
         {
-            Service.Chat.PrintError(Service.Lang.GetText("AutoJoinExitDuty-AlreadyInDutyNotice"), "Daily Routines");
+            NotifyHelper.NotificationError(Service.Lang.GetText("AutoJoinExitDuty-AlreadyInDutyNotice"));
             return;
         }
 
         if (!UIState.IsInstanceContentUnlocked(4))
         {
-            Service.Chat.PrintError(Service.Lang.GetText("AutoJoinExitDuty-DutyLockedNotice"), "Daily Routines");
+            NotifyHelper.NotificationError(Service.Lang.GetText("AutoJoinExitDuty-DutyLockedNotice"));
             return;
         }
 
