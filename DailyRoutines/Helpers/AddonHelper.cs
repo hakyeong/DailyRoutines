@@ -33,18 +33,21 @@ public unsafe class AddonHelper
     public delegate void SetComponentButtonCheckedDelegate(AtkComponentButton* button, bool isChecked);
     public static SetComponentButtonCheckedDelegate? SetComponentButtonChecked;
 
-    public static readonly AtkValue ZeroAtkValue = new() { Type = 0, Int = 0 };
-
     internal static void Init()
     {
-        FireCallback ??= Marshal.GetDelegateForFunctionPointer<FireCallbackDelegate>(Service.SigScanner.ScanText("E8 ?? ?? ?? ?? 8B 4C 24 20 0F B6 D8"));
+        FireCallback ??=
+            Marshal.GetDelegateForFunctionPointer<FireCallbackDelegate>(
+                Service.SigScanner.ScanText("E8 ?? ?? ?? ?? 8B 4C 24 20 0F B6 D8"));
 
         GetAtkValueInt ??= Marshal.GetDelegateForFunctionPointer<GetAtkValueIntDelegate>
             (Service.SigScanner.ScanText("E8 ?? ?? ?? ?? C6 45 ?? ?? 8D 48"));
 
-        GetAtkValueString ??= Marshal.GetDelegateForFunctionPointer<GetAtkValueStringDelegate>(Service.SigScanner.ScanText("E8 ?? ?? ?? ?? 33 D2 48 8D 8B ?? ?? ?? ?? 41 B8 ?? ?? ?? ?? 48 8B F8"));
+        GetAtkValueString ??= Marshal.GetDelegateForFunctionPointer<GetAtkValueStringDelegate>(
+            Service.SigScanner.ScanText("E8 ?? ?? ?? ?? 33 D2 48 8D 8B ?? ?? ?? ?? 41 B8 ?? ?? ?? ?? 48 8B F8"));
 
-        GetAtkValueUInt ??= Marshal.GetDelegateForFunctionPointer<GetAtkValueUIntDelegate>(Service.SigScanner.ScanText("E8 ?? ?? ?? ?? 8B D0 EB ?? E8"));
+        GetAtkValueUInt ??=
+            Marshal.GetDelegateForFunctionPointer<GetAtkValueUIntDelegate>(
+                Service.SigScanner.ScanText("E8 ?? ?? ?? ?? 8B D0 EB ?? E8"));
 
         GetAddonByNode ??= Marshal.GetDelegateForFunctionPointer<GetAddonByNodeDelegate>
             (Service.SigScanner.ScanText("48 83 EC ?? 4C 8B D2 4C 8B D9 48 85 D2 75"));
@@ -83,7 +86,138 @@ public unsafe class AddonHelper
         return (T*)a;
     }
 
+    public static IntPtr Alloc(ulong size) => new(IMemorySpace.GetUISpace()->Malloc(size, 8UL));
+
+    public static IntPtr Alloc(int size)
+    {
+        if (size <= 0) throw new ArgumentException("Allocation size must be positive.");
+        return Alloc((ulong)size);
+    }
+
+    public static void SetSize(AtkResNode* node, int? width, int? height)
+    {
+        if (width is >= ushort.MinValue and <= ushort.MaxValue) node->Width = (ushort)width.Value;
+        if (height is >= ushort.MinValue and <= ushort.MaxValue) node->Height = (ushort)height.Value;
+        node->DrawFlags |= 0x1;
+    }
+
+    public static void SetPosition(AtkResNode* node, float? x, float? y)
+    {
+        if (x != null) node->X = x.Value;
+        if (y != null) node->Y = y.Value;
+        node->DrawFlags |= 0x1;
+    }
+
+    public static void SetPosition(AtkUnitBase* atkUnitBase, float? x, float? y)
+    {
+        if (x is >= short.MinValue and <= short.MaxValue) atkUnitBase->X = (short)x.Value;
+        if (y >= short.MinValue && x <= short.MaxValue) atkUnitBase->Y = (short)y.Value;
+    }
+
+    public static void SetWindowSize(AtkComponentNode* windowNode, ushort? width, ushort? height)
+    {
+        if (((AtkUldComponentInfo*)windowNode->Component->UldManager.Objects)->ComponentType !=
+            ComponentType.Window) return;
+
+        width ??= windowNode->AtkResNode.Width;
+        height ??= windowNode->AtkResNode.Height;
+
+        if (width < 64) width = 64;
+        if (height < 16) height = 16;
+
+        SetSize(windowNode, width, height);
+        var n = windowNode->Component->UldManager.RootNode;
+        SetSize(n, width, height);
+        n = n->PrevSiblingNode;
+        SetSize(n, (ushort)(width - 14), null);
+        n = n->PrevSiblingNode;
+        SetSize(n, width, height);
+        n = n->PrevSiblingNode;
+        SetSize(n, width, height);
+        n = n->PrevSiblingNode;
+        if (Service.GameConfig.System.GetUInt("ColorThemeType") == 3)
+            SetSize(n, width - 8, height - 16);
+        else
+            SetSize(n, width, height);
+
+        n = n->PrevSiblingNode;
+        SetSize(n, (ushort)(width - 5), null); // Header Node
+        n = n->ChildNode;
+        SetSize(n, (ushort)(width - 20), null); // Header Seperator
+        n = n->PrevSiblingNode;
+        SetPosition(n, width - 33, 6); // Close Button
+        n = n->PrevSiblingNode;
+        SetPosition(n, width - 47, 8); // Gear Button
+        n = n->PrevSiblingNode;
+        SetPosition(n, width - 61, 8); // Help Button
+
+        windowNode->AtkResNode.DrawFlags |= 0x1;
+    }
+
+    public static void SetSize<T>(T* node, int? w, int? h) where T : unmanaged => SetSize((AtkResNode*)node, w, h);
+
+    public static void SetPosition<T>(T* node, float? x, float? y) where T : unmanaged =>
+        SetPosition((AtkResNode*)node, x, y);
+
+    public static T* CloneNode<T>(T* original) where T : unmanaged => (T*)CloneNode((AtkResNode*)original);
+
+    public static void ExpandNodeList(AtkComponentNode* componentNode, ushort addSize)
+    {
+        var newNodeList = ExpandNodeList(componentNode->Component->UldManager.NodeList,
+                                         componentNode->Component->UldManager.NodeListCount,
+                                         (ushort)(componentNode->Component->UldManager.NodeListCount + addSize));
+
+        componentNode->Component->UldManager.NodeList = newNodeList;
+    }
+
+    public static void ExpandNodeList(AtkUnitBase* atkUnitBase, ushort addSize)
+    {
+        var newNodeList = ExpandNodeList(atkUnitBase->UldManager.NodeList, atkUnitBase->UldManager.NodeListCount,
+                                         (ushort)(atkUnitBase->UldManager.NodeListCount + addSize));
+
+        atkUnitBase->UldManager.NodeList = newNodeList;
+    }
+
+    private static AtkResNode** ExpandNodeList(AtkResNode** originalList, ushort originalSize, ushort newSize = 0)
+    {
+        if (newSize <= originalSize) newSize = (ushort)(originalSize + 1);
+        var oldListPtr = new IntPtr(originalList);
+        var newListPtr = Alloc((ulong)((newSize + 1) * 8));
+        var clone = new IntPtr[originalSize];
+        Marshal.Copy(oldListPtr, clone, 0, originalSize);
+        Marshal.Copy(clone, 0, newListPtr, originalSize);
+        return (AtkResNode**)newListPtr;
+    }
+
+    public static AtkResNode* CloneNode(AtkResNode* original)
+    {
+        var size = original->Type switch
+        {
+            NodeType.Res => sizeof(AtkResNode),
+            NodeType.Image => sizeof(AtkImageNode),
+            NodeType.Text => sizeof(AtkTextNode),
+            NodeType.NineGrid => sizeof(AtkNineGridNode),
+            NodeType.Counter => sizeof(AtkCounterNode),
+            NodeType.Collision => sizeof(AtkCollisionNode),
+            _ => throw new Exception($"Unsupported Type: {original->Type}"),
+        };
+
+        var allocation = Alloc((ulong)size);
+        var bytes = new byte[size];
+        Marshal.Copy(new IntPtr(original), bytes, 0, bytes.Length);
+        Marshal.Copy(bytes, 0, allocation, bytes.Length);
+
+        var newNode = (AtkResNode*)allocation;
+        newNode->ParentNode = null;
+        newNode->ChildNode = null;
+        newNode->ChildCount = 0;
+        newNode->PrevSiblingNode = null;
+        newNode->NextSiblingNode = null;
+        return newNode;
+    }
+
     #region Callback
+
     public static void CallbackRaw(AtkUnitBase* Base, int valueCount, AtkValue* values, byte updateState = 0)
     {
         if (FireCallback == null) Init();
@@ -99,12 +233,12 @@ public unsafe class AddonHelper
         try
         {
             CallbackRaw(Base, values.Length, atkValues, (byte)(updateState ? 1 : 0));
-        }
-        finally
+        } finally
         {
             for (var i = 0; i < values.Length; i++)
                 if (atkValues[i].Type == ValueType.String)
                     Marshal.FreeHGlobal(new nint(atkValues[i].String));
+
             Marshal.FreeHGlobal(new nint(atkValues));
         }
     }
@@ -137,15 +271,15 @@ public unsafe class AddonHelper
                         atkValues[i].Byte = (byte)(boolValue ? 1 : 0);
                         break;
                     case string stringValue:
-                        {
-                            atkValues[i].Type = ValueType.String;
-                            var stringBytes = Encoding.UTF8.GetBytes(stringValue);
-                            var stringAlloc = Marshal.AllocHGlobal(stringBytes.Length + 1);
-                            Marshal.Copy(stringBytes, 0, stringAlloc, stringBytes.Length);
-                            Marshal.WriteByte(stringAlloc, stringBytes.Length, 0);
-                            atkValues[i].String = (byte*)stringAlloc;
-                            break;
-                        }
+                    {
+                        atkValues[i].Type = ValueType.String;
+                        var stringBytes = Encoding.UTF8.GetBytes(stringValue);
+                        var stringAlloc = Marshal.AllocHGlobal(stringBytes.Length + 1);
+                        Marshal.Copy(stringBytes, 0, stringAlloc, stringBytes.Length);
+                        Marshal.WriteByte(stringAlloc, stringBytes.Length, 0);
+                        atkValues[i].String = (byte*)stringAlloc;
+                        break;
+                    }
                     default:
                         throw new ArgumentException($"Unable to convert type {v.GetType()} to AtkValue");
                 }
@@ -180,56 +314,41 @@ public unsafe class AddonHelper
         switch (a.Type)
         {
             case ValueType.Int:
-                {
-                    str.Append(a.Int);
-                    break;
-                }
+            {
+                str.Append(a.Int);
+                break;
+            }
             case ValueType.String:
-                {
-                    str.Append(Marshal.PtrToStringUTF8(new nint(a.String)));
-                    break;
-                }
+            {
+                str.Append(Marshal.PtrToStringUTF8(new nint(a.String)));
+                break;
+            }
             case ValueType.UInt:
-                {
-                    str.Append(a.UInt);
-                    break;
-                }
+            {
+                str.Append(a.UInt);
+                break;
+            }
             case ValueType.Bool:
-                {
-                    str.Append(a.Byte != 0);
-                    break;
-                }
+            {
+                str.Append(a.Byte != 0);
+                break;
+            }
             default:
-                {
-                    str.Append($"Unknown Type: {a.Int}");
-                    break;
-                }
+            {
+                str.Append($"Unknown Type: {a.Int}");
+                break;
+            }
         }
 
         return str.ToString();
     }
-    #endregion
 
-    #region AddonFireback
-    public static bool? ClickContextMenuByText(string text)
-    {
-        if (TryGetAddonByName<AtkUnitBase>("ContextMenu", out var addon) && IsAddonAndNodesReady(addon))
-        {
-            if (!TryScanContextMenuText(addon, text, out var index))
-            {
-                addon->FireCloseCallback();
-                addon->Close(true);
-                return true;
-            }
-
-            Callback(addon, true, 0, index, 0U, 0, 0);
-        }
-
-        return false;
-    }
     #endregion
 
     #region NodeManagement
+
+    public static AtkTextNode* MakeTextNode(uint id) { return !TryMakeTextNode(id, out var textNode) ? null : textNode; }
+
     public static AtkImageNode* MakeImageNode(uint id, PartInfo partInfo)
     {
         if (!TryMakeImageNode(id, 0, 0, 0, 0, out var imageNode))
@@ -267,6 +386,21 @@ public unsafe class AddonHelper
 
         return imageNode;
     }
+
+    public static bool TryMakeTextNode(uint id, [NotNullWhen(true)] out AtkTextNode* textNode)
+    {
+        textNode = IMemorySpace.GetUISpace()->Create<AtkTextNode>();
+
+        if (textNode is not null)
+        {
+            textNode->AtkResNode.Type = NodeType.Text;
+            textNode->AtkResNode.NodeID = id;
+            return true;
+        }
+
+        return false;
+    }
+
 
     public static bool TryMakeImageNode(
         uint id, NodeFlags resNodeFlags, uint resNodeDrawFlags, byte wrapMode, byte imageNodeFlags,
@@ -346,33 +480,25 @@ public unsafe class AddonHelper
 
     public static void AddPart(AtkUldPartsList* partsList, AtkUldPart* part)
     {
-        // copy pointer to old array
         var oldPartArray = partsList->Parts;
 
-        // allocate space for new array
         var newSize = partsList->PartCount + 1;
         var newArray = (AtkUldPart*)IMemorySpace.GetUISpace()->Malloc((ulong)sizeof(AtkUldPart) * newSize, 8);
 
         if (oldPartArray is not null)
         {
-            // copy each member of old array2
             foreach (var index in Enumerable.Range(0, (int)partsList->PartCount))
                 Buffer.MemoryCopy(oldPartArray + index, newArray + index, sizeof(AtkUldPart), sizeof(AtkUldPart));
 
-            // free old array
             IMemorySpace.Free(oldPartArray, (ulong)sizeof(AtkUldPart) * partsList->PartCount);
         }
 
-        // add new part
         Buffer.MemoryCopy(part, newArray + (newSize - 1), sizeof(AtkUldPart), sizeof(AtkUldPart));
         partsList->Parts = newArray;
         partsList->PartCount = newSize;
     }
 
-    public static void AddAsset(AtkUldPart* part, AtkUldAsset* asset)
-    {
-        part->UldAsset = asset;
-    }
+    public static void AddAsset(AtkUldPart* part, AtkUldAsset* asset) { part->UldAsset = asset; }
 
     public static void FreeImageNode(AtkImageNode* node)
     {
@@ -399,15 +525,9 @@ public unsafe class AddonHelper
         IMemorySpace.Free(partsList, (ulong)sizeof(AtkUldPartsList));
     }
 
-    public static void FreePart(AtkUldPart* part)
-    {
-        IMemorySpace.Free(part, (ulong)sizeof(AtkUldPart));
-    }
+    public static void FreePart(AtkUldPart* part) { IMemorySpace.Free(part, (ulong)sizeof(AtkUldPart)); }
 
-    public static void FreeAsset(AtkUldAsset* asset)
-    {
-        IMemorySpace.Free(asset, (ulong)sizeof(AtkUldAsset));
-    }
+    public static void FreeAsset(AtkUldAsset* asset) { IMemorySpace.Free(asset, (ulong)sizeof(AtkUldAsset)); }
 
     public static void LinkNodeAtEnd(AtkResNode* imageNode, AtkUnitBase* parent)
     {
@@ -462,6 +582,6 @@ public unsafe class AddonHelper
         parent->UldManager.UpdateDrawNodeList();
         FreeTextNode(node);
     }
-    #endregion
 
+    #endregion
 }
