@@ -144,6 +144,7 @@ public class Main : Window, IDisposable
     private static readonly HttpClient client = new();
     private static int TotalDownloadCounts;
     private static VersionInfo LatestVersionInfo = new();
+    private static string SponsorInfo = string.Empty;
     private static List<GameEvent> GameCalendars = [];
     private static readonly List<GameNews> GameNewsList = [];
 
@@ -152,7 +153,7 @@ public class Main : Window, IDisposable
     private static readonly List<ModuleInfo> ModulesFavorite = [];
     private static readonly List<ModuleInfo> ModulesEnabled = [];
 
-    private static ImageCarousel ImageCarouselInstance = new();
+    private static readonly ImageCarousel ImageCarouselInstance = new();
 
     private const ImGuiWindowFlags ChildFlags = ImGuiWindowFlags.NoScrollbar;
 
@@ -677,7 +678,7 @@ public class Main : Window, IDisposable
                 }
 
             if (imageState1)
-                if (ImGui.CollapsingHeader($"{Service.Lang.GetText("Settings-AfdianSponsor")} (2024/05)"))
+                if (ImGui.CollapsingHeader($"{Service.Lang.GetText("Settings-AfdianSponsor")} ({SponsorInfo})"))
                 {
                     ImGui.Image(imageWarpper1.ImGuiHandle, ImageCarouselInstance.CurrentImageSize
                                     with
@@ -996,6 +997,7 @@ public class Main : Window, IDisposable
             await GetGameNews();
             TotalDownloadCounts = await GetTotalDownloadsAsync();
             LatestVersionInfo = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
+            SponsorInfo = await GetSponsorInfoAsync();
 
             FontManager.RebuildInterfaceFonts();
         });
@@ -1006,6 +1008,13 @@ public class Main : Window, IDisposable
         const string url = "https://gh.atmoomen.top/DailyRoutines/main/Assets/downloads.txt";
         var response = await client.GetStringAsync(url);
         return int.TryParse(response, out var totalDownloads) ? totalDownloads : 0;
+    }
+
+    internal static async Task<string> GetSponsorInfoAsync()
+    {
+        const string url = "https://gh.atmoomen.top/DailyRoutines/main/Assets/SponsorImageInfo.txt";
+        var response = await client.GetStringAsync(url);
+        return response;
     }
 
     internal static async Task<VersionInfo> GetLatestVersionAsync(string userName, string repoName)
