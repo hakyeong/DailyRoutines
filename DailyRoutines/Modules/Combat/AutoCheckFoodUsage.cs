@@ -196,7 +196,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
                                         new("副本", ImGuiTableColumnFlags.WidthStretch, 0)  ], 
                                      [x => () =>
                                      {
-                                         if (ImGui.Selectable(x.ExtractPlaceName(), zones.Contains(x.RowId), 
+                                         if (ImGui.Selectable($"{x.ExtractPlaceName()}##{x.RowId}", zones.Contains(x.RowId), 
                                                               ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups))
                                          {
                                              if (!zones.Remove(x.RowId))

@@ -211,13 +211,15 @@ public class FontManager : IDailyManager
         var fontDirectories = new List<string>
         {
             @"C:\Windows\Fonts",
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\Windows\Fonts"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\Windows\Fonts")
         };
 
         string[] fontExtensions = ["*.ttf", "*.otf", "*.ttc", "*.otc"];
 
         foreach (var directory in fontDirectories)
         {
+            if (!Directory.Exists(directory)) continue;
+
             foreach (var extension in fontExtensions)
             {
                 foreach (var file in Directory.GetFiles(directory, extension))
@@ -239,7 +241,6 @@ public class FontManager : IDailyManager
             }
         }
     }
-
     private void Uninit()
     {
         FontHandleTasks.Clear();
