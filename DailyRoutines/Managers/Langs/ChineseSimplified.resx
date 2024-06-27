@@ -2310,4 +2310,10 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="AutoRetainerWork-CreateNewBaseOnExisted" xml:space="preserve">
     <value>以此为基础创建新配置</value>
   </data>
+  <data name="Settings-FontSelect" xml:space="preserve">
+    <value>界面字体选择</value>
+  </data>
+  <data name="Settings-UnknownFont" xml:space="preserve">
+    <value>未知字体</value>
+  </data>
 </root>

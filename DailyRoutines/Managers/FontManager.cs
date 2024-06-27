@@ -4,13 +4,13 @@ using ImGuiNET;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System;
 using System.Linq;
 using Dalamud.Interface.GameFonts;
 using Dalamud.Interface.Utility;
-using Microsoft.Win32;
+using System.Drawing.Text;
+using System.Runtime.InteropServices;
 
 namespace DailyRoutines.Managers;
 
@@ -27,22 +27,16 @@ public class FontManager : IDailyManager
     public static IFontHandle UIFont60       => GetUIFont(0.6f);
     public static bool        IsFontBuilding => !FontHandleTasks.IsEmpty;
 
-    private delegate int EnumFontFamiliesExProc(ref ENUMLOGFONTEX lpelfe, IntPtr lpntme, uint FontType, IntPtr lParam);
+    private const int FR_PRIVATE = 0x10;
+    private const int FR_NOT_ENUM = 0x20;
 
-    [DllImport("gdi32.dll", CharSet = CharSet.Auto)]
-    private static extern int EnumFontFamiliesEx(
-        nint hdc, ref LOGFONT lpLogfont, EnumFontFamiliesExProc lpEnumFontFamExProc, nint lParam, uint dwFlags);
-
-    [DllImport("user32.dll")]
-    private static extern nint GetDC(nint hWnd);
-
-    [DllImport("user32.dll")]
-    private static extern int ReleaseDC(nint hWnd, nint hDC);
+    [DllImport("gdi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    private static extern int AddFontResourceEx(string lpszFilename, uint fl, IntPtr pdv);
 
     private static readonly ConcurrentQueue<float> CreationQueue = [];
     private static readonly ConcurrentDictionary<float, IFontHandle> FontHandles = [];
     private static readonly ConcurrentDictionary<float, Task<IFontHandle>> FontHandleTasks = [];
-    public static readonly Dictionary<string, string> InstalledFonts = [];
+    public  static readonly ConcurrentDictionary<string, string> InstalledFonts = [];
 
     #region Lazy
 
@@ -59,7 +53,7 @@ public class FontManager : IDailyManager
 
     private void Init()
     {
-        RebuildInterfaceFonts();
+        RebuildInterfaceFonts(true);
         RefreshInstalledFonts();
     }
 
@@ -103,8 +97,14 @@ public class FontManager : IDailyManager
         return handle;
     }
 
-    public static void RebuildInterfaceFonts()
+    public static void RebuildInterfaceFonts(bool clearOld = false)
     {
+        if (clearOld)
+        {
+            FontHandleTasks.Clear();
+            FontHandles.Clear();
+        }
+
         GetUIFont(0.9f);
         for (var i = 0.6f; i < 1.8f; i += 0.2f) GetUIFont(i);
     }
@@ -125,7 +125,7 @@ public class FontManager : IDailyManager
 
     private static Task<IFontHandle> CreateFontHandle(float size)
     {
-        var path = GetDefaultFontPath();
+        var path = Service.Config.InterfaceFontFileName;
         var task = Task.Run(() =>
         {
             try
@@ -170,17 +170,6 @@ public class FontManager : IDailyManager
         return task;
     }
 
-    private static string GetDefaultFontPath()
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            return Path.Join("C:\\Windows\\Fonts", "msyh.ttc");
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            return "/System/Library/Fonts/PingFang.ttc";
-
-        throw new PlatformNotSupportedException("不支持的操作系统");
-    }
-
     public static unsafe ushort[] BuildRange(IReadOnlyList<ushort>? chars, params nint[] ranges)
     {
         var builder = new ImFontGlyphRangesBuilderPtr(ImGuiNative.ImFontGlyphRangesBuilder_ImFontGlyphRangesBuilder());
@@ -217,34 +206,34 @@ public class FontManager : IDailyManager
         return builder.BuildRangesToArray();
     }
 
-    private static int FontEnumProc(ref ENUMLOGFONTEX lpelfe, IntPtr lpntme, uint FontType, IntPtr lParam)
+    public static void GetInstalledFonts()
     {
-        InstalledFonts.TryAdd(lpelfe.elfFullName, null);
-        return 1;
-    }
-
-    private static void GetInstalledFonts()
-    {
-        var logFont = new LOGFONT
+        var fontDirectories = new List<string>
         {
-            lfCharSet = 1, // DEFAULT_CHARSET
+            @"C:\Windows\Fonts",
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\Windows\Fonts"),
         };
 
-        var hdc = GetDC(IntPtr.Zero);
-        _ = EnumFontFamiliesEx(hdc, ref logFont, FontEnumProc, IntPtr.Zero, 0);
-        _ = ReleaseDC(IntPtr.Zero, hdc);
+        string[] fontExtensions = ["*.ttf", "*.otf", "*.ttc", "*.otc"];
 
-        using var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts");
-        if (key != null)
+        foreach (var directory in fontDirectories)
         {
-            foreach (var fontName in InstalledFonts.Keys)
+            foreach (var extension in fontExtensions)
             {
-                foreach (var valueName in key.GetValueNames())
+                foreach (var file in Directory.GetFiles(directory, extension))
                 {
-                    if (valueName.StartsWith(fontName, StringComparison.OrdinalIgnoreCase))
+                    try
                     {
-                        InstalledFonts[fontName] = key.GetValue(valueName).ToString();
-                        break;
+                        using var pfc = new PrivateFontCollection();
+                        pfc.AddFontFile(file);
+                        foreach (var family in pfc.Families)
+                        {
+                            InstalledFonts.TryAdd(file, family.Name);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        NotifyHelper.Error($"Error processing file {file}: {ex.Message}");
                     }
                 }
             }
@@ -255,37 +244,5 @@ public class FontManager : IDailyManager
     {
         FontHandleTasks.Clear();
         FontHandles.Clear();
-    }
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-    private struct ENUMLOGFONTEX
-    {
-        public LOGFONT elfLogFont;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-        public string elfFullName;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
-        public string elfStyle;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-        public string elfScript;
-    }
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-    private struct LOGFONT
-    {
-        public int lfHeight;
-        public int lfWidth;
-        public int lfEscapement;
-        public int lfOrientation;
-        public int lfWeight;
-        public byte lfItalic;
-        public byte lfUnderline;
-        public byte lfStrikeOut;
-        public byte lfCharSet;
-        public byte lfOutPrecision;
-        public byte lfClipPrecision;
-        public byte lfQuality;
-        public byte lfPitchAndFamily;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-        public string lfFaceName;
     }
 }

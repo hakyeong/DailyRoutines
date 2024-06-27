@@ -17,6 +17,7 @@ public class Configuration : IPluginConfiguration
     public bool                     AllowAnonymousUpload        { get; set; } = true;
     public bool                     EnableTTS                   { get; set; } = false;
     public float                    InterfaceFontSize           { get; set; } = 20f;
+    public string                   InterfaceFontFileName       { get; set; } = "msyh.ttc";
     public int                      DefaultHomePage             { get; set; } = 0;
     public Dictionary<string, bool> ModuleEnabled               { get; set; } = [];
     public HashSet<string>          ModuleFavorites             { get; set; } = [];

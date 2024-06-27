@@ -997,7 +997,7 @@ public class Main : Window, IDisposable
             TotalDownloadCounts = await GetTotalDownloadsAsync();
             LatestVersionInfo = await GetLatestVersionAsync("AtmoOmen", "DailyRoutines");
 
-            MainSettings.RebuildInterfaceFont();
+            FontManager.RebuildInterfaceFonts();
         });
     }
 
@@ -1186,16 +1186,16 @@ public class Main : Window, IDisposable
 
 public class MainSettings
 {
-
-    internal static string ConflictKeySearchString = string.Empty;
-
-    internal static Dictionary<int, string> PagesInfo = new()
+    private static Dictionary<int, string> PagesInfo = new()
     {
         { 0, "主页"   },
         { 1, "设置"   },
         { 3, "收藏"   },
         { 4, "已启用" },
     };
+
+    private static string ConflictKeySearchString = string.Empty;
+    private static string FontSearchString = string.Empty;
 
     internal static void Draw()
     {
@@ -1328,7 +1328,46 @@ public class MainSettings
             Service.Config.InterfaceFontSize = fontTemp;
             Service.Config.Save();
 
-            RebuildInterfaceFont();
+            FontManager.RebuildInterfaceFonts();
+        }
+
+        // 界面文本选择
+        ImGuiOm.TextIcon(FontAwesomeIcon.Italic, Service.Lang.GetText("Settings-FontSelect"));
+
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(300f * GlobalFontScale);
+        using (var combo = ImRaii.Combo("###FontSelectCombo",
+                            FontManager.InstalledFonts.GetValueOrDefault(Service.Config.InterfaceFontFileName, 
+                                                                         Service.Lang.GetText("Settings-UnknownFont")),
+                            ImGuiComboFlags.HeightLarge))
+        {
+            if (combo.Success)
+            {
+                using (FontManager.UIFont120.Push())
+                {
+                    ImGui.InputTextWithHint("###FontSearch", Service.Lang.GetText("PleaseSearch"), ref FontSearchString, 128);
+                    var inputWidth = ImGui.GetItemRectSize().X;
+                    ImGui.Separator();
+
+                    using (ImRaii.Child("FontChild", new(inputWidth, 400f * GlobalFontScale)))
+                    {
+                        foreach (var installedFont in FontManager.InstalledFonts)
+                        {
+                            if (!string.IsNullOrWhiteSpace(FontSearchString) &&
+                                !installedFont.Key.Contains(FontSearchString, StringComparison.OrdinalIgnoreCase) &&
+                                !installedFont.Value.Contains(FontSearchString, StringComparison.OrdinalIgnoreCase)) continue;
+
+                            if (ImGui.Selectable($"{installedFont.Value}##{installedFont.Key}"))
+                            {
+                                Service.Config.InterfaceFontFileName = installedFont.Key;
+                                Service.Config.Save();
+
+                                FontManager.RebuildInterfaceFonts(true);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // 默认页面
@@ -1374,12 +1413,5 @@ public class MainSettings
         ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage1"));
         ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage2"));
         ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage3"));
-    }
-
-    internal static void RebuildInterfaceFont()
-    {
-        FontManager.GetUIFont(0.9f);
-        for (var i = 0.6f; i < 1.8f; i += 0.2f)
-            FontManager.GetUIFont(i);
     }
 }
