@@ -49,12 +49,16 @@ internal class vnavmeshIPC : DailyIPCBase
             _navReload = PI.GetIpcSubscriber<bool>($"{InternalName}.Nav.Reload");
             _navRebuild = PI.GetIpcSubscriber<bool>($"{InternalName}.Nav.Rebuild");
             _navPathfind = PI.GetIpcSubscriber<Vector3, Vector3, bool, Task<List<Vector3>>>(
-                    $"{InternalName}.Nav.Pathfind");
+                $"{InternalName}.Nav.Pathfind");
+
             _navIsAutoLoad = PI.GetIpcSubscriber<bool>($"{InternalName}.Nav.IsAutoLoad");
             _navSetAutoLoad = PI.GetIpcSubscriber<bool, object>($"{InternalName}.Nav.SetAutoLoad");
 
-            _queryMeshNearestPoint = PI.GetIpcSubscriber<Vector3, float, float, Vector3?>($"{InternalName}.Query.Mesh.NearestPoint");
-            _queryMeshPointOnFloor = PI.GetIpcSubscriber<Vector3, float, Vector3?>($"{InternalName}.Query.Mesh.PointOnFloor");
+            _queryMeshNearestPoint =
+                PI.GetIpcSubscriber<Vector3, float, float, Vector3?>($"{InternalName}.Query.Mesh.NearestPoint");
+
+            _queryMeshPointOnFloor =
+                PI.GetIpcSubscriber<Vector3, float, Vector3?>($"{InternalName}.Query.Mesh.PointOnFloor");
 
             _pathMoveTo = PI.GetIpcSubscriber<List<Vector3>, bool, object>($"{InternalName}.Path.MoveTo");
             _pathStop = PI.GetIpcSubscriber<object>($"{InternalName}.Path.Stop");
@@ -63,6 +67,7 @@ internal class vnavmeshIPC : DailyIPCBase
             _pathGetMovementAllowed = PI.GetIpcSubscriber<bool>($"{InternalName}.Path.GetMovementAllowed");
             _pathSetMovementAllowed =
                 PI.GetIpcSubscriber<bool, object>($"{InternalName}.Path.SetMovementAllowed");
+
             _pathGetAlignCamera = PI.GetIpcSubscriber<bool>($"{InternalName}.Path.GetAlignCamera");
             _pathSetAlignCamera = PI.GetIpcSubscriber<bool, object>($"{InternalName}.Path.SetAlignCamera");
             _pathGetTolerance = PI.GetIpcSubscriber<float>($"{InternalName}.Path.GetTolerance");
@@ -70,8 +75,10 @@ internal class vnavmeshIPC : DailyIPCBase
 
             _pathfindAndMoveTo =
                 PI.GetIpcSubscriber<Vector3, bool, bool>($"{InternalName}.SimpleMove.PathfindAndMoveTo");
+
             _pathfindInProgress =
                 PI.GetIpcSubscriber<bool>($"{InternalName}.SimpleMove.PathfindInProgress");
+
             _pathfindCancelAll = PI.GetIpcSubscriber<object>($"{InternalName}.Nav.PathfindCancelAll");
         }
         catch (Exception ex)
@@ -80,26 +87,28 @@ internal class vnavmeshIPC : DailyIPCBase
         }
     }
 
-    internal bool NavIsReady() 
+    internal bool NavIsReady()
         => Execute(() => _navIsReady!.InvokeFunc());
 
-    internal float NavBuildProgress() 
+    internal float NavBuildProgress()
         => Execute(() => _navBuildProgress!.InvokeFunc());
 
     internal void NavReload() => Execute(() => _navReload!.InvokeFunc());
 
     internal void NavRebuild() => Execute(() => _navRebuild!.InvokeFunc());
 
-    internal Task<List<Vector3>>? NavPathfind(Vector3 from, Vector3 to, bool fly = false) 
+    internal Task<List<Vector3>>? NavPathfind(Vector3 from, Vector3 to, bool fly = false)
         => Execute(() => _navPathfind!.InvokeFunc(from, to, fly));
 
     internal bool NavIsAutoLoad() => Execute(() => _navIsAutoLoad!.InvokeFunc());
 
     internal void NavSetAutoLoad(bool value) => Execute(_navSetAutoLoad!.InvokeAction, value);
 
-    internal Vector3? QueryMeshNearestPoint(Vector3 pos, float halfExtentXZ, float halfExtentY) => Execute(() => _queryMeshNearestPoint!.InvokeFunc(pos, halfExtentXZ, halfExtentY));
+    internal Vector3? QueryMeshNearestPoint(Vector3 pos, float halfExtentXZ, float halfExtentY) =>
+        Execute(() => _queryMeshNearestPoint!.InvokeFunc(pos, halfExtentXZ, halfExtentY));
 
-    internal Vector3? QueryMeshPointOnFloor(Vector3 pos, float halfExtentXZ) => Execute(() => _queryMeshPointOnFloor!.InvokeFunc(pos, halfExtentXZ));
+    internal Vector3? QueryMeshPointOnFloor(Vector3 pos, float halfExtentXZ) =>
+        Execute(() => _queryMeshPointOnFloor!.InvokeFunc(pos, halfExtentXZ));
 
     internal void PathMoveTo(List<Vector3> waypoints, bool fly) => Execute(_pathMoveTo!.InvokeAction, waypoints, fly);
 
