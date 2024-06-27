@@ -89,8 +89,6 @@ public unsafe class AutoPreventDuplicateStatus : DailyModuleBase
         { 7499, new(7499, DetectType.Self, [1233], []) },
         // 灼热之光
         { 25801, new(25801, DetectType.Self, [2703], []) },
-        // 鼓励
-        { 7520, new(7520, DetectType.Self, [1297], []) },
         // 三连咏唱
         { 7421, new(7421, DetectType.Self, [1211], []) },
         // 激情咏唱
