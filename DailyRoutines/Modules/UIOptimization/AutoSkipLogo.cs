@@ -11,7 +11,7 @@ public class AutoSkipLogo : DailyModuleBase
 {
     public override unsafe void Init()
     {
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Logo", OnLogo);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "Logo", OnLogo);
         if (AddonState.Logo != null && IsAddonAndNodesReady(AddonState.Logo))
             OnLogo(AddonEvent.PostSetup, null);
     }
