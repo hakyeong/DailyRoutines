@@ -1,4 +1,4 @@
-name: Update Changelogs
+name: Update Changelog and Release Time
 
 on:
   release:
@@ -10,34 +10,59 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
-      - name: Install GitHub CLI
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
         run: |
-          sudo apt update
-          sudo apt install -y gh
+          python -m pip install --upgrade pip
+          pip install requests
 
-      - name: Login to GitHub CLI
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
-
-      - name: Get the latest release info and update files
+      - name: Fetch release data and update files
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ "${{ github.event_name }}" == "release" ]; then
-            echo "${{ github.event.body }}" > Assets/Changelog.txt
-            echo "$(date -d "${{ github.event.release.published_at }}" '+%Y/%m/%d')" > Assets/ChangelogTime.txt
-          else
-            latest_release_body=$(gh release view --repo AtmoOmen/DailyRoutines --json body -q '.body')
-            latest_release_time=$(gh release view --repo AtmoOmen/DailyRoutines --json publishedAt -q '.publishedAt' | cut -c 1-10 | sed 's/-/\//g')
-            echo "$latest_release_body" > Assets/Changelog.txt
-            echo "$latest_release_time" > Assets/ChangelogTime.txt
-          fi
-          mkdir -p Assets
+          import requests
+          import os
+          from datetime import datetime
 
-      - name: Commit and push changes
+          headers = {
+              'Authorization': f"token {os.environ['GITHUB_TOKEN']}",
+              'Accept': 'application/vnd.github.v3+json'
+          }
+
+          response = requests.get(
+              'https://api.github.com/repos/AtmoOmen/DailyRoutines/releases',
+              headers=headers
+          )
+          releases = response.json()
+          latest_release = next((r for r in releases if not r['prerelease']), None)
+
+          if latest_release:
+              changelog = latest_release['body']
+              publish_time = datetime.strptime(latest_release['published_at'], '%Y-%m-%dT%H:%M:%SZ')
+              formatted_time = publish_time.strftime('%Y/%m/%d')
+
+              os.makedirs('Assets', exist_ok=True)
+
+              with open('Assets/changelog.txt', 'w', encoding='utf-8') as f:
+                  f.write(changelog)
+
+              with open('Assets/changelog_time.txt', 'w') as f:
+                  f.write(formatted_time)
+
+              print("Files updated successfully.")
+          else:
+              print("No non-prerelease version found.")
+        shell: python
+
+      - name: Commit and push if changed
         run: |
-          git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Action"
-          git add Assets/changelog.txt
-          git add Assets/changelog_time.txt
-          git commit -m "Update Changelogs"
-          git push
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          git add Assets/changelog.txt Assets/changelog_time.txt
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update changelog and release time" && git push)
