@@ -23,8 +23,8 @@ jobs:
       - name: Get the latest non-pre release using GitHub CLI
         if: github.event_name == 'workflow_dispatch'
         run: |
-          latest_release_body=$(gh release list --repo AtmoOmen/DailyRoutines --limit 1 --exclude-drafts --exclude-prereleases -q '.[0].body' | sed 's/"/\\"/g')
-          latest_release_time=$(gh release list --repo AtmoOmen/DailyRoutines --limit 1 --exclude-drafts --exclude-prereleases -q '.[0].published_at' | cut -c 1-10 | sed 's/-/\//g')
+          latest_release_body=$(gh release view --repo AtmoOmen/DailyRoutines --json body -q '.body')
+          latest_release_time=$(gh release view --repo AtmoOmen/DailyRoutines --json publishedAt -q '.publishedAt' | cut -c 1-10 | sed 's/-/\//g')
           echo "LATEST_RELEASE_BODY=\"$latest_release_body\"" >> $GITHUB_ENV
           echo "LATEST_RELEASE_TIME=\"$latest_release_time\"" >> $GITHUB_ENV
 
