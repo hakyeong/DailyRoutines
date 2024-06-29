@@ -1,50 +1,62 @@
 name: Update Latest
 
 on:
-  workflow_dispatch:
   schedule:
     - cron: '0 * * * *'
+  workflow_dispatch:
 
 jobs:
-  process-assets:
+  update-stats:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
-      - name: Install GitHub CLI
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
         run: |
-          sudo apt update
-          sudo apt install -y gh
+          python -m pip install --upgrade pip
+          pip install requests
 
-      - name: Login to GitHub CLI
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
-
-      - name: Fetch the latest release and process its assets
+      - name: Fetch release data and update files
         run: |
-          mkdir -p Assets
-          latest_release_info=$(gh release view --repo AtmoOmen/DailyRoutines --json tagName,assets -q '.')
-          version=$(echo "$latest_release_info" | jq -r '.tagName')
-          assets=$(echo "$latest_release_info" | jq -r '.assets')
-          total_downloads=0
+          import requests
+          import os
 
-          for row in $(echo "${assets}" | jq -r '.[] | @base64'); do
-            _jq() {
-              echo ${row} | base64 --decode | jq -r ${1}
-            }
+          headers = {
+              'Authorization': f"token {os.environ['GITHUB_TOKEN']}",
+              'Accept': 'application/vnd.github.v3+json'
+          }
 
-            download_count=$(_jq '.download_count')
-            let total_downloads+=download_count*2
-          done
+          response = requests.get(
+              'https://api.github.com/repos/AtmoOmen/DailyRoutines/releases/latest',
+              headers=headers
+          )
+          release_data = response.json()
 
-          echo "$total_downloads" > Assets/downloads_latest.txt
-          echo "$version" > Assets/version_latest.txt
+          total_downloads = sum(asset['download_count'] * 2 for asset in release_data['assets'])
 
-      - name: Commit and push changes
+          version = release_data['tag_name']
+
+          os.makedirs('Assets', exist_ok=True)
+
+          with open('Assets/downloads_latest.txt', 'w') as f:
+              f.write(str(total_downloads))
+
+          with open('Assets/version_latest.txt', 'w') as f:
+              f.write(version)
+
+          print("Files updated successfully.")
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit and push if changed
         run: |
-          git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Action"
-          git add Assets/downloads_latest.txt
-          git add Assets/version_latest.txt
-          git commit -m "Update Download Counts and Version Info"
-          git push
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          git add Assets/downloads_latest.txt Assets/version_latest.txt
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update release stats" && git push)
