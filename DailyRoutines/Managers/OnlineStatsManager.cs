@@ -19,6 +19,7 @@ public class OnlineStatsManager : IDailyManager
 {
     public static Dictionary<string, int> ModuleUsageStats { get; private set; } = [];
     public static string?                 MachineCode      { get; private set; }
+    public static bool                    IsTimeValid      { get; private set; }
 
     private static string CacheFilePath =>
         Path.Join(Service.PluginInterface.GetPluginConfigDirectory(), "OnlineStatsCacheData.json");
@@ -27,14 +28,9 @@ public class OnlineStatsManager : IDailyManager
 
     private static readonly HttpClient Client = new();
 
-    public OnlineStatsManager()
-    {
-        Client.DefaultRequestHeaders.Add("Prefer", "return=minimal");
-        Task.Run(GetEncryptedMachineCode);
-    }
-
     private void Init()
     {
+        Client.DefaultRequestHeaders.Add("Prefer", "return=minimal");
         Service.ClientState.Login += OnLogin;
         TryUploadAndDownload();
     }
@@ -43,6 +39,7 @@ public class OnlineStatsManager : IDailyManager
     {
         Task.Run(async () =>
         {
+            IsTimeValid = await GetServerTimerAsync();
             await UploadEntry(new ModulesState(GetEncryptedMachineCode()));
             await DownloadOrLoadModuleStats();
         });
@@ -112,6 +109,31 @@ public class OnlineStatsManager : IDailyManager
             NotifyHelper.Debug(
                 $"上传模块启用数据失败\n" +
                 $"状态码: {response.StatusCode} 返回内容: {await response.Content.ReadAsStringAsync()}");
+    }
+
+    public static async Task<bool> GetServerTimerAsync()
+    {
+        const string url = "https://spbs.atmoomen.top/time";
+        const int allowedTimeDifferenceInSeconds = 10;
+
+        try
+        {
+            var response = await Client.GetStringAsync(url);
+
+            if (!long.TryParse(response, out var timestamp)) return false;
+
+            var serverTime = UnixSecondToDateTime(timestamp);
+            var timeDifference = DateTime.Now - serverTime;
+
+            var isTimeSynchronized = timeDifference < TimeSpan.FromSeconds(allowedTimeDifferenceInSeconds);
+
+            return isTimeSynchronized;
+        }
+        catch (Exception ex)
+        {
+            NotifyHelper.Debug($"请求或解析云端时间过程中发生错误: {ex.Message}");
+            return false;
+        }
     }
 
     public static string GetEncryptedMachineCode()

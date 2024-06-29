@@ -2316,4 +2316,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="Settings-UnknownFont" xml:space="preserve">
     <value>未知字体</value>
   </data>
+  <data name="Settings-InvalidLocalData" xml:space="preserve">
+    <value>本地或云端数据有效性校验失败,
+请尝试重新启用插件或检查你的本地网络环境</value>
+  </data>
 </root>

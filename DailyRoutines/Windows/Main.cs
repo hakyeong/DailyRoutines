@@ -198,13 +198,24 @@ public class Main : Window, IDisposable
 
     public override void Draw()
     {
-        if (FontManager.IsFontBuilding || string.IsNullOrWhiteSpace(OnlineStatsManager.MachineCode))
+        if (FontManager.IsFontBuilding)
         {
             ImGui.SetWindowFontScale(3f);
             var textSize = ImGui.CalcTextSize(Service.Lang.GetText("Settings-FontBuilding"));
             var pos = new Vector2((ImGui.GetWindowWidth() - textSize.X) / 2f, (ImGui.GetWindowHeight() - textSize.Y) / 2f);
             ImGui.SetCursorPos(pos);
             ImGui.Text(Service.Lang.GetText("Settings-FontBuilding"));
+            ImGui.SetWindowFontScale(1f);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(OnlineStatsManager.MachineCode) || !OnlineStatsManager.IsTimeValid)
+        {
+            ImGui.SetWindowFontScale(3f);
+            var textSize = ImGui.CalcTextSize(Service.Lang.GetText("Settings-InvalidLocalData"));
+            var pos = new Vector2((ImGui.GetWindowWidth() - textSize.X) / 2f, (ImGui.GetWindowHeight() - textSize.Y) / 2f);
+            ImGui.SetCursorPos(pos);
+            ImGui.Text(Service.Lang.GetText("Settings-InvalidLocalData"));
             ImGui.SetWindowFontScale(1f);
             return;
         }
