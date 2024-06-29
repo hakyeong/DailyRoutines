@@ -1,9 +1,9 @@
-name: Update DailyRoutines Release Stats
+name: Update Latest
 
 on:
   schedule:
-    - cron: '0 * * * *'  # 每小时运行一次
-  workflow_dispatch:  # 允许手动触发
+    - cron: '0 * * * *'
+  workflow_dispatch:
 
 jobs:
   update-stats:
@@ -29,33 +29,26 @@ jobs:
           import requests
           import os
 
-          # 设置 GitHub API 请求头
           headers = {
               'Authorization': f"token {os.environ['GITHUB_TOKEN']}",
               'Accept': 'application/vnd.github.v3+json'
           }
 
-          # 获取最新 release 信息
           response = requests.get(
               'https://api.github.com/repos/AtmoOmen/DailyRoutines/releases/latest',
               headers=headers
           )
           release_data = response.json()
 
-          # 计算总下载量
           total_downloads = sum(asset['download_count'] * 2 for asset in release_data['assets'])
 
-          # 获取版本号
           version = release_data['tag_name']
 
-          # 创建 Assets 文件夹（如果不存在）
           os.makedirs('Assets', exist_ok=True)
 
-          # 写入下载量到 downloads_latest.txt
           with open('Assets/downloads_latest.txt', 'w') as f:
               f.write(str(total_downloads))
 
-          # 写入版本号到 version_latest.txt
           with open('Assets/version_latest.txt', 'w') as f:
               f.write(version)
 
