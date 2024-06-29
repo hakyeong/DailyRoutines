@@ -20,24 +20,18 @@ jobs:
       - name: Login to GitHub CLI
         run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
-      - name: Get the latest non-pre release using GitHub CLI
-        if: github.event_name == 'workflow_dispatch'
+      - name: Get the latest release info and update files
         run: |
-          latest_release_body=$(gh release view --repo AtmoOmen/DailyRoutines --json body -q '.body')
-          latest_release_time=$(gh release view --repo AtmoOmen/DailyRoutines --json publishedAt -q '.publishedAt' | cut -c 1-10 | sed 's/-/\//g')
-          echo "LATEST_RELEASE_BODY=\"$latest_release_body\"" >> $GITHUB_ENV
-          echo "LATEST_RELEASE_TIME=\"$latest_release_time\"" >> $GITHUB_ENV
-
-      - name: Write release content to Changelog.txt
-        run: |
-          mkdir -p Assets
           if [ "${{ github.event_name }}" == "release" ]; then
             echo "${{ github.event.body }}" > Assets/Changelog.txt
             echo "$(date -d "${{ github.event.release.published_at }}" '+%Y/%m/%d')" > Assets/ChangelogTime.txt
           else
-            echo "$LATEST_RELEASE_BODY" > Assets/Changelog.txt
-            echo "$LATEST_RELEASE_TIME" > Assets/ChangelogTime.txt
+            latest_release_body=$(gh release view --repo AtmoOmen/DailyRoutines --json body -q '.body')
+            latest_release_time=$(gh release view --repo AtmoOmen/DailyRoutines --json publishedAt -q '.publishedAt' | cut -c 1-10 | sed 's/-/\//g')
+            echo "$latest_release_body" > Assets/Changelog.txt
+            echo "$latest_release_time" > Assets/ChangelogTime.txt
           fi
+          mkdir -p Assets
 
       - name: Commit and push changes
         run: |
