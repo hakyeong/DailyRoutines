@@ -39,5 +39,5 @@ jobs:
           git config --global user.name "GitHub Action"
           git add Assets/changelog.txt
           git add Assets/changelog_time.txt
-          git commit -m "Update Changelog and Time"
+          git commit -m "Update Changelogs"
           git push
