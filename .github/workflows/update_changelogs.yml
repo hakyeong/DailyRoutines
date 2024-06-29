@@ -12,33 +12,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Get the latest non-pre release
-        if: github.event_name == 'workflow_dispatch'
-        id: get-release
-        uses: octokit/request-action@v2.x
-        with:
-          route: GET /repos/AtmoOmen/DailyRoutines/releases
-          mediaType: |
-            previews:
-              - ant-man
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Parse latest non-pre release data
-        if: github.event_name == 'workflow_dispatch'
-        id: parse-release
+      - name: Install GitHub CLI
         run: |
-          latest_release_body=$(echo '${{ steps.get-release.outputs.data }}' | jq -r '.[] | select(.prerelease == false) | .body' | head -n 1)
-          latest_release_time=$(echo '${{ steps.get-release.outputs.data }}' | jq -r '.[] | select(.prerelease == false) | .published_at' | head -n 1 | cut -c 1-10 | sed 's/-/\//g')
-          echo "LATEST_RELEASE_BODY=$latest_release_body" >> $GITHUB_ENV
-          echo "LATEST_RELEASE_TIME=$latest_release_time" >> $GITHUB_ENV
+          sudo apt update
+          sudo apt install -y gh
+
+      - name: Login to GitHub CLI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Get the latest non-pre release using GitHub CLI
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          latest_release_body=$(gh release list --repo AtmoOmen/DailyRoutines --limit 1 --exclude-drafts --exclude-prereleases -q '.[0].body' | sed 's/"/\\"/g')
+          latest_release_time=$(gh release list --repo AtmoOmen/DailyRoutines --limit 1 --exclude-drafts --exclude-prereleases -q '.[0].published_at' | cut -c 1-10 | sed 's/-/\//g')
+          echo "LATEST_RELEASE_BODY=\"$latest_release_body\"" >> $GITHUB_ENV
+          echo "LATEST_RELEASE_TIME=\"$latest_release_time\"" >> $GITHUB_ENV
 
       - name: Write release content to Changelog.txt
         run: |
           mkdir -p Assets
           if [ "${{ github.event_name }}" == "release" ]; then
             echo "${{ github.event.body }}" > Assets/Changelog.txt
-            echo "${{ github.event.release.published_at }}" | cut -c 1-10 | sed 's/-/\//g' > Assets/ChangelogTime.txt
+            echo "$(date -d "${{ github.event.release.published_at }}" '+%Y/%m/%d')" > Assets/ChangelogTime.txt
           else
             echo "$LATEST_RELEASE_BODY" > Assets/Changelog.txt
             echo "$LATEST_RELEASE_TIME" > Assets/ChangelogTime.txt
