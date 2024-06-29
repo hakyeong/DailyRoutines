@@ -543,8 +543,8 @@ public unsafe class AutoRetainerWork : DailyModuleBase
             var groupSize0 = ImGui.GetItemRectSize();
 
             ImGui.SameLine();
-            if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Plus, Service.Lang.GetText("Add"), 
-                                                   new(ImGui.CalcTextSize("三个字").X, groupSize0.Y)))
+            if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Plus, Service.Lang.GetText("Add"),
+                                                   buttonSize:new(ImGui.CalcTextSize("三个字").X, groupSize0.Y)))
             {
                 if (CondtionInput != AbortCondition.无)
                 {

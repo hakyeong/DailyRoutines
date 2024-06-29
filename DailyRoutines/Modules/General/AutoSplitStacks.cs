@@ -158,7 +158,7 @@ public unsafe class AutoSplitStacks : DailyModuleBase
                 ImGui.SameLine();
                 ImGui.BeginDisabled(SelectedItem == null);
                 if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Plus, Service.Lang.GetText("Add"),
-                                                       new(ImGui.CalcTextSize("三个字").X, itemSize.Y)))
+                                                       buttonSize:new(ImGui.CalcTextSize("三个字").X, itemSize.Y)))
                 {
                     var newGroup = new SplitGroup(SelectedItem.RowId, SplitAmountInput);
                     if (!ModuleConfig.SplitGroups.Contains(newGroup))

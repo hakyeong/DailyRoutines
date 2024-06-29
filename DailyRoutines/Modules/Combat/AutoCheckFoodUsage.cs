@@ -29,6 +29,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
 
     private static Config ModuleConfig = null!;
 
+
     private static uint SelectedItem;
     private static string SelectItemSearch = string.Empty;
     private static bool SelectItemIsHQ = true;
