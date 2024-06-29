@@ -18,6 +18,7 @@ namespace DailyRoutines.Managers;
 public class OnlineStatsManager : IDailyManager
 {
     public static Dictionary<string, int> ModuleUsageStats { get; private set; } = [];
+    public static string?                 MachineCode      { get; private set; }
 
     private static string CacheFilePath =>
         Path.Join(Service.PluginInterface.GetPluginConfigDirectory(), "OnlineStatsCacheData.json");
@@ -26,7 +27,11 @@ public class OnlineStatsManager : IDailyManager
 
     private static readonly HttpClient Client = new();
 
-    public OnlineStatsManager() { Client.DefaultRequestHeaders.Add("Prefer", "return=minimal"); }
+    public OnlineStatsManager()
+    {
+        Client.DefaultRequestHeaders.Add("Prefer", "return=minimal");
+        Task.Run(GetEncryptedMachineCode);
+    }
 
     private void Init()
     {
@@ -111,6 +116,8 @@ public class OnlineStatsManager : IDailyManager
 
     public static string GetEncryptedMachineCode()
     {
+        if (!string.IsNullOrWhiteSpace(MachineCode)) return MachineCode;
+
         var machineCodeBuilder = new StringBuilder();
         var hardwareValues = GetHardwareValues();
 
@@ -118,7 +125,8 @@ public class OnlineStatsManager : IDailyManager
             machineCodeBuilder.Append(value);
 
         using var sha256Hash = SHA256.Create();
-        return GetHash(sha256Hash, machineCodeBuilder.ToString());
+        MachineCode = GetHash(sha256Hash, machineCodeBuilder.ToString());
+        return MachineCode;
     }
 
     private static IEnumerable<string> GetHardwareValues()
