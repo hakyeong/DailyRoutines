@@ -1,4 +1,4 @@
-name: Update Changelog and Release Time
+name: Update Changelogs
 
 on:
   release:
