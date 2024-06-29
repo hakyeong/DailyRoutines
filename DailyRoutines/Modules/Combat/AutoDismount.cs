@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -10,12 +11,12 @@ using FFXIVClientStructs.FFXIV.Client.Game.Object;
 namespace DailyRoutines.Modules;
 
 [ModuleDescription("AutoDismountTitle", "AutoDismountDescription", ModuleCategories.战斗)]
-public unsafe class AutoDismount : DailyModuleBase
+public class AutoDismount : DailyModuleBase
 {
     private static HashSet<uint>? TargetSelfOrAreaActions;
 
     [Signature("E8 ?? ?? ?? ?? 44 0F B6 C3 48 8B D0")]
-    private static delegate* unmanaged<ulong, GameObject*> GetGameObjectFromObjectID;
+    private static unsafe delegate* unmanaged<ulong, GameObject*> GetGameObjectFromObjectID;
 
     public override void Init()
     {
@@ -34,15 +35,34 @@ public unsafe class AutoDismount : DailyModuleBase
         if (!Flags.IsOnMount) return;
         if (!IsNeedToDismount((uint)actionType, actionID, targetID)) return;
 
-        Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.Dismount);
-        Service.ClientState.LocalPlayer.ToCharacterStruct()->Mount.CreateAndSetupMount(0, 0, 0, 0, 0, 0, 0);
-        Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.Dismount);
+        unsafe
+        {
+            Service.ClientState.LocalPlayer.ToCharacterStruct()->Mount.CreateAndSetupMount(0, 0, 0, 0, 0, 0, 0);
+        }
+        Task.Run(async () =>
+        {
+            const int iterations = 10;
+            const int delay = 50;
 
-        TaskHelper.Enqueue(() => Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.Dismount));
-        TaskHelper.Enqueue(() => ActionManager.Instance()->UseAction(actionType, actionID, targetID, a4, queueState, a6));
+            for (var i = 0; i < iterations; i++)
+            {
+                Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.Dismount);
+                unsafe
+                {
+                    Service.ClientState.LocalPlayer.ToCharacterStruct()->Mount.CreateAndSetupMount(0, 0, 0, 0, 0, 0, 0);
+                }
+                await Task.Delay(delay);
+            }
+        });
+
+        unsafe
+        {
+            TaskHelper.DelayNext(100);
+            TaskHelper.Enqueue(() => ActionManager.Instance()->UseAction(actionType, actionID, targetID, a4, queueState, a6));
+        }
     }
 
-    private static bool IsNeedToDismount(uint actionType, uint actionId, ulong actionTarget)
+    private static unsafe bool IsNeedToDismount(uint actionType, uint actionId, ulong actionTarget)
     {
         // 使用的技能是坐骑
         if ((ActionType)actionType == ActionType.Mount) return false;
