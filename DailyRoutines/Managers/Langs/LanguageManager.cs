@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,78 +10,101 @@ namespace DailyRoutines.Managers;
 
 public partial class LanguageManager : IDailyManager
 {
-    private static Dictionary<string, string>? resourceData;
+    private static Dictionary<string, string>? _resourceData;
+    private static readonly Dictionary<string, SeString> _seStringCache = new();
 
     private void Init()
     {
-        resourceData = LoadResourceFile(Path.Join(Path.GetDirectoryName(Service.PluginInterface.AssemblyLocation.FullName), 
-                                                  "Managers", "Langs" , "ChineseSimplified.resx"));
+        var filePath = Path.Combine(
+            Path.GetDirectoryName(Service.PluginInterface.AssemblyLocation.FullName)!,
+            "Managers", "Langs", "ChineseSimplified.resx");
+
+        _resourceData = LoadResourceFile(filePath);
     }
 
     private static Dictionary<string, string> LoadResourceFile(string filePath)
     {
-        var data = new Dictionary<string, string>();
-
-        var doc = XDocument.Load(filePath);
-        var dataElements = doc.Root.Elements("data");
-        foreach (var element in dataElements)
-        {
-            var name = element.Attribute("name")?.Value;
-            var value = element.Element("value")?.Value;
-            if (!string.IsNullOrEmpty(name) && value != null) data[name] = value;
-        }
-
-        return data;
+        using var stream = File.OpenRead(filePath);
+        var doc = XDocument.Load(stream);
+        return doc.Root!
+                  .Elements("data")
+                  .ToDictionary(
+                      e => e.Attribute("name")!.Value,
+                      e => e.Element("value")!.Value,
+                      StringComparer.Ordinal
+                  );
     }
 
     public string GetText(string key, params object[] args)
     {
-        resourceData.TryGetValue(key, out var format);
+        if (_resourceData!.TryGetValue(key, out var format))
+            return args.Length == 0 ? format : string.Format(format, args);
 
-        if (string.IsNullOrEmpty(format))
-        {
-            Service.Log.Error($"Localization String {key} Not Found in Current Language!");
-            return key;
-        }
-
-        return string.Format(format, args);
+        return LogErrorAndReturnKey(key);
     }
 
     public SeString GetSeString(string key, params object[] args)
     {
-        resourceData.TryGetValue(key, out var format);
+        if (args.Length == 0 && _seStringCache.TryGetValue(key, out var cachedSeString))
+            return cachedSeString;
+
+        if (!_resourceData!.TryGetValue(key, out var format))
+        {
+            LogErrorAndReturnKey(key);
+            return new SeString();
+        }
+
         var ssb = new SeStringBuilder();
         var lastIndex = 0;
+        var matches = SeStringRegex().Matches(format);
 
-        foreach (var match in SeStringRegex().Matches(format).Cast<Match>())
+        for (var i = 0; i < matches.Count; i++)
         {
-            ssb.AddUiForeground(format[lastIndex..match.Index], 2);
+            var match = matches[i];
+            ssb.AddUiForeground(format.Substring(lastIndex, match.Index - lastIndex), 2);
             lastIndex = match.Index + match.Length;
 
             if (int.TryParse(match.Groups[1].Value, out var argIndex) && argIndex >= 0 && argIndex < args.Length)
-            {
-                var arg = args[argIndex];
-                switch (arg)
-                {
-                    case SeString seString:
-                        ssb.Append(seString);
-                        break;
-                    case BitmapFontIcon icon:
-                        ssb.AddIcon(icon);
-                        break;
-                    default:
-                        ssb.AddUiForeground(arg.ToString(), 2);
-                        break;
-                }
-            }
+                AppendArgument(ssb, args[argIndex]);
         }
 
-        ssb.AddUiForeground(format[lastIndex..], 2);
-        return ssb.Build();
+        ssb.AddUiForeground(format.Substring(lastIndex), 2);
+        var result = ssb.Build();
+
+        if (args.Length == 0)
+            _seStringCache[key] = result;
+
+        return result;
     }
 
-    private void Uninit() { }
+    private static void AppendArgument(SeStringBuilder ssb, object arg)
+    {
+        switch (arg)
+        {
+            case SeString seString:
+                ssb.Append(seString);
+                break;
+            case BitmapFontIcon icon:
+                ssb.AddIcon(icon);
+                break;
+            default:
+                ssb.AddUiForeground(arg.ToString(), 2);
+                break;
+        }
+    }
 
-    [GeneratedRegex("\\{(\\d+)\\}")]
+    private static string LogErrorAndReturnKey(string key)
+    {
+        Service.Log.Error($"Localization String {key} Not Found in Current Language!");
+        return key;
+    }
+
+    private void Uninit()
+    {
+        _resourceData?.Clear();
+        _seStringCache.Clear();
+    }
+
+    [GeneratedRegex("\\{(\\d+)\\}", RegexOptions.Compiled)]
     private static partial Regex SeStringRegex();
 }
