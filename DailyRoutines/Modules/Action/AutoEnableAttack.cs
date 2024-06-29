@@ -1,29 +1,20 @@
-using DailyRoutines.Managers;
-using Dalamud;
+using DailyRoutines.Infos;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoEnableAttackTitle", "AutoEnableAttackDescription", ModuleCategories.¼¼ÄÜ)]
+[ModuleDescription("AutoEnableAttackTitle", "AutoEnableAttackDescription", ModuleCategories.æŠ€èƒ½)]
 public class AutoEnableAttack : DailyModuleBase
 {
-    private readonly byte[] AutoAttackOverwriteBytes =
-        [0x41, 0xF6, 0x47, 0x39, 0x04, 0x0F, 0x85, 0xA7, 0x00, 0x00, 0x00, 0x90];
-
-    private nint AutoAttackAddress = nint.Zero;
-    private byte[] AutoAttackOriginalBytes = new byte[12];
+    private static readonly MemoryPatch AutoAttackPatch = 
+        new("41 B0 01 41 0F B6 D0 E9 ?? ?? ?? ?? 41 B0 01", [0x41, 0xF6, 0x47, 0x39, 0x04, 0x0F, 0x85, 0xA7, 0x00, 0x00, 0x00, 0x90]);
 
     public override void Init()
     {
-        AutoAttackAddress = Service.SigScanner.ScanText("41 B0 01 41 0F B6 D0 E9 ?? ?? ?? ?? 41 B0 01");
-
-        if (SafeMemory.ReadBytes(AutoAttackAddress, 12, out AutoAttackOriginalBytes))
-            SafeMemory.WriteBytes(AutoAttackAddress, AutoAttackOverwriteBytes);
+        AutoAttackPatch.Set(true);
     }
 
     public override void Uninit()
     {
-        if (AutoAttackAddress != nint.Zero) SafeMemory.WriteBytes(AutoAttackAddress, AutoAttackOriginalBytes);
-
-        base.Uninit();
+        AutoAttackPatch.Set(false);
     }
 }
