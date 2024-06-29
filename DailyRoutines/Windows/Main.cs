@@ -198,7 +198,7 @@ public class Main : Window, IDisposable
 
     public override void Draw()
     {
-        if (FontManager.IsFontBuilding)
+        if (FontManager.IsFontBuilding || string.IsNullOrWhiteSpace(OnlineStatsManager.MachineCode))
         {
             ImGui.SetWindowFontScale(3f);
             var textSize = ImGui.CalcTextSize(Service.Lang.GetText("Settings-FontBuilding"));
