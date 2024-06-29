@@ -1,0 +1,50 @@
+name: Update Latest
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
+
+jobs:
+  process-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install GitHub CLI
+        run: |
+          sudo apt update
+          sudo apt install -y gh
+
+      - name: Login to GitHub CLI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Fetch the latest release and process its assets
+        run: |
+          mkdir -p Assets
+          latest_release_info=$(gh release view --repo AtmoOmen/DailyRoutines --json tagName,assets -q '.')
+          version=$(echo "$latest_release_info" | jq -r '.tagName')
+          assets=$(echo "$latest_release_info" | jq -r '.assets')
+          total_downloads=0
+
+          for row in $(echo "${assets}" | jq -r '.[] | @base64'); do
+            _jq() {
+              echo ${row} | base64 --decode | jq -r ${1}
+            }
+
+            download_count=$(_jq '.download_count')
+            let total_downloads+=download_count*2
+          done
+
+          echo "$total_downloads" > Assets/downloads_latest.txt
+          echo "$version" > Assets/version_latest.txt
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          git add Assets/downloads_latest.txt
+          git add Assets/version_latest.txt
+          git commit -m "Update Download Counts and Version Info"
+          git push

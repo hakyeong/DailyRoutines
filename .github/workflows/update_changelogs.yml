@@ -37,7 +37,7 @@ jobs:
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-          git add Assets/Changelog.txt
-          git add Assets/ChangelogTime.txt
+          git add Assets/changelog.txt
+          git add Assets/changelog_time.txt
           git commit -m "Update Changelog and Time"
           git push
