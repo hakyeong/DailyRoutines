@@ -18,6 +18,7 @@ public class Configuration : IPluginConfiguration
     public bool                     EnableTTS                   { get; set; } = false;
     public float                    InterfaceFontSize           { get; set; } = 20f;
     public string                   InterfaceFontFileName       { get; set; } = @"C:\Windows\Fonts\msyh.ttc";
+    public float                    LeftTabWidth                { get; set; } = 300f;
     public int                      DefaultHomePage             { get; set; } = 0;
     public Dictionary<string, bool> ModuleEnabled               { get; set; } = [];
     public HashSet<string>          ModuleFavorites             { get; set; } = [];

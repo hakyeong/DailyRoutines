@@ -211,7 +211,7 @@ public class Main : Window, IDisposable
                 DrawCategoriesComponent();
             }
 
-            width = Math.Max(ImGui.GetItemRectSize().X, 250f * GlobalFontScale);
+            width = Math.Max(ImGui.GetItemRectSize().X, Service.Config.LeftTabWidth);
         }
 
         LeftTabComponentSize.X = width;
@@ -1137,7 +1137,7 @@ public class MainSettings
             FontManager.RebuildInterfaceFonts();
         }
 
-        // 界面文本选择
+        // 界面字体选择
         ImGuiOm.TextIcon(FontAwesomeIcon.Italic, Service.Lang.GetText("Settings-FontSelect"));
 
         ImGui.SameLine();
@@ -1175,6 +1175,20 @@ public class MainSettings
                 }
             }
         }
+
+        // 左侧边栏宽度
+        ImGuiOm.TextIcon(FontAwesomeIcon.TextWidth, Service.Lang.GetText("Settings-LeftTabWidth"));
+        ImGui.SameLine();
+        var leftTabWidthTemp = Service.Config.LeftTabWidth;
+        ImGui.SetNextItemWidth(150f * GlobalFontScale);
+        if (ImGui.InputFloat("###LeftTabWidthInput", ref leftTabWidthTemp, 0, 0, "%.1f"))
+            leftTabWidthTemp = Math.Clamp(leftTabWidthTemp, 100f, ImGui.GetWindowWidth() - 50f);
+        if (ImGui.IsItemDeactivatedAfterEdit())
+        {
+            Service.Config.LeftTabWidth = leftTabWidthTemp;
+            Service.Config.Save();
+        }
+
 
         // 默认页面
         ImGuiOm.TextIcon(FontAwesomeIcon.Home, Service.Lang.GetText("Settings-DefaultHomePage"));
