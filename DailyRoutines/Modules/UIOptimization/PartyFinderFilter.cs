@@ -111,7 +111,7 @@ public class PartyFinderFilter : DailyModuleBase
     private bool Verify(PartyFinderListing listing)
     {
         var description = listing.Description.ToString();
-        if (!descriptionSet.Add(description))
+        if (!string.IsNullOrEmpty(description) && !descriptionSet.Add(description))
             return false;
 
         var isMatch = ModuleConfig.BlackList
