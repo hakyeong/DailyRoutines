@@ -15,7 +15,7 @@ jobs:
       - name: Get the latest non-pre release
         if: github.event_name == 'workflow_dispatch'
         id: get-release
-        uses: octokit/request-action@v3.x
+        uses: octokit/request-action@v2.x
         with:
           route: GET /repos/AtmoOmen/DailyRoutines/releases
           mediaType: |
