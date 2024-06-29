@@ -5,13 +5,19 @@ using System.Linq;
 using System.Management;
 using System.Net;
 using System.Net.Http;
+using System.Numerics;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using DailyRoutines.Helpers;
+using DailyRoutines.Infos;
 using DailyRoutines.Modules;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Utility;
 using Newtonsoft.Json;
+using static DailyRoutines.Windows.Main;
 
 namespace DailyRoutines.Managers;
 
@@ -20,6 +26,12 @@ public class OnlineStatsManager : IDailyManager
     public static Dictionary<string, int> ModuleUsageStats { get; private set; } = [];
     public static string?                 MachineCode      { get; private set; }
     public static bool                    IsTimeValid      { get; private set; }
+    public static VersionInfo             LatestVersion    { get; private set; } = new();
+    public static int                     Downloads_Total  { get; private set; }
+    public static string                  Sponsor_Period   { get; private set; } = string.Empty;
+    public static List<GameEvent>         GameCalendars    { get; private set; } = [];
+    public static List<GameNews>          GameNews         { get; private set; } = [];
+
 
     private static string CacheFilePath =>
         Path.Join(Service.PluginInterface.GetPluginConfigDirectory(), "OnlineStatsCacheData.json");
@@ -32,16 +44,30 @@ public class OnlineStatsManager : IDailyManager
     {
         Client.DefaultRequestHeaders.Add("Prefer", "return=minimal");
         Service.ClientState.Login += OnLogin;
-        TryUploadAndDownload();
+        RefreshOnlineInfo();
     }
 
-    private static void TryUploadAndDownload()
+    private static void RefreshOnlineInfo()
+    {
+        RequestModuleStats();
+        RequestValidityInfo();
+        RequestPluginInfo();
+    }
+
+    private static void OnLogin()
+    {
+        if (!Service.Config.AllowAnonymousUpload) return;
+        RefreshOnlineInfo();
+    }
+
+    #region 上传下载模块数据
+
+    private static void RequestModuleStats()
     {
         Task.Run(async () =>
         {
-            IsTimeValid = await GetServerTimerAsync();
-            await UploadEntry(new ModulesState(GetEncryptedMachineCode()));
             await DownloadOrLoadModuleStats();
+            await UploadEntry(new(GetEncryptedMachineCode()));
         });
     }
 
@@ -49,13 +75,12 @@ public class OnlineStatsManager : IDailyManager
     {
         try
         {
-            if (NeedToRefreshData())
-                await DownloadModuleUsageStats();
+            if (NeedToRefreshData()) await DownloadModuleUsageStats();
 
             if (File.Exists(CacheFilePath))
             {
                 var jsonData = File.ReadAllText(CacheFilePath);
-                var statsData = JsonConvert.DeserializeObject<StatsData>(jsonData);
+                var statsData = JsonConvert.DeserializeObject<ModuleStats>(jsonData);
                 if (statsData is { ModuleUsageStats: not null })
                     ModuleUsageStats = statsData.ModuleUsageStats;
             }
@@ -71,7 +96,7 @@ public class OnlineStatsManager : IDailyManager
         if (!File.Exists(CacheFilePath)) return true;
 
         var jsonData = File.ReadAllText(CacheFilePath);
-        var statsData = JsonConvert.DeserializeObject<StatsData>(jsonData);
+        var statsData = JsonConvert.DeserializeObject<ModuleStats>(jsonData);
         if (statsData != null && DateTime.TryParse(statsData.LastUpdated, out var lastUpdateTime))
             return (DateTime.UtcNow - lastUpdateTime).TotalHours > 2;
 
@@ -87,7 +112,7 @@ public class OnlineStatsManager : IDailyManager
             var jsonContent = await response.Content.ReadAsStringAsync();
             var moduleUsageStats = JsonConvert.DeserializeObject<Dictionary<string, int>>(jsonContent);
 
-            var statsData = new StatsData
+            var statsData = new ModuleStats
             {
                 LastUpdated = DateTime.UtcNow.ToString("o"),
                 ModuleUsageStats = moduleUsageStats,
@@ -100,7 +125,7 @@ public class OnlineStatsManager : IDailyManager
                                $"状态码: {response.StatusCode}");
     }
 
-    public static async Task UploadEntry(ModulesState entry)
+    public static async Task UploadEntry(ModuleStat entry)
     {
         var content = new StringContent(JsonConvert.SerializeObject(entry), Encoding.UTF8, "application/json");
         var response = await Client.PutAsync($"{WorkerUrl}?character=eq.{entry.Character}", content);
@@ -109,6 +134,20 @@ public class OnlineStatsManager : IDailyManager
             NotifyHelper.Debug(
                 $"上传模块启用数据失败\n" +
                 $"状态码: {response.StatusCode} 返回内容: {await response.Content.ReadAsStringAsync()}");
+    }
+
+
+    #endregion
+
+    #region 校验数据
+
+    private static void RequestValidityInfo()
+    {
+        Task.Run(async () =>
+        {
+            _ = GetEncryptedMachineCode();
+            IsTimeValid = await GetServerTimerAsync();
+        });
     }
 
     public static async Task<bool> GetServerTimerAsync()
@@ -206,47 +245,205 @@ public class OnlineStatsManager : IDailyManager
         return sBuilder.ToString();
     }
 
-    private static void OnLogin()
+    #endregion
+
+    #region 插件数据
+
+    private static void RequestPluginInfo()
     {
-        if (!Service.Config.AllowAnonymousUpload) return;
-        TryUploadAndDownload();
+        Task.Run(async () =>
+        {
+            await GetPluginVersionInfo();
+            await GetPluginSponsorInfo();
+            await GetCNOfficalInformation();
+        });
     }
 
-    private void Uninit() { Service.ClientState.Login -= OnLogin; }
-
-    public class ModulesState
+    public static async Task GetPluginVersionInfo()
     {
-        [JsonProperty("character")]
-        public string Character = string.Empty;
+        _ = ImageHelper.GetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/Changelog.png");
 
-        [JsonProperty("update_time")]
-        public string UpdateTime = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss");
+        Downloads_Total =
+            int.TryParse(
+                await ObtainContentStringFromUrl("https://gh.atmoomen.top/DailyRoutines/main/Assets/downloads.txt"), out var totalDownloads)
+                ? totalDownloads : 0;
 
-        [JsonProperty("version")]
-        public string Version = Plugin.Version.ToString();
+        LatestVersion.DownloadCount =
+            int.TryParse(
+                await ObtainContentStringFromUrl("https://gh.atmoomen.top/DailyRoutines/main/Assets/downloads_latest.txt"), out var latestDownloads)
+                ? latestDownloads : 0;
 
-        [JsonProperty("enabled_modules")]
-        public string[] EnabledModules = Service.ModuleManager.Modules
-                                                .Where(x => x.Value.Initialized &&
-                                                            x.Key.GetCustomAttribute<ModuleDescriptionAttribute>() != null)
-                                                .Select(x => Service.Lang.GetText(
-                                                            x.Key.GetCustomAttribute<ModuleDescriptionAttribute>()
-                                                             ?.TitleKey ?? "DevModuleTitle")).ToArray();
+        LatestVersion.Changelog = 
+            MarkdownToPlainText(await ObtainContentStringFromUrl("https://gh.atmoomen.top/DailyRoutines/main/Assets/changelog.txt"));
 
-        [JsonProperty("all_modules_amount")]
-        public uint AllModulesAmount = (uint)Service.ModuleManager.Modules.Count;
+        LatestVersion.Version = 
+            Version.Parse(await ObtainContentStringFromUrl("https://gh.atmoomen.top/DailyRoutines/main/Assets/version_latest.txt"));
 
-        [JsonProperty("enabled_modules_amount")]
-        public uint EnabledModulesAmount = (uint)Service.ModuleManager.Modules.Count(x => x.Value.Initialized);
-
-        public ModulesState(string character) { Character = character; }
-
-        public ModulesState() { }
+        LatestVersion.PublishTime =
+            await ObtainContentStringFromUrl("https://gh.atmoomen.top/DailyRoutines/main/Assets/changelog_time.txt");
     }
 
-    public class StatsData
+    public static async Task GetPluginSponsorInfo()
     {
-        public string?                  LastUpdated      { get; set; }
-        public Dictionary<string, int>? ModuleUsageStats { get; set; }
+        Sponsor_Period =
+            await ObtainContentStringFromUrl("https://gh.atmoomen.top/DailyRoutines/main/Assets/sponsor_period.txt");
+
+        _ = ImageHelper.GetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/AfdianSponsor.jpg");
     }
+
+    public static async Task GetCNOfficalInformation()
+    {
+        var resultCalendar = JsonConvert.DeserializeObject<FileFormat.RSActivityCalendar>(
+            await ObtainContentStringFromUrl("https://apiff14risingstones.web.sdo.com/api/home/active/calendar/getActiveCalendarMonth"));
+
+        if (resultCalendar.data.Count > 0)
+        {
+            foreach (var activity in GameCalendars)
+                Service.LinkPayloadManager.Unregister(activity.LinkPayloadID);
+            GameCalendars.Clear();
+
+            foreach (var activity in resultCalendar.data)
+            {
+                var currentTime = DateTime.Now;
+                var beginTime = UnixSecondToDateTime(activity.begin_time);
+                var endTime = UnixSecondToDateTime(activity.end_time);
+                var gameEvent = new GameEvent
+                {
+                    ID = activity.id,
+                    LinkPayload = Service.LinkPayloadManager.Register(OpenGameEventLinkPayload, out var linkPayloadID),
+                    LinkPayloadID = linkPayloadID,
+                    Name = activity.name,
+                    Url = activity.url,
+                    BeginTime = beginTime,
+                    EndTime = endTime,
+                    Color = DarkenColor(HexToVector4(activity.color), 0.3f),
+                    State = currentTime < beginTime ? 1U :
+                            currentTime <= endTime ? 0U : 2U,
+                    DaysLeft = currentTime < beginTime ? (beginTime - DateTime.Now).Days :
+                               currentTime <= endTime ? (endTime - DateTime.Now).Days : int.MaxValue,
+                };
+
+                GameCalendars.Add(gameEvent);
+            }
+
+            GameCalendars = [.. GameCalendars.OrderBy(x => x.DaysLeft)];
+        }
+
+        var resultNews = JsonConvert.DeserializeObject<FileFormat.RSGameNews>(
+            await ObtainContentStringFromUrl("https://cqnews.web.sdo.com/api/news/newsList?gameCode=ff&CategoryCode=5309,5310,5311,5312,5313&pageIndex=0&pageSize=5"));
+
+        if (resultNews.Data.Count > 0)
+        {
+            GameNews.Clear();
+            foreach (var activity in resultNews.Data)
+            {
+                var gameNews = new GameNews
+                {
+                    Title = activity.Title,
+                    Url = activity.Author,
+                    SortIndex = activity.SortIndex,
+                    Summary = activity.Summary,
+                    HomeImagePath = activity.HomeImagePath,
+                    PublishDate = activity.PublishDate,
+                };
+
+                GameNews.Add(gameNews);
+                ImageHelper.GetImage(activity.HomeImagePath);
+            }
+
+            ImageCarouselInstance.News = GameNews;
+        }
+    }
+
+    internal static void OpenGameEventLinkPayload(uint commandID, SeString message)
+    {
+        var link = GameCalendars.FirstOrDefault(x => x.LinkPayloadID == commandID)?.Url;
+        if (!string.IsNullOrWhiteSpace(link))
+            Util.OpenLink(link);
+    }
+
+    #endregion
+
+    public static async Task<string> ObtainContentStringFromUrl(string url) => await Client.GetStringAsync(url);
+
+    private void Uninit()
+    {
+        Service.ClientState.Login -= OnLogin;
+    }
+}
+
+public class ModuleStat
+{
+    [JsonProperty("character")]
+    public string Character = string.Empty;
+
+    [JsonProperty("update_time")]
+    public string UpdateTime = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss");
+
+    [JsonProperty("version")]
+    public string Version = Plugin.Version.ToString();
+
+    [JsonProperty("enabled_modules")]
+    public string[] EnabledModules = Service.ModuleManager.Modules
+                                            .Where(x => x.Value.Initialized &&
+                                                        x.Key.GetCustomAttribute<ModuleDescriptionAttribute>() != null)
+                                            .Select(x => Service.Lang.GetText(
+                                                        x.Key.GetCustomAttribute<ModuleDescriptionAttribute>()
+                                                         ?.TitleKey ?? "DevModuleTitle")).ToArray();
+
+    [JsonProperty("all_modules_amount")]
+    public uint AllModulesAmount = (uint)Service.ModuleManager.Modules.Count;
+
+    [JsonProperty("enabled_modules_amount")]
+    public uint EnabledModulesAmount = (uint)Service.ModuleManager.Modules.Count(x => x.Value.Initialized);
+
+    public ModuleStat(string character) { Character = character; }
+
+    public ModuleStat() { }
+}
+
+public class ModuleStats
+{
+    public string?                  LastUpdated      { get; set; }
+    public Dictionary<string, int>? ModuleUsageStats { get; set; }
+}
+
+public class VersionInfo
+{
+    public Version Version       { get; set; } = new();
+    public string  PublishTime   { get; set; } = string.Empty;
+    public string  Changelog     { get; set; } = string.Empty;
+    public int     DownloadCount { get; set; }
+}
+
+public class GameEvent
+{
+    public uint                ID            { get; set; }
+    public DalamudLinkPayload? LinkPayload   { get; set; }
+    public uint                LinkPayloadID { get; set; }
+    public string              Name          { get; set; } = string.Empty;
+    public string              Url           { get; set; } = string.Empty;
+    public DateTime            BeginTime     { get; set; } = DateTime.MinValue;
+    public DateTime            EndTime       { get; set; } = DateTime.MaxValue;
+    public Vector4             Color         { get; set; }
+
+    /// <summary>
+    ///     0 - 正在进行; 1 - 未开始; 2 - 已结束
+    /// </summary>
+    public uint State { get; set; }
+
+    /// <summary>
+    ///     如果已结束, 则为 -1
+    /// </summary>
+    public int DaysLeft { get; set; } = int.MaxValue;
+}
+
+public class GameNews
+{
+    public string Title         { get; set; } = string.Empty;
+    public string Url           { get; set; } = string.Empty;
+    public string PublishDate   { get; set; } = string.Empty;
+    public string Summary       { get; set; } = string.Empty;
+    public string HomeImagePath { get; set; } = string.Empty;
+    public int    SortIndex     { get; set; }
 }

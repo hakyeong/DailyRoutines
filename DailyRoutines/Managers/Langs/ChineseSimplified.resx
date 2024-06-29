@@ -1248,9 +1248,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
   <data name="PublishTime" xml:space="preserve">
     <value>发布时间</value>
   </data>
-  <data name="LowVersionWarning" xml:space="preserve">
-    <value>版本过低, 请及时升级!
-任何来自非最新版本的报告与请求都不会被受理!</value>
+  <data name="Settings-LowVersionWarning" xml:space="preserve">
+    <value>版本过低, 请及时升级!</value>
   </data>
   <data name="AutoJoinExitDutyDescription" xml:space="preserve">
     <value>添加 /pdr joinexitduty 指令, 使用后可快速进退副本一次</value>
