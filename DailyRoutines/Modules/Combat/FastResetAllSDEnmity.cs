@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
@@ -47,7 +48,7 @@ public class FastResetAllSDEnmity : DailyModuleBase
         }
     }
 
-    private static void OnCommand(string command, string arguments) { ResetAllStrikingDummies(); }
+    private static void OnCommand(string command, string arguments) => ResetAllStrikingDummies();
 
     public static void OnResetStrikingDummies(int command, int objectID, int param2, int param3, int param4)
     {
@@ -58,10 +59,25 @@ public class FastResetAllSDEnmity : DailyModuleBase
 
     private static void ResetAllStrikingDummies()
     {
-        foreach (var strikingDummy in Service.ObjectTable.Where(x => x.ObjectKind == ObjectKind.BattleNpc &&
-                                                                     x.TargetObject != null &&
-                                                                     (x as BattleChara).NameId == 541))
-            Service.ExecuteCommandManager.ExecuteCommand(319, (int)strikingDummy.ObjectId);
+        Task.Run(async () =>
+        {
+            const int iterations = 15;
+            const int delay = 100;
+
+            var targets = Service.ObjectTable.Where(x => x.ObjectKind == ObjectKind.BattleNpc &&
+                                                         x.TargetObject != null &&
+                                                         x is BattleChara { NameId: 541 })
+                                 .Select(x => x.ObjectId)
+                                 .ToList();
+
+            for (var i = 0; i < iterations; i++)
+            {
+                foreach (var targetId in targets)
+                    Service.ExecuteCommandManager.ExecuteCommand(319, (int)targetId);
+
+                await Task.Delay(delay);
+            }
+        });
     }
 
     public override void Uninit()
