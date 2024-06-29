@@ -183,7 +183,6 @@ public class Main : Window, IDisposable
             MinimumSize = new(650, 400),
         };
 
-        ForceMainWindow = true;
         SelectedTab = Service.Config.DefaultHomePage;
 
         if (Service.ClientState.ClientLanguage != (ClientLanguage)4)
