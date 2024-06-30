@@ -38,7 +38,7 @@ public class AutoAdjustScreenBrightness : DailyModuleBase, IDisposable
         ConfigureSettings();
     }
 
-    private void DisplayCurrentBrightness()
+    private static void DisplayCurrentBrightness()
     {
         ImGui.BeginGroup();
         ImGui.Text(
