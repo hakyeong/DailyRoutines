@@ -349,14 +349,17 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
             if (!ModuleConfig.SelectedKinds.Contains(objKind)) continue;
 
             var dataID = obj.DataId;
-            if (objKind == ObjectKind.EventNpc && !ImportantENPC.Contains(dataID))
+            var gameObj = (GameObject*)obj.Address;
+            if (objKind == ObjectKind.EventNpc)
             {
-                if (!ImportantENPC.Contains(dataID)) continue;
-                if (ENpcTitles.TryGetValue(dataID, out var ENPCTitle))
-                    objName = string.Format(ENPCTiltleText, ENPCTitle, obj.Name);
+                if (ImportantENPC.Contains(dataID))
+                {
+                    if (ENpcTitles.TryGetValue(dataID, out var ENPCTitle))
+                        objName = string.Format(ENPCTiltleText, ENPCTitle, obj.Name);
+                }
+                else if (gameObj->NamePlateIconId == 0) continue;
             }
 
-            var gameObj = (GameObject*)obj.Address;
             if (ModuleConfig.OnlyDisplayInViewRange)
             {
                 if (!TargetSystem_IsObjectInViewRange((nint)TargetSystem, (nint)gameObj)) continue;
