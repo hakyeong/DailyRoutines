@@ -141,7 +141,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
         ImGuiOm.DisableZoneWithHelp(() =>
         {
             if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Play, Service.Lang.GetText("Start"),
-                                                   ScaledVector2(167f, 45f)))
+                                                   ScaledVector2(167f, 60f)))
             {
                 Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SelectYesno", AlwaysYes);
                 Service.ExecuteCommandManager.Register(OnPreExecuteCommand);
@@ -158,7 +158,7 @@ public unsafe class AutoLeveQuests : DailyModuleBase
 
         ImGui.SameLine();
         if (ImGuiOm.ButtonIconWithTextVertical(FontAwesomeIcon.Pause, Service.Lang.GetText("Stop"),
-                                               ScaledVector2(167f, 45f)))
+                                               ScaledVector2(167f, 60f)))
         {
             TaskHelper.Abort();
             Service.AddonLifecycle.UnregisterListener(AlwaysYes);
