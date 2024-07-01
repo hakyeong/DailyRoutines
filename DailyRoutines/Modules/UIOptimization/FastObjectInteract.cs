@@ -60,7 +60,7 @@ public unsafe partial class FastObjectInteract : DailyModuleBase
     private static HashSet<uint>? ImportantENPC;
 
     private static Config ModuleConfig = null!;
-    private static Throttler<string> MonitorThrottler = new();
+    private static readonly Throttler<string> MonitorThrottler = new();
 
     private static string BlacklistKeyInput = string.Empty;
     private static float WindowWidth;
