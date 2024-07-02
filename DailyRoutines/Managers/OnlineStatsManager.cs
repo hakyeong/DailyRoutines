@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Management;
@@ -146,32 +147,35 @@ public class OnlineStatsManager : IDailyManager
         Task.Run(async () =>
         {
             _ = GetEncryptedMachineCode();
-            IsTimeValid = await GetServerTimerAsync();
+            var serverTime = await GetWebDateTimeAsync();
+            IsTimeValid = Math.Abs((serverTime - DateTimeOffset.UtcNow).TotalSeconds) <= 10;
         });
     }
 
-    public static async Task<bool> GetServerTimerAsync()
+    public static async Task<DateTimeOffset> GetWebDateTimeAsync()
     {
-        const string url = "https://spbs.atmoomen.top/time";
-        const int allowedTimeDifferenceInSeconds = 10;
+        using HttpClientHandler handler = new();
+        handler.UseProxy = false;
+        using HttpClient client = new(handler);
+        client.Timeout = TimeSpan.FromSeconds(1);
 
         try
         {
-            var response = await Client.GetStringAsync(url);
+            var datetime = "Mon, 1 Jan 1900 00:00:00 GMT";
+            var response = await client.GetAsync("http://connectivitycheck.platform.hicloud.com/generate_204");
+            response.EnsureSuccessStatusCode();
 
-            if (!long.TryParse(response, out var timestamp)) return false;
+            if (response.Headers.TryGetValues("Date", out var dateValues))
+            {
+                datetime = dateValues.FirstOrDefault();
+            }
 
-            var serverTime = UnixSecondToDateTime(timestamp);
-            var timeDifference = DateTime.Now - serverTime;
-
-            var isTimeSynchronized = timeDifference < TimeSpan.FromSeconds(allowedTimeDifferenceInSeconds);
-
-            return isTimeSynchronized;
+            return DateTimeOffset.ParseExact(datetime, "ddd, dd MMM yyyy HH:mm:ss 'GMT'", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
         }
         catch (Exception ex)
         {
-            NotifyHelper.Debug($"请求或解析云端时间过程中发生错误: {ex.Message}");
-            return false;
+            NotifyHelper.Error("获取在线验证时间失败:", ex);
+            return DateTimeOffset.MinValue;
         }
     }
 
