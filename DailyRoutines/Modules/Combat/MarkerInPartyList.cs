@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Runtime.InteropServices;
 using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
@@ -14,6 +9,13 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using Lumina.Excel;
+using Lumina.Excel.GeneratedSheets;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace DailyRoutines.Modules;
 
@@ -33,19 +35,22 @@ public unsafe class MarkerInPartyList : DailyModuleBase
 
     private static Config ModuleConfig = null!;
 
-    private static Dictionary<MarkIcon, IDalamudTextureWrap> _markIcon = [];
-    private static readonly Dictionary<MarkIcon, int> _markedObject = new(8);
+    private static Dictionary<int, IDalamudTextureWrap> _markIcon = [];
+    private static readonly Dictionary<int, int> _markedObject = new(8);
+    private static ExcelSheet<Marker>? MarkerSheet;
     private static bool _needClear;
 
     public override void Init()
     {
         ModuleConfig = LoadConfig<Config>() ?? new();
+        MarkerSheet ??= Service.Data.GetExcelSheet<Marker>();
 
-        _markIcon = Enum.GetValues<MarkIcon>().ToDictionary(x => x, x => ImageHelper.GetIcon((uint)x)!);
+        _markIcon = MarkerSheet.Skip(1).ToDictionary(x => x.Icon, x => ImageHelper.GetIcon((uint)x.Icon)!);
 
         Service.Hook.InitializeFromAttributes(this);
         LocalMarkingHook?.Enable();
         Service.ClientState.TerritoryChanged += ResetmarkedObject;
+
 
         Overlay ??= new(this);
         Overlay.IsOpen = true;
@@ -65,7 +70,7 @@ public unsafe class MarkerInPartyList : DailyModuleBase
             SaveConfig(ModuleConfig);
 
         if (ImGui.Checkbox(Service.Lang.GetText("MarkerInPartyList-HidePartyListIndexNumber"), ref ModuleConfig.HidePartyListIndexNumber))
-        { 
+        {
             SaveConfig(ModuleConfig);
             ResetPartyMemberList();
         }
@@ -73,7 +78,8 @@ public unsafe class MarkerInPartyList : DailyModuleBase
 
     public override void OverlayUI()
     {
-        if (_markedObject.Count != 0) { }
+        if (_markedObject.Count != 0)
+        { }
         else if (_needClear)
         {
             ResetPartyMemberList();
@@ -109,12 +115,13 @@ public unsafe class MarkerInPartyList : DailyModuleBase
 
     private static void ResetPartyMemberList(AtkUnitBase* partylist = null)
     {
-        if (partylist is null) partylist = AddonState.PartyList;
+        if (partylist is null)
+            partylist = AddonState.PartyList;
         if (partylist is not null && IsAddonAndNodesReady(partylist))
             ModifyPartyMemberNumber(partylist, true);
     }
 
-    private static void DrawOnPartyList(int listIndex, MarkIcon markIcon, AtkUnitBase* pPartyList, ImDrawListPtr drawList)
+    private static void DrawOnPartyList(int listIndex, int markIcon, AtkUnitBase* pPartyList, ImDrawListPtr drawList)
     {
         if (listIndex is < 0 or > 7)
             return;
@@ -150,7 +157,7 @@ public unsafe class MarkerInPartyList : DailyModuleBase
         if (pPartyList is null || (!ModuleConfig.HidePartyListIndexNumber && !visible))
             return;
 
-        var memberIdList = Enumerable.Range(10, 17).ToList();
+        var memberIdList = Enumerable.Range(10, 8).ToList();
         foreach (var id in memberIdList)
         {
             var member = pPartyList->GetNodeById((uint)id);
@@ -167,58 +174,58 @@ public unsafe class MarkerInPartyList : DailyModuleBase
     }
 
 
-    private static void ProcMarkIconSetted(MarkType markType, uint objectId)
+    private static void ProcMarkIconSetted(uint markIndex, uint objectId)
     {
-        var icon = Enum.Parse<MarkIcon>(Enum.GetName(markType) ?? string.Empty);
+        var icon = MarkerSheet.ElementAt((int)(markIndex + 1));
         switch (objectId)
         {
             case 0xE000_0000 or 0xE00_0000:
-            {
-                _markedObject.Remove(icon);
-                if (_markedObject.Count == 0)
-                    _needClear = true;
+                {
+                    _markedObject.Remove(icon.Icon);
+                    if (_markedObject.Count == 0)
+                        _needClear = true;
 
-                return;
-            }
+                    return;
+                }
         }
 
         if (AgentHUD.Instance() is null || InfoProxyCrossRealm.Instance() is null)
             return;
 
         var pAgentHUD = AgentHUD.Instance();
-            for (var i = 0; i < 8; ++i)
+        for (var i = 0; i < 8; ++i)
+        {
+            var offset = i * Marshal.SizeOf<PartyListCharInfo>();
+            var pCharData = pAgentHUD->PartyMemberList + offset;
+            var charData = *(PartyListCharInfo*)pCharData;
+            if (objectId == charData.ObjectID)
             {
-                var offset = i * Marshal.SizeOf<PartyListCharInfo>();
-                var pCharData = pAgentHUD->PartyMemberList + offset;
-                var charData = *(PartyListCharInfo*)pCharData;
-                if (objectId == charData.ObjectID)
-                {
-                    if (_markedObject.ContainsValue(i))
-                        _markedObject.Remove(_markedObject.First(x => x.Value == i).Key);
+                if (_markedObject.ContainsValue(i))
+                    _markedObject.Remove(_markedObject.First(x => x.Value == i).Key);
 
-                    _needClear = false;
-                    _markedObject[icon] = i;
-                    return;
-                }
+                _needClear = false;
+                _markedObject[icon.Icon] = i;
+                return;
+            }
         }
 
         if (InfoProxyCrossRealm.Instance()->IsCrossRealm > 0)
         {
             var pGroupMember = InfoProxyCrossRealm.GetMemberByObjectId(objectId);
             if (pGroupMember is not null && pGroupMember->GroupIndex == 0)
-        {
-                if (_markedObject.ContainsValue(pGroupMember->MemberIndex))
             {
+                if (_markedObject.ContainsValue(pGroupMember->MemberIndex))
+                {
                     _markedObject.Remove(_markedObject.First(x => x.Value == pGroupMember->MemberIndex).Key);
                 }
                 _needClear = false;
-                _markedObject[icon] = pGroupMember->MemberIndex;
+                _markedObject[icon.Icon] = pGroupMember->MemberIndex;
                 return;
             }
 
         }
 
-        _markedObject.Remove(icon);
+        _markedObject.Remove(icon.Icon);
         if (_markedObject.Count == 0)
         {
             _needClear = true;
@@ -227,7 +234,7 @@ public unsafe class MarkerInPartyList : DailyModuleBase
 
     private static nint DetourLocalMarkingFunc(nint manager, uint markingType, nint objectId, nint a4)
     {
-        ProcMarkIconSetted((MarkType)markingType, (uint)objectId);
+        ProcMarkIconSetted(markingType, (uint)objectId);
 
         return LocalMarkingHook!.Original(manager, markingType, objectId, a4);
     }
@@ -273,47 +280,5 @@ public unsafe class MarkerInPartyList : DailyModuleBase
 
             return Marshal.PtrToStringUTF8(ObjectNameAddress) ?? "";
         }
-    }
-
-    public enum MarkType : byte
-    {
-        Attack1 = 0,
-        Attack2,
-        Attack3,
-        Attack4,
-        Attack5,
-        Bind1,
-        Bind2,
-        Bind3,
-        Stop1,
-        Stop2,
-        Square,
-        Circle,
-        Cross,
-        Triangle,
-        Attack6,
-        Attack7,
-        Attack8,
-    }
-
-    public enum MarkIcon : uint
-    {
-        Attack1 = 61201,
-        Attack2,
-        Attack3,
-        Attack4,
-        Attack5,
-        Attack6,
-        Attack7,
-        Attack8,
-        Bind1 = 61211,
-        Bind2,
-        Bind3,
-        Stop1 = 61221,
-        Stop2,
-        Square = 61231,
-        Circle,
-        Cross,
-        Triangle,
     }
 }
