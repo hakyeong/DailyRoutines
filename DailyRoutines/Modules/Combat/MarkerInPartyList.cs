@@ -195,7 +195,6 @@ public unsafe class MarkerInPartyList : DailyModuleBase
         lock (_lock)
         {
             if (_isBuilt)
-
                 return;
 
             foreach (var i in Enumerable.Range(10, 8))
@@ -227,9 +226,7 @@ public unsafe class MarkerInPartyList : DailyModuleBase
         lock (_lock)
         {
             if (!_isBuilt)
-
                 return;
-
 
             foreach (var item in _imageNodes)
             {
@@ -245,14 +242,11 @@ public unsafe class MarkerInPartyList : DailyModuleBase
     {
         var partylist = (AtkUnitBase*)Service.Gui.GetAddonByName("_PartyList");
         if (i is < 0 or > 7 || partylist is null || _imageNodes.Count <= i)
-
             return;
 
         var node = (AtkImageNode*)_imageNodes[i];
         if (node is null)
-
             return;
-
 
         node->LoadIconTexture(iconId, 0);
         (float x, float y) = (BasePosition.X + _config.IconOffset.X, BasePosition.Y + _config.IconOffset.Y);
@@ -267,11 +261,9 @@ public unsafe class MarkerInPartyList : DailyModuleBase
     private void HideImageNode(int i)
     {
         if (i is < 0 or > 7)
-
             return;
         var node = (AtkImageNode*)_imageNodes[i];
         if (node is null)
-
             return;
 
         node->AtkResNode.ToggleVisibility(false);
@@ -280,21 +272,17 @@ public unsafe class MarkerInPartyList : DailyModuleBase
     private static void AttachToComponentNode(AtkResNode* parent, AtkImageNode* node, bool toFront = true)
     {
         if (parent is null || node is null)
-
             return;
 
         var lastNode = parent->GetComponent()->UldManager.RootNode;
         node->AtkResNode.ParentNode = parent;
         if (lastNode is null)
-
             parent->GetComponent()->UldManager.RootNode = &node->AtkResNode;
 
         else if (toFront)
         {
             while (lastNode->PrevSiblingNode != null)
-
                 lastNode = lastNode->PrevSiblingNode;
-
 
             node->AtkResNode.NextSiblingNode = lastNode;
             lastNode->PrevSiblingNode = &node->AtkResNode;
@@ -311,24 +299,16 @@ public unsafe class MarkerInPartyList : DailyModuleBase
     private static void DetachFromComponentNode(AtkImageNode* node)
     {
         if (node is null)
-
             return;
 
-
         if (node->AtkResNode.ParentNode->GetComponent()->UldManager.RootNode == node)
-
             node->AtkResNode.ParentNode->GetComponent()->UldManager.RootNode = node->AtkResNode.PrevSiblingNode;
 
-
         if (node->AtkResNode.NextSiblingNode != null && node->AtkResNode.NextSiblingNode->PrevSiblingNode == node)
-
             node->AtkResNode.NextSiblingNode->PrevSiblingNode = node->AtkResNode.PrevSiblingNode;
 
-
         if (node->AtkResNode.PrevSiblingNode != null && node->AtkResNode.PrevSiblingNode->NextSiblingNode == node)
-
             node->AtkResNode.PrevSiblingNode->NextSiblingNode = node->AtkResNode.NextSiblingNode;
-
 
         node->AtkResNode.ParentNode->GetComponent()->UldManager.UpdateDrawNodeList();
     }
@@ -340,7 +320,6 @@ public unsafe class MarkerInPartyList : DailyModuleBase
     private void PartyListDrawHandle(AddonEvent type, AddonArgs args)
     {
         if (!_isBuilt)
-
             InitImageNodes();
 
         if (_needClear && _markedObject.Count is 0)
@@ -366,13 +345,9 @@ public unsafe class MarkerInPartyList : DailyModuleBase
         if (objectId is 0xE000_0000 or 0xE00_0000)
         {
             if (_markedObject.Remove(icon.Icon, out outValue))
-
                 HideImageNode(outValue);
-
             if (_markedObject.Count == 0)
-
                 _needClear = true;
-
             return;
         }
 
