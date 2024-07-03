@@ -242,11 +242,11 @@ public class OnlineStatsManager : IDailyManager
 
         var tasks = new[]
         {
-            ObtainContentStringFromUrl("https://cdn.jsdmirror.com/gh/AtmoOmen/DailyRoutines/Assets/downloads.txt"),
-            ObtainContentStringFromUrl("https://cdn.jsdmirror.com/gh/AtmoOmen/DailyRoutines/Assets/downloads_latest.txt"),
-            ObtainContentStringFromUrl("https://cdn.jsdmirror.com/gh/AtmoOmen/DailyRoutines/Assets/changelog.txt"),
-            ObtainContentStringFromUrl("https://cdn.jsdmirror.com/gh/AtmoOmen/DailyRoutines/Assets/version_latest.txt"),
-            ObtainContentStringFromUrl("https://cdn.jsdmirror.com/gh/AtmoOmen/DailyRoutines/Assets/changelog_time.txt"),
+            ObtainContentStringFromUrl("https://gh.atmoomen.top/DailyRoutines/main/Assets/downloads.txt"),
+            ObtainContentStringFromUrl("https://gh.atmoomen.top/DailyRoutines/main/Assets/downloads_latest.txt"),
+            ObtainContentStringFromUrl("https://gh.atmoomen.top/DailyRoutines/main/Assets/changelog.txt"),
+            ObtainContentStringFromUrl("https://gh.atmoomen.top/DailyRoutines/main/Assets/version_latest.txt"),
+            ObtainContentStringFromUrl("https://gh.atmoomen.top/DailyRoutines/main/Assets/changelog_time.txt"),
         };
 
         var results = await Task.WhenAll(tasks);
@@ -261,7 +261,7 @@ public class OnlineStatsManager : IDailyManager
     public static async Task GetPluginSponsorInfo()
     {
         Sponsor_Period =
-            await ObtainContentStringFromUrl("https://cdn.jsdmirror.com/gh/AtmoOmen/DailyRoutines/Assets/sponsor_period.txt");
+            await ObtainContentStringFromUrl("https://gh.atmoomen.top/DailyRoutines/main/Assets/sponsor_period.txt");
 
         _ = ImageHelper.GetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/AfdianSponsor.jpg");
     }
