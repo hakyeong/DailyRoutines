@@ -141,7 +141,7 @@ public class OnlineStatsManager : IDailyManager
     {
         _ = GetEncryptedMachineCode();
         var serverTime = await GetWebDateTimeAsync();
-        IsTimeValid = Math.Abs((serverTime - DateTimeOffset.UtcNow).TotalSeconds) <= 10;
+        IsTimeValid = Math.Abs((serverTime - DateTimeOffset.UtcNow).TotalSeconds) <= 60;
     }
 
     public static async Task<DateTimeOffset> GetWebDateTimeAsync()
@@ -149,7 +149,7 @@ public class OnlineStatsManager : IDailyManager
         using var handler = new HttpClientHandler();
         handler.UseProxy = false;
         using var client = new HttpClient(handler);
-        client.Timeout = TimeSpan.FromSeconds(1);
+        client.Timeout = TimeSpan.FromSeconds(15);
 
         try
         {

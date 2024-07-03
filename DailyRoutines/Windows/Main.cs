@@ -156,7 +156,7 @@ public class Main : Window, IDisposable
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(OnlineStatsManager.MachineCode) || !OnlineStatsManager.IsTimeValid)
+        if (!OnlineStatsManager.IsTimeValid)
         {
             ImGui.SetWindowFontScale(3f);
             var textSize = ImGui.CalcTextSize(Service.Lang.GetText("Settings-InvalidLocalData"));
