@@ -32,10 +32,10 @@ public unsafe class MarkerInPartyList : DailyModuleBase
     public delegate nint LocalMarkingFunc(nint manager, uint markingType, nint objectId, nint a4);
 
     private static Config _config = null!;
-    private List<nint> _imageNodes = new(8);
+    private static List<nint> _imageNodes = new(8);
     private static readonly Dictionary<int, int> _markedObject = new(8);
     private static bool _isBuilt, _needClear;
-    private object _lock = new();
+    private static object _lock = new();
 
     public override void Init()
     {
@@ -124,7 +124,7 @@ public unsafe class MarkerInPartyList : DailyModuleBase
 
     #region ImageNode
 
-    private unsafe AtkImageNode* GenerateImageNode()
+    private static unsafe AtkImageNode* GenerateImageNode()
     {
         var node = (AtkImageNode*)IMemorySpace.GetUISpace()->Malloc((ulong)sizeof(AtkImageNode), 8);
         if (node == null)
@@ -191,7 +191,7 @@ public unsafe class MarkerInPartyList : DailyModuleBase
         return node;
     }
 
-    private void InitImageNodes()
+    private static void InitImageNodes()
     {
         var partylist = (AtkUnitBase*)Service.Gui.GetAddonByName("_PartyList");
         if (partylist is null)
@@ -228,7 +228,7 @@ public unsafe class MarkerInPartyList : DailyModuleBase
 
     }
 
-    private void ReleaseImageNodes()
+    private static void ReleaseImageNodes()
     {
         lock (_lock)
         {
@@ -245,7 +245,7 @@ public unsafe class MarkerInPartyList : DailyModuleBase
         }
     }
 
-    private void ShowImageNode(int i, int iconId)
+    private static void ShowImageNode(int i, int iconId)
     {
         var partylist = (AtkUnitBase*)Service.Gui.GetAddonByName("_PartyList");
         if (i is < 0 or > 7 || partylist is null || _imageNodes.Count <= i)
@@ -265,7 +265,7 @@ public unsafe class MarkerInPartyList : DailyModuleBase
         ModifyPartyMemberNumber(partylist, false);
     }
 
-    private void HideImageNode(int i)
+    private static void HideImageNode(int i)
     {
         if (i is < 0 or > 7)
             return;
@@ -276,7 +276,7 @@ public unsafe class MarkerInPartyList : DailyModuleBase
         node->AtkResNode.ToggleVisibility(false);
     }
 
-    private void RefreshPosition()
+    private static void RefreshPosition()
     {
         foreach (var item in _imageNodes)
         {
