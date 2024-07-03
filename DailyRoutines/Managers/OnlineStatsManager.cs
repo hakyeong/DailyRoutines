@@ -4,7 +4,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Management;
-using System.Net;
 using System.Net.Http;
 using System.Numerics;
 using System.Reflection;
@@ -24,7 +23,7 @@ namespace DailyRoutines.Managers;
 
 public class OnlineStatsManager : IDailyManager
 {
-    public static Dictionary<string, int> ModuleUsageStats { get; private set; } = [];
+    public static Dictionary<string, int> ModuleUsageStats { get; private set; } = new(StringComparer.Ordinal);
     public static string?                 MachineCode      { get; private set; }
     public static bool                    IsTimeValid      { get; private set; }
     public static VersionInfo             LatestVersion    { get; private set; } = new();
@@ -33,13 +32,20 @@ public class OnlineStatsManager : IDailyManager
     public static List<GameEvent>         GameCalendars    { get; private set; } = [];
     public static List<GameNews>          GameNews         { get; private set; } = [];
 
-
-    private static string CacheFilePath =>
+    private static readonly string CacheFilePath =
         Path.Join(Service.PluginInterface.GetPluginConfigDirectory(), "OnlineStatsCacheData.json");
 
     private const string WorkerUrl = "https://spbs.atmoomen.top/";
-
     private static readonly HttpClient Client = new();
+
+    private static readonly string[] HardwareClasses =
+        ["Win32_Processor", "Win32_BaseBoard", "Win32_BIOS", "Win32_LogicalDisk", "Win32_NetworkAdapter",];
+
+    private static readonly string[] Properties =
+        ["ProcessorId", "SerialNumber", "SerialNumber", "VolumeSerialNumber", "MACAddress",];
+
+    private static readonly string?[] Conditions = 
+        [null, null, null, "DriveType = 3", "PhysicalAdapter = 'True'"];
 
     private void Init()
     {
@@ -50,40 +56,38 @@ public class OnlineStatsManager : IDailyManager
 
     private static void RefreshOnlineInfo()
     {
-        RequestModuleStats();
-        RequestValidityInfo();
-        RequestPluginInfo();
+        Task.WhenAll(
+            RequestModuleStats(),
+            RequestValidityInfo(),
+            RequestPluginInfo()
+        );
     }
 
     private static void OnLogin()
     {
-        if (!Service.Config.AllowAnonymousUpload) return;
-        RefreshOnlineInfo();
+        if (Service.Config.AllowAnonymousUpload)
+            RefreshOnlineInfo();
     }
 
-    #region 上传下载模块数据
-
-    private static void RequestModuleStats()
+    private static async Task RequestModuleStats()
     {
-        Task.Run(async () =>
-        {
-            await DownloadOrLoadModuleStats();
-            await UploadEntry(new(GetEncryptedMachineCode()));
-        });
+        await DownloadOrLoadModuleStats();
+        await UploadEntry(new(GetEncryptedMachineCode()));
     }
 
     public static async Task DownloadOrLoadModuleStats()
     {
         try
         {
-            if (NeedToRefreshData()) await DownloadModuleUsageStats();
+            if (NeedToRefreshData())
+                await DownloadModuleUsageStats();
 
             if (File.Exists(CacheFilePath))
             {
-                var jsonData = File.ReadAllText(CacheFilePath);
+                var jsonData = await File.ReadAllTextAsync(CacheFilePath);
                 var statsData = JsonConvert.DeserializeObject<ModuleStats>(jsonData);
-                if (statsData is { ModuleUsageStats: not null })
-                    ModuleUsageStats = statsData.ModuleUsageStats;
+                if (statsData?.ModuleUsageStats != null)
+                    ModuleUsageStats = new Dictionary<string, int>(statsData.ModuleUsageStats, StringComparer.Ordinal);
             }
         }
         catch (Exception ex)
@@ -98,10 +102,8 @@ public class OnlineStatsManager : IDailyManager
 
         var jsonData = File.ReadAllText(CacheFilePath);
         var statsData = JsonConvert.DeserializeObject<ModuleStats>(jsonData);
-        if (statsData != null && DateTime.TryParse(statsData.LastUpdated, out var lastUpdateTime))
-            return (DateTime.UtcNow - lastUpdateTime).TotalHours > 2;
-
-        return true;
+        return statsData == null || !DateTime.TryParse(statsData.LastUpdated, out var lastUpdateTime) ||
+               (DateTime.UtcNow - lastUpdateTime).TotalHours > 2;
     }
 
     private static async Task DownloadModuleUsageStats()
@@ -119,11 +121,10 @@ public class OnlineStatsManager : IDailyManager
                 ModuleUsageStats = moduleUsageStats,
             };
 
-            File.WriteAllText(CacheFilePath, JsonConvert.SerializeObject(statsData));
+            await File.WriteAllTextAsync(CacheFilePath, JsonConvert.SerializeObject(statsData));
         }
         else
-            NotifyHelper.Debug($"下载模块启用数据失败\n" +
-                               $"状态码: {response.StatusCode}");
+            NotifyHelper.Debug($"下载模块启用数据失败\n状态码: {response.StatusCode}");
     }
 
     public static async Task UploadEntry(ModuleStat entry)
@@ -131,52 +132,61 @@ public class OnlineStatsManager : IDailyManager
         var content = new StringContent(JsonConvert.SerializeObject(entry), Encoding.UTF8, "application/json");
         var response = await Client.PutAsync($"{WorkerUrl}?character=eq.{entry.Character}", content);
 
-        if (response.StatusCode != HttpStatusCode.OK)
+        if (!response.IsSuccessStatusCode)
             NotifyHelper.Debug(
-                $"上传模块启用数据失败\n" +
-                $"状态码: {response.StatusCode} 返回内容: {await response.Content.ReadAsStringAsync()}");
+                $"上传模块启用数据失败\n状态码: {response.StatusCode} 返回内容: {await response.Content.ReadAsStringAsync()}");
     }
 
-
-    #endregion
-
-    #region 校验数据
-
-    private static void RequestValidityInfo()
+    private static async Task RequestValidityInfo()
     {
-        Task.Run(async () =>
-        {
-            _ = GetEncryptedMachineCode();
-            var serverTime = await GetWebDateTimeAsync();
-            IsTimeValid = Math.Abs((serverTime - DateTimeOffset.UtcNow).TotalSeconds) <= 10;
-        });
+        _ = GetEncryptedMachineCode();
+        var serverTime = await GetWebDateTimeAsync();
+        IsTimeValid = Math.Abs((serverTime - DateTimeOffset.UtcNow).TotalSeconds) <= 10;
     }
 
     public static async Task<DateTimeOffset> GetWebDateTimeAsync()
     {
-        using HttpClientHandler handler = new();
+        using var handler = new HttpClientHandler();
         handler.UseProxy = false;
-        using HttpClient client = new(handler);
+        using var client = new HttpClient(handler);
         client.Timeout = TimeSpan.FromSeconds(1);
 
         try
         {
-            var datetime = "Mon, 1 Jan 1900 00:00:00 GMT";
             var response = await client.GetAsync("http://connectivitycheck.platform.hicloud.com/generate_204");
             response.EnsureSuccessStatusCode();
 
             if (response.Headers.TryGetValues("Date", out var dateValues))
             {
-                datetime = dateValues.FirstOrDefault();
-            }
+                var datetime = dateValues.FirstOrDefault();
+                if (datetime != null)
+                {
+                    string[] formats =
+                    [
+                        "ddd, dd MMM yyyy HH:mm:ss GMT",
+                        "ddd, d MMM yyyy HH:mm:ss GMT",
+                        "ddd, dd MMM yyyy HH:mm:ss 'GMT'",
+                        "ddd, d MMM yyyy HH:mm:ss 'GMT'",
+                    ];
 
-            return DateTimeOffset.ParseExact(datetime, "ddd, dd MMM yyyy HH:mm:ss 'GMT'", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
+                    if (DateTimeOffset.TryParseExact(datetime, formats, CultureInfo.InvariantCulture,
+                                                     DateTimeStyles.AssumeUniversal, out var parsedDate))
+                        return parsedDate;
+
+                    NotifyHelper.Error($"无法解析日期: {datetime}。尝试的格式: {string.Join(", ", formats)}");
+                }
+                else
+                    NotifyHelper.Error("Date Header 为空");
+            }
+            else
+                NotifyHelper.Error("云端服务器响应中不存在 Date Header");
         }
         catch (Exception ex)
         {
-            NotifyHelper.Error("获取在线验证时间失败:", ex);
-            return DateTimeOffset.MinValue;
+            NotifyHelper.Error("获取在线验证时间时发生未知错误", ex);
         }
+
+        return DateTimeOffset.MinValue;
     }
 
     public static string GetEncryptedMachineCode()
@@ -196,42 +206,14 @@ public class OnlineStatsManager : IDailyManager
 
     private static IEnumerable<string> GetHardwareValues()
     {
-        string[] HardwareClasses =
-        [
-            "Win32_Processor",
-            "Win32_BaseBoard",
-            "Win32_BIOS",
-            "Win32_LogicalDisk",
-            "Win32_NetworkAdapter",
-        ];
-
-        string[] Properties =
-        [
-            "ProcessorId",
-            "SerialNumber",
-            "SerialNumber",
-            "VolumeSerialNumber",
-            "MACAddress",
-        ];
-
-        string?[] Conditions =
-        [
-            null,
-            null,
-            null,
-            "DriveType = 3",
-            "PhysicalAdapter = 'True'",
-        ];
-
         for (var i = 0; i < HardwareClasses.Length; i++)
             yield return GetSingleHardwareValue(Properties[i], HardwareClasses[i], Conditions[i]);
     }
 
     private static string GetSingleHardwareValue(string property, string className, string? condition)
     {
-        using var searcher =
-            new ManagementObjectSearcher($"SELECT {property} FROM {className}" +
-                                         (condition != null ? " WHERE " + condition : ""));
+        using var searcher = new ManagementObjectSearcher($"SELECT {property} FROM {className}" +
+                                                          (condition != null ? " WHERE " + condition : ""));
 
         foreach (var obj in searcher.Get())
             return obj[property]?.ToString() ?? string.Empty;
@@ -242,118 +224,118 @@ public class OnlineStatsManager : IDailyManager
     private static string GetHash(HashAlgorithm hashAlgorithm, string input)
     {
         var data = hashAlgorithm.ComputeHash(Encoding.UTF8.GetBytes(input));
-        var sBuilder = new StringBuilder();
-        foreach (var b in data)
-            sBuilder.Append(b.ToString("x2"));
-
-        return sBuilder.ToString();
+        return BitConverter.ToString(data).Replace("-", "").ToLowerInvariant();
     }
 
-    #endregion
-
-    #region 插件数据
-
-    private static void RequestPluginInfo()
+    private static async Task RequestPluginInfo()
     {
-        Task.Run(async () =>
-        {
-            await GetPluginVersionInfo();
-            await GetPluginSponsorInfo();
-            await GetCNOfficalInformation();
-        });
+        await Task.WhenAll(
+            GetPluginVersionInfo(),
+            GetPluginSponsorInfo(),
+            GetCNOfficalInformation()
+        );
     }
 
     public static async Task GetPluginVersionInfo()
     {
         _ = ImageHelper.GetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/Changelog.png");
 
-        Downloads_Total =
-            int.TryParse(
-                await ObtainContentStringFromUrl("https://gh.atmoomen.top/DailyRoutines/main/Assets/downloads.txt"), out var totalDownloads)
-                ? totalDownloads : 0;
+        var tasks = new[]
+        {
+            ObtainContentStringFromUrl("https://cdn.jsdmirror.com/gh/AtmoOmen/DailyRoutines/Assets/downloads.txt"),
+            ObtainContentStringFromUrl("https://cdn.jsdmirror.com/gh/AtmoOmen/DailyRoutines/Assets/downloads_latest.txt"),
+            ObtainContentStringFromUrl("https://cdn.jsdmirror.com/gh/AtmoOmen/DailyRoutines/Assets/changelog.txt"),
+            ObtainContentStringFromUrl("https://cdn.jsdmirror.com/gh/AtmoOmen/DailyRoutines/Assets/version_latest.txt"),
+            ObtainContentStringFromUrl("https://cdn.jsdmirror.com/gh/AtmoOmen/DailyRoutines/Assets/changelog_time.txt"),
+        };
 
-        LatestVersion.DownloadCount =
-            int.TryParse(
-                await ObtainContentStringFromUrl("https://gh.atmoomen.top/DailyRoutines/main/Assets/downloads_latest.txt"), out var latestDownloads)
-                ? latestDownloads : 0;
+        var results = await Task.WhenAll(tasks);
 
-        LatestVersion.Changelog = 
-            MarkdownToPlainText(await ObtainContentStringFromUrl("https://gh.atmoomen.top/DailyRoutines/main/Assets/changelog.txt"));
-
-        LatestVersion.Version = 
-            Version.Parse(await ObtainContentStringFromUrl("https://gh.atmoomen.top/DailyRoutines/main/Assets/version_latest.txt"));
-
-        LatestVersion.PublishTime =
-            await ObtainContentStringFromUrl("https://gh.atmoomen.top/DailyRoutines/main/Assets/changelog_time.txt");
+        Downloads_Total = int.TryParse(results[0], out var totalDownloads) ? totalDownloads : 0;
+        LatestVersion.DownloadCount = int.TryParse(results[1], out var latestDownloads) ? latestDownloads : 0;
+        LatestVersion.Changelog = MarkdownToPlainText(results[2]);
+        LatestVersion.Version = Version.TryParse(results[3], out var version) ? version : new Version();
+        LatestVersion.PublishTime = results[4];
     }
 
     public static async Task GetPluginSponsorInfo()
     {
         Sponsor_Period =
-            await ObtainContentStringFromUrl("https://gh.atmoomen.top/DailyRoutines/main/Assets/sponsor_period.txt");
+            await ObtainContentStringFromUrl("https://cdn.jsdmirror.com/gh/AtmoOmen/DailyRoutines/Assets/sponsor_period.txt");
 
         _ = ImageHelper.GetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/AfdianSponsor.jpg");
     }
 
     public static async Task GetCNOfficalInformation()
     {
-        var resultCalendar = JsonConvert.DeserializeObject<FileFormat.RSActivityCalendar>(
-            await ObtainContentStringFromUrl("https://apiff14risingstones.web.sdo.com/api/home/active/calendar/getActiveCalendarMonth"));
+        var calendarTask =
+            ObtainContentStringFromUrl(
+                "https://apiff14risingstones.web.sdo.com/api/home/active/calendar/getActiveCalendarMonth");
 
+        var newsTask =
+            ObtainContentStringFromUrl(
+                "https://cqnews.web.sdo.com/api/news/newsList?gameCode=ff&CategoryCode=5309,5310,5311,5312,5313&pageIndex=0&pageSize=5");
+
+        await Task.WhenAll(calendarTask, newsTask);
+
+        var resultCalendar = JsonConvert.DeserializeObject<FileFormat.RSActivityCalendar>(await calendarTask);
+        var resultNews = JsonConvert.DeserializeObject<FileFormat.RSGameNews>(await newsTask);
+
+        UpdateGameCalendars(resultCalendar);
+        UpdateGameNews(resultNews);
+    }
+
+    private static void UpdateGameCalendars(FileFormat.RSActivityCalendar resultCalendar)
+    {
         if (resultCalendar.data.Count > 0)
         {
             foreach (var activity in GameCalendars)
                 Service.LinkPayloadManager.Unregister(activity.LinkPayloadID);
+
             GameCalendars.Clear();
 
-            foreach (var activity in resultCalendar.data)
-            {
-                var currentTime = DateTime.Now;
-                var beginTime = UnixSecondToDateTime(activity.begin_time);
-                var endTime = UnixSecondToDateTime(activity.end_time);
-                var gameEvent = new GameEvent
+            var currentTime = DateTime.Now;
+            GameCalendars =
+            [
+                .. resultCalendar.data.Select(activity =>
                 {
-                    ID = activity.id,
-                    LinkPayload = Service.LinkPayloadManager.Register(OpenGameEventLinkPayload, out var linkPayloadID),
-                    LinkPayloadID = linkPayloadID,
-                    Name = activity.name,
-                    Url = activity.url,
-                    BeginTime = beginTime,
-                    EndTime = endTime,
-                    Color = DarkenColor(HexToVector4(activity.color), 0.3f),
-                    State = currentTime < beginTime ? 1U :
-                            currentTime <= endTime ? 0U : 2U,
-                    DaysLeft = currentTime < beginTime ? (beginTime - DateTime.Now).Days :
-                               currentTime <= endTime ? (endTime - DateTime.Now).Days : int.MaxValue,
-                };
-
-                GameCalendars.Add(gameEvent);
-            }
-
-            GameCalendars = [.. GameCalendars.OrderBy(x => x.DaysLeft)];
+                    var beginTime = UnixSecondToDateTime(activity.begin_time);
+                    var endTime = UnixSecondToDateTime(activity.end_time);
+                    return new GameEvent
+                    {
+                        ID = activity.id,
+                        LinkPayload = Service.LinkPayloadManager.Register(OpenGameEventLinkPayload, out var linkPayloadID),
+                        LinkPayloadID = linkPayloadID,
+                        Name = activity.name,
+                        Url = activity.url,
+                        BeginTime = beginTime,
+                        EndTime = endTime,
+                        Color = DarkenColor(HexToVector4(activity.color), 0.3f),
+                        State = currentTime < beginTime ? 1U : currentTime <= endTime ? 0U : 2U,
+                        DaysLeft = currentTime < beginTime ? (beginTime - currentTime).Days :
+                                   currentTime <= endTime ? (endTime - currentTime).Days : int.MaxValue,
+                    };
+                }).OrderBy(x => x.DaysLeft),
+            ];
         }
+    }
 
-        var resultNews = JsonConvert.DeserializeObject<FileFormat.RSGameNews>(
-            await ObtainContentStringFromUrl("https://cqnews.web.sdo.com/api/news/newsList?gameCode=ff&CategoryCode=5309,5310,5311,5312,5313&pageIndex=0&pageSize=5"));
-
+    private static void UpdateGameNews(FileFormat.RSGameNews resultNews)
+    {
         if (resultNews.Data.Count > 0)
         {
-            GameNews.Clear();
-            foreach (var activity in resultNews.Data)
+            GameNews = resultNews.Data.Select(activity => new GameNews
             {
-                var gameNews = new GameNews
-                {
-                    Title = activity.Title,
-                    Url = activity.Author,
-                    SortIndex = activity.SortIndex,
-                    Summary = activity.Summary,
-                    HomeImagePath = activity.HomeImagePath,
-                    PublishDate = activity.PublishDate,
-                };
+                Title = activity.Title,
+                Url = activity.Author,
+                SortIndex = activity.SortIndex,
+                Summary = activity.Summary,
+                HomeImagePath = activity.HomeImagePath,
+                PublishDate = activity.PublishDate,
+            }).ToList();
 
-                GameNews.Add(gameNews);
-                ImageHelper.GetImage(activity.HomeImagePath);
-            }
+            foreach (var news in GameNews)
+                _ = ImageHelper.GetImage(news.HomeImagePath);
 
             ImageCarouselInstance.News = GameNews;
         }
@@ -366,20 +348,32 @@ public class OnlineStatsManager : IDailyManager
             Util.OpenLink(link);
     }
 
-    #endregion
+    public static Task<string> ObtainContentStringFromUrl(string url) => Client.GetStringAsync(url);
 
-    public static async Task<string> ObtainContentStringFromUrl(string url) => await Client.GetStringAsync(url);
+    private void Uninit() { Service.ClientState.Login -= OnLogin; }
 
-    private void Uninit()
+    public class ModuleStats
     {
-        Service.ClientState.Login -= OnLogin;
+        public string?                  LastUpdated      { get; set; }
+        public Dictionary<string, int>? ModuleUsageStats { get; set; }
+    }
+
+    public class VersionInfo
+    {
+        public Version Version       { get; set; } = new();
+        public string  PublishTime   { get; set; } = string.Empty;
+        public string  Changelog     { get; set; } = string.Empty;
+        public int     DownloadCount { get; set; }
     }
 }
 
 public class ModuleStat
 {
     [JsonProperty("character")]
-    public string Character = string.Empty;
+    public string Character = OnlineStatsManager.GetEncryptedMachineCode();
+
+    [JsonProperty("world")]
+    public string? World = Service.ClientState.LocalPlayer?.HomeWorld.GameData?.Name.RawString ?? null;
 
     [JsonProperty("update_time")]
     public string UpdateTime = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss");
@@ -404,20 +398,6 @@ public class ModuleStat
     public ModuleStat(string character) { Character = character; }
 
     public ModuleStat() { }
-}
-
-public class ModuleStats
-{
-    public string?                  LastUpdated      { get; set; }
-    public Dictionary<string, int>? ModuleUsageStats { get; set; }
-}
-
-public class VersionInfo
-{
-    public Version Version       { get; set; } = new();
-    public string  PublishTime   { get; set; } = string.Empty;
-    public string  Changelog     { get; set; } = string.Empty;
-    public int     DownloadCount { get; set; }
 }
 
 public class GameEvent
