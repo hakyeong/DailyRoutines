@@ -65,14 +65,20 @@ public unsafe class MarkerInPartyList : DailyModuleBase
     public override void ConfigUI()
     {
         ImGui.SetNextItemWidth(200f * GlobalFontScale);
-        ImGui.InputFloat2(Service.Lang.GetText("MarkerInPartyList-IconOffset"), ref _config.IconOffset, "%.1f");
+        ImGui.InputFloat2(Service.Lang.GetText("MarkerInPartyList-IconOffset"), ref _config.IconOffset, "%d");
         if (ImGui.IsItemDeactivatedAfterEdit())
+        {
             SaveConfig(_config);
+            RefreshPosition();
+        }
 
         ImGui.SetNextItemWidth(200f * GlobalFontScale);
         ImGui.InputInt(Service.Lang.GetText("MarkerInPartyList-IconScale"), ref _config.Size, 0, 0);
         if (ImGui.IsItemDeactivatedAfterEdit())
+        {
             SaveConfig(_config);
+            RefreshPosition();
+        }
 
         if (ImGui.Checkbox(Service.Lang.GetText("MarkerInPartyList-HidePartyListIndexNumber"), ref _config.HidePartyListIndexNumber))
         {
@@ -120,27 +126,27 @@ public unsafe class MarkerInPartyList : DailyModuleBase
 
     private unsafe AtkImageNode* GenerateImageNode()
     {
-        var newImageNode = (AtkImageNode*)IMemorySpace.GetUISpace()->Malloc((ulong)sizeof(AtkImageNode), 8);
-        if (newImageNode == null)
+        var node = (AtkImageNode*)IMemorySpace.GetUISpace()->Malloc((ulong)sizeof(AtkImageNode), 8);
+        if (node == null)
         {
             Service.Log.Error("Failed to allocate memory for image parentNode");
             return null;
         }
-        IMemorySpace.Memset(newImageNode, 0, (ulong)sizeof(AtkImageNode));
-        newImageNode->Ctor();
+        IMemorySpace.Memset(node, 0, (ulong)sizeof(AtkImageNode));
+        node->Ctor();
 
-        newImageNode->AtkResNode.Type = NodeType.Image;
-        newImageNode->AtkResNode.NodeFlags = NodeFlags.AnchorLeft | NodeFlags.AnchorTop;
-        newImageNode->AtkResNode.DrawFlags = 0;
+        node->AtkResNode.Type = NodeType.Image;
+        node->AtkResNode.NodeFlags = NodeFlags.AnchorLeft | NodeFlags.AnchorTop;
+        node->AtkResNode.DrawFlags = 0;
 
-        newImageNode->WrapMode = 1;
-        newImageNode->Flags |= (byte)ImageNodeFlags.AutoFit;
+        node->WrapMode = 1;
+        node->Flags |= (byte)ImageNodeFlags.AutoFit;
 
         var partsList = (AtkUldPartsList*)IMemorySpace.GetUISpace()->Malloc((ulong)sizeof(AtkUldPartsList), 8);
         if (partsList == null)
         {
             Service.Log.Error("Failed to allocate memory for parts list");
-            newImageNode->AtkResNode.Destroy(true);
+            node->AtkResNode.Destroy(true);
             return null;
         }
 
@@ -152,7 +158,7 @@ public unsafe class MarkerInPartyList : DailyModuleBase
         {
             Service.Log.Error("Failed to allocate memory for part");
             IMemorySpace.Free(partsList, (ulong)sizeof(AtkUldPartsList));
-            newImageNode->AtkResNode.Destroy(true);
+            node->AtkResNode.Destroy(true);
             return null;
         }
 
@@ -169,7 +175,7 @@ public unsafe class MarkerInPartyList : DailyModuleBase
             Service.Log.Error("Failed to allocate memory for asset");
             IMemorySpace.Free(part, (ulong)sizeof(AtkUldPart));
             IMemorySpace.Free(partsList, (ulong)sizeof(AtkUldPartsList));
-            newImageNode->AtkResNode.Destroy(true);
+            node->AtkResNode.Destroy(true);
             return null;
         }
 
@@ -178,10 +184,11 @@ public unsafe class MarkerInPartyList : DailyModuleBase
 
         part->UldAsset = asset;
 
-        newImageNode->PartsList = partsList;
+        node->PartsList = partsList;
 
-        newImageNode->LoadIconTexture(DefaultIconId, 0);
-        return newImageNode;
+        node->LoadIconTexture(DefaultIconId, 0);
+        node->AtkResNode.SetPriority(5);
+        return node;
     }
 
     private void InitImageNodes()
@@ -267,6 +274,19 @@ public unsafe class MarkerInPartyList : DailyModuleBase
             return;
 
         node->AtkResNode.ToggleVisibility(false);
+    }
+
+    private void RefreshPosition()
+    {
+        foreach (var item in _imageNodes)
+        {
+            var node = (AtkImageNode*)item;
+            (var x, var y) = (BasePosition.X + _config.IconOffset.X, BasePosition.Y + _config.IconOffset.Y);
+            node->AtkResNode.SetPositionFloat(x, y);
+            node->AtkResNode.SetHeight((ushort)_config.Size);
+            node->AtkResNode.SetWidth((ushort)_config.Size);
+            node->AtkResNode.ToggleVisibility(true);
+        }
     }
 
     private static void AttachToComponentNode(AtkResNode* parent, AtkImageNode* node, bool toFront = true)
