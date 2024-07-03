@@ -1,0 +1,113 @@
+name: Update Repository Stats
+
+on:
+  release:
+    types: [published]
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  update-repository-info:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Get repository details and validate
+        id: repo_info
+        run: |
+          REPO_NAME=$(echo $GITHUB_REPOSITORY | awk -F'/' '{print $1"/"$2}')
+          if [ "$REPO_NAME" != "AtmoOmen/DailyRoutines" ]; then
+            echo "This is not the AtmoOmen's DailyRoutines repository. Exiting."
+            exit 0
+          fi
+          echo "repo_name=$REPO_NAME" >> $GITHUB_OUTPUT
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Update repository stats and changelogs
+        run: |
+          import requests
+          import os
+          from datetime import datetime
+
+          def get_total_downloads(headers):
+              total = 0
+              page = 1
+              while True:
+                  response = requests.get(
+                      f'https://api.github.com/repos/AtmoOmen/DailyRoutines/releases?page={page}&per_page=100',
+                      headers=headers
+                  )
+                  releases = response.json()
+                  if not releases:
+                      break
+                  for release in releases:
+                      total += sum(asset['download_count'] * 2 for asset in release['assets'])
+                  page += 1
+              return total
+
+          headers = {
+              'Authorization': f"token {os.environ['GITHUB_TOKEN']}",
+              'Accept': 'application/vnd.github.v3+json'
+          }
+
+          # Fetch all releases and calculate total downloads
+          total_downloads = get_total_downloads(headers)
+
+          # Fetch latest release
+          response = requests.get(
+              'https://api.github.com/repos/AtmoOmen/DailyRoutines/releases/latest',
+              headers=headers
+          )
+          latest_release = response.json()
+
+          # Update latest version stats
+          latest_downloads = sum(asset['download_count'] * 2 for asset in latest_release['assets'])
+          version = latest_release['tag_name']
+
+          os.makedirs('Assets', exist_ok=True)
+
+          # Update total downloads
+          with open('Assets/downloads.txt', 'w') as f:
+              f.write(str(total_downloads))
+
+          # Update latest version downloads
+          with open('Assets/downloads_latest.txt', 'w') as f:
+              f.write(str(latest_downloads))
+
+          with open('Assets/version_latest.txt', 'w') as f:
+              f.write(version)
+
+          # Update changelog
+          changelog = latest_release['body']
+          publish_time = datetime.strptime(latest_release['published_at'], '%Y-%m-%dT%H:%M:%SZ')
+          formatted_time = publish_time.strftime('%Y/%m/%d')
+
+          with open('Assets/changelog.txt', 'w', encoding='utf-8') as f:
+              f.write(changelog)
+
+          with open('Assets/changelog_time.txt', 'w') as f:
+              f.write(formatted_time)
+
+          print("Files updated successfully.")
+        shell: python
+
+      - name: Commit and push if changed
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          git add Assets/*.txt
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update repository stats and changelog" && git push origin HEAD:main)
