@@ -57,7 +57,7 @@ jobs:
                   for release in releases:
                       total += sum(asset['download_count'] * 2 for asset in release['assets'])
                   page += 1
-              return total
+              return total + 174920
 
           headers = {
               'Authorization': f"token {os.environ['GITHUB_TOKEN']}",
