@@ -167,7 +167,7 @@ public class Main : Window, IDisposable
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(OnlineStatsManager.LatestVersion.Changelog) || Plugin.Version < OnlineStatsManager.LatestVersion.Version)
+        if (Plugin.Version < OnlineStatsManager.LatestVersion.Version)
         {
             ImGui.SetWindowFontScale(3f);
             var textSize = ImGui.CalcTextSize(Service.Lang.GetText("Settings-LowVersionWarning"));
