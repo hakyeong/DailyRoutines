@@ -2316,8 +2316,8 @@ A / B / C / D / 1 / 2 / 3 / 4</value>
     <value>未知字体</value>
   </data>
   <data name="Settings-InvalidLocalData" xml:space="preserve">
-    <value>本地或云端数据有效性校验失败,
-请尝试重新启用插件或检查你的本地网络环境</value>
+    <value>时间同步失败,
+请检查本地网络设置并尝试重启插件。</value>
   </data>
   <data name="Settings-LeftTabWidth" xml:space="preserve">
     <value>左侧边栏宽度</value>

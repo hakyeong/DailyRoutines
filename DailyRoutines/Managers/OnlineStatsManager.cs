@@ -149,7 +149,7 @@ public class OnlineStatsManager : IDailyManager
         using var handler = new HttpClientHandler();
         handler.UseProxy = false;
         using var client = new HttpClient(handler);
-        client.Timeout = TimeSpan.FromSeconds(15);
+        client.Timeout = TimeSpan.FromSeconds(30);
 
         try
         {
