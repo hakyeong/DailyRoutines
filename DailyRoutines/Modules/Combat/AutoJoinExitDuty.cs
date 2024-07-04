@@ -4,7 +4,6 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
-using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -15,15 +14,10 @@ namespace DailyRoutines.Modules;
 [ModuleDescription("AutoJoinExitDutyTitle", "AutoJoinExitDutyDescription", ModuleCategories.战斗)]
 public unsafe class AutoJoinExitDuty : DailyModuleBase
 {
-    [Signature("E8 ?? ?? ?? ?? 48 8B 43 28 B1 01")]
-    private static AbandonDutyDelagte? AbandonDuty;
-
     private static AtkUnitBase* ContentsFinder => (AtkUnitBase*)Service.Gui.GetAddonByName("ContentsFinder");
 
     public override void Init()
     {
-        Service.Hook.InitializeFromAttributes(this);
-
         TaskHelper ??= new TaskHelper { AbortOnTimeout = true, TimeLimitMS = 60000, ShowDebug = false };
         Service.CommandManager.AddSubCommand("joinexitduty",
                                              new CommandInfo(OnCommand)
@@ -74,7 +68,7 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
     {
         if (!Throttler.Throttle("AutoJoinExitDuty-ResetContentFinder", 100)) return false;
         var instance = FFXIVClientStructs.FFXIV.Client.Game.UI.ContentsFinder.Instance();
-        if ( instance == null) return false;
+        if (instance == null) return false;
         
         instance->IsExplorerMode = false;
         instance->IsUnrestrictedParty = false;
@@ -124,7 +118,7 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
     {
         if (ContentsFinder == null || !IsAddonAndNodesReady(ContentsFinder)) return false;
 
-        AddonHelper.Callback(ContentsFinder, true, 12, 1);
+        Callback(ContentsFinder, true, 12, 1);
         var atkValues = ContentsFinder->AtkValues;
         atkValues[7].UInt = 3;
         atkValues[7].Type = ValueType.UInt;
@@ -148,22 +142,22 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
             return false;
         }
 
-        AddonHelper.Callback(ContentsFinder, true, 1, 1);
-        AddonHelper.Callback(ContentsFinder, true, 4, 0, true);
-        AddonHelper.Callback(ContentsFinder, true, 4, 1, false);
-        AddonHelper.Callback(ContentsFinder, true, 4, 2, false);
-        AddonHelper.Callback(ContentsFinder, true, 4, 3, false);
+        Callback(ContentsFinder, true, 1, 1);
+        Callback(ContentsFinder, true, 4, 0, true);
+        Callback(ContentsFinder, true, 4, 1, false);
+        Callback(ContentsFinder, true, 4, 2, false);
+        Callback(ContentsFinder, true, 4, 3, false);
 
         if (ContentsFinder->AtkValues[7].UInt != 0)
         {
-            AddonHelper.Callback(ContentsFinder, true, 3, 1U);
+            Callback(ContentsFinder, true, 3, 1U);
             agent->OpenRegularDuty(4);
             return false;
         }
 
         if (ContentsFinder->AtkValues[7].UInt == 0)
         {
-            AddonHelper.Callback(ContentsFinder, true, 12, 0);
+            Callback(ContentsFinder, true, 12, 0);
             return true;
         }
 
@@ -190,16 +184,12 @@ public unsafe class AutoJoinExitDuty : DailyModuleBase
         if (Service.Condition[ConditionFlag.WaitingForDutyFinder] ||
             Service.Condition[ConditionFlag.InDutyQueue] || Flags.BetweenAreas) return false;
 
-        AbandonDuty(false);
+        Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.LeaveDuty);
         return true;
     }
 
     public override void Uninit()
     {
         Service.CommandManager.RemoveSubCommand("joinexitduty");
-
-        base.Uninit();
     }
-
-    private delegate void AbandonDutyDelagte(bool a1);
 }
