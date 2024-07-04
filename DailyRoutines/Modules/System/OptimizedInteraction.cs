@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
 using Dalamud.Hooking;
@@ -68,17 +67,12 @@ public class OptimizedInteraction : DailyModuleBase
         SwitchHooks(true);
 
         Service.ClientState.TerritoryChanged += OnZoneChanged;
-        Task.Run(async () =>
-        {
-            await Service.Framework.RunOnFrameworkThread(() => Service.ClientState.TerritoryType != 0);
-            OnZoneChanged(Service.ClientState.TerritoryType);
-        });
     }
 
     private static void OnZoneChanged(ushort zone)
     {
         var zoneData = LuminaCache.GetRow<TerritoryType>(zone);
-        SwitchHooks(!zoneData.IsPvpZone);
+        SwitchHooks(zoneData.ContentFinderCondition.Value == null);
     }
 
     private static void SwitchHooks(bool isEnable)
@@ -107,6 +101,12 @@ public class OptimizedInteraction : DailyModuleBase
             EventCanceledHook.Disable();
             CheckTargetDistanceHook.Disable();
         }
+    }
+
+    public override void Uninit()
+    {
+        Service.ClientState.TerritoryChanged -= OnZoneChanged;
+        base.Uninit();
     }
 
     private static bool CameraObjectBlockedDetour(nint a1, nint a2, nint a3) => true;
