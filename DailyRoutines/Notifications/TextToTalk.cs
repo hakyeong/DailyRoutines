@@ -4,7 +4,6 @@ using System.IO;
 using System.Net.Http;
 using System.Security;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DailyRoutines.Helpers;
 using DailyRoutines.Managers;
@@ -80,6 +79,8 @@ public class TextToTalk : DailyNotificationBase
 
     public static async Task Speak(string text)
     {
+        Directory.CreateDirectory(CacheDirectory);
+
         text = SanitizeString(text);
         var fileName = Convert.ToBase64String(Encoding.UTF8.GetBytes(text)).Replace('+', '-').Replace('/', '_').TrimEnd('=');
         var filePath = Path.Join(CacheDirectory, $"{fileName}.wav");
@@ -112,7 +113,6 @@ public class TextToTalk : DailyNotificationBase
             player.Play(filePath);
         }
     }
-
 
     public static string SanitizeString(string text)
     {
