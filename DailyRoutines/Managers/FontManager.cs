@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Drawing.Text;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DailyRoutines.Helpers;
 using Dalamud.Interface.GameFonts;
@@ -25,6 +26,11 @@ public class FontManager : IDailyManager
     public static IFontHandle UIFont80       => GetUIFont(0.8f);
     public static IFontHandle UIFont60       => GetUIFont(0.6f);
     public static bool        IsFontBuilding => !_fontHandleTasks.IsEmpty;
+
+    private static string DefaultFontPath =>
+        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\Windows\Fonts\msyh.ttc" :
+        RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "/System/Library/Fonts/PingFang.ttc" :
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
 
     private static readonly ConcurrentQueue<float> _creationQueue = [];
     private static readonly ConcurrentDictionary<float, IFontHandle> _fontHandles = [];
@@ -122,11 +128,18 @@ public class FontManager : IDailyManager
         {
             try
             {
+                var fontPath = Service.Config.InterfaceFontFileName;
+                if (!File.Exists(fontPath))
+                {
+                    NotifyHelper.NotificationError("字体获取失败, 已转为默认字体");
+                    fontPath = DefaultFontPath;
+                }
+
                 var handle = FontAtlas.NewDelegateFontHandle(e =>
                 {
                     e.OnPreBuild(tk =>
                     {
-                        var fileFontPtr = tk.AddFontFromFile(Service.Config.InterfaceFontFileName, new()
+                        var fileFontPtr = tk.AddFontFromFile(fontPath, new()
                         {
                             SizePt = size,
                             PixelSnapH = true,
@@ -154,7 +167,8 @@ public class FontManager : IDailyManager
             }
             catch (Exception ex)
             {
-                NotifyHelper.Error($"Failed to create font handle for size {size}", ex);
+                NotifyHelper.NotificationError($"字体 (大小: {size}) 构建失败");
+                NotifyHelper.Error($"构建字体 (大小: {size}) 失败", ex);
                 throw;
             }
         });
@@ -201,12 +215,25 @@ public class FontManager : IDailyManager
 
     public static void GetInstalledFonts()
     {
-        var fontDirectories = new[]
+        var fontDirectories = new List<string>();
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            @"C:\Windows\Fonts",
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                         @"Microsoft\Windows\Fonts"),
-        };
+            fontDirectories.Add(@"C:\Windows\Fonts");
+            fontDirectories.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\Windows\Fonts"));
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            fontDirectories.Add("/Library/Fonts");
+            fontDirectories.Add("/System/Library/Fonts");
+            fontDirectories.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library/Fonts"));
+        }
+        else // Linux
+        {
+            fontDirectories.Add("/usr/share/fonts");
+            fontDirectories.Add("/usr/local/share/fonts");
+            fontDirectories.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".fonts"));
+        }
 
         string[] fontExtensions = [".ttf", ".otf", ".ttc", ".otc"];
 
@@ -214,8 +241,9 @@ public class FontManager : IDailyManager
         {
             if (!Directory.Exists(directory)) continue;
 
-            foreach (var file in Directory.EnumerateFiles(directory)
+            foreach (var file in Directory.EnumerateFiles(directory, "*.*", SearchOption.AllDirectories)
                                           .Where(f => fontExtensions.Contains(Path.GetExtension(f).ToLowerInvariant())))
+            {
                 try
                 {
                     using var pfc = new PrivateFontCollection();
@@ -225,8 +253,10 @@ public class FontManager : IDailyManager
                 }
                 catch (Exception ex)
                 {
-                    NotifyHelper.Error($"Error processing file {file}: {ex.Message}");
+                    NotifyHelper.NotificationError("获取本地字体列表失败");
+                    NotifyHelper.Error($"处理文件时出错 {file}: {ex.Message}");
                 }
+            }
         }
     }
 
