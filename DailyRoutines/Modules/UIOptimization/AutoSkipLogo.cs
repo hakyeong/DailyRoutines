@@ -18,7 +18,8 @@ public class AutoSkipLogo : DailyModuleBase
 
     private static unsafe void OnLogo(AddonEvent type, AddonArgs? args)
     {
-        var addon = args.Addon.ToAtkUnitBase();
+        var addon = AddonState.Logo;
+        if (addon == null) return;
 
         Callback(addon, true, 0);
         addon->Hide(false, false, 1);
