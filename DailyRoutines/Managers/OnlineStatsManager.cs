@@ -337,7 +337,7 @@ public class OnlineStatsManager : IDailyManager
             foreach (var news in GameNews)
                 _ = ImageHelper.GetImage(news.HomeImagePath);
 
-            ImageCarouselInstance.News = GameNews;
+            ImageCarouselInstance.AddNews(GameNews);
         }
     }
 

@@ -240,7 +240,7 @@ public class AutoCheckFoodUsage : DailyModuleBase
 
         var actionManager = ActionManager.Instance();
         if (Flags.BetweenAreas || Service.ClientState.LocalPlayer == null || 
-            !IsScreenReady() || actionManager->GetActionStatus(ActionType.Item, 4650) != 0)
+            !IsScreenReady() || actionManager->GetActionStatus(ActionType.GeneralAction, 2) != 0)
             return false;
 
         if (zone == -1)

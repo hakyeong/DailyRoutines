@@ -36,67 +36,6 @@ public class Main : Window, IDisposable
         public ModuleCategories Category        { get; set; }
     }
 
-    public class ImageCarousel
-    {
-        public IReadOnlyList<GameNews> News           { get; set; } = [];
-        public float                   ChangeInterval { get; set; } = 5.0f;
-        public Vector2                 ChildSize      { get; set; }
-
-        public readonly Vector2 CurrentImageSize = ScaledVector2(375, 200);
-
-        private int currentIndex;
-        private long lastImageChangeTime;
-
-        public ImageCarousel() { }
-
-        public ImageCarousel(IReadOnlyList<GameNews> newsList)
-        {
-            News = newsList;
-        }
-
-        private void PreDraw()
-        {
-            if (Environment.TickCount64 - lastImageChangeTime > ChangeInterval * 1000)
-            {
-                currentIndex = (currentIndex + 1) % News.Count;
-                lastImageChangeTime = Environment.TickCount64;
-            }
-
-            var singleCharSize = ImGui.CalcTextSize("测");
-            var itemSpacing = ImGui.GetStyle().ItemSpacing;
-            ChildSize = new Vector2(CurrentImageSize.X + (2 * itemSpacing.X), CurrentImageSize.Y + (singleCharSize.Y * 2.5f));
-        }
-
-        public void Draw()
-        {
-            if (News.Count == 0) return;
-            PreDraw();
-
-            using (ImRaii.Child("NewsImageCarousel", ChildSize, false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
-            {
-                var news = News[currentIndex];
-                if (ImageHelper.TryGetImage(news.HomeImagePath, out var imageHandle))
-                {
-                    ImGui.Image(imageHandle.ImGuiHandle, CurrentImageSize);
-                }
-                else
-                {
-                    ImGui.Dummy(CurrentImageSize);
-                }
-
-                if (ImGui.IsItemHovered())
-                    ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-
-                if (ImGui.IsItemClicked())
-                    Util.OpenLink(news.Url);
-
-                ImGui.Indent(2f * GlobalFontScale);
-                ImGui.TextWrapped(news.Title);
-                ImGui.Unindent(2f * GlobalFontScale);
-            }
-        }
-    }
-
     private static readonly List<ModuleInfo> Modules = [];
     private static readonly Dictionary<ModuleCategories, List<ModuleInfo>> categorizedModules = [];
     private static readonly List<ModuleInfo> ModulesFavorite = [];
@@ -928,32 +867,32 @@ public class Main : Window, IDisposable
         {
             var allModules = Assembly.GetExecutingAssembly().GetTypes()
                                      .Where(t => typeof(DailyModuleBase).IsAssignableFrom(t) &&
-                                                 t is { IsClass: true, IsAbstract: false })
-                                     .Select(type => new ModuleInfo
+                                                 t is { IsClass: true, IsAbstract: false } &&
+                                                 t.GetCustomAttribute<ModuleDescriptionAttribute>() != null)
+                                     .Select(t => new ModuleInfo
                                      {
-                                         Module = type,
-                                         PrecedingModule = type.GetCustomAttribute<PrecedingModuleAttribute>()?.Modules
-                                                               .Select(t => t.Name + "Title")
-                                                               .Select(title => Service.Lang.GetText(title))
+                                         Module = t,
+                                         PrecedingModule = t.GetCustomAttribute<PrecedingModuleAttribute>()?.Modules
+                                                               .Select(type => 
+                                                                           Service.Lang.GetText(type.GetCustomAttribute<ModuleDescriptionAttribute>()?.TitleKey ??
+                                                                           "DevModuleTitle"))
                                                                .ToArray(),
-                                         ModuleName = type.Name,
+                                         ModuleName = t.Name,
                                          Title = Service.Lang.GetText(
-                                             type.GetCustomAttribute<ModuleDescriptionAttribute>()?.TitleKey ??
+                                             t.GetCustomAttribute<ModuleDescriptionAttribute>()?.TitleKey ??
                                              "DevModuleTitle"),
                                          Description = Service.Lang.GetText(
-                                             type.GetCustomAttribute<ModuleDescriptionAttribute>()?.DescriptionKey ??
+                                             t.GetCustomAttribute<ModuleDescriptionAttribute>()?.DescriptionKey ??
                                              "DevModuleDescription"),
-                                         Category = type.GetCustomAttribute<ModuleDescriptionAttribute>()?.Category ??
+                                         Category = t.GetCustomAttribute<ModuleDescriptionAttribute>()?.Category ??
                                                     ModuleCategories.一般,
-                                         Author = ((DailyModuleBase)Activator.CreateInstance(type)!).Author,
-                                         WithConfigUI = type
-                                                        .GetMethods(BindingFlags.Instance | BindingFlags.Public |
-                                                                    BindingFlags.DeclaredOnly)
-                                                        .Any(m => m.Name == "ConfigUI" &&
-                                                                  m.DeclaringType != typeof(DailyModuleBase)),
+                                         Author = t.GetCustomAttribute<ModuleDescriptionAttribute>()?.Author,
+                                         WithConfigUI = t.GetMethods(BindingFlags.Instance | BindingFlags.Public |
+                                                                     BindingFlags.DeclaredOnly)
+                                                         .Any(m => m.Name == "ConfigUI" &&
+                                                                   m.DeclaringType != typeof(DailyModuleBase)),
                                          WithConfig = File.Exists(
-                                             Path.Join(Service.PluginInterface.ConfigDirectory.FullName,
-                                                       $"{type.Name}.json")),
+                                             Path.Join(Service.PluginInterface.ConfigDirectory.FullName, $"{t.Name}.json")),
                                      })
                                      .ToList();
 
@@ -989,6 +928,208 @@ public class Main : Window, IDisposable
     }
 
     public void Dispose() { }
+
+    public class ImageCarousel
+    {
+        private readonly List<GameNews> news = [];
+        private int currentIndex;
+        private float lastChangeTime;
+        private Vector2 imageSize = ScaledVector2(450f, 240f);
+        private Vector2 childSize;
+        private bool isHovered;
+        private bool isDragging;
+        private float dragStartPos;
+        private float currentOffset;
+        private float targetOffset;
+
+        public float ChangeInterval { get; set; } = 8.0f;
+        public Vector2 CurrentImageSize
+        {
+            get => imageSize;
+            set
+            {
+                imageSize = value;
+                UpdateChildSize();
+            }
+        }
+        public Vector2 ChildSize => childSize;
+
+        public ImageCarousel() { }
+
+        public ImageCarousel(IEnumerable<GameNews> newsList)
+        {
+            AddNews(newsList);
+        }
+
+        public void AddNews(IEnumerable<GameNews> newsList)
+        {
+            news.AddRange(newsList);
+            UpdateChildSize();
+        }
+
+        public void ClearNews()
+        {
+            news.Clear();
+            currentIndex = 0;
+            currentOffset = 0;
+            targetOffset = 0;
+            UpdateChildSize();
+        }
+
+        private void UpdateChildSize()
+        {
+            var style = ImGui.GetStyle();
+            var singleCharSize = ImGui.CalcTextSize("测");
+            childSize = new(
+                imageSize.X + (2 * style.ItemSpacing.X),
+                imageSize.Y + (singleCharSize.Y * 4f) + style.ItemSpacing.Y
+            );
+        }
+
+        private void UpdateCarouselState()
+        {
+            var currentTime = (float)ImGui.GetTime();
+            if (currentTime - lastChangeTime > ChangeInterval && !isDragging && !isHovered)
+            {
+                currentIndex = (currentIndex + 1) % news.Count;
+                targetOffset = -currentIndex * imageSize.X;
+                lastChangeTime = currentTime;
+            }
+
+            currentOffset = Lerp(currentOffset, targetOffset, ImGui.GetIO().DeltaTime * 5f);
+
+            var minOffset = -(news.Count - 1) * imageSize.X;
+            currentOffset = Math.Clamp(currentOffset, minOffset, 0);
+        }
+
+        private void HandleInput()
+        {
+            if (ImGui.IsItemHovered())
+            {
+                isHovered = true;
+                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+
+                if (ImGui.IsMouseDown(ImGuiMouseButton.Left))
+                {
+                    if (!isDragging)
+                    {
+                        isDragging = true;
+                        dragStartPos = ImGui.GetMousePos().X - currentOffset;
+                    }
+                    var newOffset = ImGui.GetMousePos().X - dragStartPos;
+                    currentOffset = newOffset;
+                    targetOffset = newOffset;
+                    lastChangeTime = (float)ImGui.GetTime();
+                }
+                else
+                {
+                    isDragging = false;
+                }
+
+                var wheel = ImGui.GetIO().MouseWheel;
+                if (wheel != 0)
+                {
+                    currentIndex = Math.Clamp(currentIndex - Math.Sign(wheel), 0, news.Count - 1);
+                    targetOffset = -currentIndex * imageSize.X;
+                    lastChangeTime = (float)ImGui.GetTime();
+                }
+            }
+            else
+            {
+                isHovered = false;
+                isDragging = false;
+            }
+
+            if (ImGui.IsItemClicked())
+            {
+                Util.OpenLink(news[currentIndex].Url);
+            }
+        }
+
+        private void DrawCarousel()
+        {
+            ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, Vector2.Zero);
+
+            ImGui.BeginChild("CarouselImages", new Vector2(imageSize.X, imageSize.Y), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+
+            for (var i = 0; i < news.Count; i++)
+            {
+                var xPos = (i * imageSize.X) + currentOffset;
+
+                ImGui.SetCursorPosX(xPos);
+
+                if (ImageHelper.TryGetImage(news[i].HomeImagePath, out var imageHandle))
+                {
+                    ImGui.Image(imageHandle.ImGuiHandle, imageSize);
+                }
+                else
+                {
+                    ImGui.Dummy(imageSize);
+                }
+
+                if (i < news.Count - 1)
+                {
+                    ImGui.SameLine();
+                }
+            }
+
+            ImGui.EndChild();
+
+            ImGui.PopStyleVar();
+        }
+
+        private void DrawTitle()
+        {
+            var style = ImGui.GetStyle();
+            ImGui.SetCursorPosY(imageSize.Y + style.ItemSpacing.Y);
+            ImGui.PushTextWrapPos(ImGui.GetCursorPosX() + childSize.X - style.ItemSpacing.X);
+
+            var titleIndex = Math.Abs((int)Math.Round(currentOffset / imageSize.X)) % news.Count;
+            ImGui.TextWrapped(news[titleIndex].Title);
+
+            ImGui.PopTextWrapPos();
+        }
+
+        private void DrawNavigationDots()
+        {
+            var totalWidth = (news.Count * 10f) + ((news.Count - 1) * 5f);
+            ImGui.SetCursorPosX((childSize.X - totalWidth) * 0.5f);
+            ImGui.SetCursorPosY(childSize.Y - (16f * GlobalFontScale));
+
+            for (var i = 0; i < news.Count; i++)
+            {
+                if (i > 0) ImGui.SameLine(0, 5);
+                ImGui.PushStyleColor(ImGuiCol.Button, i == currentIndex ? 0xFFFFFFFF : 0x88FFFFFF);
+                ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0xFFFFFFFF);
+                ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0xFFFFFFFF);
+                if (ImGui.Button($"##{i}", new Vector2(10, 10)))
+                {
+                    currentIndex = i;
+                    targetOffset = -i * imageSize.X;
+                }
+                ImGui.PopStyleColor(3);
+            }
+        }
+
+        public void Draw()
+        {
+            if (news.Count == 0) return;
+
+            UpdateCarouselState();
+
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+            using (ImRaii.Child("NewsImageCarousel", childSize, false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
+            {
+                DrawCarousel();
+                HandleInput();
+                DrawTitle();
+                DrawNavigationDots();
+            }
+            ImGui.PopStyleVar();
+        }
+
+        private static float Lerp(float a, float b, float t) => a + ((b - a) * t);
+    }
 }
 
 public class MainSettings

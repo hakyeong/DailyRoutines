@@ -3,12 +3,9 @@ using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Colors;
-using Dalamud.Interface.Utility;
-
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 
@@ -21,9 +18,6 @@ public unsafe class AutoMount : DailyModuleBase
 
     private static Mount? SelectedMount;
     private static string MountSearchInput = string.Empty;
-
-    private static AtkUnitBase* NowLoading => (AtkUnitBase*)Service.Gui.GetAddonByName("NowLoading");
-    private static AtkUnitBase* FadeMiddle => (AtkUnitBase*)Service.Gui.GetAddonByName("FadeMiddle");
 
     public override void Init()
     {
@@ -76,10 +70,12 @@ public unsafe class AutoMount : DailyModuleBase
 
     private void OnZoneChanged(ushort zone)
     {
-        if (!ModuleConfig.MountWhenZoneChange) return;
+        if (!ModuleConfig.MountWhenZoneChange || zone == 0) return;
+        if (!CanUseMountCurrentZone(zone)) return;
 
         TaskHelper.Abort();
-        TaskHelper.Enqueue(UseMountBetweenMap);
+        TaskHelper.DelayNext(500);
+        TaskHelper.Enqueue(UseMount);
     }
 
     private void OnConditionChanged(ConditionFlag flag, bool value)
@@ -90,51 +86,38 @@ public unsafe class AutoMount : DailyModuleBase
             case ConditionFlag.InCombat when !value && ModuleConfig.MountWhenCombatEnd && !Service.ClientState.IsPvP &&
                                              (FateManager.Instance()->CurrentFate == null ||
                                               FateManager.Instance()->CurrentFate->Progress == 100):
-                TaskHelper.Abort();
+                if (!CanUseMountCurrentZone()) return;
 
+                TaskHelper.Abort();
                 TaskHelper.DelayNext(500);
-                TaskHelper.Enqueue(UseMountInMap);
+                TaskHelper.Enqueue(UseMount);
                 break;
         }
     }
 
-    private bool? UseMountInMap()
+    private bool? UseMount()
     {
         if (!Throttler.Throttle("AutoMount")) return false;
+        if (!(Service.ClientState.LocalPlayer?.IsTargetable ?? false)) return false;
         if (AgentMap.Instance()->IsPlayerMoving == 1) return true;
-        if (Flags.IsCasting || Flags.IsOnMount) return true;
+        if (Flags.IsCasting) return false;
+        if (Flags.IsOnMount) return true;
         if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 9) != 0) return false;
 
         TaskHelper.DelayNext(100);
-        TaskHelper.Enqueue(UseMount);
+        TaskHelper.Enqueue(() => ModuleConfig.SelectedMount == 0
+                                     ? ActionManager.Instance()->UseAction(ActionType.GeneralAction, 9)
+                                     : ActionManager.Instance()->UseAction(ActionType.Mount, ModuleConfig.SelectedMount));
         return true;
     }
 
-    private bool? UseMountBetweenMap()
+    private static bool CanUseMountCurrentZone(ushort zone = 0)
     {
-        if (!Throttler.Throttle("AutoMount")) return false;
-        if (Service.Condition[ConditionFlag.BetweenAreas]) return false;
-        if (NowLoading->IsVisible) return false;
+        if (zone == 0) zone = Service.ClientState.TerritoryType;
+        if (zone == 0) return false;
 
-        if (AgentMap.Instance()->IsPlayerMoving == 1) return true;
-        if (ActionManager.Instance()->GetActionStatus(ActionType.GeneralAction, 9) != 0) return !FadeMiddle->IsVisible;
-        if (Flags.IsCasting || Flags.IsOnMount) return true;
-
-        if (Service.ClientState.LocalPlayer.IsTargetable)
-        {
-            TaskHelper.DelayNext(100);
-            TaskHelper.Enqueue(UseMount);
-            return true;
-        }
-
-        return true;
-    }
-
-    private static bool? UseMount()
-    {
-        return ModuleConfig.SelectedMount == 0
-                   ? ActionManager.Instance()->UseAction(ActionType.GeneralAction, 9)
-                   : ActionManager.Instance()->UseAction(ActionType.Mount, ModuleConfig.SelectedMount);
+        var zoneData = LuminaCache.GetRow<TerritoryType>(zone);
+        return zoneData is { Mount: true };
     }
 
     public override void Uninit()

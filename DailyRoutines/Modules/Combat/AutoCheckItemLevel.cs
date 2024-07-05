@@ -149,6 +149,7 @@ public unsafe class AutoCheckItemLevel : DailyModuleBase
             AgentInspect.Instance()->AgentInterface.Hide();
 
             CurrentMember = null;
+            container->Loaded = 0;
             return true;
         }, "CheckMemberIL", 2);
     }

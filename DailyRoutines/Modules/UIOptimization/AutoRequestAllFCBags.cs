@@ -30,17 +30,13 @@ public unsafe class AutoRequestAllFCBags : DailyModuleBase
         SendInventoryRefreshHook.Enable();
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "FreeCompanyChest", OnAddon);
-        TaskHelper = new();
     }
 
-    private void OnAddon(AddonEvent type, AddonArgs args)
+    private static void OnAddon(AddonEvent type, AddonArgs args)
     {
         // 预请求数据
-        TaskHelper.Enqueue(() =>
-        {
-            foreach (var inventory in FreeCompanyInventories)
-                Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.RequestInventory, (int)inventory);
-        });
+        foreach (var inventory in FreeCompanyInventories)
+            Service.ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.RequestInventory, (int)inventory);
     }
 
     private static bool SendInventoryRefreshDetour(InventoryManager* instance, int inventoryType)

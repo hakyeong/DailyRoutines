@@ -72,7 +72,7 @@ public class OptimizedInteraction : DailyModuleBase
     private static void OnZoneChanged(ushort zone)
     {
         var zoneData = LuminaCache.GetRow<TerritoryType>(zone);
-        SwitchHooks(zoneData?.ContentFinderCondition?.Value?.RowId == 0);
+        SwitchHooks((zoneData?.ContentFinderCondition?.Value?.RowId ?? 0) == 0);
     }
 
     private static void SwitchHooks(bool isEnable)
