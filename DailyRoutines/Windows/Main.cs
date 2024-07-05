@@ -23,19 +23,6 @@ namespace DailyRoutines.Windows;
 
 public class Main : Window, IDisposable
 {
-    public class ModuleInfo
-    {
-        public Type             Module          { get; set; } = null!;
-        public string[]?        PrecedingModule { get; set; }
-        public string           ModuleName      { get; set; } = null!;
-        public string           Title           { get; set; } = null!;
-        public string           Description     { get; set; } = null!;
-        public string?          Author          { get; set; }
-        public bool             WithConfigUI    { get; set; }
-        public bool             WithConfig      { get; set; }
-        public ModuleCategories Category        { get; set; }
-    }
-
     private static readonly List<ModuleInfo> Modules = [];
     private static readonly Dictionary<ModuleCategories, List<ModuleInfo>> categorizedModules = [];
     private static readonly List<ModuleInfo> ModulesFavorite = [];
@@ -47,6 +34,7 @@ public class Main : Window, IDisposable
 
     private static Vector2 LeftTabComponentSize;
     private static Vector2 LogoComponentSize;
+    private static Vector2 LogoDetailComponentSize;
     private static Vector2 CategoriesComponentSize;
 
     private static Vector2 UpperTabComponentSize;
@@ -370,7 +358,7 @@ public class Main : Window, IDisposable
                     DrawHomePage();
                     break;
                 case 1:
-                    MainSettings.Draw();
+                    Settings.Draw();
                     break;
                 case 3:
                     DrawModules(ModulesFavorite);
@@ -392,16 +380,19 @@ public class Main : Window, IDisposable
         ImGui.SetScrollHereY();
         using (ImRaii.Group())
         {
-            ImGui.Image(PresetData.Icon.ImGuiHandle, ScaledVector2(72f));
+            ImGui.Image(PresetData.Icon.ImGuiHandle, ScaledVector2(96f));
 
             ImGui.SameLine();
+            ImGui.SetCursorPosY(((96f * GlobalFontScale) - LogoDetailComponentSize.Y) * 0.5f);
             using (ImRaii.Group())
             {
                 using (FontManager.UIFont160.Push())
                     ImGuiOm.Text("Daily Routines");
 
-                ImGuiOm.Text("Help With Some Boring Tasks");
+                ImGui.TextColored(ImGuiColors.TankBlue, "Help With Some Boring Tasks");
             }
+
+            LogoDetailComponentSize = ImGui.GetItemRectSize();
         }
         
         ScaledDummy(1f);
@@ -457,9 +448,9 @@ public class Main : Window, IDisposable
                 {
                     var greetingTextSize = ImGui.CalcTextSize(GreetingText);
                     ImGui.SetCursorPosX(greetingObject.X - greetingTextSize.X - ImGui.GetStyle().ItemSpacing.X);
-                    ImGui.Text(GreetingText);
+                    ImGui.TextColored(ImGuiColors.TankBlue, GreetingText);
 
-                    ImGui.Text($"{GreetingPlace}, {GreetingName}");
+                    ImGui.TextColored(ImGuiColors.DalamudWhite2, $"{GreetingPlace}, {GreetingName}");
                 }
 
                 size = ImGui.GetItemRectSize();
@@ -568,12 +559,13 @@ public class Main : Window, IDisposable
             ImageHelper.TryGetImage("https://gh.atmoomen.top/DailyRoutines/main/Assets/Images/AfdianSponsor.jpg",
                                     out var imageWarpper1);
 
-        var childSize = ImageCarouselInstance.CurrentImageSize + (ImGui.GetStyle().ItemSpacing * 2) + new Vector2(50f) * GlobalFontScale;
+        var childSize = ImageCarouselInstance.CurrentImageSize + (ImGui.GetStyle().ItemSpacing * 2) + ScaledVector2(50f);
         using (ImRaii.Child("HomePage_ChangelogComponent", childSize, false, ChildFlags | ImGuiWindowFlags.NoScrollWithMouse))
         {
             if (imageState0)
-                if (ImGui.CollapsingHeader(
-                        Service.Lang.GetText("Changelog", OnlineStatsManager.LatestVersion.PublishTime)))
+            {
+                ImGui.SetNextItemWidth(200f * GlobalFontScale);
+                if (ImGui.CollapsingHeader(Service.Lang.GetText("Changelog", OnlineStatsManager.LatestVersion.PublishTime)))
                 {
                     ImGui.Image(imageWarpper0.ImGuiHandle, ImageCarouselInstance.CurrentImageSize);
                     if (ImGui.IsItemHovered()) ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
@@ -583,13 +575,19 @@ public class Main : Window, IDisposable
                     if (popup.Success)
                         ImGui.Image(imageWarpper0.ImGuiHandle, imageWarpper0.Size * 0.8f);
                 }
+            }
 
             if (imageState1)
+            {
+                ImGui.SetNextItemWidth(200f * GlobalFontScale);
                 if (ImGui.CollapsingHeader($"{Service.Lang.GetText("Settings-AfdianSponsor")} ({OnlineStatsManager.Sponsor_Period})"))
                 {
                     ImGui.Image(imageWarpper1.ImGuiHandle, ImageCarouselInstance.CurrentImageSize
                                     with
-                                    { Y = ImageCarouselInstance.CurrentImageSize.Y + (400f * GlobalFontScale) });
+                                    {
+                                        Y = ImageCarouselInstance.CurrentImageSize.Y + (400f * GlobalFontScale)
+                                    });
+
                     if (ImGui.IsItemHovered()) ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
                     if (ImGui.IsItemClicked()) ImGui.OpenPopup("SponsorPopup");
 
@@ -597,6 +595,7 @@ public class Main : Window, IDisposable
                     if (popup.Success)
                         ImGui.Image(imageWarpper1.ImGuiHandle, imageWarpper1.Size * 0.4f);
                 }
+            }
         }
     }
 
@@ -936,6 +935,7 @@ public class Main : Window, IDisposable
         private float lastChangeTime;
         private Vector2 imageSize = ScaledVector2(450f, 240f);
         private Vector2 childSize;
+        private Vector2 textSize;
         private bool isHovered;
         private bool isDragging;
         private float dragStartPos;
@@ -979,10 +979,10 @@ public class Main : Window, IDisposable
         private void UpdateChildSize()
         {
             var style = ImGui.GetStyle();
-            var singleCharSize = ImGui.CalcTextSize("测");
+            imageSize = ScaledVector2(450f, 240f);
             childSize = new(
                 imageSize.X + (2 * style.ItemSpacing.X),
-                imageSize.Y + (singleCharSize.Y * 4f) + style.ItemSpacing.Y
+                imageSize.Y + textSize.Y + style.ItemSpacing.Y
             );
         }
 
@@ -1082,9 +1082,20 @@ public class Main : Window, IDisposable
             var style = ImGui.GetStyle();
             ImGui.SetCursorPosY(imageSize.Y + style.ItemSpacing.Y);
             ImGui.PushTextWrapPos(ImGui.GetCursorPosX() + childSize.X - style.ItemSpacing.X);
-
             var titleIndex = Math.Abs((int)Math.Round(currentOffset / imageSize.X)) % news.Count;
-            ImGui.TextWrapped(news[titleIndex].Title);
+
+            using (ImRaii.Group())
+            {
+                ImGui.TextWrapped(news[titleIndex].Title);
+            }
+
+            var itemSize = ImGui.GetItemRectSize();
+            var singleLineHeight = ImGui.GetTextLineHeight();
+            var lineCount = (int)Math.Ceiling(itemSize.Y / singleLineHeight);
+            var neededLineCount = Math.Max(lineCount + 1, 3);
+            textSize.Y = neededLineCount * (singleLineHeight + style.ItemSpacing.Y);
+
+            // 计算行数
 
             ImGui.PopTextWrapPos();
         }
@@ -1125,15 +1136,29 @@ public class Main : Window, IDisposable
                 DrawNavigationDots();
             }
             ImGui.PopStyleVar();
+
+            UpdateChildSize();
         }
 
         private static float Lerp(float a, float b, float t) => a + ((b - a) * t);
     }
-}
 
-public class MainSettings
-{
-    private static readonly Dictionary<int, string> PagesInfo = new()
+    public class ModuleInfo
+    {
+        public Type             Module          { get; set; } = null!;
+        public string[]?        PrecedingModule { get; set; }
+        public string           ModuleName      { get; set; } = null!;
+        public string           Title           { get; set; } = null!;
+        public string           Description     { get; set; } = null!;
+        public string?          Author          { get; set; }
+        public bool             WithConfigUI    { get; set; }
+        public bool             WithConfig      { get; set; }
+        public ModuleCategories Category        { get; set; }
+    }
+
+    public class Settings
+    {
+        private static readonly Dictionary<int, string> PagesInfo = new()
     {
         { 0, "主页"   },
         { 1, "设置"   },
@@ -1141,237 +1166,238 @@ public class MainSettings
         { 4, "已启用" },
     };
 
-    private static string ConflictKeySearchString = string.Empty;
-    private static string FontSearchString = string.Empty;
+        private static string ConflictKeySearchString = string.Empty;
+        private static string FontSearchString = string.Empty;
 
-    internal static void Draw()
-    {
-        DrawGlobalConfig();
-
-        ImGui.Separator();
-
-        DrawTooltips();
-    }
-
-    internal static void DrawGlobalConfig()
-    {
-        // 语言
-        ImGuiOm.TextIcon(FontAwesomeIcon.Globe, Service.Lang.GetText("Language"));
-
-        ImGui.SameLine();
-        ImGui.BeginDisabled();
-        ImGui.SetNextItemWidth(180f * GlobalFontScale);
-        using (ImRaii.Combo("##LanguagesList", "简体中文")) { }
-        ImGui.EndDisabled();
-
-        ImGui.Spacing();
-
-        // 模块配置
-        ImGuiOm.TextIcon(FontAwesomeIcon.FolderOpen, Service.Lang.GetText("ModulesConfig"));
-
-        ImGui.SameLine();
-        if (ImGui.Button(Service.Lang.GetText("OpenFolder")))
-            OpenFileOrFolder(Service.PluginInterface.ConfigDirectory.FullName);
-
-        ImGuiOm.TooltipHover(Service.Lang.GetText("ModulesConfigHelp"));
-
-        ImGui.Spacing();
-
-        // 打断热键
-        ImGuiOm.TextIcon(FontAwesomeIcon.Keyboard, Service.Lang.GetText("ConflictKey"));
-
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(150f * GlobalFontScale);
-        using (var combo = ImRaii.Combo("##GlobalConflictHotkey", Service.Config.ConflictKey.ToString()))
+        internal static void Draw()
         {
-            if (combo.Success)
+            DrawGlobalConfig();
+
+            ImGui.Separator();
+
+            DrawTooltips();
+        }
+
+        internal static void DrawGlobalConfig()
+        {
+            // 语言
+            ImGuiOm.TextIcon(FontAwesomeIcon.Globe, Service.Lang.GetText("Language"));
+
+            ImGui.SameLine();
+            ImGui.BeginDisabled();
+            ImGui.SetNextItemWidth(180f * GlobalFontScale);
+            using (ImRaii.Combo("##LanguagesList", "简体中文")) { }
+            ImGui.EndDisabled();
+
+            ImGui.Spacing();
+
+            // 模块配置
+            ImGuiOm.TextIcon(FontAwesomeIcon.FolderOpen, Service.Lang.GetText("ModulesConfig"));
+
+            ImGui.SameLine();
+            if (ImGui.Button(Service.Lang.GetText("OpenFolder")))
+                OpenFileOrFolder(Service.PluginInterface.ConfigDirectory.FullName);
+
+            ImGuiOm.TooltipHover(Service.Lang.GetText("ModulesConfigHelp"));
+
+            ImGui.Spacing();
+
+            // 打断热键
+            ImGuiOm.TextIcon(FontAwesomeIcon.Keyboard, Service.Lang.GetText("ConflictKey"));
+
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(150f * GlobalFontScale);
+            using (var combo = ImRaii.Combo("##GlobalConflictHotkey", Service.Config.ConflictKey.ToString()))
             {
-                ImGui.SetNextItemWidth(-1f);
-                ImGui.InputTextWithHint("##ConflictKeySearchBar", $"{Service.Lang.GetText("PleaseSearch")}...",
-                                        ref ConflictKeySearchString, 20);
-
-                ImGui.Separator();
-
-                var validKeys = Service.KeyState.GetValidVirtualKeys();
-                foreach (var keyToSelect in validKeys)
+                if (combo.Success)
                 {
-                    if (!string.IsNullOrWhiteSpace(ConflictKeySearchString) && !keyToSelect.GetFancyName()
-                            .Contains(ConflictKeySearchString, StringComparison.OrdinalIgnoreCase)) continue;
+                    ImGui.SetNextItemWidth(-1f);
+                    ImGui.InputTextWithHint("##ConflictKeySearchBar", $"{Service.Lang.GetText("PleaseSearch")}...",
+                                            ref ConflictKeySearchString, 20);
 
-                    if (ImGui.Selectable(keyToSelect.GetFancyName()))
+                    ImGui.Separator();
+
+                    var validKeys = Service.KeyState.GetValidVirtualKeys();
+                    foreach (var keyToSelect in validKeys)
                     {
-                        Service.Config.ConflictKey = keyToSelect;
-                        Service.Config.Save();
+                        if (!string.IsNullOrWhiteSpace(ConflictKeySearchString) && !keyToSelect.GetFancyName()
+                                .Contains(ConflictKeySearchString, StringComparison.OrdinalIgnoreCase)) continue;
+
+                        if (ImGui.Selectable(keyToSelect.GetFancyName()))
+                        {
+                            Service.Config.ConflictKey = keyToSelect;
+                            Service.Config.Save();
+                        }
                     }
                 }
             }
-        }
-        ImGuiOm.TooltipHover(Service.Lang.GetText("ConflictKeyHelp"));
+            ImGuiOm.TooltipHover(Service.Lang.GetText("ConflictKeyHelp"));
 
-        ImGui.Spacing();
+            ImGui.Spacing();
 
-        // 匿名数据上传
-        ImGuiOm.TextIcon(FontAwesomeIcon.Database, Service.Lang.GetText("Settings-AllowAnonymousUpload"));
+            // 匿名数据上传
+            ImGuiOm.TextIcon(FontAwesomeIcon.Database, Service.Lang.GetText("Settings-AllowAnonymousUpload"));
 
-        ImGui.SameLine();
-        var allowState = Service.Config.AllowAnonymousUpload;
-        if (ImGui.Checkbox("###AllowAnonymousUpload", ref allowState))
-        {
-            Service.Config.AllowAnonymousUpload ^= true;
-            Service.Config.Save();
-
-            if (Service.Config.AllowAnonymousUpload)
+            ImGui.SameLine();
+            var allowState = Service.Config.AllowAnonymousUpload;
+            if (ImGui.Checkbox("###AllowAnonymousUpload", ref allowState))
             {
-                Task.Run(async () =>
-                             await OnlineStatsManager.UploadEntry(new ModuleStat(OnlineStatsManager.GetEncryptedMachineCode())));
-            }
-        }
-        ImGuiOm.TooltipHover(Service.Lang.GetText("Settings-AllowAnonymousUploadHelp"), 25f);
+                Service.Config.AllowAnonymousUpload ^= true;
+                Service.Config.Save();
 
-        // 游戏活动日历
-        ImGuiOm.TextIcon(FontAwesomeIcon.Calendar, Service.Lang.GetText("Settings-SendCalendarToCharWhenLogin"));
-
-        ImGui.SameLine();
-        var checkboxBool = Service.Config.SendCalendarToChatWhenLogin;
-        if (ImGui.Checkbox("###SendCalendarToCharWhenLogin", ref checkboxBool))
-        {
-            Service.Config.SendCalendarToChatWhenLogin ^= true;
-            Service.Config.Save();
-        }
-
-        ImGuiOm.TextIcon(FontAwesomeIcon.CalendarAlt, Service.Lang.GetText("Settings-HideOutdatedEvents"));
-        
-        ImGui.SameLine();
-        var checkboxBool2 = Service.Config.IsHideOutdatedEvent;
-        if (ImGui.Checkbox("###HideOutdatedEvents", ref checkboxBool2))
-        {
-            Service.Config.IsHideOutdatedEvent ^= true;
-            Service.Config.Save();
-        }
-
-        // 启用 TTS
-        ImGuiOm.TextIcon(FontAwesomeIcon.Microphone, Service.Lang.GetText("Settings-EnableTTS"));
-
-        ImGui.SameLine();
-        var enableTTS = Service.Config.EnableTTS;
-        ImGui.SetNextItemWidth(150f * GlobalFontScale);
-        if (ImGui.Checkbox("###EnableTTS", ref enableTTS))
-        {
-            Service.Config.EnableTTS = enableTTS;
-            Service.Config.Save();
-        }
-
-        // 界面文本字号
-        ImGuiOm.TextIcon(FontAwesomeIcon.Font, Service.Lang.GetText("Settings-InterfaceFontSize"));
-
-        ImGui.SameLine();
-        var fontTemp = Service.Config.InterfaceFontSize;
-        ImGui.SetNextItemWidth(150f * GlobalFontScale);
-        if (ImGui.InputFloat("###InterfaceFontInput", ref fontTemp, 0, 0, "%.1f"))
-            fontTemp = Math.Clamp(fontTemp, 8, 48);
-        if (ImGui.IsItemDeactivatedAfterEdit())
-        {
-            Service.Config.InterfaceFontSize = fontTemp;
-            Service.Config.Save();
-
-            FontManager.RebuildInterfaceFonts();
-        }
-
-        // 界面字体选择
-        ImGuiOm.TextIcon(FontAwesomeIcon.Italic, Service.Lang.GetText("Settings-FontSelect"));
-
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(300f * GlobalFontScale);
-        using (var combo = ImRaii.Combo("###FontSelectCombo",
-                            FontManager.InstalledFonts.GetValueOrDefault(Service.Config.InterfaceFontFileName, 
-                                                                         Service.Lang.GetText("Settings-UnknownFont")),
-                            ImGuiComboFlags.HeightLarge))
-        {
-            if (combo.Success)
-            {
-                using (FontManager.UIFont120.Push())
+                if (Service.Config.AllowAnonymousUpload)
                 {
-                    ImGui.InputTextWithHint("###FontSearch", Service.Lang.GetText("PleaseSearch"), ref FontSearchString, 128);
-                    var inputWidth = ImGui.GetItemRectSize().X;
-                    ImGui.Separator();
+                    Task.Run(async () =>
+                                 await OnlineStatsManager.UploadEntry(new ModuleStat(OnlineStatsManager.GetEncryptedMachineCode())));
+                }
+            }
+            ImGuiOm.TooltipHover(Service.Lang.GetText("Settings-AllowAnonymousUploadHelp"), 25f);
 
-                    using (ImRaii.Child("FontChild", new(inputWidth, 400f * GlobalFontScale)))
+            // 游戏活动日历
+            ImGuiOm.TextIcon(FontAwesomeIcon.Calendar, Service.Lang.GetText("Settings-SendCalendarToCharWhenLogin"));
+
+            ImGui.SameLine();
+            var checkboxBool = Service.Config.SendCalendarToChatWhenLogin;
+            if (ImGui.Checkbox("###SendCalendarToCharWhenLogin", ref checkboxBool))
+            {
+                Service.Config.SendCalendarToChatWhenLogin ^= true;
+                Service.Config.Save();
+            }
+
+            ImGuiOm.TextIcon(FontAwesomeIcon.CalendarAlt, Service.Lang.GetText("Settings-HideOutdatedEvents"));
+
+            ImGui.SameLine();
+            var checkboxBool2 = Service.Config.IsHideOutdatedEvent;
+            if (ImGui.Checkbox("###HideOutdatedEvents", ref checkboxBool2))
+            {
+                Service.Config.IsHideOutdatedEvent ^= true;
+                Service.Config.Save();
+            }
+
+            // 启用 TTS
+            ImGuiOm.TextIcon(FontAwesomeIcon.Microphone, Service.Lang.GetText("Settings-EnableTTS"));
+
+            ImGui.SameLine();
+            var enableTTS = Service.Config.EnableTTS;
+            ImGui.SetNextItemWidth(150f * GlobalFontScale);
+            if (ImGui.Checkbox("###EnableTTS", ref enableTTS))
+            {
+                Service.Config.EnableTTS = enableTTS;
+                Service.Config.Save();
+            }
+
+            // 界面文本字号
+            ImGuiOm.TextIcon(FontAwesomeIcon.Font, Service.Lang.GetText("Settings-InterfaceFontSize"));
+
+            ImGui.SameLine();
+            var fontTemp = Service.Config.InterfaceFontSize;
+            ImGui.SetNextItemWidth(150f * GlobalFontScale);
+            if (ImGui.InputFloat("###InterfaceFontInput", ref fontTemp, 0, 0, "%.1f"))
+                fontTemp = Math.Clamp(fontTemp, 8, 48);
+            if (ImGui.IsItemDeactivatedAfterEdit())
+            {
+                Service.Config.InterfaceFontSize = fontTemp;
+                Service.Config.Save();
+
+                FontManager.RebuildInterfaceFonts();
+            }
+
+            // 界面字体选择
+            ImGuiOm.TextIcon(FontAwesomeIcon.Italic, Service.Lang.GetText("Settings-FontSelect"));
+
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(300f * GlobalFontScale);
+            using (var combo = ImRaii.Combo("###FontSelectCombo",
+                                FontManager.InstalledFonts.GetValueOrDefault(Service.Config.InterfaceFontFileName,
+                                                                             Service.Lang.GetText("Settings-UnknownFont")),
+                                ImGuiComboFlags.HeightLarge))
+            {
+                if (combo.Success)
+                {
+                    using (FontManager.UIFont120.Push())
                     {
-                        foreach (var installedFont in FontManager.InstalledFonts)
+                        ImGui.InputTextWithHint("###FontSearch", Service.Lang.GetText("PleaseSearch"), ref FontSearchString, 128);
+                        var inputWidth = ImGui.GetItemRectSize().X;
+                        ImGui.Separator();
+
+                        using (ImRaii.Child("FontChild", new(inputWidth, 400f * GlobalFontScale)))
                         {
-                            if (!string.IsNullOrWhiteSpace(FontSearchString) &&
-                                !installedFont.Key.Contains(FontSearchString, StringComparison.OrdinalIgnoreCase) &&
-                                !installedFont.Value.Contains(FontSearchString, StringComparison.OrdinalIgnoreCase)) continue;
-
-                            if (ImGui.Selectable($"{installedFont.Value}##{installedFont.Key}"))
+                            foreach (var installedFont in FontManager.InstalledFonts)
                             {
-                                Service.Config.InterfaceFontFileName = installedFont.Key;
-                                Service.Config.Save();
+                                if (!string.IsNullOrWhiteSpace(FontSearchString) &&
+                                    !installedFont.Key.Contains(FontSearchString, StringComparison.OrdinalIgnoreCase) &&
+                                    !installedFont.Value.Contains(FontSearchString, StringComparison.OrdinalIgnoreCase)) continue;
 
-                                FontManager.RebuildInterfaceFonts(true);
+                                if (ImGui.Selectable($"{installedFont.Value}##{installedFont.Key}"))
+                                {
+                                    Service.Config.InterfaceFontFileName = installedFont.Key;
+                                    Service.Config.Save();
+
+                                    FontManager.RebuildInterfaceFonts(true);
+                                }
                             }
+                        }
+                    }
+                }
+            }
+
+            // 左侧边栏宽度
+            ImGuiOm.TextIcon(FontAwesomeIcon.TextWidth, Service.Lang.GetText("Settings-LeftTabWidth"));
+            ImGui.SameLine();
+            var leftTabWidthTemp = Service.Config.LeftTabWidth;
+            ImGui.SetNextItemWidth(150f * GlobalFontScale);
+            if (ImGui.InputFloat("###LeftTabWidthInput", ref leftTabWidthTemp, 0, 0, "%.1f"))
+                leftTabWidthTemp = Math.Clamp(leftTabWidthTemp, 100f, ImGui.GetWindowWidth() - 50f);
+            if (ImGui.IsItemDeactivatedAfterEdit())
+            {
+                Service.Config.LeftTabWidth = leftTabWidthTemp;
+                Service.Config.Save();
+            }
+
+
+            // 默认页面
+            ImGuiOm.TextIcon(FontAwesomeIcon.Home, Service.Lang.GetText("Settings-DefaultHomePage"));
+
+            ImGui.SameLine();
+            var defaultHomePage = Service.Config.DefaultHomePage;
+            var previewString = defaultHomePage > 100 ?
+                                    ((ModuleCategories)(defaultHomePage % 100)).ToString() :
+                                    PagesInfo[defaultHomePage];
+
+            ImGui.SetNextItemWidth(150f * GlobalFontScale);
+            using (var combo = ImRaii.Combo("###DefaultHomePageSelectCombo", previewString))
+            {
+                if (combo.Success)
+                {
+                    foreach (var buttonInfo in PagesInfo)
+                    {
+                        if (ImGuiOm.Selectable(buttonInfo.Value))
+                        {
+                            Service.Config.DefaultHomePage = buttonInfo.Key;
+                            Service.Config.Save();
+                        }
+                    }
+
+                    foreach (var buttonInfo in Enum.GetValues<ModuleCategories>())
+                    {
+                        if (buttonInfo == ModuleCategories.无) continue;
+
+                        if (ImGuiOm.Selectable(buttonInfo.ToString()))
+                        {
+                            Service.Config.DefaultHomePage = (int)buttonInfo + 100;
+                            Service.Config.Save();
                         }
                     }
                 }
             }
         }
 
-        // 左侧边栏宽度
-        ImGuiOm.TextIcon(FontAwesomeIcon.TextWidth, Service.Lang.GetText("Settings-LeftTabWidth"));
-        ImGui.SameLine();
-        var leftTabWidthTemp = Service.Config.LeftTabWidth;
-        ImGui.SetNextItemWidth(150f * GlobalFontScale);
-        if (ImGui.InputFloat("###LeftTabWidthInput", ref leftTabWidthTemp, 0, 0, "%.1f"))
-            leftTabWidthTemp = Math.Clamp(leftTabWidthTemp, 100f, ImGui.GetWindowWidth() - 50f);
-        if (ImGui.IsItemDeactivatedAfterEdit())
+        internal static void DrawTooltips()
         {
-            Service.Config.LeftTabWidth = leftTabWidthTemp;
-            Service.Config.Save();
+            ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("Settings-TipMessage0")}:");
+            ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage1"));
+            ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage2"));
+            ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage3"));
         }
-
-
-        // 默认页面
-        ImGuiOm.TextIcon(FontAwesomeIcon.Home, Service.Lang.GetText("Settings-DefaultHomePage"));
-
-        ImGui.SameLine();
-        var defaultHomePage = Service.Config.DefaultHomePage;
-        var previewString = defaultHomePage > 100 ? 
-                                ((ModuleCategories)(defaultHomePage % 100)).ToString() : 
-                                PagesInfo[defaultHomePage];
-
-        ImGui.SetNextItemWidth(150f * GlobalFontScale);
-        using (var combo = ImRaii.Combo("###DefaultHomePageSelectCombo", previewString))
-        {
-            if (combo.Success)
-            {
-                foreach (var buttonInfo in PagesInfo)
-                {
-                    if (ImGuiOm.Selectable(buttonInfo.Value))
-                    {
-                        Service.Config.DefaultHomePage = buttonInfo.Key;
-                        Service.Config.Save();
-                    }
-                }
-
-                foreach (var buttonInfo in Enum.GetValues<ModuleCategories>())
-                {
-                    if (buttonInfo == ModuleCategories.无) continue;
-
-                    if (ImGuiOm.Selectable(buttonInfo.ToString()))
-                    {
-                        Service.Config.DefaultHomePage = (int)buttonInfo + 100;
-                        Service.Config.Save();
-                    }
-                }
-            }
-        }
-    }
-
-    internal static void DrawTooltips()
-    {
-        ImGui.TextColored(ImGuiColors.DalamudYellow, $"{Service.Lang.GetText("Settings-TipMessage0")}:");
-        ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage1"));
-        ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage2"));
-        ImGui.TextWrapped(Service.Lang.GetText("Settings-TipMessage3"));
     }
 }
