@@ -19,11 +19,9 @@ using System.Runtime.InteropServices;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("MarkerInPartyListTitle", "MarkerInPartyListDescription", ModuleCategories.战斗)]
+[ModuleDescription("MarkerInPartyListTitle", "MarkerInPartyListDescription", ModuleCategories.战斗, "status102")]
 public unsafe class MarkerInPartyList : DailyModuleBase
 {
-    public override string Author => "status102";
-
     [Signature("E8 ?? ?? ?? ?? 4C 8B C5 8B D7 48 8B CB E8", DetourName = nameof(DetourLocalMarkingFunc))]
     public static Hook<LocalMarkingFunc>? LocalMarkingHook;
     public delegate nint LocalMarkingFunc(nint manager, uint markingType, nint objectId, nint a4);

@@ -17,7 +17,7 @@ using GameObjectStruct = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("CustomizeGameObjectTitle", "CustomizeGameObjectDescription", ModuleCategories.系统)]
+[ModuleDescription("CustomizeGameObjectTitle", "CustomizeGameObjectDescription", ModuleCategories.系统, "HSS")]
 public unsafe class CustomizeGameObject : DailyModuleBase
 {
     private delegate byte IsTargetableDelegate(GameObjectStruct* gameObj);
@@ -43,8 +43,6 @@ public unsafe class CustomizeGameObject : DailyModuleBase
     private static Vector2 CheckboxSize = ScaledVector2(20f);
 
     private static readonly Dictionary<nint, CustomizeHistoryEntry> CustomizeHistory = [];
-
-    public override string? Author { get; set; } = "HSS";
 
     public override void Init()
     {

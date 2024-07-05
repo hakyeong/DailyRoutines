@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using DailyRoutines.Managers;
 using DailyRoutines.Notifications;
@@ -9,7 +9,7 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoNotifyLeveUpdateTitle", "AutoNotifyLeveUpdateDescription", ModuleCategories.通知)]
+[ModuleDescription("AutoNotifyLeveUpdateTitle", "AutoNotifyLeveUpdateDescription", ModuleCategories.通知, "HSS")]
 public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
 {
     private static DateTime nextLeveCheck = DateTime.MinValue;
@@ -17,7 +17,6 @@ public unsafe class AutoNotifyLeveUpdate : DailyModuleBase
     private static int lastLeve;
     private static bool OnChatMessage;
     private static int NotificationThreshold;
-    public override string? Author { get; set; } = "HSS";
 
     public override void Init()
     {

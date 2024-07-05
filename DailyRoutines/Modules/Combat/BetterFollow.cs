@@ -14,7 +14,6 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;
-
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -23,7 +22,7 @@ using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("BetterFollowTitle", "BetterFollowDescription", ModuleCategories.战斗)]
+[ModuleDescription("BetterFollowTitle", "BetterFollowDescription", ModuleCategories.战斗, "HSS")]
 public unsafe class BetterFollow : DailyModuleBase
 {
     public const string CommandStr = "/pdrfollow";
@@ -63,8 +62,6 @@ public unsafe class BetterFollow : DailyModuleBase
     private readonly delegate* unmanaged<nint, uint, nint, nint, ulong> FollowStart;
 
     private Config ModuleConfig = null!;
-    public override string? Author { get; set; } = "HSS";
-
     public override void Init()
     {
         ModuleConfig = LoadConfig<Config>() ?? new();

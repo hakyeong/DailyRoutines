@@ -6,11 +6,9 @@ using FFXIVClientStructs.FFXIV.Client.UI;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoCommenceDutyTitle", "AutoCommenceDutyDescription", ModuleCategories.界面操作)]
+[ModuleDescription("AutoCommenceDutyTitle", "AutoCommenceDutyDescription", ModuleCategories.界面操作, "Cindy-Master")]
 public class AutoCommenceDuty : DailyModuleBase
 {
-    public override string? Author { get; set; } = "Cindy-Master";
-
     public override void Init()
     {
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "ContentsFinderConfirm", OnAddonSetup);

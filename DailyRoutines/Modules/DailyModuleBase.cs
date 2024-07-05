@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using DailyRoutines.Helpers;
-using DailyRoutines.Infos;
 using DailyRoutines.Managers;
 using DailyRoutines.Windows;
 using Dalamud.Game.Text.SeStringHandling;
@@ -22,7 +21,6 @@ namespace DailyRoutines.Modules;
 public abstract class DailyModuleBase
 {
     public         bool           Initialized   { get; internal set; }
-    public virtual string?        Author        { get; set; }
     protected      TaskHelper?    TaskHelper    { get; set; }
     protected      Overlay?       Overlay       { get; set; }
     public         OverlayConfig? OverlayConfig { get; set; }

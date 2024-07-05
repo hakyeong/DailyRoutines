@@ -17,7 +17,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("ExpandItemMenuSearchTitle", "ExpandItemMenuSearchDescription", ModuleCategories.界面优化)]
+[ModuleDescription("ExpandItemMenuSearchTitle", "ExpandItemMenuSearchDescription", ModuleCategories.界面优化, "HSS")]
 public unsafe class ExpandItemMenuSearch : DailyModuleBase
 {
     private const int ChatLogContextItemId = 0x948;
@@ -63,7 +63,6 @@ public unsafe class ExpandItemMenuSearch : DailyModuleBase
     private static bool SearchCollectorByGlamour;
     private static bool SearchWiki;
     private static bool SearchWikiByGlamour;
-    public override string? Author { get; set; } = "HSS";
 
     public override void Init()
     {

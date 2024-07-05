@@ -12,11 +12,9 @@ using ImGuiNET;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("PartyFinderFilterTitle", "PartyFinderFilterDescription", ModuleCategories.界面优化)]
+[ModuleDescription("PartyFinderFilterTitle", "PartyFinderFilterDescription", ModuleCategories.界面优化, "status102")]
 public class PartyFinderFilter : DailyModuleBase
 {
-    public override string? Author => "status102";
-
     private int batchIndex;
     private readonly HashSet<string> descriptionSet = [];
     private static Config ModuleConfig = null!;

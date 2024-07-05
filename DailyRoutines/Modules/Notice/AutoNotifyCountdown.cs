@@ -12,12 +12,11 @@ using PayloadType = Lumina.Text.Payloads.PayloadType;
 
 namespace DailyRoutines.Modules;
 
-[ModuleDescription("AutoNotifyCountdownTitle", "AutoNotifyCountdownDescription", ModuleCategories.通知)]
+[ModuleDescription("AutoNotifyCountdownTitle", "AutoNotifyCountdownDescription", ModuleCategories.通知, "HSS")]
 public class AutoNotifyCountdown : DailyModuleBase
 {
     private static bool ConfigOnlyNotifyWhenBackground;
     private static List<string>? Countdown;
-    public override string? Author { get; set; } = "HSS";
 
     public override void Init()
     {
