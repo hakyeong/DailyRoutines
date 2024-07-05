@@ -1050,30 +1050,29 @@ public class Main : Window, IDisposable
         {
             ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, Vector2.Zero);
 
-            ImGui.BeginChild("CarouselImages", new Vector2(imageSize.X, imageSize.Y), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
-
-            for (var i = 0; i < news.Count; i++)
+            using (ImRaii.Child("CarouselImages", new Vector2(imageSize.X, imageSize.Y), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
             {
-                var xPos = (i * imageSize.X) + currentOffset;
-
-                ImGui.SetCursorPosX(xPos);
-
-                if (ImageHelper.TryGetImage(news[i].HomeImagePath, out var imageHandle))
+                for (var i = 0; i < news.Count; i++)
                 {
-                    ImGui.Image(imageHandle.ImGuiHandle, imageSize);
-                }
-                else
-                {
-                    ImGui.Dummy(imageSize);
-                }
+                    var xPos = (i * imageSize.X) + currentOffset;
 
-                if (i < news.Count - 1)
-                {
-                    ImGui.SameLine();
+                    ImGui.SetCursorPosX(xPos);
+
+                    if (ImageHelper.TryGetImage(news[i].HomeImagePath, out var imageHandle))
+                    {
+                        ImGui.Image(imageHandle.ImGuiHandle, imageSize);
+                    }
+                    else
+                    {
+                        ImGui.Dummy(imageSize);
+                    }
+
+                    if (i < news.Count - 1)
+                    {
+                        ImGui.SameLine();
+                    }
                 }
             }
-
-            ImGui.EndChild();
 
             ImGui.PopStyleVar();
         }
