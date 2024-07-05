@@ -1,10 +1,10 @@
+using DailyRoutines.Helpers;
 using DailyRoutines.Infos;
 using DailyRoutines.Managers;
-using Dalamud.Game.Addon.Lifecycle;
-using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Hooking;
+using Dalamud.Interface.Internal;
+using Dalamud.Interface.Utility;
 using Dalamud.Utility.Signatures;
-using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -23,67 +23,87 @@ namespace DailyRoutines.Modules;
 public unsafe class MarkerInPartyList : DailyModuleBase
 {
     public override string Author => "status102";
-    private const int DefaultIconId = 61201;
-    private static readonly (short X, short Y) BasePosition = (52, 15);
-    private static ExcelSheet<Marker>? MarkerSheet;
 
     [Signature("E8 ?? ?? ?? ?? 4C 8B C5 8B D7 48 8B CB E8", DetourName = nameof(DetourLocalMarkingFunc))]
     public static Hook<LocalMarkingFunc>? LocalMarkingHook;
     public delegate nint LocalMarkingFunc(nint manager, uint markingType, nint objectId, nint a4);
 
-    private static Config _config = null!;
-    private static List<nint> _imageNodes = new(8);
+    private const ImGuiWindowFlags Flags = ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoSavedSettings |
+                                           ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoMouseInputs |
+                                           ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoBackground |
+                                           ImGuiWindowFlags.NoNav;
+
+    private static Config ModuleConfig = null!;
+
+    private static Dictionary<int, IDalamudTextureWrap> _markIcon = [];
     private static readonly Dictionary<int, int> _markedObject = new(8);
-    private static bool _isBuilt, _needClear;
-    private static object _lock = new();
+    private static ExcelSheet<Marker>? MarkerSheet;
+    private static bool _needClear;
 
     public override void Init()
     {
-        _config = LoadConfig<Config>() ?? new();
+        ModuleConfig = LoadConfig<Config>() ?? new();
+        MarkerSheet ??= Service.Data.GetExcelSheet<Marker>();
+
+        _markIcon = MarkerSheet.Skip(1).ToDictionary(x => x.Icon, x => ImageHelper.GetIcon((uint)x.Icon)!);
 
         Service.Hook.InitializeFromAttributes(this);
-        MarkerSheet ??= Service.Data.GetExcelSheet<Marker>();
         LocalMarkingHook?.Enable();
         Service.ClientState.TerritoryChanged += ResetmarkedObject;
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "_PartyList", PartyListDrawHandle);
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "_PartyList", PartyListFinalizeHandle);
 
-    }
 
-    public override void Uninit()
-    {
-        Service.AddonLifecycle.UnregisterListener(AddonEvent.PostDraw, PartyListDrawHandle);
-        Service.AddonLifecycle.UnregisterListener(AddonEvent.PreFinalize, PartyListFinalizeHandle);
-        Service.ClientState.TerritoryChanged -= ResetmarkedObject;
-        LocalMarkingHook?.Dispose();
-        ResetPartyMemberList();
-        ReleaseImageNodes();
-
-        base.Uninit();
+        Overlay ??= new(this);
+        Overlay.IsOpen = true;
+        Overlay.Flags = Flags;
     }
 
     public override void ConfigUI()
     {
         ImGui.SetNextItemWidth(200f * GlobalFontScale);
-        ImGui.InputFloat2(Service.Lang.GetText("MarkerInPartyList-IconOffset"), ref _config.IconOffset, "%d");
+        ImGui.InputFloat2(Service.Lang.GetText("MarkerInPartyList-IconOffset"), ref ModuleConfig.PartyListIconOffset, "%.1f");
         if (ImGui.IsItemDeactivatedAfterEdit())
-        {
-            SaveConfig(_config);
-            RefreshPosition();
-        }
+            SaveConfig(ModuleConfig);
 
         ImGui.SetNextItemWidth(200f * GlobalFontScale);
-        ImGui.InputInt(Service.Lang.GetText("MarkerInPartyList-IconScale"), ref _config.Size, 0, 0);
+        ImGui.InputFloat(Service.Lang.GetText("MarkerInPartyList-IconScale"), ref ModuleConfig.PartyListIconScale, 0, 0, "%.1f");
         if (ImGui.IsItemDeactivatedAfterEdit())
-        {
-            SaveConfig(_config);
-            RefreshPosition();
-        }
+            SaveConfig(ModuleConfig);
 
-        if (ImGui.Checkbox(Service.Lang.GetText("MarkerInPartyList-HidePartyListIndexNumber"), ref _config.HidePartyListIndexNumber))
+        if (ImGui.Checkbox(Service.Lang.GetText("MarkerInPartyList-HidePartyListIndexNumber"), ref ModuleConfig.HidePartyListIndexNumber))
         {
-            SaveConfig(_config);
+            SaveConfig(ModuleConfig);
             ResetPartyMemberList();
+        }
+    }
+
+    public override void OverlayUI()
+    {
+        if (_markedObject.Count != 0)
+        { }
+        else if (_needClear)
+        {
+            ResetPartyMemberList();
+            _needClear = false;
+            return;
+        }
+        else
+            return;
+
+        if (AddonState.PartyList is null || !IsAddonAndNodesReady(AddonState.PartyList) ||
+            Service.ClientState.LocalPlayer is null)
+            return;
+
+        ModifyPartyMemberNumber(AddonState.PartyList, false);
+
+        ImGuiHelpers.ForceNextWindowMainViewport();
+        ImGui.SetNextWindowPos(ImGui.GetMainViewport().Pos);
+        ImGui.SetNextWindowSize(ImGui.GetMainViewport().Size);
+        if (ImGui.Begin("##MarkOverlayWindow", Flags))
+        {
+            foreach (var icon in _markedObject)
+                DrawOnPartyList(icon.Value, icon.Key, AddonState.PartyList, ImGui.GetWindowDrawList());
+
+            ImGui.End();
         }
     }
 
@@ -101,9 +121,40 @@ public unsafe class MarkerInPartyList : DailyModuleBase
             ModifyPartyMemberNumber(partylist, true);
     }
 
+    private static void DrawOnPartyList(int listIndex, int markIcon, AtkUnitBase* pPartyList, ImDrawListPtr drawList)
+    {
+        if (listIndex is < 0 or > 7)
+            return;
+
+        var partyMemberNodeIndex = 10 + listIndex;
+        var partyAlign = pPartyList->UldManager.SearchNodeById(2)->Y;
+
+        var pPartyMemberNode = (AtkComponentNode*)pPartyList->UldManager.SearchNodeById((uint)partyMemberNodeIndex);
+        if (pPartyMemberNode is null)
+            return;
+
+        var pIconNode = pPartyMemberNode->Component->UldManager.SearchNodeById(19);
+        if (pIconNode is null)
+            return;
+
+        //	Note: sub-nodes don't scale, so we have to account for the addon's scale.
+        var iconOffset = (new Vector2(5, -5) + ModuleConfig.PartyListIconOffset) * pPartyList->Scale;
+        var iconSize = new Vector2(pIconNode->Width / 2, pIconNode->Height / 2) * ModuleConfig.PartyListIconScale * 0.9f *
+                       pPartyList->Scale;
+
+        var iconPos = new Vector2(
+            pPartyList->X + (pPartyMemberNode->AtkResNode.X * pPartyList->Scale) + (pIconNode->X * pPartyList->Scale) +
+            (pIconNode->Width * pPartyList->Scale / 2),
+            pPartyList->Y + partyAlign + (pPartyMemberNode->AtkResNode.Y * pPartyList->Scale) +
+            (pIconNode->Y * pPartyList->Scale) + (pIconNode->Height * pPartyList->Scale / 2));
+
+        iconPos += iconOffset;
+        drawList.AddImage(_markIcon[markIcon].ImGuiHandle, iconPos, iconPos + iconSize);
+    }
+
     private static void ModifyPartyMemberNumber(AtkUnitBase* pPartyList, bool visible)
     {
-        if (pPartyList is null || (!_config.HidePartyListIndexNumber && !visible))
+        if (pPartyList is null || (!ModuleConfig.HidePartyListIndexNumber && !visible))
             return;
 
         var memberIdList = Enumerable.Range(10, 8).ToList();
@@ -122,253 +173,20 @@ public unsafe class MarkerInPartyList : DailyModuleBase
         }
     }
 
-    #region ImageNode
 
-    private static unsafe AtkImageNode* GenerateImageNode()
-    {
-        var node = (AtkImageNode*)IMemorySpace.GetUISpace()->Malloc((ulong)sizeof(AtkImageNode), 8);
-        if (node == null)
-        {
-            Service.Log.Error("Failed to allocate memory for image parentNode");
-            return null;
-        }
-        IMemorySpace.Memset(node, 0, (ulong)sizeof(AtkImageNode));
-        node->Ctor();
-
-        node->AtkResNode.Type = NodeType.Image;
-        node->AtkResNode.NodeFlags = NodeFlags.AnchorLeft | NodeFlags.AnchorTop;
-        node->AtkResNode.DrawFlags = 0;
-
-        node->WrapMode = 1;
-        node->Flags |= (byte)ImageNodeFlags.AutoFit;
-
-        var partsList = (AtkUldPartsList*)IMemorySpace.GetUISpace()->Malloc((ulong)sizeof(AtkUldPartsList), 8);
-        if (partsList == null)
-        {
-            Service.Log.Error("Failed to allocate memory for parts list");
-            node->AtkResNode.Destroy(true);
-            return null;
-        }
-
-        partsList->Id = 0;
-        partsList->PartCount = 1;
-
-        var part = (AtkUldPart*)IMemorySpace.GetUISpace()->Malloc((ulong)sizeof(AtkUldPart), 8);
-        if (part == null)
-        {
-            Service.Log.Error("Failed to allocate memory for part");
-            IMemorySpace.Free(partsList, (ulong)sizeof(AtkUldPartsList));
-            node->AtkResNode.Destroy(true);
-            return null;
-        }
-
-        part->U = 0;
-        part->V = 0;
-        part->Width = 80;
-        part->Height = 80;
-
-        partsList->Parts = part;
-
-        var asset = (AtkUldAsset*)IMemorySpace.GetUISpace()->Malloc((ulong)sizeof(AtkUldAsset), 8);
-        if (asset == null)
-        {
-            Service.Log.Error("Failed to allocate memory for asset");
-            IMemorySpace.Free(part, (ulong)sizeof(AtkUldPart));
-            IMemorySpace.Free(partsList, (ulong)sizeof(AtkUldPartsList));
-            node->AtkResNode.Destroy(true);
-            return null;
-        }
-
-        asset->Id = 0;
-        asset->AtkTexture.Ctor();
-
-        part->UldAsset = asset;
-
-        node->PartsList = partsList;
-
-        node->LoadIconTexture(DefaultIconId, 0);
-        node->AtkResNode.SetPriority(5);
-        return node;
-    }
-
-    private static void InitImageNodes()
-    {
-        var partylist = (AtkUnitBase*)Service.Gui.GetAddonByName("_PartyList");
-        if (partylist is null)
-        {
-            Service.Log.Error("Failed to get partylist");
-            return;
-        }
-        lock (_lock)
-        {
-            if (_isBuilt)
-                return;
-
-            foreach (var i in Enumerable.Range(10, 8))
-            {
-                var parentNode = partylist->GetNodeById((uint)i);
-                if (parentNode is null)
-                {
-                    Service.Log.Error($"Failed to get parentNode-{i}");
-                    continue;
-                }
-
-                var imageNode = GenerateImageNode();
-                if (imageNode is null)
-                {
-                    Service.Log.Error($"Failed to create image parentNode-{i}");
-                    continue;
-                }
-                imageNode->AtkResNode.NodeID = 114514;
-                _imageNodes.Add((nint)imageNode);
-                AttachToComponentNode(parentNode, imageNode);
-            }
-            _isBuilt = true;
-        }
-
-    }
-
-    private static void ReleaseImageNodes()
-    {
-        lock (_lock)
-        {
-            if (!_isBuilt)
-                return;
-
-            foreach (var item in _imageNodes)
-            {
-                Service.Log.Info($"Detach:{item:X}");
-                DetachFromComponentNode((AtkImageNode*)item);
-            }
-            _imageNodes.Clear();
-            _isBuilt = false;
-        }
-    }
-
-    private static void ShowImageNode(int i, int iconId)
-    {
-        var partylist = (AtkUnitBase*)Service.Gui.GetAddonByName("_PartyList");
-        if (i is < 0 or > 7 || partylist is null || _imageNodes.Count <= i)
-            return;
-
-        var node = (AtkImageNode*)_imageNodes[i];
-        if (node is null)
-            return;
-
-        node->LoadIconTexture(iconId, 0);
-        (float x, float y) = (BasePosition.X + _config.IconOffset.X, BasePosition.Y + _config.IconOffset.Y);
-        node->AtkResNode.SetPositionFloat(x, y);
-        node->AtkResNode.SetHeight((ushort)_config.Size);
-        node->AtkResNode.SetWidth((ushort)_config.Size);
-        node->AtkResNode.ToggleVisibility(true);
-
-        ModifyPartyMemberNumber(partylist, false);
-    }
-
-    private static void HideImageNode(int i)
-    {
-        if (i is < 0 or > 7)
-            return;
-        var node = (AtkImageNode*)_imageNodes[i];
-        if (node is null)
-            return;
-
-        node->AtkResNode.ToggleVisibility(false);
-    }
-
-    private static void RefreshPosition()
-    {
-        foreach (var item in _imageNodes)
-        {
-            var node = (AtkImageNode*)item;
-            (var x, var y) = (BasePosition.X + _config.IconOffset.X, BasePosition.Y + _config.IconOffset.Y);
-            node->AtkResNode.SetPositionFloat(x, y);
-            node->AtkResNode.SetHeight((ushort)_config.Size);
-            node->AtkResNode.SetWidth((ushort)_config.Size);
-            node->AtkResNode.ToggleVisibility(true);
-        }
-    }
-
-    private static void AttachToComponentNode(AtkResNode* parent, AtkImageNode* node, bool toFront = true)
-    {
-        if (parent is null || node is null)
-            return;
-
-        var lastNode = parent->GetComponent()->UldManager.RootNode;
-        node->AtkResNode.ParentNode = parent;
-        if (lastNode is null)
-            parent->GetComponent()->UldManager.RootNode = &node->AtkResNode;
-
-        else if (toFront)
-        {
-            while (lastNode->PrevSiblingNode != null)
-                lastNode = lastNode->PrevSiblingNode;
-
-            node->AtkResNode.NextSiblingNode = lastNode;
-            lastNode->PrevSiblingNode = &node->AtkResNode;
-        }
-        else
-        {
-            node->AtkResNode.PrevSiblingNode = lastNode;
-            lastNode->NextSiblingNode = &node->AtkResNode;
-            parent->GetComponent()->UldManager.RootNode = &node->AtkResNode;
-        }
-        parent->GetComponent()->UldManager.UpdateDrawNodeList();
-    }
-
-    private static void DetachFromComponentNode(AtkImageNode* node)
-    {
-        if (node is null)
-            return;
-
-        if (node->AtkResNode.ParentNode->GetComponent()->UldManager.RootNode == node)
-            node->AtkResNode.ParentNode->GetComponent()->UldManager.RootNode = node->AtkResNode.PrevSiblingNode;
-
-        if (node->AtkResNode.NextSiblingNode != null && node->AtkResNode.NextSiblingNode->PrevSiblingNode == node)
-            node->AtkResNode.NextSiblingNode->PrevSiblingNode = node->AtkResNode.PrevSiblingNode;
-
-        if (node->AtkResNode.PrevSiblingNode != null && node->AtkResNode.PrevSiblingNode->NextSiblingNode == node)
-            node->AtkResNode.PrevSiblingNode->NextSiblingNode = node->AtkResNode.NextSiblingNode;
-
-        node->AtkResNode.ParentNode->GetComponent()->UldManager.UpdateDrawNodeList();
-    }
-
-    #endregion
-
-    #region Handle
-
-    private void PartyListDrawHandle(AddonEvent type, AddonArgs args)
-    {
-        if (!_isBuilt)
-            InitImageNodes();
-
-        if (_needClear && _markedObject.Count is 0)
-        {
-            ResetPartyMemberList((AtkUnitBase*)args.Addon);
-            _needClear = false;
-        }
-    }
-
-    private void PartyListFinalizeHandle(AddonEvent type, AddonArgs args)
-    {
-        ReleaseImageNodes();
-    }
-
-    private void ProcMarkIconSetted(uint markIndex, uint objectId)
+    private static void ProcMarkIconSetted(uint markIndex, uint objectId)
     {
         var icon = MarkerSheet.ElementAt((int)(markIndex + 1));
-        int outValue;
-        if (icon is null)
-
-            return;
-
-        if (objectId is 0xE000_0000 or 0xE00_0000)
+        switch (objectId)
         {
-            if (_markedObject.Remove(icon.Icon, out outValue))
-                HideImageNode(outValue);
-            if (_markedObject.Count == 0)
-                _needClear = true;
-            return;
+            case 0xE000_0000 or 0xE00_0000:
+                {
+                    _markedObject.Remove(icon.Icon);
+                    if (_markedObject.Count == 0)
+                        _needClear = true;
+
+                    return;
+                }
         }
 
         if (AgentHUD.Instance() is null || InfoProxyCrossRealm.Instance() is null)
@@ -383,13 +201,10 @@ public unsafe class MarkerInPartyList : DailyModuleBase
             if (objectId == charData.ObjectID)
             {
                 if (_markedObject.ContainsValue(i))
-                {
                     _markedObject.Remove(_markedObject.First(x => x.Value == i).Key);
-                    HideImageNode(i);
-                }
-                _markedObject[icon.Icon] = i;
-                ShowImageNode(i, icon.Icon);
+
                 _needClear = false;
+                _markedObject[icon.Icon] = i;
                 return;
             }
         }
@@ -402,39 +217,40 @@ public unsafe class MarkerInPartyList : DailyModuleBase
                 if (_markedObject.ContainsValue(pGroupMember->MemberIndex))
                 {
                     _markedObject.Remove(_markedObject.First(x => x.Value == pGroupMember->MemberIndex).Key);
-                    HideImageNode(pGroupMember->MemberIndex);
                 }
-                _markedObject[icon.Icon] = pGroupMember->MemberIndex;
-                ShowImageNode(pGroupMember->MemberIndex, icon.Icon);
                 _needClear = false;
+                _markedObject[icon.Icon] = pGroupMember->MemberIndex;
                 return;
             }
 
         }
 
-        if (_markedObject.Remove(icon.Icon, out outValue))
-            HideImageNode(outValue);
+        _markedObject.Remove(icon.Icon);
         if (_markedObject.Count == 0)
+        {
             _needClear = true;
+        }
     }
 
-    #endregion
-
-    #region Hook
-
-    private nint DetourLocalMarkingFunc(nint manager, uint markingType, nint objectId, nint a4)
+    private static nint DetourLocalMarkingFunc(nint manager, uint markingType, nint objectId, nint a4)
     {
         ProcMarkIconSetted(markingType, (uint)objectId);
 
         return LocalMarkingHook!.Original(manager, markingType, objectId, a4);
     }
 
-    #endregion
+    public override void Uninit()
+    {
+        Service.ClientState.TerritoryChanged -= ResetmarkedObject;
+        ResetPartyMemberList();
+
+        base.Uninit();
+    }
 
     private class Config : ModuleConfiguration
     {
-        public Vector2 IconOffset = new(0, 0);
-        public int Size = 27;
+        public Vector2 PartyListIconOffset = new(0, 0);
+        public float PartyListIconScale = 1f;
         public bool HidePartyListIndexNumber = true;
     }
 
